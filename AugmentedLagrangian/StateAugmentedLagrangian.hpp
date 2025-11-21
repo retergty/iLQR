@@ -48,6 +48,7 @@ public:
   }
   Multiplier<Scalar> initializeLagrangian(const Scalar time) const override
   {
+    (void)time;
     return {1.0, penalty_.initializeMultipliers()};
   }
 

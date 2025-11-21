@@ -63,7 +63,7 @@ public:
     gainArray_ = controllerGain;
   }
 
-  Vector<Scalar, UDimisions> computeInput(Scalar t, const Vector<Scalar, XDimisions> &x) override
+  Vector<Scalar, UDimisions> computeInput(Scalar t, const Vector<Scalar, XDimisions> &x) const override
   {
     const std::pair<int, Scalar> indexAlpha = LinearInterpolation::timeSegment(t, timeStamp_);
 
@@ -74,7 +74,7 @@ public:
     return uff;
   }
 
-  Vector<Scalar, UDimisions> computeInput(size_t time_index, const Vector<Scalar, XDimisions> &x) override
+  Vector<Scalar, UDimisions> computeInput(size_t time_index, const Vector<Scalar, XDimisions> &x) const override
   {
     assert(time_index < ArrayLen);
     Vector<Scalar, UDimisions> uff = biasArray_[time_index];

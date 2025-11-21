@@ -6,6 +6,42 @@
 #include "Metrics.hpp"
 
 /**
+ * Initializes final MultiplierCollection for equality and inequality Lagrangians.
+ *
+ * @param [in] ocp : A const reference to the optimal control problem.
+ * @param [in] time : Final time.
+ * @param [out] multiplierCollection : The initialized final MultiplierCollection.
+ */
+template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+          int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
+          int FinalStateEqConstrains, int FinalStateIneqConstrains>
+void initializeFinalMultiplierCollection(const OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
+                                         Scalar time, MultiplierCollection<Scalar, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0> &multiplierCollection)
+{
+  ocp.finalEqualityLagrangian.initializeLagrangian(time, multiplierCollection.stateEq);
+  ocp.finalInequalityLagrangian.initializeLagrangian(time, multiplierCollection.stateIneq);
+}
+
+/**
+ * Initializes intermediate MultiplierCollection for equality and inequality Lagrangians.
+ *
+ * @param [in] ocp : A const reference to the optimal control problem.
+ * @param [in] time : Intermediate time.
+ * @param [out] multiplierCollection : The initialized intermediate MultiplierCollection.
+ */
+template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+          int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
+          int FinalStateEqConstrains, int FinalStateIneqConstrains>
+void initializeIntermediateMultiplierCollection(const OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
+                                                Scalar time, MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &multiplierCollection)
+{
+  ocp.stateEqualityLagrangian.initializeLagrangian(time, multiplierCollection.stateEq);
+  ocp.stateInequalityLagrangian.initializeLagrangian(time, multiplierCollection.stateIneq);
+  ocp.equalityLagrangian.initializeLagrangian(time, multiplierCollection.stateInputEq);
+  ocp.inequalityLagrangian.initializeLagrangian(time, multiplierCollection.stateInputIneq);
+}
+
+/**
  * Initializes the dual solution based on the cached dual solution. It will use interpolation if cachedDualSolution has any component
  * in the same mode otherwise it will use the Lagrangian initialization method of ocp.
  *
@@ -23,19 +59,38 @@ void initializeDualSolution(
     const DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength> &cachedDualSolution,
     DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength> &dualSolution)
 {
-  (void)ocp;
   // find the time period that we can interpolate the cached dual solution
   dualSolution.timeTrajectory = primalSolution.timeTrajectory_;
 
-  // final
-  dualSolution.final = cachedDualSolution.final;
-
-  // intermediates
-  for (size_t i = 0; i < PredictLength; i++)
+  if (!cachedDualSolution.empty())
   {
-    const Scalar &time = primalSolution.timeTrajectory_[i];
-    MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &multipliers = dualSolution.intermediates[i];
-    multipliers = getIntermediateDualSolutionAtTime(cachedDualSolution, time);
+    // final
+    dualSolution.final = cachedDualSolution.final;
+  }
+  else
+  {
+    initializeFinalMultiplierCollection(ocp, primalSolution.timeTrajectory_.back(), dualSolution.final);
+  }
+
+  if (!cachedDualSolution.empty())
+  {
+    // intermediates
+    for (size_t i = 0; i < PredictLength; i++)
+    {
+      const Scalar &time = primalSolution.timeTrajectory_[i];
+      MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &multipliers = dualSolution.intermediates[i];
+      multipliers = getIntermediateDualSolutionAtTime(cachedDualSolution, time);
+    }
+  }
+  else
+  {
+    // intermediates
+    for (size_t i = 0; i < PredictLength; i++)
+    {
+      const Scalar &time = primalSolution.timeTrajectory_[i];
+      MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &multipliers = dualSolution.intermediates[i];
+      initializeIntermediateMultiplierCollection(ocp, time, multipliers);
+    }
   }
 }
 

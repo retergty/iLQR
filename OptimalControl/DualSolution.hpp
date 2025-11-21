@@ -2,8 +2,8 @@
 #include <array>
 #include "Multiplier.hpp"
 #include "LinearInterpolation.hpp"
-
-template <typename Scalar, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains, int FinalStateEqConstrains, int FinalStateIneqConstrains, size_t PredictLength>
+#include "Numerics.hpp"
+template <typename Scalar, int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains, int FinalStateEqConstrains, int FinalStateIneqConstrains, size_t PredictLength>
 struct DualSolution
 {
   using IntermediateMultiplierCollection_t = MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>;
@@ -21,13 +21,35 @@ struct DualSolution
     intermediates.swap(other.intermediates);
     final.swap(other.final);
   }
+
+  bool empty() const
+  {
+    bool ret = true;
+    for (size_t i = 0; i < timeTrajectory.size(); ++i)
+    {
+      if (!numerics::almost_eq(timeTrajectory[i], static_cast<Scalar>(0)))
+      {
+        ret = false;
+        break;
+      }
+    }
+    return ret;
+  }
+
+  void clear()
+  {
+    for (int i = 0; i < timeTrajectory.size(); ++i)
+    {
+      timeTrajectory[i] = 0;
+    }
+  }
 };
 
 /**
  * Note that this view of DualSolution does not have access to its timestamp, signaling that functions
  * operating on it cannot modify its timestamp.
  */
-template <typename Scalar, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains, int FinalStateEqConstrains, int FinalStateIneqConstrains, size_t PredictLength>
+template <typename Scalar, int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains, int FinalStateEqConstrains, int FinalStateIneqConstrains, size_t PredictLength>
 struct DualSolutionRef
 {
   using DualSolution_t = DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
@@ -50,7 +72,7 @@ struct DualSolutionRef
  * @param [in] time: The inquiry time
  * @return The collection of multipliers associated to state/state-input, equality/inequality Lagrangian terms.
  */
-template <typename Scalar, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains, int FinalStateEqConstrains, int FinalStateIneqConstrains, size_t PredictLength>
+template <typename Scalar, int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains, int FinalStateEqConstrains, int FinalStateIneqConstrains, size_t PredictLength>
 inline MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>
 getIntermediateDualSolutionAtTime(const DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength> &dualSolution,
                                   Scalar time)

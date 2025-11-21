@@ -26,19 +26,10 @@ struct RolloutSettings
   Scalar maxNumStepsPerSecond = 10000;
   /** The integration time step used in the fixed time-step rollout methods */
   Scalar timeStep = 1e-2;
-  /** Rollout integration scheme type */
-  IntegratorType integratorType = IntegratorType::ODE45;
 
   /** Whether to run controller again after integration to construct input trajectory */
   bool reconstructInputTrajectory = true;
 
-  /** Which of the RootFinding algorithms to use in StateRollout
-   * 		0:		Anderson & Björck		(default)
-   * 		1:		Pegasus
-   * 		2:		Illinois
-   * 		3:		Regula Falsi
-   */
-  RootFinderType rootFindingAlgorithm = RootFinderType::ANDERSON_BJORCK;
   /** Whether to use the trajectory spreading controller in state triggered rollout */
   bool useTrajectorySpreadingController = false;
 };
@@ -55,7 +46,7 @@ public:
    *
    * @param [in] rolloutSettings: The rollout settings.
    */
-  explicit RolloutBase(const RolloutSettings<Scalar> &rolloutSettings) : rolloutSettings_(rolloutSettings) {}
+  explicit RolloutBase() {}
 
   /**
    * Default destructor.
@@ -67,7 +58,7 @@ public:
    *
    * @return The rollout settings.
    */
-  const RolloutSettings<Scalar> &settings() const { return rolloutSettings_; }
+  RolloutSettings<Scalar> &settings() { return rolloutSettings_; }
 
   /**
    * The kills the integrator inside the rollout.
@@ -99,9 +90,9 @@ public:
    *
    * @return numbers of array member
    */
-  virtual int run(const Scalar initTime, const Vector<Scalar, XDimisions> &initState, const Scalar finalTime, ControllerBase<Scalar,XDimisions,UDimisions> *controller,
-                                         std::array<Scalar, ArrayLen> &timeTrajectory, std::array<Vector<Scalar, XDimisions>, ArrayLen> &stateTrajectory, std::array<Vector<Scalar, UDimisions>, ArrayLen> &inputTrajectory) = 0;
+  virtual int run(const Scalar initTime, const Vector<Scalar, XDimisions> &initState, const Scalar finalTime, ControllerBase<Scalar, XDimisions, UDimisions> *controller,
+                  std::array<Scalar, ArrayLen> &timeTrajectory, std::array<Vector<Scalar, XDimisions>, ArrayLen> &stateTrajectory, std::array<Vector<Scalar, UDimisions>, ArrayLen> &inputTrajectory) = 0;
 
 protected:
-  RolloutSettings<Scalar> rolloutSettings_;
+  RolloutSettings<Scalar> rolloutSettings_{};
 };

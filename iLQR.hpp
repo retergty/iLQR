@@ -22,6 +22,7 @@
 #include "LinearAlgebra.hpp"
 #include "OptimalControlProblemHelperFunction.hpp"
 #include "ChangeOfInputVariables.hpp"
+#include "TimeTriggeredRollout.hpp"
 
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains = 0, int StateIneqConstrains = 0, int StateInputEqConstrains = 0, int StateInputIneqConstrains = 0,
@@ -30,6 +31,7 @@ class iLQR
 {
 public:
     using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+    using ControlledSystemBase_t = ControlledSystemBase<Scalar, XDimisions, UDimisions>;
     using StateVector_t = Vector<Scalar, XDimisions>;
     using InputVector_t = Vector<Scalar, UDimisions>;
     using LvVector_t = Vector<Scalar, UDimisions>;
@@ -46,6 +48,7 @@ public:
     using IntermediateMetrics_t = Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>;
     using FinalMetrics_t = Metrics<Scalar, XDimisions, UDimisions, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
     using RolloutBase_t = RolloutBase<Scalar, XDimisions, UDimisions, PredictLength>;
+    using TimeTriggeredRollout_t = TimeTriggeredRollout<Scalar, XDimisions, UDimisions, PredictLength>;
     using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
     using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
 
@@ -73,21 +76,25 @@ public:
     using ValueFunctionQuadraticApproximation_t = ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>;
     using DiscreteTimeRiccatiEquations_t = DiscreteTimeRiccatiEquations<Scalar, XDimisions, UDimisions>;
 
+    iLQR(ControlledSystemBase_t *systemPtr, const Scalar timestep) : rollout_(systemPtr, timestep), predictTimeStep_(timestep) {
+
+                                                                     };
+
     /**
      * The main routine of solver which runs the optimizer for a given initial state, initial time, and final time.
      *
      * @param [in] initTime: The initial time.
      * @param [in] initState: The initial state.
-     * @param [in] finalTime: The final time.
      */
-    void run(Scalar initTime, const StateVector_t &initState, Scalar finalTime)
+    void run(Scalar initTime, const StateVector_t &initState)
     {
         // initialize parameters
         initTime_ = initTime;
         initState_ = initState;
-        finalTime_ = finalTime;
+        finalTime_ = initTime + predictTimeStep_ * (PredictLength);
         const auto initIteration = totalNumIterations_;
 
+        // optimized --> nominal: initializes the nominal primal and dual solutions based on the optimized ones
         bool initialSolutionExists = initializePrimalSolution(); // true if the rollout is not purely from the Initializer
         initializeDualSolutionAndMetrics();
 
@@ -209,24 +216,22 @@ private:
      */
     bool rolloutInitialController(PrimalSolution_t &inputPrimalSolution, PrimalSolution_t &outputPrimalSolution)
     {
+        if (inputPrimalSolution.controllerPtr_ == nullptr)
         {
-            if (inputPrimalSolution.controllerPtr_ == nullptr)
-            {
-                return false;
-            }
+            return false;
+        }
 
-            // const Scalar finalTime = std::max(initTime_, std::min(inputPrimalSolution.controllerPtr_->timeStamp_.back(), finalTime_));
+        // const Scalar finalTime = std::max(initTime_, std::min(inputPrimalSolution.controllerPtr_->timeStamp_.back(), finalTime_));
 
-            if (initTime_ < finalTime_)
-            {
-                outputPrimalSolution.controllerPtr_ = inputPrimalSolution.controllerPtr_;
-                rolloutTrajectory(*rolloutPtr_, initTime_, initState_, finalTime_, outputPrimalSolution);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+        if (initTime_ < finalTime_)
+        {
+            outputPrimalSolution.controllerPtr_ = inputPrimalSolution.controllerPtr_;
+            rolloutTrajectory(*rolloutPtr_, initTime_, initState_, finalTime_, outputPrimalSolution);
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -695,6 +700,7 @@ private:
 
     // roll out
     RolloutBase_t *rolloutPtr_;
+    TimeTriggeredRollout_t rollout_;
 
     // linear approximator
     LinearQuadraticApproximator_t approximator_;
@@ -712,4 +718,6 @@ private:
     Scalar avgTimeStepBP_ = 0.0;
 
     size_t totalNumIterations_{0};
+
+    Scalar predictTimeStep_;
 };

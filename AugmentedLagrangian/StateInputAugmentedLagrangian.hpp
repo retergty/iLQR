@@ -73,7 +73,7 @@ public:
   {
     (void)input;
     (void)state;
-    
+
     const Multiplier<Scalar> updatedMultiplier{multiplier.penalty, penalty_.updateMultipliers(time, constraint, multiplier.lagrangian)};
     const Scalar penalty = updatedMultiplier.penalty * penalty_.getValue(time, constraint, updatedMultiplier.lagrangian);
     return {updatedMultiplier, penalty};
@@ -81,6 +81,7 @@ public:
 
   Multiplier<Scalar> initializeLagrangian(const Scalar time) const override
   {
+    (void)time;
     return {1.0, penalty_.initializeMultipliers()};
   }
 

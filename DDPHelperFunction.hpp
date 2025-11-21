@@ -33,7 +33,7 @@ Scalar rolloutTrajectory(RolloutBase<Scalar, XDimisions, UDimisions, PredictLeng
   rollout.run(initTime, initState, finalTime, primalSolution.controllerPtr_,
               primalSolution.timeTrajectory_, primalSolution.stateTrajectory_, primalSolution.inputTrajectory_);
   // average time step
-  return (finalTime - initTime) / static_cast<Scalar>(PredictLength);
+  return (finalTime - initTime) / static_cast<Scalar>(PredictLength - 1);
 }
 
 /**
@@ -45,7 +45,7 @@ Scalar rolloutTrajectory(RolloutBase<Scalar, XDimisions, UDimisions, PredictLeng
  * @return The PerformanceIndex of the trajectory.
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains,
+          int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
 PerformanceIndex<Scalar> computeRolloutPerformanceIndex(
     const std::array<Scalar, PredictLength> &timeTrajectory,

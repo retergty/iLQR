@@ -3,8 +3,8 @@
 
 int main()
 {
-    iLQR<double, 3, 2, 10> ilqr;
+    iLQR<double, 3, 2, 10> ilqr(nullptr, 0.1);
     decltype(ilqr)::StateVector_t init_state;
-    ilqr.run(0, init_state, 10);
+    ilqr.run(0, init_state);
     return 0;
 }

@@ -45,7 +45,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * the rest of member variables are not the result of the controller. But they will be cleared and populated when runInit is called.
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains,
+          int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
 struct PrimalDataContainer
 {
@@ -86,7 +86,7 @@ struct PrimalDataContainer
  *
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains,
+          int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
 struct DualDataContainer
 {

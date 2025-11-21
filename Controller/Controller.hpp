@@ -35,9 +35,9 @@ public:
    * @param [in] x: Current state.
    * @return Current input.
    */
-  virtual Vector<Scalar, UDimisions> computeInput(Scalar t, const Vector<Scalar, XDimisions>& x) = 0;
+  virtual Vector<Scalar, UDimisions> computeInput(Scalar t, const Vector<Scalar, XDimisions>& x) const = 0;
 
-  virtual Vector<Scalar, UDimisions> computeInput(size_t time_index, const Vector<Scalar, XDimisions>& x) = 0;
+  virtual Vector<Scalar, UDimisions> computeInput(size_t time_index, const Vector<Scalar, XDimisions>& x) const = 0;
   /**
    * @brief Prints the type of controller
    * @return ControllerType: what type of controller this is

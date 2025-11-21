@@ -16,7 +16,7 @@ public:
    * Constructor
    *
    */
-  ControlledSystemBase();
+  ControlledSystemBase() = default;
 
   /** Default destructor */
   ~ControlledSystemBase() override = default;
@@ -48,6 +48,10 @@ public:
   void setController(ControllerBase<Scalar, XDimisions, UDimisions> *controllerPtr)
   {
     controllerPtr_ = controllerPtr;
+  }
+  const ControllerBase<Scalar, XDimisions, UDimisions> *controllerPtr() const
+  {
+    return controllerPtr_;
   }
 
 private:

@@ -68,36 +68,4 @@ public:
    * @param [in] dt: Time step.
    */
   virtual void integrateConst(OdeBase<Scalar, XDimisions> &system, Observer<Scalar, XDimisions> &observer, const Vector<Scalar, XDimisions> &initialState, const Scalar startTime, const Scalar finalTime, const Scalar dt) = 0;
-
-  /**
-   * Adaptive time integration based on start time and final time.
-   *
-   * @param [in] system: System dynamics
-   * @param [in] observer: Observer
-   * @param [in] initialState: Initial state.
-   * @param [in] startTime: Initial time.
-   * @param [in] finalTime: Final time.
-   * @param [in] dtInitial: Initial time step.
-   * @param [in] AbsTol: The absolute tolerance error for ode solver.
-   * @param [in] RelTol: The relative tolerance error for ode solver.
-   */
-  virtual void integrateAdaptive(OdeBase<Scalar, XDimisions> &system, Observer<Scalar, XDimisions> &observer, const Vector<Scalar, XDimisions> &initialState, const Scalar startTime, const Scalar finalTime, const Scalar dtInitial = 0.01,
-                                 const Scalar AbsTol = 1e-6, const Scalar RelTol = 1e-3) = 0;
-
-  // /**
-  //  * Output integration based on a given time trajectory.
-  //  *
-  //  * @param [in] system: System dynamics
-  //  * @param [in] observer: Observer
-  //  * @param [in] initialState: Initial state.
-  //  * @param [in] beginTimeItr: The iterator to the beginning of the time stamp trajectory.
-  //  * @param [in] endTimeItr: The iterator to the end of the time stamp trajectory.
-  //  * @param [in] dtInitial: Initial time step.
-  //  * @param [in] AbsTol: The absolute tolerance error for ode solver.
-  //  * @param [in] RelTol: The relative tolerance error for ode solver.
-  //  */
-  // void integrateTimes(OdeBase &system, Observer &observer, const vector_t &initialState,
-  //                     typename scalar_array_t::const_iterator beginTimeItr, typename scalar_array_t::const_iterator endTimeItr,
-  //                     scalar_t dtInitial = 0.01, scalar_t AbsTol = 1e-6, scalar_t RelTol = 1e-3,
-  //                     int maxNumSteps = std::numeric_limits<int>::max());
 };
