@@ -97,11 +97,11 @@ struct DualDataContainer
   // Dual solution
   DualSolution_t dualSolution;
   // projected model data trajectory
-  std::array<ModelData_t, PredictLength> projectedModelDataTrajectory;
+  std::array<ModelData_t, PredictLength + 1> projectedModelDataTrajectory;
   // Riccati modification
-  std::array<RiccatiModification_t, PredictLength> riccatiModificationTrajectory;
+  std::array<RiccatiModification_t, PredictLength + 1> riccatiModificationTrajectory;
   // Riccati solution coefficients
-  std::array<ValueFunctionQuadraticApproximation_t, PredictLength> valueFunctionTrajectory;
+  std::array<ValueFunctionQuadraticApproximation_t, PredictLength + 1> valueFunctionTrajectory;
 
   void swap(DualDataContainer &other)
   {

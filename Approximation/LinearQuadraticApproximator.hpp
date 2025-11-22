@@ -50,9 +50,9 @@ struct LinearQuadraticApproximator
   using FinalMultiplierCollection_t = MultiplierCollection<Scalar, FinalStateEqLagrangianContrains, FinalStateIneqFinalLagrangianContrains, 0, 0>;
   using IntermediateMetrics_t = Metrics<Scalar, XDimisions, UDimisions, StateEqLagrangianContrains, StateIneqLagrangianContrains, StateInputEqLagrangianContrains, StateInputIneqLagrangianContrains>;
   using FinalMetrics_t = Metrics<Scalar, XDimisions, UDimisions, FinalStateEqLagrangianContrains, FinalStateIneqFinalLagrangianContrains, 0, 0>;
-  using TimeTrajectory_t = std::array<Scalar, PredictLength>;
-  using StateTrajectory_t = std::array<Vector<Scalar, XDimisions>, PredictLength>;
-  using InputTrajectory_t = std::array<Vector<Scalar, UDimisions>, PredictLength>;
+  using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
+  using StateTrajectory_t = std::array<Vector<Scalar, XDimisions>, PredictLength + 1>;
+  using InputTrajectory_t = std::array<Vector<Scalar, UDimisions>, PredictLength + 1>;
 
   /**
    * Calculates an LQ approximate of the constrained optimal control problem at a given time, state, and input.
@@ -76,14 +76,14 @@ struct LinearQuadraticApproximator
     // Lagrangians
     if constexpr (StateEqLagrangianContrains != 0)
     {
-      auto approx = problem.stateEqualityLagrangian.getQuadraticApproximation(time, state, multipliers.stateEq);
+      ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> approx = problem.stateEqualityLagrangian.getQuadraticApproximation(time, state, multipliers.stateEq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
     if constexpr (StateIneqLagrangianContrains != 0)
     {
-      auto approx = problem.stateInequalityLagrangian.getQuadraticApproximation(time, state, multipliers.stateIneq);
+      ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> approx = problem.stateInequalityLagrangian.getQuadraticApproximation(time, state, multipliers.stateIneq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
@@ -236,8 +236,8 @@ struct LinearQuadraticApproximator
   approximateFinalCost(const OptimalControlProblem_t &problem,
                        const Scalar time, const StateVector_t &state)
   {
-    const std::array<Scalar, PredictLength> &targetTimeTrajectories = *problem.timeTrajectory;
-    const std::array<Vector<Scalar, XDimisions>, PredictLength> &targetStateTrajectories = *problem.stateTrajectory;
+    const TimeTrajectory_t &targetTimeTrajectories = *problem.timeTrajectory;
+    const StateTrajectory_t &targetStateTrajectories = *problem.stateTrajectory;
 
     ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> cost = problem.finalCost.getQuadraticApproximation(time, state, targetTimeTrajectories, targetStateTrajectories);
 

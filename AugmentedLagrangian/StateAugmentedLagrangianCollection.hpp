@@ -50,15 +50,6 @@ public:
   {
     std::array<LagrangianMetrics<Scalar>, StateAugmentLagrangianNumbers> termsConstraintPenalty;
 
-    // int i = 0;
-    // for (auto it = list_.begin();it != list_.end();++it)
-    // {
-    //   assert(i < StateAugmentLagrangianNumbers);
-
-    //   termsConstraintPenalty[i] = it->getValue(time, state, termsMultiplier[i]);
-    //   i++;
-    // }
-
     for (int i = 0;i < num_;++i)
     {
       termsConstraintPenalty[i] = lagrangian_[i].getValue(time, state, termsMultiplier[i]);
@@ -71,16 +62,6 @@ public:
     ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> penalty;
     penalty.setZero();
 
-    // // accumulate terms
-    // int i = 0;
-    // for (auto it = list_.begin();it != list_.end();++it)
-    // {
-    //   assert(i < StateAugmentLagrangianNumbers);
-
-    //   penalty += it->getQuadraticApproximation(time, state, termsMultiplier[i]);
-    //   i++;
-    // }
-
     for (int i = 0;i < num_;++i)
     {
       penalty += lagrangian_[i].getQuadraticApproximation(time, state, termsMultiplier[i]);
@@ -91,20 +72,6 @@ public:
   /** Update Lagrange/penalty multipliers, and the penalty value for each active term. */
   void updateLagrangian(Scalar time, const Vector<Scalar, XDimisions>& state, std::array<LagrangianMetrics<Scalar>, StateAugmentLagrangianNumbers>& termsMetrics, std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>& termsMultiplier) const
   {
-    // int i = 0;
-    // for (auto it = list_.begin();it != list_.end();++it)
-    // {
-    //   assert(i < StateAugmentLagrangianNumbers);
-
-    //   // Multiplier<Scalar> updatedLagrangian;
-    //   // std::tie(updatedLagrangian, termsMetrics[i].penalty) = it->updateLagrangian(time, state, termsMetrics[i].constraint, termsMultiplier[i]);
-    //   // termsMultiplier[i] = updatedLagrangian;
-
-    //   std::tie(termsMultiplier[i], termsMetrics[i].penalty) = it->updateLagrangian(time, state, termsMetrics[i].constraint, termsMultiplier[i]);
-
-    //   i++;
-    // }
-
     for (int i = 0;i < num_;++i)
     {
       std::tie(termsMultiplier[i], termsMetrics[i].penalty) = lagrangian_[i].updateLagrangian(time, state, termsMetrics[i].constraint, termsMultiplier[i]);
@@ -114,14 +81,6 @@ public:
   /** Initialize Lagrange/penalty multipliers for each active term. */
   void initializeLagrangian(Scalar time, std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>& termsMultiplier) const
   {
-    //int i = 0;
-    // for (auto it = list_.begin();it != list_.end();++it)
-    // {
-    //   assert(i < StateAugmentLagrangianNumbers);
-
-    //   termsMultiplier[i] = it->initializeLagrangian(time);
-    //   i++;
-    // }
     for (int i = 0;i < num_; ++i)
     {
       termsMultiplier[i] = lagrangian_[i].initializeLagrangian(time);
@@ -131,7 +90,6 @@ public:
   // add cost to list end
   void add(const StateAugmentedLagrangian<Scalar, XDimisions>& state_augment_lagrangian)
   {
-    //list_.insert(list_.end(), state_augment_lagrangian);
     assert(num_ < StateAugmentLagrangianNumbers);
     lagrangian_[num_] = state_augment_lagrangian;
     num_++;
@@ -139,6 +97,5 @@ public:
 
 private:
   int num_{ 0 };
-  //IntrusiveList<StateAugmentedLagrangian<Scalar, XDimisions>> list_;
   std::array<StateAugmentedLagrangian<Scalar, XDimisions>, StateAugmentLagrangianNumbers> lagrangian_;
 };

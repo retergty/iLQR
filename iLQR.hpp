@@ -47,18 +47,18 @@ public:
     using FinalMultiplierCollection_t = MultiplierCollection<Scalar, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
     using IntermediateMetrics_t = Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>;
     using FinalMetrics_t = Metrics<Scalar, XDimisions, UDimisions, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
-    using RolloutBase_t = RolloutBase<Scalar, XDimisions, UDimisions, PredictLength>;
+    using RolloutBase_t = RolloutBase<Scalar, XDimisions, UDimisions, PredictLength + 1>;
     using TimeTriggeredRollout_t = TimeTriggeredRollout<Scalar, XDimisions, UDimisions, PredictLength>;
     using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
     using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
 
-    using LinearController_t = LinearController<Scalar, XDimisions, UDimisions, PredictLength>;
+    using LinearController_t = LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1>;
     using SearchStrategyBase_t = SearchStrategyBase<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
     using RiccatiModification_t = RiccatiModification<Scalar, XDimisions, UDimisions>;
 
-    using TimeTrajectory_t = std::array<Scalar, PredictLength>;
-    using StateTrajectory_t = std::array<Vector<Scalar, XDimisions>, PredictLength>;
-    using InputTrajectory_t = std::array<Vector<Scalar, UDimisions>, PredictLength>;
+    using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
+    using StateTrajectory_t = std::array<Vector<Scalar, XDimisions>, PredictLength + 1>;
+    using InputTrajectory_t = std::array<Vector<Scalar, UDimisions>, PredictLength + 1>;
     using IntermediateMultiplierTrajectory_t = std::array<IntermediateMultiplierCollection_t, PredictLength>;
     using ModelDataTrajectory_t = std::array<ModelData_t, PredictLength>;
 
@@ -70,6 +70,7 @@ public:
     using DualDataContainer_t = DualDataContainer<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
     using ProblemMetrics_t = ProblemMetrics<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
     using PerformanceIndex_t = PerformanceIndex<Scalar>;
+    using IntermediatePerformanceIndexTrajectory_t = std::array<PerformanceIndex_t, PredictLength>;
 
     using EK2DynamicsDiscretizer_t = EK2DynamicsDiscretizer<Scalar, XDimisions, UDimisions>;
 
@@ -92,7 +93,7 @@ public:
         initTime_ = initTime;
         initState_ = initState;
         finalTime_ = initTime + predictTimeStep_ * (PredictLength);
-        const auto initIteration = totalNumIterations_;
+        const size_t initIteration = totalNumIterations_;
 
         // optimized --> nominal: initializes the nominal primal and dual solutions based on the optimized ones
         bool initialSolutionExists = initializePrimalSolution(); // true if the rollout is not purely from the Initializer
@@ -332,17 +333,21 @@ private:
 
             // TO DO:checking the numerical properties
 
-            // discretize LQ problem
-            const Scalar timeStep = (timeIndex + 1 < timeTrajectory.size()) ? (timeTrajectory[timeIndex + 1] - timeTrajectory[timeIndex]) : 0.0;
-            if (!numerics::almost_eq(timeStep, 0.0))
-            {
-                discreteLQWorker(*optimalControlProblem_.dynamicsPtr, timeTrajectory[timeIndex], stateTrajectory[timeIndex],
-                                 inputTrajectory[timeIndex], timeStep, continuousTimeModelData, modelDataTrajectory[timeIndex]);
-            }
-            else
-            {
-                modelDataTrajectory[timeIndex] = continuousTimeModelData;
-            }
+            // // discretize LQ problem
+            // const Scalar timeStep = (timeIndex + 1 < timeTrajectory.size()) ? (timeTrajectory[timeIndex + 1] - timeTrajectory[timeIndex]) : 0.0;
+            // if (!numerics::almost_eq(timeStep, 0.0))
+            // {
+            //     discreteLQWorker(*optimalControlProblem_.dynamicsPtr, timeTrajectory[timeIndex], stateTrajectory[timeIndex],
+            //                      inputTrajectory[timeIndex], timeStep, continuousTimeModelData, modelDataTrajectory[timeIndex]);
+            // }
+            // else
+            // {
+            //     modelDataTrajectory[timeIndex] = continuousTimeModelData;
+            // }
+
+            const Scalar timeStep = timeTrajectory[timeIndex + 1] - timeTrajectory[timeIndex];
+            discreteLQWorker(*optimalControlProblem_.dynamicsPtr, timeTrajectory[timeIndex], stateTrajectory[timeIndex],
+                             inputTrajectory[timeIndex], timeStep, continuousTimeModelData, modelDataTrajectory[timeIndex]);
         };
     }
 
@@ -472,7 +477,7 @@ private:
         LvVector_t &finalProjectedLvFinal = projectedLvTrajectoryStock_.back();
         KmMatrix_t &finalProjectedKmFinal = projectedKmTrajectoryStock_.back();
 
-        Matrix<Scalar, XDimisions, XDimisions> SmDummy;
+        SmMatrix_t SmDummy;
         SmDummy.setZero();
 
         computeProjectionAndRiccatiModification(finalModelData, SmDummy, finalProjectedModelData, finalRiccatiModification);
@@ -496,15 +501,9 @@ private:
      */
     Scalar solveSequentialRiccatiEquationsImpl(const ValueFunctionQuadraticApproximation_t &finalValueFunction)
     {
-        // the last index of the partition is excluded, namely [first, last), so the value function approximation of the end point of the end
-        // partition is filled manually.
-        // For other partitions except the last one, the end points are filled in the solving stage of the next partition. For example,
-        // [first1,last1), [first2(last1), last2).
         nominalDualData_.valueFunctionTrajectory.back() = finalValueFunction;
 
-        // solve it sequentially for the first iteration
-        const std::pair<int, int> partitionInterval{0, PredictLength - 1};
-        riccatiEquationsWorker(partitionInterval, finalValueFunction);
+        riccatiEquationsWorker(finalValueFunction);
 
         // average time step
         return (finalTime_ - initTime_) / PredictLength;
@@ -514,21 +513,17 @@ private:
      * Solves a Riccati equations and type_1 constraints error correction compensation for the partition in the given index.
      *
      * @param [in] workerIndex: Current worker index
-     * @param [in] partitionInterval: Current active interval
      * @param [in] finalValueFunction The final Sm(dfdxx), Sv(dfdx), s(f), for Riccati equation.
      */
-    void riccatiEquationsWorker(const std::pair<int, int> &partitionInterval, const ValueFunctionQuadraticApproximation_t &finalValueFunction)
+    void riccatiEquationsWorker(const ValueFunctionQuadraticApproximation_t &finalValueFunction)
     {
-        // final temporal values. Used to store pre-jump value
-        ValueFunctionQuadraticApproximation_t finalValueTemp = finalValueFunction;
-
         /*
          * solving the Riccati equations
          */
-        const ValueFunctionQuadraticApproximation_t *valueFunctionNext = &finalValueTemp;
+        const ValueFunctionQuadraticApproximation_t *valueFunctionNext = &finalValueFunction;
 
-        int curIndex = partitionInterval.second - 1;
-        const int stopIndex = partitionInterval.first;
+        int curIndex = PredictLength - 1;
+        const int stopIndex = 0;
         while (curIndex >= stopIndex)
         {
             LvVector_t &curProjectedLv = projectedLvTrajectoryStock_[curIndex];
@@ -650,9 +645,9 @@ private:
     void computeRolloutMetrics(OptimalControlProblem_t &problem, const PrimalSolution_t &primalSolution,
                                DualSolution_t &dualSolution, ProblemMetrics_t &problemMetrics)
     {
-        const std::array<Scalar, PredictLength> &tTrajectory = primalSolution.timeTrajectory_;
-        const std::array<Vector<Scalar, XDimisions>, PredictLength> &xTrajectory = primalSolution.stateTrajectory_;
-        const std::array<Vector<Scalar, UDimisions>, PredictLength> &uTrajectory = primalSolution.inputTrajectory_;
+        const TimeTrajectory_t &tTrajectory = primalSolution.timeTrajectory_;
+        const StateTrajectory_t &xTrajectory = primalSolution.stateTrajectory_;
+        const InputTrajectory_t &uTrajectory = primalSolution.inputTrajectory_;
 
         for (size_t k = 0; k < PredictLength; k++)
         {
@@ -663,6 +658,96 @@ private:
 
         // final time cost and constraints
         problemMetrics.final = approximator_.computeFinalMetrics(problem, tTrajectory.back(), xTrajectory.back(), dualSolution.final);
+    }
+
+    /**
+     * Forward integrate the system dynamics with given controller. It uses the given control policies and initial state,
+     * to integrate the system dynamics in time period [initTime, finalTime].
+     *
+     * @param [in] rollout: A reference to the rollout class.
+     * @param [in] initTime: The initial time.
+     * @param [in] initState: The initial state.
+     * @param [in] finalTime: The final time.
+     * @param [in, out] primalSolution: The resulting primal solution. Make sure that primalSolution::controllerPtr is set since
+     *                                  the rollout is performed based on the controller stored in primalSolution. Moreover,
+     *                                  except for StateTriggeredRollout, one should also set primalSolution::modeSchedule.
+     *
+     * @return average time step.
+     */
+    static Scalar rolloutTrajectory(RolloutBase_t &rollout,
+                                    Scalar initTime, const StateVector_t &initState, Scalar finalTime,
+                                    PrimalSolution_t &primalSolution)
+    {
+        // rollout with controller
+        // const Vector<Scalar, XDimisions> xCurrent = rollout.run(initTime, initState, finalTime, primalSolution.controllerPtr_,
+        //                                                         primalSolution.timeTrajectory_, primalSolution.stateTrajectory_, primalSolution.inputTrajectory_);
+
+        // assert(!xCurrent.allFinite());
+        rollout.run(initTime, initState, finalTime, primalSolution.controllerPtr_,
+                    primalSolution.timeTrajectory_, primalSolution.stateTrajectory_, primalSolution.inputTrajectory_);
+        // average time step
+        return (finalTime - initTime) / static_cast<Scalar>(PredictLength);
+    }
+
+    /**
+     * Calculates the PerformanceIndex associated to the given ProblemMetrics.
+     *
+     * @param [in] timeTrajectory: Time stamp of the rollout.
+     * @param [in] problemMetrics: The cost, soft constraints and constraints values of the rollout.
+     *
+     * @return The PerformanceIndex of the trajectory.
+     */
+    static PerformanceIndex_t computeRolloutPerformanceIndex(
+        const TimeTrajectory_t &timeTrajectory,
+        const ProblemMetrics_t &problemMetrics)
+    {
+        // Final
+        PerformanceIndex_t finalperformanceIndex = toPerformanceIndex(problemMetrics.final);
+        // Intermediates
+        IntermediatePerformanceIndexTrajectory_t performanceIndexTrajectory;
+
+        // std::for_each(problemMetrics.intermediates.cbegin(), problemMetrics.intermediates.cend(),
+        //   [&performanceIndexTrajectory](const Metrics& m) { performanceIndexTrajectory.push_back(toPerformanceIndex(m)); });
+
+        for (size_t i = 0; i < performanceIndexTrajectory.size(); ++i)
+        {
+            performanceIndexTrajectory[i] = toPerformanceIndex(problemMetrics.intermediates[i]);
+        }
+
+        // Intermediates
+        return trapezoidalIntegration(timeTrajectory, performanceIndexTrajectory, finalperformanceIndex);
+    }
+
+    /**
+     * Outputs a controller with the same time stamp and gains as unoptimizedController. However, bias is incremented based on:
+     * biasArray = unoptimizedController.biasArray + stepLength * unoptimizedController.deltaBiasArray
+     */
+    static void incrementController(Scalar stepLength, const LinearController_t &unoptimizedController, LinearController_t &controller)
+    {
+        controller.timeStamp_ = unoptimizedController.timeStamp_;
+        controller.gainArray_ = unoptimizedController.gainArray_;
+        for (size_t k = 0; k < unoptimizedController.size(); k++)
+        {
+            controller.biasArray_[k] = unoptimizedController.biasArray_[k] + stepLength * unoptimizedController.deltaBiasArray_[k];
+        }
+    }
+
+    /**
+     * Computes the integral of the squared (IS) norm of the controller update.
+     *
+     * @param [in] controller: Input controller.
+     * @return The integral of the squared (IS) norm of the controller update.
+     */
+    static Scalar computeControllerUpdateIS(const LinearController_t &controller)
+    {
+        std::array<Scalar, controller.size()> biasArraySquaredNorm;
+
+        for (int i = 0; i < controller.size(); ++i)
+        {
+            biasArraySquaredNorm[i] = controller.deltaBiasArray_[i].squareNorm();
+        }
+        // integrates using the trapezoidal approximation method
+        return trapezoidalIntegration(controller.timeStamp_, biasArraySquaredNorm, 0.0);
     }
 
 private:
@@ -710,8 +795,8 @@ private:
 
     // Discrete time riccati equation solver
     DiscreteTimeRiccatiEquations_t riccatiEquationsSolver_;
-    std::array<KmMatrix_t, PredictLength> projectedKmTrajectoryStock_; // projected feedback
-    std::array<LvVector_t, PredictLength> projectedLvTrajectoryStock_; // projected feedforward
+    std::array<KmMatrix_t, PredictLength + 1> projectedKmTrajectoryStock_; // projected feedback
+    std::array<LvVector_t, PredictLength + 1> projectedLvTrajectoryStock_; // projected feedforward
 
     // forward pass and backward pass average time step
     Scalar avgTimeStepFP_ = 0.0;

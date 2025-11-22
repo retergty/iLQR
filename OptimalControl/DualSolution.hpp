@@ -9,7 +9,7 @@ struct DualSolution
   using IntermediateMultiplierCollection_t = MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>;
   using FinalMultiplierCollection_t = MultiplierCollection<Scalar, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
 
-  std::array<Scalar, PredictLength> timeTrajectory;
+  std::array<Scalar, PredictLength + 1> timeTrajectory;
 
   FinalMultiplierCollection_t final;
   std::array<IntermediateMultiplierCollection_t, PredictLength> intermediates;

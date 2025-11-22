@@ -73,7 +73,7 @@ class SearchStrategyBase
 {
 public:
   using DualSolution_t = DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
-  using LinearController_t = LinearController<Scalar, XDimisions, UDimisions, PredictLength>;
+  using LinearController_t = LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1>;
   using StateVector_t = Vector<Scalar, XDimisions>;
   using PerformanceIndex_t = PerformanceIndex<Scalar>;
   using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;

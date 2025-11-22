@@ -36,19 +36,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @note It requires that the VALUE_T has overwrite operator+(VALUE_T, VALUE_T) and define VALUE_T::operator*(SCALAR_T)
  */
-template <typename Scalar, typename VALUE, size_t ArrayLen>
-VALUE trapezoidalIntegration(const std::array<Scalar, ArrayLen>& timeTrajectory, const std::array<VALUE, ArrayLen>& valueTrajectory,
-  VALUE initialValue) {
+template <typename Scalar, typename VALUE, size_t TimeArrayLen, size_t ValueArrayLen>
+VALUE trapezoidalIntegration(const std::array<Scalar, TimeArrayLen> &timeTrajectory, const std::array<VALUE, ValueArrayLen> &valueTrajectory,
+                             VALUE initialValue)
+{
+  constexpr size_t ArrayLen = std::min(TimeArrayLen, ValueArrayLen);
 
-  if constexpr (ArrayLen < 2) {
+  if constexpr (ArrayLen < 2)
+  {
     return initialValue;
   }
 
-  for (std::size_t k = 1; k < ArrayLen; k++) {
+  for (std::size_t k = 1; k < ArrayLen; k++)
+  {
     auto temp = valueTrajectory[k - 1] + valueTrajectory[k];
     temp *= (0.5 * (timeTrajectory[k] - timeTrajectory[k - 1]));
     initialValue += temp;
-  }  // end of k loop
+  } // end of k loop
 
   return initialValue;
 }

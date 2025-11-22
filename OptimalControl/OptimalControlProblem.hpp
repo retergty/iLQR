@@ -35,16 +35,16 @@ struct OptimalControlProblem
 
   /* Cost */
   /** Intermediate cost */
-  StateInputCostCollection<Scalar, XDimisions, UDimisions, PredictLength> cost;
+  StateInputCostCollection<Scalar, XDimisions, UDimisions, PredictLength + 1> cost;
   /** Intermediate state-only cost */
-  StateCostCollection<Scalar, XDimisions, PredictLength> stateCost;
+  StateCostCollection<Scalar, XDimisions, PredictLength + 1> stateCost;
 
   // /** Final cost */
-  StateCostCollection<Scalar, XDimisions, PredictLength> finalCost;
+  StateCostCollection<Scalar, XDimisions, PredictLength + 1> finalCost;
 
-  std::array<Scalar, PredictLength>* timeTrajectory;
-  std::array<Vector<Scalar, XDimisions>, PredictLength>* stateTrajectory;
-  std::array<Vector<Scalar, UDimisions>, PredictLength>* inputTrajectory;
+  std::array<Scalar, PredictLength + 1>* timeTrajectory;
+  std::array<Vector<Scalar, XDimisions>, PredictLength + 1>* stateTrajectory;
+  std::array<Vector<Scalar, UDimisions>, PredictLength + 1>* inputTrajectory;
 
   /* Lagrangians */
   // /** Lagrangian for equality constraints */

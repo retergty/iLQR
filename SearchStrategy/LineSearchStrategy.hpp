@@ -125,8 +125,8 @@ public:
 
   void computeRiccatiModification(const ModelData_t &projectedModelData, Matrix<Scalar, XDimisions, XDimisions> &deltaQm) const override
   {
-    const auto &QmProjected = projectedModelData.cost.dfdxx;
-    const auto &PmProjected = projectedModelData.cost.dfdux;
+    // const auto &QmProjected = projectedModelData.cost.dfdxx;
+    // const auto &PmProjected = projectedModelData.cost.dfdux;
 
     // Q_minus_PTRinvP
     // matrix_t Q_minus_PTRinvP = QmProjected;
