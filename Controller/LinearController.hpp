@@ -122,10 +122,19 @@ public:
     return is_empty;
   }
 
-  constexpr size_t size() const
+  constexpr static size_t size()
   {
     return ArrayLen;
   }
+
+  void swap(LinearController &other)
+  {
+    timeStamp_.swap(other.timeStamp_);
+    biasArray_.swap(other.biasArray_);
+    deltaBiasArray_.swap(other.deltaBiasArray_);
+    gainArray_.swap(other.gainArray_);
+  }
+
 public:
   std::array<Scalar, ArrayLen> timeStamp_;
   std::array<Vector<Scalar, UDimisions>, ArrayLen> biasArray_;

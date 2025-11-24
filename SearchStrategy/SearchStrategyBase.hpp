@@ -10,8 +10,8 @@
 #include "ModelData.hpp"
 
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains>
+  int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
+  int FinalStateEqConstrains, int FinalStateIneqConstrains>
 struct SearchStrategySolution
 {
   using PrimalSolution_t = PrimalSolution<Scalar, XDimisions, UDimisions, PredictLength>;
@@ -27,8 +27,8 @@ struct SearchStrategySolution
 };
 
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains>
+  int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
+  int FinalStateEqConstrains, int FinalStateIneqConstrains>
 struct SearchStrategySolutionRef
 {
   using PrimalSolution_t = PrimalSolution<Scalar, XDimisions, UDimisions, PredictLength>;
@@ -37,38 +37,47 @@ struct SearchStrategySolutionRef
   using PerformanceIndex_t = PerformanceIndex<Scalar>;
   using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
 
-  SearchStrategySolutionRef(SearchStrategySolution_t &s)
-      : avgTimeStep(s.avgTimeStep),
-        dualSolution(s.dualSolution),
-        primalSolution(s.primalSolution),
-        problemMetrics(s.problemMetrics),
-        performanceIndex(s.performanceIndex)
+  SearchStrategySolutionRef(SearchStrategySolution_t& s)
+    : avgTimeStep(s.avgTimeStep),
+    dualSolution(s.dualSolution),
+    primalSolution(s.primalSolution),
+    problemMetrics(s.problemMetrics),
+    performanceIndex(s.performanceIndex)
   {
   }
 
-  SearchStrategySolutionRef(Scalar avgTimeStepArg, DualSolution_t &dualSolutionArg, PrimalSolution_t &primalSolutionArg, ProblemMetrics_t &problemMetricsArg,
-                            PerformanceIndex_t &performanceIndexArg)
-      : avgTimeStep(avgTimeStepArg),
-        dualSolution(dualSolutionArg),
-        primalSolution(primalSolutionArg),
-        problemMetrics(problemMetricsArg),
-        performanceIndex(performanceIndexArg)
+  SearchStrategySolutionRef(Scalar avgTimeStepArg, DualSolution_t& dualSolutionArg, PrimalSolution_t& primalSolutionArg, ProblemMetrics_t& problemMetricsArg,
+    PerformanceIndex_t& performanceIndexArg)
+    : avgTimeStep(avgTimeStepArg),
+    dualSolution(dualSolutionArg),
+    primalSolution(primalSolutionArg),
+    problemMetrics(problemMetricsArg),
+    performanceIndex(performanceIndexArg)
   {
   }
 
-  Scalar &avgTimeStep;
-  DualSolution_t &dualSolution;
-  PrimalSolution_t &primalSolution;
-  ProblemMetrics_t &problemMetrics;
-  PerformanceIndex_t &performanceIndex;
+  void swap(SearchStrategySolution_t& rhs)
+  {
+    std::swap(avgTimeStep, rhs.avgTimeStep);
+    dualSolution.swap(rhs.dualSolution);
+    primalSolution.swap(rhs.primalSolution);
+    problemMetrics.swap(rhs.problemMetrics);
+    std::swap(performanceIndex, rhs.performanceIndex);
+  }
+
+  Scalar& avgTimeStep;
+  DualSolution_t& dualSolution;
+  PrimalSolution_t& primalSolution;
+  ProblemMetrics_t& problemMetrics;
+  PerformanceIndex_t& performanceIndex;
 };
 
 /**
  * This class is an interface class for search strategies such as line-search, trust-region.
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains>
+  int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
+  int FinalStateEqConstrains, int FinalStateIneqConstrains>
 class SearchStrategyBase
 {
 public:
@@ -87,8 +96,8 @@ public:
   explicit SearchStrategyBase() {}
 
   virtual ~SearchStrategyBase() = default;
-  SearchStrategyBase(const SearchStrategyBase &) = delete;
-  SearchStrategyBase &operator=(const SearchStrategyBase &) = delete;
+  SearchStrategyBase(const SearchStrategyBase&) = delete;
+  SearchStrategyBase& operator=(const SearchStrategyBase&) = delete;
 
   /**
    * Resets the class to its state after construction.
@@ -108,8 +117,8 @@ public:
    * @param [out] solution: Output of search (primalSolution, performanceIndex, problemMetrics, avgTimeStep)
    * @return whether the search was successful or failed.
    */
-  virtual bool run(const std::pair<Scalar, Scalar> &timePeriod, const StateVector_t &initState, const Scalar expectedCost,
-                   const LinearController_t &unoptimizedController, const DualSolution_t &dualSolution, SearchStrategySolutionRef_t &solution) = 0;
+  virtual bool run(const std::pair<Scalar, Scalar>& timePeriod, const StateVector_t& initState, const Scalar expectedCost,
+    const LinearController_t& unoptimizedController, const DualSolution_t& dualSolution, SearchStrategySolutionRef_t& solution) = 0;
 
   /**
    * Checks convergence of the main loop of DDP.
@@ -121,8 +130,8 @@ public:
    * @return A pair of (isOptimizationConverged, infoString)
    */
   virtual bool checkConvergence(bool unreliableControllerIncrement,
-                                const PerformanceIndex_t &previousPerformanceIndex,
-                                const PerformanceIndex_t &currentPerformanceIndex) const = 0;
+    const PerformanceIndex_t& previousPerformanceIndex,
+    const PerformanceIndex_t& currentPerformanceIndex) const = 0;
 
   /**
    * Computes the Riccati modification based on the strategy.
@@ -132,7 +141,7 @@ public:
    * @param [out] deltaGv: The Riccati modifier to cost derivative w.r.t. input.
    * @param [out] deltaGm: The Riccati modifier to cost input-state derivative.
    */
-  virtual void computeRiccatiModification(const ModelData_t &projectedModelData, Matrix<Scalar, XDimisions, XDimisions> &deltaQm) const = 0;
+  virtual void computeRiccatiModification(const ModelData_t& projectedModelData, Matrix<Scalar, XDimisions, XDimisions>& deltaQm) const = 0;
 
   /**
    * Augments the Hessian of Hamiltonian based on the strategy.
@@ -141,7 +150,7 @@ public:
    * @param [in] Hm: The Hessian of Hamiltonian that should be augmented.
    * @return The augmented Hamiltonian's Hessian.
    */
-  virtual Matrix<Scalar, UDimisions, UDimisions> augmentHamiltonianHessian(const ModelData_t &modelData, const Matrix<Scalar, UDimisions, UDimisions> &Hm) const = 0;
+  virtual Matrix<Scalar, UDimisions, UDimisions> augmentHamiltonianHessian(const ModelData_t& modelData, const Matrix<Scalar, UDimisions, UDimisions>& Hm) const = 0;
 
 protected:
   constexpr static SearchStrategyBaseSettings<Scalar> baseSettings_{};

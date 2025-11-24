@@ -40,7 +40,7 @@ struct DDPSettings {
   /** Determines the strategy for solving the subproblem. There are two choices line-search strategy and levenberg_marquardt strategy. */
   SearchStrategyType strategy_ = SearchStrategyType::LINE_SEARCH;
   /** The line-search strategy settings. */
-  LineSearchSettings<Scalar> lineSearch_;
+  LineSearchSettings<Scalar> lineSearch_{};
   // /** The levenberg_marquardt strategy settings. */
   // levenberg_marquardt::Settings levenbergMarquardt_;
 

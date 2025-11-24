@@ -18,7 +18,7 @@ struct PrimalSolution
       : timeTrajectory_(other.timeTrajectory_),
         stateTrajectory_(other.stateTrajectory_),
         inputTrajectory_(other.inputTrajectory_),
-        controllerPtr_(other.controllerPtr_)
+        controller_(other.controller_)
   {
   }
 
@@ -28,7 +28,7 @@ struct PrimalSolution
     timeTrajectory_ = other.timeTrajectory_;
     stateTrajectory_ = other.stateTrajectory_;
     inputTrajectory_ = other.inputTrajectory_;
-    controllerPtr_ = other.controllerPtr_;
+    controller_ = other.controller_;
     return *this;
   }
 
@@ -44,14 +44,11 @@ struct PrimalSolution
     timeTrajectory_.swap(other.timeTrajectory_);
     stateTrajectory_.swap(other.stateTrajectory_);
     inputTrajectory_.swap(other.inputTrajectory_);
-
-    LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1> *tmp = other.controllerPtr_;
-    other.controllerPtr_ = controllerPtr_;
-    controllerPtr_ = tmp;
+    controller_.swap(other.controller_);
   }
 
   std::array<Scalar, PredictLength + 1> timeTrajectory_;
   std::array<Vector<Scalar, XDimisions>, PredictLength + 1> stateTrajectory_;
   std::array<Vector<Scalar, UDimisions>, PredictLength + 1> inputTrajectory_;
-  LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1> *controllerPtr_{nullptr};
+  LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1> controller_;
 };

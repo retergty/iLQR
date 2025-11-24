@@ -48,7 +48,7 @@ namespace numerics
  * @return bool: true if x=y.
  */
   template <class T1, class T2, class T3>
-  bool almost_eq(T1&& x, T2&& y, T3&& prec) {
+  constexpr bool almost_eq(T1&& x, T2&& y, T3&& prec) {
     static_assert(std::is_floating_point<typename std::remove_reference<T1>::type>::value, "First argument is not floating point!");
     static_assert(std::is_floating_point<typename std::remove_reference<T2>::type>::value, "Second argument is not floating point!");
     static_assert(std::is_floating_point<typename std::remove_reference<T3>::type>::value, "prec is not floating point!");
@@ -71,7 +71,7 @@ namespace numerics
    * @return bool: true if x=y.
    */
   template <class T1, class T2>
-  bool almost_eq(T1&& x, T2&& y) {
+  constexpr bool almost_eq(T1&& x, T2&& y) {
     const auto prec = std::numeric_limits<std::remove_reference_t<T1>>::epsilon();
     return almost_eq(x, y, prec);
   }
@@ -102,7 +102,7 @@ namespace numerics
    * @return bool: true if x<=y.
    */
   template <class T1, class T2, class T3>
-  bool almost_le(T1&& x, T2&& y) {
+  constexpr bool almost_le(T1&& x, T2&& y) {
     return x < y || almost_eq(x, y);
   }
 
@@ -118,7 +118,7 @@ namespace numerics
    * @return bool: true if x>=y.
    */
   template <class T1, class T2, class T3>
-  bool almost_ge(T1&& x, T2&& y, T3&& prec) {
+  constexpr bool almost_ge(T1&& x, T2&& y, T3&& prec) {
     return x > y || almost_eq(x, y, prec);
   }
 
@@ -132,7 +132,7 @@ namespace numerics
    * @return bool: true if x>=y.
    */
   template <class T1, class T2>
-  bool almost_ge(T1&& x, T2&& y) {
+  constexpr bool almost_ge(T1&& x, T2&& y) {
     return x > y || almost_eq(x, y);
   }
 }

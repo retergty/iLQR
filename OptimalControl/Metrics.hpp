@@ -42,15 +42,6 @@ struct Metrics
         stateInputEqLagrangian.swap(other.stateInputEqLagrangian);
         stateInputIneqLagrangian.swap(other.stateInputIneqLagrangian);
     }
-
-    // /** Clears the value of the Metrics */
-    // void clear();
-
-    // /** Returns true if *this is approximately equal to other, within the precision determined by prec. */
-    // bool isApprox(const Metrics &other, Scalar prec = 1e-8) const
-    // {
-
-    // }
 };
 
 /** Sums penalties of an array of LagrangianMetrics. */
