@@ -182,9 +182,9 @@ struct LinearQuadraticApproximator
    */
   static Scalar computeCost(const OptimalControlProblem_t &problem, const Scalar time, const StateVector_t &state, const InputVector_t &input)
   {
-    const TimeTrajectory_t &targetTimeTrajectories = *problem.timeTrajectory;
-    const StateTrajectory_t &targetStateTrajectories = *problem.stateTrajectory;
-    const InputTrajectory_t &targetInputTrajectories = *problem.inputTrajectory;
+    const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
+    const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
+    const InputTrajectory_t &targetInputTrajectories = problem.inputTrajectory;
 
     // Compute and sum all costs
     Scalar cost = problem.cost.getValue(time, state, input, targetTimeTrajectories, targetStateTrajectories, targetInputTrajectories);
@@ -201,9 +201,9 @@ struct LinearQuadraticApproximator
   approximateCost(const OptimalControlProblem_t &problem,
                   const Scalar time, const StateVector_t &state, const InputVector_t &input)
   {
-    const TimeTrajectory_t &targetTimeTrajectories = *problem.timeTrajectory;
-    const StateTrajectory_t &targetStateTrajectories = *problem.stateTrajectory;
-    const InputTrajectory_t &targetInputTrajectories = *problem.inputTrajectory;
+    const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
+    const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
+    const InputTrajectory_t &targetInputTrajectories = problem.inputTrajectory;
 
     // get the state-input cost approximations
     ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> cost = problem.cost.getQuadraticApproximation(time, state, input, targetTimeTrajectories, targetStateTrajectories, targetInputTrajectories);
@@ -220,8 +220,8 @@ struct LinearQuadraticApproximator
   static Scalar computeFinalCost(const OptimalControlProblem_t &problem,
                                  const Scalar time, const StateVector_t &state)
   {
-    const TimeTrajectory_t &targetTimeTrajectories = *problem.timeTrajectory;
-    const StateTrajectory_t &targetStateTrajectories = *problem.stateTrajectory;
+    const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
+    const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
 
     Scalar cost = problem.finalCost.getValue(time, state, targetTimeTrajectories, targetStateTrajectories);
 
@@ -236,8 +236,8 @@ struct LinearQuadraticApproximator
   approximateFinalCost(const OptimalControlProblem_t &problem,
                        const Scalar time, const StateVector_t &state)
   {
-    const TimeTrajectory_t &targetTimeTrajectories = *problem.timeTrajectory;
-    const StateTrajectory_t &targetStateTrajectories = *problem.stateTrajectory;
+    const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
+    const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
 
     ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> cost = problem.finalCost.getQuadraticApproximation(time, state, targetTimeTrajectories, targetStateTrajectories);
 

@@ -51,7 +51,7 @@ class LineSearchStrategy final : public SearchStrategyBase<Scalar, XDimisions, U
 {
 public:
   using iLQR_t = iLQR<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-  using RolloutBase_t = RolloutBase<Scalar, XDimisions, UDimisions, PredictLength + 1>;
+  using RolloutBase_t = RolloutBase<Scalar, XDimisions, UDimisions>;
   using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
   using PerformanceIndex_t = PerformanceIndex<Scalar>;
   using DualSolution_t = DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
@@ -184,10 +184,7 @@ private:
     iLQR_t::changeControllerStepLength(stepLength, *lineSearchInputRef_.unoptimizedControllerPtr, solution.primalSolution.controller_);
     solution.avgTimeStep = iLQR_t::rolloutTrajectory(ilqr_.rollout_, lineSearchInputRef_.timePeriodPtr->first, *lineSearchInputRef_.initStatePtr,
       lineSearchInputRef_.timePeriodPtr->second, solution.primalSolution);
-
-    // adjust dual solution only if it is required
-    // const DualSolution_t* adjustedDualSolutionPtr = lineSearchInputRef_.dualSolutionPtr;
-
+    
     // initialize dual solution
     //initializeDualSolution(ilqr_.optimalControlProblem_, solution.primalSolution, *adjustedDualSolutionPtr, solution.dualSolution);
     solution.dualSolution = *lineSearchInputRef_.dualSolutionPtr;

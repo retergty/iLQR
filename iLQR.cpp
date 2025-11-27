@@ -1,9 +1,11 @@
 #include <iostream>
 #include "iLQR.hpp"
+#include "DefaultInitializer.hpp"
 
 int main()
 {
-    iLQR<double, 3, 2, 10> ilqr(nullptr, 0.1);
+    DefaultInitializer<double, 3, 2> init;
+    iLQR<double, 3, 2, 10> ilqr(nullptr, &init);
     decltype(ilqr)::StateVector_t init_state;
     ilqr.run(0, init_state);
     return 0;

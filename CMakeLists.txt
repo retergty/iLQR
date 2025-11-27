@@ -10,7 +10,7 @@ project(${PROJECT_NAME})
 find_package(Eigen3 REQUIRED)
 
 add_executable(iLQR iLQR.cpp)
-target_include_directories(iLQR PUBLIC ${EIGEN3_INCLUDE_DIRS} Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Misc ${CMAKE_SOURCE_DIR})
+target_include_directories(iLQR PUBLIC ${EIGEN3_INCLUDE_DIRS} Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Misc Initialization ${CMAKE_SOURCE_DIR})
 
 set(CMAKE_C_FLAGS "-std=gnu11 -Wall -Wpedantic -Wextra -ffunction-sections -fdata-sections")
 set(CMAKE_CXX_FLAGS "-Wall -Wpedantic -Wextra -ffunction-sections -fdata-sections")

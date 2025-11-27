@@ -42,9 +42,10 @@ struct OptimalControlProblem
   // /** Final cost */
   StateCostCollection<Scalar, XDimisions, PredictLength + 1> finalCost;
 
-  std::array<Scalar, PredictLength + 1>* timeTrajectory;
-  std::array<Vector<Scalar, XDimisions>, PredictLength + 1>* stateTrajectory;
-  std::array<Vector<Scalar, UDimisions>, PredictLength + 1>* inputTrajectory;
+  // target trajectory
+  std::array<Scalar, PredictLength + 1> timeTrajectory;
+  std::array<Vector<Scalar, XDimisions>, PredictLength + 1> stateTrajectory;
+  std::array<Vector<Scalar, UDimisions>, PredictLength + 1> inputTrajectory;
 
   /* Lagrangians */
   // /** Lagrangian for equality constraints */

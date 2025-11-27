@@ -23,15 +23,19 @@
 #include "ChangeOfInputVariables.hpp"
 #include "TimeTriggeredRollout.hpp"
 #include "TrapezoidalIntegration.hpp"
+#include "Initializer.hpp"
+#include "InitializerRollout.hpp"
 
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
-    int StateEqConstrains = 0, int StateIneqConstrains = 0, int StateInputEqConstrains = 0, int StateInputIneqConstrains = 0,
-    int FinalStateEqConstrains = 0, int FinalStateIneqConstrains = 0>
+          int StateEqConstrains = 0, int StateIneqConstrains = 0, int StateInputEqConstrains = 0, int StateInputIneqConstrains = 0,
+          int FinalStateEqConstrains = 0, int FinalStateIneqConstrains = 0>
 class iLQR
 {
 public:
     using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
     using ControlledSystemBase_t = ControlledSystemBase<Scalar, XDimisions, UDimisions>;
+    using SystemDynamicsBase_t = SystemDynamicsBase<Scalar, XDimisions, UDimisions>;
+
     using StateVector_t = Vector<Scalar, XDimisions>;
     using InputVector_t = Vector<Scalar, UDimisions>;
     using LvVector_t = Vector<Scalar, UDimisions>;
@@ -47,8 +51,13 @@ public:
     using FinalMultiplierCollection_t = MultiplierCollection<Scalar, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
     using IntermediateMetrics_t = Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>;
     using FinalMetrics_t = Metrics<Scalar, XDimisions, UDimisions, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
-    using RolloutBase_t = RolloutBase<Scalar, XDimisions, UDimisions, PredictLength + 1>;
-    using TimeTriggeredRollout_t = TimeTriggeredRollout<Scalar, XDimisions, UDimisions, PredictLength + 1>;
+    using RolloutBase_t = RolloutBase<Scalar, XDimisions, UDimisions>;
+    using InitializerRollout_t = InitializerRollout<Scalar, XDimisions, UDimisions>;
+    using Initializer_t = Initializer<Scalar, XDimisions, UDimisions>;
+
+    using TimeTriggeredRollout_t = TimeTriggeredRollout<Scalar, XDimisions, UDimisions>;
+    using RolloutTrajectoryPointer_t = RolloutTrajectoryPointer<Scalar, XDimisions, UDimisions>;
+
     using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
     using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
 
@@ -78,9 +87,14 @@ public:
     using ValueFunctionQuadraticApproximation_t = ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>;
     using DiscreteTimeRiccatiEquations_t = DiscreteTimeRiccatiEquations<Scalar, XDimisions, UDimisions>;
 
-    iLQR(ControlledSystemBase_t* systemPtr, const Scalar timestep) :
-        rollout_(systemPtr, timestep), lineSearchStrategy_(*this) {
-        // optimalControlProblem_.dynamicsPtr = systemPtr;
+    iLQR(SystemDynamicsBase_t *systemPtr, Initializer_t *initializer) : rollout_(systemPtr, ddpSettings_.timeStep_),
+                                                                        initializerRollout_(*initializer, ddpSettings_.timeStep_),
+                                                                        lineSearchStrategy_(*this)
+    {
+        optimalControlProblem_.dynamicsPtr = systemPtr;
+        // set zero solution
+        optimizedPrimalSolution_.clear();
+        optimizedDualSolution_.clear();
     };
 
     /**
@@ -89,12 +103,13 @@ public:
      * @param [in] initTime: The initial time.
      * @param [in] initState: The initial state.
      */
-    void run(Scalar initTime, const StateVector_t& initState)
+    void run(Scalar initTime, const StateVector_t &initState)
     {
         // initialize parameters
         initTime_ = initTime;
         initState_ = initState;
-        finalTime_ = initTime + predictTimeStep_ * (PredictLength);
+        lastFinalTime_ = finalTime_;
+        finalTime_ = initTime + ddpSettings_.timeStep_ * (PredictLength);
         const size_t initIteration = totalNumIterations_;
 
         // optimized --> nominal: initializes the nominal primal and dual solutions based on the optimized ones
@@ -151,60 +166,14 @@ private:
     bool initializePrimalSolution()
     {
         // try to initialize with controller
-        bool initialSolutionExists = rolloutInitialController(optimizedPrimalSolution_, nominalPrimalData_.primalSolution);
-
-        // if rolloutInitialController failed, try to initialize with PrimalSolution's state-input trajectories
-        if (!initialSolutionExists)
+        int numSteps = 0;
+        if (lastFinalTime_ > initTime_)
         {
-            // // display
-            // if (ddpSettings_.displayInfo_) {
-            //     std::cerr << "Initial controller is unavailable. Solver resorts to use PrimalSolution trajectories ...\n";
-            // }
-
-            initialSolutionExists = extractInitialTrajectories(optimizedPrimalSolution_, nominalPrimalData_.primalSolution);
+            numSteps = rolloutInitialController(optimizedPrimalSolution_, nominalPrimalData_.primalSolution);
         }
-        assert(initialSolutionExists);
-
-        return initialSolutionExists;
-    }
-
-    /**
-     * Extracts the PrimalSolution trajectories from inputPrimalSolution. In general, it will try to extract in time period
-     * [initTime, finalTime]. However, if inputPrimalSolution's timeTrajectory does not cover the period [initTime, finalTime],
-     * it will extract the solution until the last time of the timeTrajectory
-     *
-     * @param [in] inputPrimalSolution: Its controller will be used for rollout.
-     * @param [out] outputPrimalSolution: The resulting PrimalSolution.
-     * @return True if the extraction was successful.
-     */
-    bool extractInitialTrajectories(PrimalSolution_t& inputPrimalSolution, PrimalSolution_t& outputPrimalSolution)
-    {
-        if (inputPrimalSolution.timeTrajectory_.empty())
-        {
-            return false;
-        }
-
-        // const auto finalTime = std::max(initTime_, std::min(inputPrimalSolution.timeTrajectory_.back(), finalTime_));
-
-        if (initTime_ < finalTime_)
-        {
-            // if (ddpSettings_.debugPrintRollout_) {
-            //     std::cerr << "[GaussNewtonDDP::extractInitialTrajectories] for t = [" << initTime_ << ", " << finalTime_ << "]\n";
-            //     std::cerr << "\twill use PrimalSolution trajectory for t = [" << initTime_ << ", " << finalTime << "]\n";
-            // }
-            // extractPrimalSolution({ initTime_, finalTime_ }, inputPrimalSolution, outputPrimalSolution);
-
-            // copy
-            outputPrimalSolution.timeTrajectory_ = inputPrimalSolution.timeTrajectory_;
-            outputPrimalSolution.stateTrajectory_ = inputPrimalSolution.stateTrajectory_;
-            outputPrimalSolution.inputTrajectory_ = outputPrimalSolution.inputTrajectory_;
-
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        // past too long before last run.
+        rolloutInitializer(nominalPrimalData_.primalSolution, numSteps);
+        return true;
     }
 
     /**
@@ -215,29 +184,32 @@ private:
      *
      * @param [in] inputPrimalSolution: Its controller will be used for rollout.
      * @param [out] outputPrimalSolution: The resulting PrimalSolution.
-     * @return True if the rollout was successful.
+     * @return number of steps are covered.
      */
-    bool rolloutInitialController(PrimalSolution_t& inputPrimalSolution, PrimalSolution_t& outputPrimalSolution)
+    int rolloutInitialController(PrimalSolution_t &inputPrimalSolution, PrimalSolution_t &outputPrimalSolution)
     {
-        // if (inputPrimalSolution.controllerPtr_ == nullptr)
-        // {
-        //     return false;
-        // }
+        // Ensure that finalTime is included by adding a fraction of dt such that: N * dt <= finalTime < (N + 1) * dt.
+        Scalar finalTimeLocal = std::min(lastFinalTime_, finalTime_) + static_cast<Scalar>(0.01) * ddpSettings_.timeStep_;
+        int numSteps = (finalTimeLocal - initTime_) / PredictLength;
 
-        // const Scalar finalTime = std::max(initTime_, std::min(inputPrimalSolution.controllerPtr_->timeStamp_.back(), finalTime_));
+        outputPrimalSolution.controller_ = inputPrimalSolution.controller_;
+        rolloutTrajectory(rollout_, initTime_, initState_, lastFinalTime_, outputPrimalSolution);
 
-        if (initTime_ < finalTime_)
-        {
-            outputPrimalSolution.controller_ = inputPrimalSolution.controller_;
-            rolloutTrajectory(rollout_, initTime_, initState_, finalTime_, outputPrimalSolution);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return numSteps;
     }
 
+    /**
+     * It will check the content of the primalSolution, and if its final time is smaller than the current solver finalTime_,
+     * it will concatenate it with the result of Initializer.
+     */
+    void rolloutInitializer(PrimalSolution_t &primalSolution, int numSteps)
+    {
+        RolloutTrajectoryPointer_t rolloutTrajectortPtr(primalSolution.timeTrajectory_.data() + numSteps, primalSolution.stateTrajectory_.data() + numSteps + 1, primalSolution.inputTrajectory_.data() + numSteps, PredictLength - numSteps + 1);
+        Scalar initTime = lastFinalTime_;
+        const StateVector_t &initState = primalSolution.stateTrajectory_[numSteps];
+
+        initializerRollout_.run(initTime, initState, finalTime_, nullptr, rolloutTrajectortPtr);
+    }
     /**
      * Initializes the nominal dual solutions based on the optimized ones and nominal primal solution.
      * Moreover, it updates ProblemMetrics.
@@ -246,16 +218,10 @@ private:
     {
         // initialize dual solution
         initializeDualSolution(optimalControlProblem_, nominalPrimalData_.primalSolution, optimizedDualSolution_,
-            nominalDualData_.dualSolution);
+                               nominalDualData_.dualSolution);
 
         computeRolloutMetrics(optimalControlProblem_, nominalPrimalData_.primalSolution, nominalDualData_.dualSolution,
-            nominalPrimalData_.problemMetrics);
-
-        // update dual
-        //  totalDualSolutionTimer_.startTimer();
-        //  ocs2::updateDualSolution(optimalControlProblemStock_[0], nominalPrimalData_.primalSolution, nominalPrimalData_.problemMetrics,
-        //  nominalDualData_.dualSolution);
-        //  totalDualSolutionTimer_.endTimer();
+                              nominalPrimalData_.problemMetrics);
 
         // calculates rollout merit
         performanceIndex_ = computeRolloutPerformanceIndex(nominalPrimalData_.primalSolution.timeTrajectory_, nominalPrimalData_.problemMetrics);
@@ -280,17 +246,17 @@ private:
         /*
          * compute the Heuristics function at the final time. Also call shiftHessian on the Heuristics 2nd order derivative.
          */
-        ModelData_t& modelData = nominalPrimalData_.modelDataFinalTime;
-        const Scalar& time = nominalPrimalData_.primalSolution.timeTrajectory_.back();
-        const StateVector_t& state = nominalPrimalData_.primalSolution.stateTrajectory_.back();
-        const FinalMultiplierCollection_t& multiplier = nominalDualData_.dualSolution.final;
+        ModelData_t &modelData = nominalPrimalData_.modelDataFinalTime;
+        const Scalar &time = nominalPrimalData_.primalSolution.timeTrajectory_.back();
+        const StateVector_t &state = nominalPrimalData_.primalSolution.stateTrajectory_.back();
+        const FinalMultiplierCollection_t &multiplier = nominalDualData_.dualSolution.final;
         modelData = approximator_.approximateFinalLQ(optimalControlProblem_, time, state, multiplier);
 
         // shift Hessian for final time
         if (ddpSettings_.strategy_ == SearchStrategyType::LINE_SEARCH)
         {
             shiftHessian(ddpSettings_.lineSearch_.hessianCorrectionStrategy, modelData.cost.dfdxx,
-                ddpSettings_.lineSearch_.hessianCorrectionMultiple);
+                         ddpSettings_.lineSearch_.hessianCorrectionMultiple);
         }
     }
 
@@ -300,20 +266,20 @@ private:
      * @param [in] dualSolution: The dual solution
      * @param [in,out] primalData: The primal Data
      */
-    void approximateIntermediateLQ(const DualSolution_t& dualSolution, PrimalDataContainer_t& primalData)
+    void approximateIntermediateLQ(const DualSolution_t &dualSolution, PrimalDataContainer_t &primalData)
     {
         // create alias
-        const TimeTrajectory_t& timeTrajectory = primalData.primalSolution.timeTrajectory_;
-        const StateTrajectory_t& stateTrajectory = primalData.primalSolution.stateTrajectory_;
-        const InputTrajectory_t& inputTrajectory = primalData.primalSolution.inputTrajectory_;
-        const IntermediateMultiplierTrajectory_t& multiplierTrajectory = dualSolution.intermediates;
-        ModelDataTrajectory_t& modelDataTrajectory = primalData.modelDataTrajectory;
+        const TimeTrajectory_t &timeTrajectory = primalData.primalSolution.timeTrajectory_;
+        const StateTrajectory_t &stateTrajectory = primalData.primalSolution.stateTrajectory_;
+        const InputTrajectory_t &inputTrajectory = primalData.primalSolution.inputTrajectory_;
+        const IntermediateMultiplierTrajectory_t &multiplierTrajectory = dualSolution.intermediates;
+        ModelDataTrajectory_t &modelDataTrajectory = primalData.modelDataTrajectory;
 
         for (size_t timeIndex = 0; timeIndex < PredictLength; ++timeIndex)
         {
             // approximate continuous LQ for the given time index
             ModelData_t continuousTimeModelData = approximator_.approximateIntermediateLQ(optimalControlProblem_, timeTrajectory[timeIndex], stateTrajectory[timeIndex],
-                inputTrajectory[timeIndex], multiplierTrajectory[timeIndex]);
+                                                                                          inputTrajectory[timeIndex], multiplierTrajectory[timeIndex]);
 
             // TO DO:checking the numerical properties
 
@@ -331,7 +297,7 @@ private:
 
             const Scalar timeStep = timeTrajectory[timeIndex + 1] - timeTrajectory[timeIndex];
             discreteLQWorker(*optimalControlProblem_.dynamicsPtr, timeTrajectory[timeIndex], stateTrajectory[timeIndex],
-                inputTrajectory[timeIndex], timeStep, continuousTimeModelData, modelDataTrajectory[timeIndex]);
+                             inputTrajectory[timeIndex], timeStep, continuousTimeModelData, modelDataTrajectory[timeIndex]);
         };
     }
 
@@ -346,8 +312,8 @@ private:
      * @param [in] continuousTimeModelData: continuous time model data.
      * @param [out] modelData: Discretized mode data.
      */
-    void discreteLQWorker(SystemDynamicsBase<Scalar, XDimisions, UDimisions>& system, Scalar time, const StateVector_t& state, const InputVector_t& input, Scalar timeStep,
-        const ModelData_t& continuousTimeModelData, ModelData_t& modelData)
+    void discreteLQWorker(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, Scalar time, const StateVector_t &state, const InputVector_t &input, Scalar timeStep,
+                          const ModelData_t &continuousTimeModelData, ModelData_t &modelData)
     {
         modelData.time = continuousTimeModelData.time;
 
@@ -366,7 +332,7 @@ private:
      * @param [in] Sm: The Riccati matrix.
      * @return The Hessian matrix of the Hamiltonian.
      */
-    HmMatrix_t computeHamiltonianHessian(const ModelData_t& modelData, const SmMatrix_t& Sm) const
+    HmMatrix_t computeHamiltonianHessian(const ModelData_t &modelData, const SmMatrix_t &Sm) const
     {
         const Matrix<Scalar, UDimisions, XDimisions> BmTransSm = modelData.dynamics.dfdu.transpose() * Sm;
         HmMatrix_t Hm = modelData.cost.dfduu;
@@ -380,7 +346,7 @@ private:
      * @param [out] constraintRangeProjector: The projection matrix to the constrained subspace.
      * @param [out] constraintNullProjector: The projection matrix to the null space of constrained.
      */
-    void computeProjections(const HmMatrix_t& Hm, HmMatrix_t& constraintNullProjector) const
+    void computeProjections(const HmMatrix_t &Hm, HmMatrix_t &constraintNullProjector) const
     {
         // UUT decomposition of inv(Hm)
         HmMatrix_t HmInvUmUmT;
@@ -399,7 +365,7 @@ private:
      * @param [in] constraintNullProjector: The projection matrix to the null space of constrained.
      * @param [out] projectedModelData: The projected model data.
      */
-    void projectLQ(const ModelData_t& modelData, const HmMatrix_t& constraintNullProjector, ModelData_t& projectedModelData) const
+    void projectLQ(const ModelData_t &modelData, const HmMatrix_t &constraintNullProjector, ModelData_t &projectedModelData) const
     {
         // dimensions and time
         projectedModelData.time = modelData.time;
@@ -427,8 +393,8 @@ private:
      * @param [out] projectedModelData: The projected model data.
      * @param [out] riccatiModification: The Riccati equation modifier.
      */
-    void computeProjectionAndRiccatiModification(const ModelData_t& modelData, const SmMatrix_t& Sm, ModelData_t& projectedModelData,
-        RiccatiModification_t& riccatiModification) const
+    void computeProjectionAndRiccatiModification(const ModelData_t &modelData, const SmMatrix_t &Sm, ModelData_t &projectedModelData,
+                                                 RiccatiModification_t &riccatiModification) const
     {
         // compute the Hamiltonian's Hessian
         riccatiModification.time_ = modelData.time;
@@ -453,13 +419,13 @@ private:
      * @param [in] finalValueFunction: The final value of Sm (dfdxx), Sv (dfdx), s (f), for Riccati equation.
      * @return average time step
      */
-    Scalar solveSequentialRiccatiEquations(const ValueFunctionQuadraticApproximation_t& finalValueFunction)
+    Scalar solveSequentialRiccatiEquations(const ValueFunctionQuadraticApproximation_t &finalValueFunction)
     {
-        const ModelData_t& finalModelData = nominalPrimalData_.modelDataFinalTime;
-        RiccatiModification_t& finalRiccatiModification = nominalDualData_.riccatiModificationTrajectory.back();
-        ModelData_t& finalProjectedModelData = nominalDualData_.projectedModelDataTrajectory.back();
-        LvVector_t& finalProjectedLvFinal = projectedLvTrajectoryStock_.back();
-        KmMatrix_t& finalProjectedKmFinal = projectedKmTrajectoryStock_.back();
+        const ModelData_t &finalModelData = nominalPrimalData_.modelDataFinalTime;
+        RiccatiModification_t &finalRiccatiModification = nominalDualData_.riccatiModificationTrajectory.back();
+        ModelData_t &finalProjectedModelData = nominalDualData_.projectedModelDataTrajectory.back();
+        LvVector_t &finalProjectedLvFinal = projectedLvTrajectoryStock_.back();
+        KmMatrix_t &finalProjectedKmFinal = projectedKmTrajectoryStock_.back();
 
         SmMatrix_t SmDummy;
         SmDummy.setZero();
@@ -484,7 +450,7 @@ private:
      * @param [in] finalValueFunction The final Sm(dfdxx), Sv(dfdx), s(f), for Riccati equation.
      * @return average time step
      */
-    Scalar solveSequentialRiccatiEquationsImpl(const ValueFunctionQuadraticApproximation_t& finalValueFunction)
+    Scalar solveSequentialRiccatiEquationsImpl(const ValueFunctionQuadraticApproximation_t &finalValueFunction)
     {
         nominalDualData_.valueFunctionTrajectory.back() = finalValueFunction;
 
@@ -500,32 +466,32 @@ private:
      * @param [in] workerIndex: Current worker index
      * @param [in] finalValueFunction The final Sm(dfdxx), Sv(dfdx), s(f), for Riccati equation.
      */
-    void riccatiEquationsWorker(const ValueFunctionQuadraticApproximation_t& finalValueFunction)
+    void riccatiEquationsWorker(const ValueFunctionQuadraticApproximation_t &finalValueFunction)
     {
         /*
          * solving the Riccati equations
          */
-        const ValueFunctionQuadraticApproximation_t* valueFunctionNext = &finalValueFunction;
+        const ValueFunctionQuadraticApproximation_t *valueFunctionNext = &finalValueFunction;
 
         int curIndex = PredictLength - 1;
         const int stopIndex = 0;
         while (curIndex >= stopIndex)
         {
-            LvVector_t& curProjectedLv = projectedLvTrajectoryStock_[curIndex];
-            KmMatrix_t& curProjectedKm = projectedKmTrajectoryStock_[curIndex];
-            ModelData_t& curProjectedModelData = nominalDualData_.projectedModelDataTrajectory[curIndex];
-            RiccatiModification_t& curRiccatiModification = nominalDualData_.riccatiModificationTrajectory[curIndex];
-            const ModelData_t& curModelData = nominalPrimalData_.modelDataTrajectory[curIndex];
+            LvVector_t &curProjectedLv = projectedLvTrajectoryStock_[curIndex];
+            KmMatrix_t &curProjectedKm = projectedKmTrajectoryStock_[curIndex];
+            ModelData_t &curProjectedModelData = nominalDualData_.projectedModelDataTrajectory[curIndex];
+            RiccatiModification_t &curRiccatiModification = nominalDualData_.riccatiModificationTrajectory[curIndex];
+            const ModelData_t &curModelData = nominalPrimalData_.modelDataTrajectory[curIndex];
 
-            SmMatrix_t& curSm = nominalDualData_.valueFunctionTrajectory[curIndex].dfdxx;
-            SvVector_t& curSv = nominalDualData_.valueFunctionTrajectory[curIndex].dfdx;
-            Scalar& curs = nominalDualData_.valueFunctionTrajectory[curIndex].f;
+            SmMatrix_t &curSm = nominalDualData_.valueFunctionTrajectory[curIndex].dfdxx;
+            SvVector_t &curSv = nominalDualData_.valueFunctionTrajectory[curIndex].dfdx;
+            Scalar &curs = nominalDualData_.valueFunctionTrajectory[curIndex].f;
 
             computeProjectionAndRiccatiModification(curModelData, valueFunctionNext->dfdxx, curProjectedModelData, curRiccatiModification);
 
             riccatiEquationsSolver_.computeMap(curProjectedModelData, curRiccatiModification, valueFunctionNext->dfdxx,
-                valueFunctionNext->dfdx, valueFunctionNext->f, curProjectedKm, curProjectedLv, curSm,
-                curSv, curs);
+                                               valueFunctionNext->dfdx, valueFunctionNext->f, curProjectedKm, curProjectedLv, curSm,
+                                               curSv, curs);
             valueFunctionNext = &(nominalDualData_.valueFunctionTrajectory[curIndex]);
 
             --curIndex;
@@ -564,13 +530,13 @@ private:
      * @param [in] dualData: Dual data used to calculate controller
      * @param [out] dstController: The destination controller
      */
-    void calculateControllerWorker(size_t timeIndex, const PrimalDataContainer_t& primalData, const DualDataContainer_t& dualData,
-        LinearController_t& dstController)
+    void calculateControllerWorker(size_t timeIndex, const PrimalDataContainer_t &primalData, const DualDataContainer_t &dualData,
+                                   LinearController_t &dstController)
     {
-        const StateVector_t& nominalState = primalData.primalSolution.stateTrajectory_[timeIndex];
-        const InputVector_t& nominalInput = primalData.primalSolution.inputTrajectory_[timeIndex];
+        const StateVector_t &nominalState = primalData.primalSolution.stateTrajectory_[timeIndex];
+        const InputVector_t &nominalInput = primalData.primalSolution.inputTrajectory_[timeIndex];
 
-        const Matrix<Scalar, UDimisions, UDimisions>& Qu = dualData.riccatiModificationTrajectory[timeIndex].constraintNullProjector_;
+        const Matrix<Scalar, UDimisions, UDimisions> &Qu = dualData.riccatiModificationTrajectory[timeIndex].constraintNullProjector_;
 
         // feedback gains
         dstController.gainArray_[timeIndex] = Qu * projectedKmTrajectoryStock_[timeIndex];
@@ -587,9 +553,9 @@ private:
         // update primal: run search strategy and find the optimal stepLength
         Scalar avgTimeStep = 0;
         SearchStrategySolutionRef_t solution(avgTimeStep, optimizedDualSolution_, optimizedPrimalSolution_, optimizedProblemMetrics_,
-            performanceIndex_);
-        const bool success = lineSearchStrategy_.run({ initTime_, finalTime_ }, initState_, lqModelExpectedCost, unoptimizedController_,
-            nominalDualData_.dualSolution, solution);
+                                             performanceIndex_);
+        const bool success = lineSearchStrategy_.run({initTime_, finalTime_}, initState_, lqModelExpectedCost, unoptimizedController_,
+                                                     nominalDualData_.dualSolution, solution);
 
         if (success)
         {
@@ -614,6 +580,7 @@ private:
             performanceIndex_ = performanceIndexLast_;
         }
     }
+
 public:
     /**
      * Calculates the merit function based on the performance index .
@@ -621,7 +588,7 @@ public:
      * @param [in] performanceIndex: The performance index which includes the uninitialized merit, cost, and ISEs of constraints.
      * @return The merit function
      */
-    static Scalar calculateRolloutMerit(const PerformanceIndex_t& performanceIndex)
+    static Scalar calculateRolloutMerit(const PerformanceIndex_t &performanceIndex)
     {
         // cost
         Scalar merit = performanceIndex.cost;
@@ -641,12 +608,12 @@ public:
      * @param [in] dualSolution: Const reference view to the dual solution
      * @param [out] problemMetrics: The cost, soft constraints and constraints values of the rollout.
      */
-    static void computeRolloutMetrics(OptimalControlProblem_t& problem, const PrimalSolution_t& primalSolution,
-        DualSolution_t& dualSolution, ProblemMetrics_t& problemMetrics)
+    static void computeRolloutMetrics(OptimalControlProblem_t &problem, const PrimalSolution_t &primalSolution,
+                                      DualSolution_t &dualSolution, ProblemMetrics_t &problemMetrics)
     {
-        const TimeTrajectory_t& tTrajectory = primalSolution.timeTrajectory_;
-        const StateTrajectory_t& xTrajectory = primalSolution.stateTrajectory_;
-        const InputTrajectory_t& uTrajectory = primalSolution.inputTrajectory_;
+        const TimeTrajectory_t &tTrajectory = primalSolution.timeTrajectory_;
+        const StateTrajectory_t &xTrajectory = primalSolution.stateTrajectory_;
+        const InputTrajectory_t &uTrajectory = primalSolution.inputTrajectory_;
 
         for (size_t k = 0; k < PredictLength; k++)
         {
@@ -673,17 +640,12 @@ public:
      *
      * @return average time step.
      */
-    static Scalar rolloutTrajectory(RolloutBase_t& rollout,
-        Scalar initTime, const StateVector_t& initState, Scalar finalTime,
-        PrimalSolution_t& primalSolution)
+    static Scalar rolloutTrajectory(RolloutBase_t &rollout,
+                                    Scalar initTime, const StateVector_t &initState, Scalar finalTime,
+                                    PrimalSolution_t &primalSolution)
     {
-        // rollout with controller
-        // const Vector<Scalar, XDimisions> xCurrent = rollout.run(initTime, initState, finalTime, primalSolution.controllerPtr_,
-        //                                                         primalSolution.timeTrajectory_, primalSolution.stateTrajectory_, primalSolution.inputTrajectory_);
-
-        // assert(!xCurrent.allFinite());
-        rollout.run(initTime, initState, finalTime, &primalSolution.controller_,
-            primalSolution.timeTrajectory_, primalSolution.stateTrajectory_, primalSolution.inputTrajectory_);
+        RolloutTrajectoryPointer_t rolloutTrajectortPtr(primalSolution.timeTrajectory_.data(), primalSolution.stateTrajectory_.data(), primalSolution.inputTrajectory_.data(), PredictLength + 1);
+        rollout.run(initTime, initState, finalTime, &primalSolution.controller_, rolloutTrajectortPtr);
         // average time step
         return (finalTime - initTime) / static_cast<Scalar>(PredictLength);
     }
@@ -697,8 +659,8 @@ public:
      * @return The PerformanceIndex of the trajectory.
      */
     static PerformanceIndex_t computeRolloutPerformanceIndex(
-        const TimeTrajectory_t& timeTrajectory,
-        const ProblemMetrics_t& problemMetrics)
+        const TimeTrajectory_t &timeTrajectory,
+        const ProblemMetrics_t &problemMetrics)
     {
         // Final
         PerformanceIndex_t finalperformanceIndex = toPerformanceIndex(problemMetrics.final);
@@ -721,7 +683,7 @@ public:
      * Outputs a controller with the same time stamp and gains as unoptimizedController. However, bias is incremented based on:
      * biasArray = unoptimizedController.biasArray + stepLength * unoptimizedController.deltaBiasArray
      */
-    static void incrementController(Scalar stepLength, const LinearController_t& unoptimizedController, LinearController_t& controller)
+    static void incrementController(Scalar stepLength, const LinearController_t &unoptimizedController, LinearController_t &controller)
     {
         controller.timeStamp_ = unoptimizedController.timeStamp_;
         controller.gainArray_ = unoptimizedController.gainArray_;
@@ -734,7 +696,7 @@ public:
     /**
      * biasArray = unoptimizedController.biasArray + stepLength * unoptimizedController.deltaBiasArray
      */
-    static void changeControllerStepLength(Scalar stepLength, const LinearController_t& unoptimizedController, LinearController_t& controller)
+    static void changeControllerStepLength(Scalar stepLength, const LinearController_t &unoptimizedController, LinearController_t &controller)
     {
         for (size_t k = 0; k < unoptimizedController.size(); k++)
         {
@@ -748,7 +710,7 @@ public:
      * @param [in] controller: Input controller.
      * @return The integral of the squared (IS) norm of the controller update.
      */
-    static Scalar computeControllerUpdateIS(const LinearController_t& controller)
+    static Scalar computeControllerUpdateIS(const LinearController_t &controller)
     {
         std::array<Scalar, controller.size()> biasArraySquaredNorm;
 
@@ -760,11 +722,14 @@ public:
         return trapezoidalIntegration(controller.timeStamp_, biasArraySquaredNorm, 0.0);
     }
 
-
     OptimalControlProblem_t optimalControlProblem_;
 
     // roll out
     TimeTriggeredRollout_t rollout_;
+
+    // initializer
+    InitializerRollout_t initializerRollout_;
+
 private:
     // linear approximator
     static LinearQuadraticApproximator_t approximator_;
@@ -772,8 +737,10 @@ private:
     constexpr static DDPSettings<Scalar> ddpSettings_{};
 
     // time and state
-    Scalar initTime_ = 0.0;
-    Scalar finalTime_ = 0.0;
+    Scalar initTime_{0.0};
+    Scalar finalTime_{0.0};
+    Scalar lastFinalTime_{0.0};
+
     StateVector_t initState_;
 
     // nominal data
@@ -811,7 +778,5 @@ private:
     Scalar avgTimeStepFP_ = 0.0;
     Scalar avgTimeStepBP_ = 0.0;
 
-    size_t totalNumIterations_{ 0 };
-
-    Scalar predictTimeStep_;
+    size_t totalNumIterations_{0};
 };

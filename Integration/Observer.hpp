@@ -15,8 +15,9 @@ public:
    * @param stateTrajectoryPtr: A pinter to an state trajectory container to store resulting state trajectory.
    * @param timeTrajectoryPtr: A pinter to an time trajectory container to store resulting time trajectory.
    */
-  explicit Observer(int length, Vector<Scalar, XDimisions> *stateTrajectoryPtr = nullptr, Scalar *timeTrajectoryPtr = nullptr)
-      : stateTrajectoryPtr_(stateTrajectoryPtr), timeTrajectoryPtr_(timeTrajectoryPtr), length_(length) {};
+  explicit Observer(int length, Vector<Scalar, XDimisions>* stateTrajectoryPtr = nullptr, Scalar* timeTrajectoryPtr = nullptr)
+    : stateTrajectoryPtr_(stateTrajectoryPtr), timeTrajectoryPtr_(timeTrajectoryPtr), length_(length) {
+  };
 
   /**
    * Default destructor.
@@ -28,7 +29,7 @@ public:
    * @param [in] state: Current state.
    * @param [in] time: Current time.
    */
-  void observe(const Vector<Scalar, XDimisions> &state, const Scalar time)
+  void observe(const Vector<Scalar, XDimisions>& state, const Scalar time)
   {
     if (now_ >= length_)
       return;
@@ -51,8 +52,8 @@ public:
   }
 
 private:
-  Vector<Scalar, XDimisions> *stateTrajectoryPtr_;
-  Scalar *timeTrajectoryPtr_;
+  Vector<Scalar, XDimisions>* stateTrajectoryPtr_;
+  Scalar* timeTrajectoryPtr_;
   int length_;
-  int now_{0};
+  int now_{ 0 };
 };

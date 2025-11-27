@@ -47,6 +47,16 @@ struct PrimalSolution
     controller_.swap(other.controller_);
   }
 
+  void clear()
+  {
+    controller_.clear();
+    for (size_t i = 0; i < PredictLength + 1; ++i)
+    {
+      timeTrajectory_[i] = 0;
+      stateTrajectory_[i].setZero();
+      inputTrajectory_[i].setZero();
+    }
+  }
   std::array<Scalar, PredictLength + 1> timeTrajectory_;
   std::array<Vector<Scalar, XDimisions>, PredictLength + 1> stateTrajectory_;
   std::array<Vector<Scalar, UDimisions>, PredictLength + 1> inputTrajectory_;
