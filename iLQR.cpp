@@ -1,6 +1,5 @@
 #include <iostream>
 #include "iLQR.hpp"
-#include "DefaultInitializer.hpp"
 
 int main()
 {

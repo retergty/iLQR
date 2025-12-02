@@ -38,18 +38,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Metrics.hpp"
 
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
-          int StateEqLagrangianContrains, int StateIneqLagrangianContrains, int StateInputEqLagrangianContrains, int StateInputIneqLagrangianContrains,
-          int FinalStateEqLagrangianContrains, int FinalStateIneqFinalLagrangianContrains>
+          int StateEqLagrangianConstrains, int StateIneqLagrangianConstrains, int StateInputEqLagrangianConstrains, int StateInputIneqLagrangianConstrains,
+          int FinalStateEqLagrangianConstrains, int FinalStateIneqFinalLagrangianConstrains>
 struct LinearQuadraticApproximator
 {
-  using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqLagrangianContrains, StateInputEqLagrangianContrains, StateIneqLagrangianContrains, StateInputIneqLagrangianContrains, FinalStateEqLagrangianContrains, FinalStateIneqFinalLagrangianContrains>;
+  using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqLagrangianConstrains, StateInputEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputIneqLagrangianConstrains, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains>;
   using StateVector_t = Vector<Scalar, XDimisions>;
   using InputVector_t = Vector<Scalar, UDimisions>;
   using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
-  using IntermediateMultiplierCollection_t = MultiplierCollection<Scalar, StateEqLagrangianContrains, StateIneqLagrangianContrains, StateInputEqLagrangianContrains, StateInputIneqLagrangianContrains>;
-  using FinalMultiplierCollection_t = MultiplierCollection<Scalar, FinalStateEqLagrangianContrains, FinalStateIneqFinalLagrangianContrains, 0, 0>;
-  using IntermediateMetrics_t = Metrics<Scalar, XDimisions, UDimisions, StateEqLagrangianContrains, StateIneqLagrangianContrains, StateInputEqLagrangianContrains, StateInputIneqLagrangianContrains>;
-  using FinalMetrics_t = Metrics<Scalar, XDimisions, UDimisions, FinalStateEqLagrangianContrains, FinalStateIneqFinalLagrangianContrains, 0, 0>;
+  using IntermediateMultiplierCollection_t = MultiplierCollection<Scalar, StateEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains, StateInputIneqLagrangianConstrains>;
+  using FinalMultiplierCollection_t = MultiplierCollection<Scalar, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains, 0, 0>;
+  using IntermediateMetrics_t = Metrics<Scalar, XDimisions, UDimisions, StateEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains, StateInputIneqLagrangianConstrains>;
+  using FinalMetrics_t = Metrics<Scalar, XDimisions, UDimisions, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains, 0, 0>;
   using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
   using StateTrajectory_t = std::array<Vector<Scalar, XDimisions>, PredictLength + 1>;
   using InputTrajectory_t = std::array<Vector<Scalar, UDimisions>, PredictLength + 1>;
@@ -74,26 +74,26 @@ struct LinearQuadraticApproximator
     modelData.cost = approximateCost(problem, time, state, input);
 
     // Lagrangians
-    if constexpr (StateEqLagrangianContrains != 0)
+    if constexpr (StateEqLagrangianConstrains != 0)
     {
       ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> approx = problem.stateEqualityLagrangian.getQuadraticApproximation(time, state, multipliers.stateEq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
-    if constexpr (StateIneqLagrangianContrains != 0)
+    if constexpr (StateIneqLagrangianConstrains != 0)
     {
       ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> approx = problem.stateInequalityLagrangian.getQuadraticApproximation(time, state, multipliers.stateIneq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
-    if constexpr (StateInputEqLagrangianContrains != 0)
+    if constexpr (StateInputEqLagrangianConstrains != 0)
     {
       modelData.cost +=
           problem.equalityLagrangian.getQuadraticApproximation(time, state, input, multipliers.stateInputEq);
     }
-    if constexpr (StateInputIneqLagrangianContrains != 0)
+    if constexpr (StateInputIneqLagrangianConstrains != 0)
     {
       modelData.cost +=
           problem.inequalityLagrangian.getQuadraticApproximation(time, state, input, multipliers.stateInputIneq);
@@ -143,14 +143,14 @@ struct LinearQuadraticApproximator
     modelData.cost = approximateFinalCost(problem, time, state);
 
     // Lagrangians
-    if constexpr (FinalStateEqLagrangianContrains != 0)
+    if constexpr (FinalStateEqLagrangianConstrains != 0)
     {
       auto approx = problem.finalEqualityLagrangian.getQuadraticApproximation(time, state, multipliers.stateEq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
-    if constexpr (FinalStateIneqFinalLagrangianContrains != 0)
+    if constexpr (FinalStateIneqFinalLagrangianConstrains != 0)
     {
       auto approx = problem.finalInequalityLagrangian.getQuadraticApproximation(time, state, multipliers.stateIneq);
       modelData.cost.f += approx.f;
@@ -259,16 +259,12 @@ struct LinearQuadraticApproximator
    */
   static IntermediateMetrics_t
   computeIntermediateMetrics(const OptimalControlProblem_t &problem,
-                             const Scalar time, const StateVector_t &state, const InputVector_t &input,
-                             const StateVector_t &dynamicsViolation = StateVector_t())
+                             const Scalar time, const StateVector_t &state, const InputVector_t &input)
   {
     IntermediateMetrics_t metrics;
 
     // Cost
     metrics.cost = computeCost(problem, time, state, input);
-
-    // Dynamics violation
-    metrics.dynamicsViolation = dynamicsViolation;
 
     return metrics;
   }
@@ -290,29 +286,29 @@ struct LinearQuadraticApproximator
   static IntermediateMetrics_t
   computeIntermediateMetrics(const OptimalControlProblem_t &problem,
                              const Scalar time, const StateVector_t &state, const InputVector_t &input,
-                             const IntermediateMultiplierCollection_t &multipliers, const StateVector_t &dynamicsViolation = StateVector_t())
+                             const IntermediateMultiplierCollection_t &multipliers)
   {
     // cost, dynamics violation, equlaity constraints, inequlaity constraints
-    IntermediateMetrics_t metrics = computeIntermediateMetrics(problem, time, state, input, dynamicsViolation);
+    IntermediateMetrics_t metrics = computeIntermediateMetrics(problem, time, state, input);
 
     // Equality Lagrangians
-    if constexpr (StateEqLagrangianContrains != 0)
+    if constexpr (StateEqLagrangianConstrains != 0)
     {
       metrics.stateEqLagrangian = problem.stateEqualityLagrangian.getValue(time, state, multipliers.stateEq);
     }
 
-    if constexpr (StateInputEqLagrangianContrains != 0)
+    if constexpr (StateInputEqLagrangianConstrains != 0)
     {
       metrics.stateInputEqLagrangian = problem.equalityLagrangian.getValue(time, state, input, multipliers.stateInputEq);
     }
 
     // Inequality Lagrangians
-    if constexpr (StateIneqLagrangianContrains != 0)
+    if constexpr (StateIneqLagrangianConstrains != 0)
     {
       metrics.stateIneqLagrangian = problem.stateInequalityLagrangian.getValue(time, state, multipliers.stateIneq);
     }
 
-    if constexpr (StateInputIneqLagrangianContrains != 0)
+    if constexpr (StateInputIneqLagrangianConstrains != 0)
     {
       metrics.stateInputIneqLagrangian = problem.inequalityLagrangian.getValue(time, state, input, multipliers.stateInputIneq);
     }
@@ -364,14 +360,14 @@ struct LinearQuadraticApproximator
     // cost, equlaity constraints, inequlaity constraints
     FinalMetrics_t metrics = computeFinalMetrics(problem, time, state);
 
-    if constexpr (FinalStateEqLagrangianContrains != 0)
+    if constexpr (FinalStateEqLagrangianConstrains != 0)
     {
       // Equality Lagrangians
       metrics.stateEqLagrangian = problem.finalEqualityLagrangian.getValue(time, state, multipliers.stateEq);
     }
 
     // Inequality Lagrangians
-    if constexpr (FinalStateIneqFinalLagrangianContrains != 0)
+    if constexpr (FinalStateIneqFinalLagrangianConstrains != 0)
     {
       metrics.stateIneqLagrangian = problem.finalInequalityLagrangian.getValue(time, state, multipliers.stateIneq);
     }

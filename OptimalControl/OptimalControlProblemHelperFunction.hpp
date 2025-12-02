@@ -59,7 +59,6 @@ void initializeDualSolution(
     const DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength> &cachedDualSolution,
     DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength> &dualSolution)
 {
-  // find the time period that we can interpolate the cached dual solution
   dualSolution.timeTrajectory = primalSolution.timeTrajectory_;
 
   if (!cachedDualSolution.empty())
