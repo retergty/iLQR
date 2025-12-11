@@ -17,8 +17,9 @@ public:
 
   ~LinearSystemDynamics() override = default;
 
-  Vector<Scalar, XDimisions> computeFlowMap(Scalar t, const Vector<Scalar, XDimisions> &x, const Vector<Scalar, UDimisions> &u) override
+  Vector<Scalar, XDimisions> computeFlowMap(Scalar t, const Vector<Scalar, XDimisions> &x, const Vector<Scalar, UDimisions> &u) const override
   {
+    (void)t;
     Vector<Scalar, XDimisions> f = A_ * x;
     f += B_ * u;
     return f;
@@ -27,6 +28,7 @@ public:
   VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
   linearApproximation(Scalar t, const Vector<Scalar, XDimisions> &x, const Vector<Scalar, UDimisions> &u) override
   {
+    (void)t;
     VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> approximation;
     approximation.f = A_ * x;
     approximation.f += B_ * u;

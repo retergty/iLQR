@@ -43,7 +43,7 @@ public:
    * @param [in] u: The current input.
    * @return The state time derivative.
    */
-  virtual Vector<Scalar, XDimisions> computeFlowMap(Scalar t, const Vector<Scalar, XDimisions> &x, const Vector<Scalar, UDimisions> &u) = 0;
+  virtual Vector<Scalar, XDimisions> computeFlowMap(Scalar t, const Vector<Scalar, XDimisions> &x, const Vector<Scalar, UDimisions> &u) const = 0;
 
   void setController(ControllerBase<Scalar, XDimisions, UDimisions> *controllerPtr)
   {

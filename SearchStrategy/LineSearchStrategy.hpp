@@ -35,8 +35,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "NumericTraits.hpp"
 
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
-  int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
-  int FinalStateEqConstrains, int FinalStateIneqConstrains>
+          int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
+          int FinalStateEqConstrains, int FinalStateIneqConstrains>
 class iLQR;
 
 /**
@@ -44,10 +44,10 @@ class iLQR;
  * indices. It line-searches on the feedforward parts of the controller and chooses the largest acceptable step-size.
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
-  int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
-  int FinalStateEqConstrains, int FinalStateIneqConstrains>
+          int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
+          int FinalStateEqConstrains, int FinalStateIneqConstrains>
 class LineSearchStrategy final : public SearchStrategyBase<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
-  FinalStateEqConstrains, FinalStateIneqConstrains>
+                                                           FinalStateEqConstrains, FinalStateIneqConstrains>
 {
 public:
   using iLQR_t = iLQR<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
@@ -61,22 +61,21 @@ public:
   using InputVector_t = Vector<Scalar, UDimisions>;
   using LinearController_t = LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1>;
   using SearchStrategyBase_t = SearchStrategyBase<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
-    FinalStateEqConstrains, FinalStateIneqConstrains>;
+                                                  FinalStateEqConstrains, FinalStateIneqConstrains>;
   using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
 
-  LineSearchStrategy(iLQR_t& ilqr) : ilqr_(ilqr)
+  LineSearchStrategy(iLQR_t &ilqr) : ilqr_(ilqr)
   {
-
   }
 
   ~LineSearchStrategy() override = default;
-  LineSearchStrategy(const LineSearchStrategy&) = delete;
-  LineSearchStrategy& operator=(const LineSearchStrategy&) = delete;
+  LineSearchStrategy(const LineSearchStrategy &) = delete;
+  LineSearchStrategy &operator=(const LineSearchStrategy &) = delete;
 
   void reset() override {}
 
-  bool run(const std::pair<Scalar, Scalar>& timePeriod, const StateVector_t& initState, const Scalar expectedCost,
-    const LinearController_t& unoptimizedController, const DualSolution_t& dualSolution, SearchStrategySolutionRef_t& solutionRef) override
+  bool run(const std::pair<Scalar, Scalar> &timePeriod, const StateVector_t &initState, const Scalar expectedCost,
+           const LinearController_t &unoptimizedController, const DualSolution_t &dualSolution, SearchStrategySolutionRef_t &solutionRef) override
   {
     (void)expectedCost;
     // initialize lineSearchModule inputs
@@ -104,15 +103,15 @@ public:
   }
 
   bool checkConvergence(bool unreliableControllerIncrement,
-    const PerformanceIndex_t& previousPerformanceIndex,
-    const PerformanceIndex_t& currentPerformanceIndex) const override
+                        const PerformanceIndex_t &previousPerformanceIndex,
+                        const PerformanceIndex_t &currentPerformanceIndex) const override
   {
     (void)unreliableControllerIncrement;
     // loop break variables
     const Scalar currentTotalCost =
-      currentPerformanceIndex.cost + currentPerformanceIndex.equalityLagrangian + currentPerformanceIndex.inequalityLagrangian;
+        currentPerformanceIndex.cost + currentPerformanceIndex.equalityLagrangian + currentPerformanceIndex.inequalityLagrangian;
     const Scalar previousTotalCost =
-      previousPerformanceIndex.cost + previousPerformanceIndex.equalityLagrangian + previousPerformanceIndex.inequalityLagrangian;
+        previousPerformanceIndex.cost + previousPerformanceIndex.equalityLagrangian + previousPerformanceIndex.inequalityLagrangian;
     const Scalar relCost = std::abs(currentTotalCost - previousTotalCost);
     const bool isCostFunctionConverged = relCost <= this->baseSettings_.minRelCost;
     const bool isOptimizationConverged = isCostFunctionConverged;
@@ -120,7 +119,7 @@ public:
     return isOptimizationConverged;
   }
 
-  void computeRiccatiModification(const ModelData_t& projectedModelData, Matrix<Scalar, XDimisions, XDimisions>& deltaQm) const override
+  void computeRiccatiModification(const ModelData_t &projectedModelData, Matrix<Scalar, XDimisions, XDimisions> &deltaQm) const override
   {
     // const auto &QmProjected = projectedModelData.cost.dfdxx;
     // const auto &PmProjected = projectedModelData.cost.dfdux;
@@ -137,15 +136,15 @@ public:
     // deltaQm -= Q_minus_PTRinvP;
   }
 
-  Matrix<Scalar, UDimisions, UDimisions> augmentHamiltonianHessian(const ModelData_t& /*modelData*/, const Matrix<Scalar, UDimisions, UDimisions>& Hm) const override { return Hm; }
+  Matrix<Scalar, UDimisions, UDimisions> augmentHamiltonianHessian(const ModelData_t & /*modelData*/, const Matrix<Scalar, UDimisions, UDimisions> &Hm) const override { return Hm; }
 
 private:
   struct LineSearchInputRef
   {
-    const std::pair<Scalar, Scalar>* timePeriodPtr;
-    const StateVector_t* initStatePtr;
-    const LinearController_t* unoptimizedControllerPtr;
-    const DualSolution_t* dualSolutionPtr;
+    const std::pair<Scalar, Scalar> *timePeriodPtr;
+    const StateVector_t *initStatePtr;
+    const LinearController_t *unoptimizedControllerPtr;
+    const DualSolution_t *dualSolutionPtr;
   };
 
   /** number of line search iterations (the if statements order is important) */
@@ -178,15 +177,15 @@ private:
   }
 
   /** Computes the solution on a given stepLength  */
-  void computeSolution(Scalar stepLength, SearchStrategySolution_t& solution)
+  void computeSolution(Scalar stepLength, SearchStrategySolution_t &solution)
   {
     // compute primal solution
     iLQR_t::changeControllerStepLength(stepLength, *lineSearchInputRef_.unoptimizedControllerPtr, solution.primalSolution.controller_);
     solution.avgTimeStep = iLQR_t::rolloutTrajectory(ilqr_.rollout_, lineSearchInputRef_.timePeriodPtr->first, *lineSearchInputRef_.initStatePtr,
-      lineSearchInputRef_.timePeriodPtr->second, solution.primalSolution);
-    
+                                                     lineSearchInputRef_.timePeriodPtr->second, solution.primalSolution);
+
     // initialize dual solution
-    //initializeDualSolution(ilqr_.optimalControlProblem_, solution.primalSolution, *adjustedDualSolutionPtr, solution.dualSolution);
+    // initializeDualSolution(ilqr_.optimalControlProblem_, solution.primalSolution, *adjustedDualSolutionPtr, solution.dualSolution);
     solution.dualSolution = *lineSearchInputRef_.dualSolutionPtr;
 
     // compute problem metrics
@@ -221,7 +220,7 @@ private:
        * be as high as possible. This is equivalent to a single core line search.
        */
       const bool armijoCondition = workersSolution_.performanceIndex.merit <
-        (baselineMerit_ - settings_.armijoCoefficient * stepLength * unoptimizedControllerUpdateIS_);
+                                   (baselineMerit_ - settings_.armijoCoefficient * stepLength * unoptimizedControllerUpdateIS_);
       if (armijoCondition && stepLength > bestStepSize_)
       { // save solution
         bestStepSize_ = stepLength;
@@ -235,7 +234,7 @@ private:
 
   constexpr static LineSearchSettings<Scalar> settings_{};
 
-  iLQR_t& ilqr_;
+  iLQR_t &ilqr_;
 
   DualSolution_t tempDualSolutions_;
   SearchStrategySolution_t workersSolution_;
@@ -243,11 +242,10 @@ private:
   // input
   LineSearchInputRef lineSearchInputRef_;
   // output
-  std::atomic<Scalar> bestStepSize_{ 0.0 };
-  SearchStrategySolutionRef_t* bestSolutionRef_;
+  std::atomic<Scalar> bestStepSize_{0.0};
+  SearchStrategySolutionRef_t *bestSolutionRef_;
 
   // convergence check
   Scalar baselineMerit_ = 0.0;                 // the merit of the rollout for zero learning rate
   Scalar unoptimizedControllerUpdateIS_ = 0.0; // integral of the squared (IS) norm of the controller update.
-
 };
