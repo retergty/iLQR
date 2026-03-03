@@ -66,7 +66,7 @@ public:
     // b_{k} = x_{n} + dt * f(x_{n},u_{n})
     VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> continuousApproximation = system.linearApproximation(t, x, u);
     continuousApproximation.dfdx *= dt;
-    continuousApproximation.dfdx.diagonal().array() += 1.0; // plus Identity()
+    continuousApproximation.dfdx += Matrix<Scalar, XDimisions, XDimisions>::Identity(); // plus Identity()
     continuousApproximation.dfdu *= dt;
     continuousApproximation.f = x + dt * continuousApproximation.f;
     return continuousApproximation;
@@ -115,7 +115,7 @@ public:
     // Assemble discrete approximation
     // Re-use k1 to collect the result
     k1.dfdx = dt_halve * k1.dfdx + dt_halve * k2.dfdx;
-    k1.dfdx.diagonal().array() += 1.0; // plus Identity()
+    k1.dfdx += Matrix<Scalar, XDimisions, XDimisions>::Identity(); // plus Identity()
     k1.dfdu = dt_halve * k1.dfdu + dt_halve * k2.dfdu;
     k1.f = x + dt_halve * k1.f + dt_halve * k2.f;
     return k1;
@@ -183,7 +183,7 @@ public:
     // Assemble discrete approximation
     // Re-use k1 to collect the result
     k1.dfdx = dt_sixth * k1.dfdx + dt_third * k2.dfdx + dt_third * k3.dfdx + dt_sixth * k4.dfdx;
-    k1.dfdx += 1.0; // plus Identity()
+    k1.dfdx += Matrix<Scalar, XDimisions, XDimisions>::Identity(); // plus Identity()
     k1.dfdu = dt_sixth * k1.dfdu + dt_third * k2.dfdu + dt_third * k3.dfdu + dt_sixth * k4.dfdu;
     k1.f = x + dt_sixth * k1.f + dt_third * k2.f + dt_third * k3.f + dt_sixth * k4.f;
     return k1;

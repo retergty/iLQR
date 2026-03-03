@@ -8,7 +8,9 @@ FetchContent_MakeAvailable(googletest)
 
 # 创建测试可执行文件列表
 set(TEST_SOURCES
-    LinearSystemTest.cpp
+    LinearSystemRolloutTest.cpp
+    LinearSystemDiscreteTest.cpp
+    LinearSystemILQRTest.cpp
 )
 
 # 循环添加所有测试
