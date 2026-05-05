@@ -40,36 +40,36 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @brief 离散时间 Riccati 单步递推的中间缓存（Sm*Am, Sm*Bm, Gm, Gv, Hm*Km 等）。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
+template <typename Scalar, int XDim, int UDim>
 struct DiscreteTimeRiccatiData
 {
-  // Vector<Scalar, XDimisions> Sm_projectedHv_;
-  Matrix<Scalar, XDimisions, XDimisions> Sm_projectedAm_;
-  Matrix<Scalar, XDimisions, UDimisions> Sm_projectedBm_;
-  Vector<Scalar, XDimisions> Sv_plus_Sm_projectedHv_;
+  // Vector<Scalar, XDim> Sm_projectedHv_;
+  Matrix<Scalar, XDim, XDim> Sm_projectedAm_;
+  Matrix<Scalar, XDim, UDim> Sm_projectedBm_;
+  Vector<Scalar, XDim> Sv_plus_Sm_projectedHv_;
 
-  Matrix<Scalar, UDimisions, UDimisions> projectedHm_;
-  Matrix<Scalar, UDimisions, XDimisions> projectedGm_;
-  Vector<Scalar, UDimisions> projectedGv_;
+  Matrix<Scalar, UDim, UDim> projectedHm_;
+  Matrix<Scalar, UDim, XDim> projectedGm_;
+  Vector<Scalar, UDim> projectedGv_;
 
-  Matrix<Scalar, XDimisions, XDimisions> projectedKm_T_projectedGm_;
-  Matrix<Scalar, UDimisions, XDimisions> projectedHm_projectedKm_;
-  Vector<Scalar, UDimisions> projectedHm_projectedLv_;
+  Matrix<Scalar, XDim, XDim> projectedKm_T_projectedGm_;
+  Matrix<Scalar, UDim, XDim> projectedHm_projectedKm_;
+  Vector<Scalar, UDim> projectedHm_projectedLv_;
 };
 
 /**
  * @brief 实现 iLQR 的离散时间 Riccati 差分方程：由下一时刻的 (Sm,Sv,s) 与当前投影模型数据递推当前 (Sm,Sv,s) 与 (Km,Lv)。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
+template <typename Scalar, int XDim, int UDim>
 class DiscreteTimeRiccatiEquations
 {
 public:
-  using DiscreteTimeRiccatiData_t = DiscreteTimeRiccatiData<Scalar, XDimisions, UDimisions>;
-  using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
-  using RiccatiModification_t = RiccatiModification<Scalar, XDimisions, UDimisions>;
+  using DiscreteTimeRiccatiData_t = DiscreteTimeRiccatiData<Scalar, XDim, UDim>;
+  using ModelData_t = ModelData<Scalar, XDim, UDim>;
+  using RiccatiModification_t = RiccatiModification<Scalar, XDim, UDim>;
   /**
    * @brief 构造离散时间 Riccati 求解器。
    * @param [in] reducedFormRiccati 若为 true，假设哈密顿量 Hessian 正定，使用简化公式（不显式构造 Hm），计算更高效。
@@ -93,9 +93,9 @@ public:
    * @param [out] s 当前 Riccati 标量。
    */
   void computeMap(const ModelData_t &projectedModelData, const RiccatiModification_t &riccatiModification,
-                  const Matrix<Scalar, XDimisions, XDimisions> &SmNext, const Vector<Scalar, XDimisions> &SvNext, const Scalar &sNext,
-                  Matrix<Scalar, UDimisions, XDimisions> &projectedKm, Vector<Scalar, UDimisions> &projectedLv,
-                  Matrix<Scalar, XDimisions, XDimisions> &Sm, Vector<Scalar, XDimisions> &Sv, Scalar &s)
+                  const Matrix<Scalar, XDim, XDim> &SmNext, const Vector<Scalar, XDim> &SvNext, const Scalar &sNext,
+                  Matrix<Scalar, UDim, XDim> &projectedKm, Vector<Scalar, UDim> &projectedLv,
+                  Matrix<Scalar, XDim, XDim> &Sm, Vector<Scalar, XDim> &Sv, Scalar &s)
   {
     computeMapILQR(projectedModelData, riccatiModification, SmNext, SvNext, sNext, discreteTimeRiccatiData_, projectedKm, projectedLv, Sm,
                    Sv, s);
@@ -117,9 +117,9 @@ private:
    * @param [out] s 当前 Riccati 标量。
    */
   void computeMapILQR(const ModelData_t &projectedModelData, const RiccatiModification_t &riccatiModification,
-                      const Matrix<Scalar, XDimisions, XDimisions> &SmNext, const Vector<Scalar, XDimisions> &SvNext, const Scalar &sNext, DiscreteTimeRiccatiData_t &dreCache,
-                      Matrix<Scalar, UDimisions, XDimisions> &projectedKm, Vector<Scalar, UDimisions> &projectedLv,
-                      Matrix<Scalar, XDimisions, XDimisions> &Sm, Vector<Scalar, XDimisions> &Sv, Scalar &s) const
+                      const Matrix<Scalar, XDim, XDim> &SmNext, const Vector<Scalar, XDim> &SvNext, const Scalar &sNext, DiscreteTimeRiccatiData_t &dreCache,
+                      Matrix<Scalar, UDim, XDim> &projectedKm, Vector<Scalar, UDim> &projectedLv,
+                      Matrix<Scalar, XDim, XDim> &Sm, Vector<Scalar, XDim> &Sv, Scalar &s) const
   {
     // precomputation (1)
     // dreCache.Sm_projectedHv_ = SmNext * projectedModelData.dynamicsBias;

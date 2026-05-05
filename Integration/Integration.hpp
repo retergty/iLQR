@@ -9,9 +9,9 @@
 /**
  * @brief 自治系统动力学基类：根据时间与状态计算状态导数 dx/dt。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
+ * @tparam XDim 状态维度。
  */
-template <typename Scalar, int XDimisions>
+template <typename Scalar, int XDim>
 class OdeBase
 {
 public:
@@ -27,7 +27,7 @@ public:
    * @param [in] x 当前状态。
    * @return 状态对时间的导数。
    */
-  virtual Vector<Scalar, XDimisions> computeFlowMap(Scalar t, const Vector<Scalar, XDimisions> &x) const = 0;
+  virtual Vector<Scalar, XDim> computeFlowMap(Scalar t, const Vector<Scalar, XDim> &x) const = 0;
 };
 
 /**
@@ -49,9 +49,9 @@ enum class IntegratorType
 /**
  * @brief 自治系统积分器基类：固定步长积分，将轨迹写入 Observer。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
+ * @tparam XDim 状态维度。
  */
-template <typename Scalar, int XDimisions>
+template <typename Scalar, int XDim>
 class IntegratorBase
 {
 public:
@@ -70,5 +70,5 @@ public:
    * @param [in] finalTime 终止时间。
    * @param [in] dt 时间步长。
    */
-  virtual void integrateConst(OdeBase<Scalar, XDimisions> &system, Observer<Scalar, XDimisions> &observer, const Vector<Scalar, XDimisions> &initialState, const Scalar startTime, const Scalar finalTime, const Scalar dt) = 0;
+  virtual void integrateConst(OdeBase<Scalar, XDim> &system, Observer<Scalar, XDim> &observer, const Vector<Scalar, XDim> &initialState, const Scalar startTime, const Scalar finalTime, const Scalar dt) = 0;
 };

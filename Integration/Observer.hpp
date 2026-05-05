@@ -9,9 +9,9 @@
 /**
  * @brief 观测器：将积分器输出的 (time, state) 依次写入外部提供的时间与状态数组。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
+ * @tparam XDim 状态维度。
  */
-template <typename Scalar, int XDimisions>
+template <typename Scalar, int XDim>
 class Observer
 {
 public:
@@ -21,7 +21,7 @@ public:
    * @param [in] stateTrajectoryPtr 状态轨迹缓冲区指针。
    * @param [in] timeTrajectoryPtr 时间轨迹缓冲区指针。
    */
-  explicit Observer(int length, Vector<Scalar, XDimisions>* stateTrajectoryPtr = nullptr, Scalar* timeTrajectoryPtr = nullptr)
+  explicit Observer(int length, Vector<Scalar, XDim>* stateTrajectoryPtr = nullptr, Scalar* timeTrajectoryPtr = nullptr)
     : stateTrajectoryPtr_(stateTrajectoryPtr), timeTrajectoryPtr_(timeTrajectoryPtr), length_(length) {
   };
 
@@ -33,7 +33,7 @@ public:
    * @param [in] state 当前状态。
    * @param [in] time 当前时间。
    */
-  void observe(const Vector<Scalar, XDimisions>& state, const Scalar time)
+  void observe(const Vector<Scalar, XDim>& state, const Scalar time)
   {
     if (now_ >= length_)
       return;
@@ -58,7 +58,7 @@ public:
   }
 
 private:
-  Vector<Scalar, XDimisions>* stateTrajectoryPtr_;
+  Vector<Scalar, XDim>* stateTrajectoryPtr_;
   Scalar* timeTrajectoryPtr_;
   int length_;
   int now_{ 0 };

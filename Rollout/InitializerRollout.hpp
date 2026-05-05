@@ -39,15 +39,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @brief 基于初始化器的 rollout：在 [initTime, finalTime] 上按固定步长调用 initializer，填充时间/状态/输入轨迹。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
-class InitializerRollout : RolloutBase<Scalar, XDimisions, UDimisions>
+template <typename Scalar, int XDim, int UDim>
+class InitializerRollout : RolloutBase<Scalar, XDim, UDim>
 {
 public:
-  using Initializer_t = Initializer<Scalar, XDimisions, UDimisions>;
-  using RolloutTrajectoryPointer_t = typename RolloutBase<Scalar, XDimisions, UDimisions>::RolloutTrajectoryPointer_t;
+  using Initializer_t = Initializer<Scalar, XDim, UDim>;
+  using RolloutTrajectoryPointer_t = typename RolloutBase<Scalar, XDim, UDim>::RolloutTrajectoryPointer_t;
   /**
    * @brief 构造：绑定初始化器与步长。
    * @param [in] initializer 用于生成状态与输入的初始化器。
@@ -69,7 +69,7 @@ public:
    * @param [in,out] trajectory 输出轨迹。
    * @return 步数（写入点数减 1）。
    */
-  int run(const Scalar initTime, const Vector<Scalar, XDimisions> &initState, const Scalar finalTime, ControllerBase<Scalar, XDimisions, UDimisions> *controller,
+  int run(const Scalar initTime, const Vector<Scalar, XDim> &initState, const Scalar finalTime, ControllerBase<Scalar, XDim, UDim> *controller,
           RolloutTrajectoryPointer_t &trajectory) override
   {
     assert(finalTime > initTime);
@@ -80,8 +80,8 @@ public:
     Scalar t = initTime;
     const Scalar timeStep = this->settings().timeStep;
 
-    Vector<Scalar, XDimisions> state = initState;
-    Vector<Scalar, XDimisions> nextState;
+    Vector<Scalar, XDim> state = initState;
+    Vector<Scalar, XDim> nextState;
 
     const size_t numSteps = (finalTimeLocal - initTime) / timeStep;
 

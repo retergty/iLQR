@@ -9,29 +9,29 @@
 /**
  * @brief 标量函数二次近似：f = 1/2 dx' dfdxx dx + du' dfdux dx + 1/2 du' dfduu du + dfdx' dx + dfdu' du + f。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 输入维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
+template <typename Scalar, int XDim, int UDim>
 struct ScalarFunctionQuadraticApproximation
 {
   /** @brief 对状态的二阶导数（Hessian）。 */
-  Matrix<Scalar, XDimisions, XDimisions> dfdxx;
+  Matrix<Scalar, XDim, XDim> dfdxx;
   /** @brief 对输入-状态的混合二阶导数。 */
-  Matrix<Scalar, UDimisions, XDimisions> dfdux;
+  Matrix<Scalar, UDim, XDim> dfdux;
   /** @brief 对输入的二阶导数。 */
-  Matrix<Scalar, UDimisions, UDimisions> dfduu;
+  Matrix<Scalar, UDim, UDim> dfduu;
   /** @brief 对状态的一阶导数。 */
-  Vector<Scalar, XDimisions> dfdx;
+  Vector<Scalar, XDim> dfdx;
   /** @brief 对输入的一阶导数。 */
-  Vector<Scalar, UDimisions> dfdu;
+  Vector<Scalar, UDim> dfdu;
   /** @brief 常数项。 */
   Scalar f{ 0 };
 
   /** @brief 默认构造。 */
   ScalarFunctionQuadraticApproximation() = default;
 
-  ScalarFunctionQuadraticApproximation(const ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>& rhs) : dfdxx(rhs.dfdxx), dfdx(rhs.dfdx), f(rhs.f)
+  ScalarFunctionQuadraticApproximation(const ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& rhs) : dfdxx(rhs.dfdxx), dfdx(rhs.dfdx), f(rhs.f)
   {
     dfdux.setZero();
     dfduu.setZero();
@@ -87,13 +87,13 @@ struct ScalarFunctionQuadraticApproximation
 };
 
 /** @brief 无输入时的标量函数二次近似特化（仅 dfdxx、dfdx、f）。 */
-template <typename Scalar, int XDimisions>
-struct ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>
+template <typename Scalar, int XDim>
+struct ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
 {
   /** @brief 对状态的二阶导数。 */
-  Matrix<Scalar, XDimisions, XDimisions> dfdxx;
+  Matrix<Scalar, XDim, XDim> dfdxx;
   /** @brief 对状态的一阶导数。 */
-  Vector<Scalar, XDimisions> dfdx;
+  Vector<Scalar, XDim> dfdx;
   /** @brief 常数项。 */
   Scalar f{ 0 };
 
@@ -139,17 +139,17 @@ struct ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>
   }
 };
 
-template <typename Scalar, int XDimisions, int UDimisions>
-inline ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> operator*(ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> lhs, Scalar scalar) {
+template <typename Scalar, int XDim, int UDim>
+inline ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> operator*(ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> lhs, Scalar scalar) {
   return lhs *= scalar;
 }
-template <typename Scalar, int XDimisions, int UDimisions>
-inline ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> operator*(Scalar scalar, ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> rhs) {
+template <typename Scalar, int XDim, int UDim>
+inline ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> operator*(Scalar scalar, ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> rhs) {
   return rhs *= scalar;
 }
 
-template<typename Scalar, int XDimisions, int UDimisions>
-ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>& operator+=(ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>& lhs, ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>& rhs)
+template<typename Scalar, int XDim, int UDim>
+ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& operator+=(ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& lhs, ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& rhs)
 {
   lhs.f += rhs.f;
   lhs.dfdx += rhs.dfdx;

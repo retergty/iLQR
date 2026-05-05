@@ -10,10 +10,10 @@
 /**
  * @brief 仅状态代价项集合：对多个 StateCost 求和得到总代价与总二次近似。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
+ * @tparam XDim 状态维度。
  * @tparam ArrayLength 轨迹长度。
  */
-template <typename Scalar, int XDimisions, int ArrayLength>
+template <typename Scalar, int XDim, int ArrayLength>
 class StateCostCollection
 {
 public:
@@ -21,7 +21,7 @@ public:
   virtual ~StateCostCollection() = default;
 
   /** @brief 获取仅状态总代价值。 */
-  Scalar getValue(Scalar time, const Vector<Scalar, XDimisions> &state, const std::array<Scalar, ArrayLength> &timeTrajectories, const std::array<Vector<Scalar, XDimisions>, ArrayLength> &stateTrajectoies) const
+  Scalar getValue(Scalar time, const Vector<Scalar, XDim> &state, const std::array<Scalar, ArrayLength> &timeTrajectories, const std::array<Vector<Scalar, XDim>, ArrayLength> &stateTrajectoies) const
   {
     Scalar cost = 0;
     for (auto it = list_.begin(); it != list_.end(); ++it)
@@ -32,10 +32,10 @@ public:
   }
 
   /** @brief 获取仅状态总代价的二次近似。 */
-  ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>
-  getQuadraticApproximation(Scalar time, const Vector<Scalar, XDimisions> &state, const std::array<Scalar, ArrayLength> &timeTrajectories, const std::array<Vector<Scalar, XDimisions>, ArrayLength> &stateTrajectoies) const
+  ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
+  getQuadraticApproximation(Scalar time, const Vector<Scalar, XDim> &state, const std::array<Scalar, ArrayLength> &timeTrajectories, const std::array<Vector<Scalar, XDim>, ArrayLength> &stateTrajectoies) const
   {
-    ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> cost_appro;
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> cost_appro;
     cost_appro.setZero();
     for (auto it = list_.begin(); it != list_.end(); ++it)
     {
@@ -45,23 +45,23 @@ public:
   }
 
   /** @brief 在链表末尾添加代价项。 */
-  void add(StateCost<Scalar, XDimisions, ArrayLength> &cost)
+  void add(StateCost<Scalar, XDim, ArrayLength> &cost)
   {
     list_.insert(list_.end(), cost);
   }
 
 private:
-  IntrusiveList<StateCost<Scalar, XDimisions, ArrayLength>> list_;
+  IntrusiveList<StateCost<Scalar, XDim, ArrayLength>> list_;
 };
 
 /**
  * @brief 状态-输入代价项集合：对多个 StateInputCost 求和得到总代价与总二次近似。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 输入维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  * @tparam ArrayLength 轨迹长度。
  */
-template <typename Scalar, int XDimisions, int UDimisions, int ArrayLength>
+template <typename Scalar, int XDim, int UDim, int ArrayLength>
 class StateInputCostCollection
 {
 public:
@@ -70,8 +70,8 @@ public:
 
   /** Get state-input cost value */
   Scalar getValue(
-      Scalar time, const Vector<Scalar, XDimisions> &state, const Vector<Scalar, UDimisions> &input,
-      const std::array<Scalar, ArrayLength> &timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength> &stateTrajectoy, const std::array<Vector<Scalar, UDimisions>, ArrayLength> &inputTrajectory) const
+      Scalar time, const Vector<Scalar, XDim> &state, const Vector<Scalar, UDim> &input,
+      const std::array<Scalar, ArrayLength> &timeTrajectory, const std::array<Vector<Scalar, XDim>, ArrayLength> &stateTrajectoy, const std::array<Vector<Scalar, UDim>, ArrayLength> &inputTrajectory) const
   {
     Scalar cost = 0;
     for (auto it = list_.begin(); it != list_.end(); ++it)
@@ -82,11 +82,11 @@ public:
   }
 
   /** Get state-input cost quadratic approximation */
-  ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>
-  getQuadraticApproximation(Scalar time, const Vector<Scalar, XDimisions> &state, const Vector<Scalar, UDimisions> &input,
-                            const std::array<Scalar, ArrayLength> &timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength> &stateTrajectoy, const std::array<Vector<Scalar, UDimisions>, ArrayLength> &inputTrajectory) const
+  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
+  getQuadraticApproximation(Scalar time, const Vector<Scalar, XDim> &state, const Vector<Scalar, UDim> &input,
+                            const std::array<Scalar, ArrayLength> &timeTrajectory, const std::array<Vector<Scalar, XDim>, ArrayLength> &stateTrajectoy, const std::array<Vector<Scalar, UDim>, ArrayLength> &inputTrajectory) const
   {
-    ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> cost_appro;
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost_appro;
     cost_appro.setZero();
     for (auto it = list_.begin(); it != list_.end(); ++it)
     {
@@ -96,11 +96,11 @@ public:
   }
 
   // add cost to list end
-  void add(StateInputCost<Scalar, XDimisions, UDimisions, ArrayLength> &cost)
+  void add(StateInputCost<Scalar, XDim, UDim, ArrayLength> &cost)
   {
     list_.insert(list_.end(), cost);
   }
 
 private:
-  IntrusiveList<StateInputCost<Scalar, XDimisions, UDimisions, ArrayLength>> list_;
+  IntrusiveList<StateInputCost<Scalar, XDim, UDim, ArrayLength>> list_;
 };

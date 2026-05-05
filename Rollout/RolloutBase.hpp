@@ -33,31 +33,31 @@ struct RolloutSettings
 /**
  * @brief 指向轨迹缓冲区的轻量句柄：时间/状态/输入指针及最大长度。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
+template <typename Scalar, int XDim, int UDim>
 struct RolloutTrajectoryPointer
 {
   /** @brief 构造：绑定时间、状态、输入数组指针及最大写入长度。 */
-  RolloutTrajectoryPointer(Scalar* time_trajectory, Vector<Scalar, XDimisions>* state_trajectory, Vector<Scalar, UDimisions>* input_trajectory, int max_length)
+  RolloutTrajectoryPointer(Scalar* time_trajectory, Vector<Scalar, XDim>* state_trajectory, Vector<Scalar, UDim>* input_trajectory, int max_length)
     : timeTrajectory(time_trajectory), stateTrajectory(state_trajectory), inputTrajectory(input_trajectory), maxLength(max_length)
   {
   };
   Scalar* timeTrajectory;
-  Vector<Scalar, XDimisions>* stateTrajectory;
-  Vector<Scalar, UDimisions>* inputTrajectory;
+  Vector<Scalar, XDim>* stateTrajectory;
+  Vector<Scalar, UDim>* inputTrajectory;
   size_t maxLength;
 };
 
 /**
  * @brief 前向 rollout 抽象基类：用给定控制器与初态在 [initTime, finalTime] 上积分动力学，结果写入 trajectory。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
+template <typename Scalar, int XDim, int UDim>
 class RolloutBase
 {
 public:
-  using RolloutTrajectoryPointer_t = RolloutTrajectoryPointer<Scalar, XDimisions, UDimisions>;
+  using RolloutTrajectoryPointer_t = RolloutTrajectoryPointer<Scalar, XDim, UDim>;
   /** @brief 默认构造。 */
   explicit RolloutBase() {}
 
@@ -76,7 +76,7 @@ public:
    * @param [in,out] trajectory 轨迹输出（时间/状态/输入指针及最大长度）。
    * @return 写入的轨迹点数。
    */
-  virtual int run(const Scalar initTime, const Vector<Scalar, XDimisions>& initState, const Scalar finalTime, ControllerBase<Scalar, XDimisions, UDimisions>* controller,
+  virtual int run(const Scalar initTime, const Vector<Scalar, XDim>& initState, const Scalar finalTime, ControllerBase<Scalar, XDim, UDim>* controller,
     RolloutTrajectoryPointer_t& trajectory) = 0;
 
   // /**
@@ -92,8 +92,8 @@ public:
   //  * @param [out] inputTrajectory: The control input trajectory.
   //  * @return the final time
   //  */
-  // virtual int run(const Scalar initTime, const Vector<Scalar, XDimisions>& initState, const int steps, ControllerBase<Scalar, XDimisions, UDimisions>& controller,
-  //   std::array<Scalar, ArrayLen>& timeTrajectory, std::array<Vector<Scalar, XDimisions>, ArrayLen>& stateTrajectory, std::array<Vector<Scalar, UDimisions>, ArrayLen>& inputTrajectory) = 0;
+  // virtual int run(const Scalar initTime, const Vector<Scalar, XDim>& initState, const int steps, ControllerBase<Scalar, XDim, UDim>& controller,
+  //   std::array<Scalar, ArrayLen>& timeTrajectory, std::array<Vector<Scalar, XDim>, ArrayLen>& stateTrajectory, std::array<Vector<Scalar, UDim>, ArrayLen>& inputTrajectory) = 0;
 
 protected:
   RolloutSettings<Scalar> rolloutSettings_{};

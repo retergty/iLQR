@@ -9,12 +9,12 @@
 /**
  * @brief 线性控制器，形式为 u[x,t] = k[t]*x + uff[t]，时间戳与增益/偏置为数组。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  * @tparam ArrayLen 时间节点数（时间戳与增益/偏置数组长度）。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t ArrayLen>
-class LinearController final : public ControllerBase<Scalar, XDimisions, UDimisions>
+template <typename Scalar, int XDim, int UDim, size_t ArrayLen>
+class LinearController final : public ControllerBase<Scalar, XDim, UDim>
 {
 public:
   /** @brief 默认构造，成员未初始化。 */
@@ -28,8 +28,8 @@ public:
    */
   LinearController(
       const std::array<Scalar, ArrayLen> &controllerTime,
-      const std::array<Vector<Scalar, UDimisions>, ArrayLen> &controllerBias,
-      const std::array<Matrix<Scalar, UDimisions, XDimisions>, ArrayLen> &controllerGain)
+      const std::array<Vector<Scalar, UDim>, ArrayLen> &controllerBias,
+      const std::array<Matrix<Scalar, UDim, XDim>, ArrayLen> &controllerGain)
       : timeStamp_(controllerTime), biasArray_(controllerBias), gainArray_(controllerGain)
   {
   }
@@ -62,8 +62,8 @@ public:
    */
   void setController(
       const std::array<Scalar, ArrayLen> &controllerTime,
-      const std::array<Vector<Scalar, UDimisions>, ArrayLen> &controllerBias,
-      const std::array<Matrix<Scalar, UDimisions, XDimisions>, ArrayLen> &controllerGain)
+      const std::array<Vector<Scalar, UDim>, ArrayLen> &controllerBias,
+      const std::array<Matrix<Scalar, UDim, XDim>, ArrayLen> &controllerGain)
   {
     timeStamp_ = controllerTime;
     biasArray_ = controllerBias;
@@ -71,23 +71,23 @@ public:
   }
 
   /** @brief 按时间 t 与状态 x 计算控制：先时间插值得到 K 与 uff，再 u = uff + K*x。 */
-  Vector<Scalar, UDimisions> computeInput(Scalar t, const Vector<Scalar, XDimisions> &x) const override
+  Vector<Scalar, UDim> computeInput(Scalar t, const Vector<Scalar, XDim> &x) const override
   {
     const std::pair<int, Scalar> indexAlpha = LinearInterpolation::timeSegment(t, timeStamp_);
 
-    Vector<Scalar, UDimisions> uff = LinearInterpolation::interpolate(indexAlpha, biasArray_);
-    const Matrix<Scalar, UDimisions, XDimisions> k = LinearInterpolation::interpolate(indexAlpha, gainArray_);
+    Vector<Scalar, UDim> uff = LinearInterpolation::interpolate(indexAlpha, biasArray_);
+    const Matrix<Scalar, UDim, XDim> k = LinearInterpolation::interpolate(indexAlpha, gainArray_);
 
     uff.noalias() += k * x;
     return uff;
   }
 
   /** @brief 按离散时间索引与状态计算控制（无插值）。 */
-  Vector<Scalar, UDimisions> computeInput(size_t time_index, const Vector<Scalar, XDimisions> &x) const override
+  Vector<Scalar, UDim> computeInput(size_t time_index, const Vector<Scalar, XDim> &x) const override
   {
     assert(time_index < ArrayLen);
-    Vector<Scalar, UDimisions> uff = biasArray_[time_index];
-    const Matrix<Scalar, UDimisions, XDimisions> &k = gainArray_[time_index];
+    Vector<Scalar, UDim> uff = biasArray_[time_index];
+    const Matrix<Scalar, UDim, XDim> &k = gainArray_[time_index];
 
     uff += k * x;
     return uff;
@@ -142,7 +142,7 @@ public:
 
 public:
   std::array<Scalar, ArrayLen> timeStamp_;
-  std::array<Vector<Scalar, UDimisions>, ArrayLen> biasArray_;
-  std::array<Vector<Scalar, UDimisions>, ArrayLen> deltaBiasArray_;
-  std::array<Matrix<Scalar, UDimisions, XDimisions>, ArrayLen> gainArray_;
+  std::array<Vector<Scalar, UDim>, ArrayLen> biasArray_;
+  std::array<Vector<Scalar, UDim>, ArrayLen> deltaBiasArray_;
+  std::array<Matrix<Scalar, UDim, XDim>, ArrayLen> gainArray_;
 };

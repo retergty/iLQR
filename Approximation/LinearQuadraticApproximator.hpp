@@ -44,27 +44,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @brief 在给定名义轨迹与对偶解下，对 OCP 做 LQ 近似，填充中间/终端 ModelData 与可选的 Metrics。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 输入维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  * @tparam PredictLength 预测步数。
  * @tparam StateEqLagrangianConstrains 等 各约束维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqLagrangianConstrains, int StateIneqLagrangianConstrains, int StateInputEqLagrangianConstrains, int StateInputIneqLagrangianConstrains,
           int FinalStateEqLagrangianConstrains, int FinalStateIneqFinalLagrangianConstrains>
 struct LinearQuadraticApproximator
 {
-  using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqLagrangianConstrains, StateInputEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputIneqLagrangianConstrains, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains>;
-  using StateVector_t = Vector<Scalar, XDimisions>;
-  using InputVector_t = Vector<Scalar, UDimisions>;
-  using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
+  using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrains, StateInputEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputIneqLagrangianConstrains, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains>;
+  using StateVector_t = Vector<Scalar, XDim>;
+  using InputVector_t = Vector<Scalar, UDim>;
+  using ModelData_t = ModelData<Scalar, XDim, UDim>;
   using IntermediateMultiplierCollection_t = MultiplierCollection<Scalar, StateEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains, StateInputIneqLagrangianConstrains>;
   using FinalMultiplierCollection_t = MultiplierCollection<Scalar, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains, 0, 0>;
-  using IntermediateMetrics_t = Metrics<Scalar, XDimisions, UDimisions, StateEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains, StateInputIneqLagrangianConstrains>;
-  using FinalMetrics_t = Metrics<Scalar, XDimisions, UDimisions, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains, 0, 0>;
+  using IntermediateMetrics_t = Metrics<Scalar, XDim, UDim, StateEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains, StateInputIneqLagrangianConstrains>;
+  using FinalMetrics_t = Metrics<Scalar, XDim, UDim, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains, 0, 0>;
   using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
-  using StateTrajectory_t = std::array<Vector<Scalar, XDimisions>, PredictLength + 1>;
-  using InputTrajectory_t = std::array<Vector<Scalar, UDimisions>, PredictLength + 1>;
+  using StateTrajectory_t = std::array<Vector<Scalar, XDim>, PredictLength + 1>;
+  using InputTrajectory_t = std::array<Vector<Scalar, UDim>, PredictLength + 1>;
 
   /**
    * Calculates an LQ approximate of the constrained optimal control problem at a given time, state, and input.
@@ -88,14 +88,14 @@ struct LinearQuadraticApproximator
     // Lagrangians
     if constexpr (StateEqLagrangianConstrains != 0)
     {
-      ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> approx = problem.stateEqualityLagrangian.getQuadraticApproximation(time, state, multipliers.stateEq);
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx = problem.stateEqualityLagrangian.getQuadraticApproximation(time, state, multipliers.stateEq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
     if constexpr (StateIneqLagrangianConstrains != 0)
     {
-      ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> approx = problem.stateInequalityLagrangian.getQuadraticApproximation(time, state, multipliers.stateIneq);
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx = problem.stateInequalityLagrangian.getQuadraticApproximation(time, state, multipliers.stateIneq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
@@ -125,7 +125,7 @@ struct LinearQuadraticApproximator
   static inline ModelData_t approximateIntermediateLQ(const OptimalControlProblem_t &problem, const Scalar time, const StateVector_t &state, const InputVector_t &input,
                                                       const IntermediateMultiplierCollection_t &multipliers)
   {
-    ModelData<Scalar, XDimisions, UDimisions> md;
+    ModelData<Scalar, XDim, UDim> md;
     approximateIntermediateLQ(problem, time, state, input, multipliers, md);
     return md;
   }
@@ -145,7 +145,7 @@ struct LinearQuadraticApproximator
   {
     modelData.time = time;
 
-    VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> finalDynamics;
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> finalDynamics;
     finalDynamics.setZero();
 
     // Dynamics
@@ -209,7 +209,7 @@ struct LinearQuadraticApproximator
    * Compute the quadratic approximation of the total intermediate cost (i.e. cost + softConstraints). It is assumed that the precomputation
    * request is already made.
    */
-  static ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>
+  static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   approximateCost(const OptimalControlProblem_t &problem,
                   const Scalar time, const StateVector_t &state, const InputVector_t &input)
   {
@@ -218,7 +218,7 @@ struct LinearQuadraticApproximator
     const InputTrajectory_t &targetInputTrajectories = problem.inputTrajectory;
 
     // get the state-input cost approximations
-    ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> cost = problem.cost.getQuadraticApproximation(time, state, input, targetTimeTrajectories, targetStateTrajectories, targetInputTrajectories);
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost = problem.cost.getQuadraticApproximation(time, state, input, targetTimeTrajectories, targetStateTrajectories, targetInputTrajectories);
 
     // get the state only cost approximations
     cost += problem.stateCost.getQuadraticApproximation(time, state, targetTimeTrajectories, targetStateTrajectories);
@@ -244,14 +244,14 @@ struct LinearQuadraticApproximator
    * Compute the quadratic approximation of the total final cost (i.e. cost + softConstraints). It is assumed that the precomputation
    * request is already made.
    */
-  static ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>
+  static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   approximateFinalCost(const OptimalControlProblem_t &problem,
                        const Scalar time, const StateVector_t &state)
   {
     const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
     const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
 
-    ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> cost = problem.finalCost.getQuadraticApproximation(time, state, targetTimeTrajectories, targetStateTrajectories);
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost = problem.finalCost.getQuadraticApproximation(time, state, targetTimeTrajectories, targetStateTrajectories);
 
     return cost;
   }

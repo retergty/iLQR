@@ -9,11 +9,11 @@
 /**
  * @brief 原始问题解：一条 rollout 的时间、状态、输入轨迹及对应的线性控制器。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  * @tparam PredictLength 预测步数（轨迹点数为 PredictLength+1）。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength>
+template <typename Scalar, int XDim, int UDim, size_t PredictLength>
 struct PrimalSolution
 {
   /** @brief 默认构造。 */
@@ -71,9 +71,9 @@ struct PrimalSolution
   /** @brief 时间序列，长度 PredictLength+1。 */
   std::array<Scalar, PredictLength + 1> timeTrajectory_;
   /** @brief 状态轨迹。 */
-  std::array<Vector<Scalar, XDimisions>, PredictLength + 1> stateTrajectory_;
+  std::array<Vector<Scalar, XDim>, PredictLength + 1> stateTrajectory_;
   /** @brief 输入轨迹。 */
-  std::array<Vector<Scalar, UDimisions>, PredictLength + 1> inputTrajectory_;
+  std::array<Vector<Scalar, UDim>, PredictLength + 1> inputTrajectory_;
   /** @brief 线性控制器（时间戳与增益/偏置数组）。 */
-  LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1> controller_;
+  LinearController<Scalar, XDim, UDim, PredictLength + 1> controller_;
 };

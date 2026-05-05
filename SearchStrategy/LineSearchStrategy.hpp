@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <functional>
 #include "NumericTraits.hpp"
 
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
 class iLQR;
@@ -46,26 +46,26 @@ class iLQR;
 /**
  * @brief 线搜索策略：用未优化控制器做 rollout，在步长上做 Armijo 回溯，选取满足下降条件的最大步长并写回解。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
-class LineSearchStrategy final : public SearchStrategyBase<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
+class LineSearchStrategy final : public SearchStrategyBase<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
                                                            FinalStateEqConstrains, FinalStateIneqConstrains>
 {
 public:
-  using iLQR_t = iLQR<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-  using RolloutBase_t = RolloutBase<Scalar, XDimisions, UDimisions>;
-  using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using iLQR_t = iLQR<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using RolloutBase_t = RolloutBase<Scalar, XDim, UDim>;
+  using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
   using PerformanceIndex_t = PerformanceIndex<Scalar>;
   using DualSolution_t = DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
-  using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-  using StateVector_t = Vector<Scalar, XDimisions>;
-  using InputVector_t = Vector<Scalar, UDimisions>;
-  using LinearController_t = LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1>;
-  using SearchStrategyBase_t = SearchStrategyBase<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
+  using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using StateVector_t = Vector<Scalar, XDim>;
+  using InputVector_t = Vector<Scalar, UDim>;
+  using LinearController_t = LinearController<Scalar, XDim, UDim, PredictLength + 1>;
+  using SearchStrategyBase_t = SearchStrategyBase<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
                                                   FinalStateEqConstrains, FinalStateIneqConstrains>;
-  using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
+  using ModelData_t = ModelData<Scalar, XDim, UDim>;
 
   /** @brief 构造线搜索策略，绑定 iLQR 实例（用于 rollout、merit 等）。 */
   LineSearchStrategy(iLQR_t &ilqr) : ilqr_(ilqr)
@@ -145,7 +145,7 @@ public:
    * @param [in] projectedModelData 投影后模型数据（当前未使用）。
    * @param [out] deltaQm 输出的 Riccati 修正矩阵（被设为 shift 后的零矩阵）。
    */
-  void computeRiccatiModification(const ModelData_t &projectedModelData, Matrix<Scalar, XDimisions, XDimisions> &deltaQm) const override
+  void computeRiccatiModification(const ModelData_t &projectedModelData, Matrix<Scalar, XDim, XDim> &deltaQm) const override
   {
     // const auto &QmProjected = projectedModelData.cost.dfdxx;
     // const auto &PmProjected = projectedModelData.cost.dfdux;
@@ -163,7 +163,7 @@ public:
   }
 
   /** @brief 对哈密顿量 Hessian 的额外修正；当前实现直接返回 Hm，不做修改。 */
-  Matrix<Scalar, UDimisions, UDimisions> augmentHamiltonianHessian(const ModelData_t & /*modelData*/, const Matrix<Scalar, UDimisions, UDimisions> &Hm) const override { return Hm; }
+  Matrix<Scalar, UDim, UDim> augmentHamiltonianHessian(const ModelData_t & /*modelData*/, const Matrix<Scalar, UDim, UDim> &Hm) const override { return Hm; }
 
 private:
   struct LineSearchInputRef

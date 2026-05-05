@@ -42,9 +42,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @param [in,out] quadraticApproximation 待变换的二次近似（原地修改）。
  * @param [in] Pu 定义 δũ 范围的矩阵（m×p）。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
-void changeOfInputVariables(ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> &quadraticApproximation,
-                            const Matrix<Scalar, UDimisions, UDimisions> &Pu)
+template <typename Scalar, int XDim, int UDim>
+void changeOfInputVariables(ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> &quadraticApproximation,
+                            const Matrix<Scalar, UDim, UDim> &Pu)
 {
   // P = Pu'*P
   quadraticApproximation.dfdux = Pu.transpose() * quadraticApproximation.dfdux;
@@ -57,8 +57,8 @@ void changeOfInputVariables(ScalarFunctionQuadraticApproximation<Scalar, XDimisi
 }
 
 /** Applies the change of input variables to a linear system */
-template <typename Scalar, int FDimisions, int XDimisions, int UDimisions>
-void changeOfInputVariables(VectorFunctionLinearApproximation<Scalar, FDimisions, XDimisions, UDimisions> &linearApproximation, const Matrix<Scalar, UDimisions, UDimisions> &Pu)
+template <typename Scalar, int FDimisions, int XDim, int UDim>
+void changeOfInputVariables(VectorFunctionLinearApproximation<Scalar, FDimisions, XDim, UDim> &linearApproximation, const Matrix<Scalar, UDim, UDim> &Pu)
 {
   // B = B*Pu
   linearApproximation.dfdu = linearApproximation.dfdu * Pu; // temporary matrix unavoidable

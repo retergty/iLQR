@@ -139,8 +139,8 @@ void swap(PerformanceIndex<Scalar>& lhs, PerformanceIndex<Scalar>& rhs)
  * @param [in] m 该时刻的 Metrics。
  * @return 填充 cost、dynamicsViolationSSE、equalityLagrangian、inequalityLagrangian 等的 PerformanceIndex。
  */
-template <typename Scalar, int XDimisions, int UDimisions, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains>
-PerformanceIndex<Scalar> toPerformanceIndex(const Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>& m)
+template <typename Scalar, int XDim, int UDim, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains>
+PerformanceIndex<Scalar> toPerformanceIndex(const Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>& m)
 {
   PerformanceIndex<Scalar> performanceIndex;
   performanceIndex.merit = 0.0;  // left for the solver to fill
@@ -158,8 +158,8 @@ PerformanceIndex<Scalar> toPerformanceIndex(const Metrics<Scalar, XDimisions, UD
  * @param [in] dt 时间步长。
  * @return 乘以 dt 后的 PerformanceIndex（cost 已在 computeIntermediateMetrics 中考虑）。
  */
-template <typename Scalar, int XDimisions, int UDimisions, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains>
-PerformanceIndex<Scalar> toPerformanceIndex(const Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>& m, const Scalar dt)
+template <typename Scalar, int XDim, int UDim, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains>
+PerformanceIndex<Scalar> toPerformanceIndex(const Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>& m, const Scalar dt)
 {
   auto performanceIndex = toPerformanceIndex(m);
   performanceIndex.dualFeasibilitiesSSE *= dt;

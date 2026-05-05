@@ -38,11 +38,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @brief 基于工作点的初始化器：输出恒为给定状态工作点与输入工作点，nextState 为状态工作点。
  * @tparam Scalar 标量类型。
- * @tparam XDimision 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  */
-template<typename Scalar, int XDimision, int UDimisions>
-class OperatingPoints final : public Initializer<Scalar, XDimision, UDimisions>
+template<typename Scalar, int XDim, int UDim>
+class OperatingPoints final : public Initializer<Scalar, XDim, UDim>
 {
 public:
   /**
@@ -50,7 +50,7 @@ public:
    * @param [in] stateOperatingPoint 状态工作点。
    * @param [in] inputOperatingPoint 输入工作点。
    */
-  OperatingPoints(const Vector<Scalar, XDimision>& stateOperatingPoint, const Vector<Scalar, UDimisions>& inputOperatingPoint)
+  OperatingPoints(const Vector<Scalar, XDim>& stateOperatingPoint, const Vector<Scalar, UDim>& inputOperatingPoint)
     : stateTrajectory_(stateOperatingPoint), inputTrajectory_(inputOperatingPoint) {
   }
 
@@ -58,7 +58,7 @@ public:
   ~OperatingPoints() override = default;
 
   /** @brief 将 input 设为输入工作点，nextState 设为状态工作点。 */
-  void compute(const Scalar time, const Vector<Scalar, XDimision>& state, const Scalar nextTime, Vector<Scalar, UDimisions>& input, Vector<Scalar, XDimision>& nextState) override {
+  void compute(const Scalar time, const Vector<Scalar, XDim>& state, const Scalar nextTime, Vector<Scalar, UDim>& input, Vector<Scalar, XDim>& nextState) override {
     input = inputTrajectory_;
     nextState = stateTrajectory_;
   }
@@ -68,7 +68,7 @@ private:
   OperatingPoints(const OperatingPoints& other) = default;
 
   /** @brief 状态工作点。 */
-  const Vector<Scalar, XDimision> stateTrajectory_;
+  const Vector<Scalar, XDim> stateTrajectory_;
   /** @brief 输入工作点。 */
-  const Vector<Scalar, UDimisions> inputTrajectory_;
+  const Vector<Scalar, UDim> inputTrajectory_;
 };

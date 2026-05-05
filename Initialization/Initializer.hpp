@@ -38,10 +38,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @brief 求解器在无控制器可用时使用的初始化器接口；简单实现见 DefaultInitializer。
  * @tparam Scalar 标量类型。
- * @tparam XDimision 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  */
-template<typename Scalar, int XDimision, int UDimisions>
+template<typename Scalar, int XDim, int UDim>
 class Initializer
 {
 public:
@@ -56,7 +56,7 @@ public:
    * @param [out] input 当前段的输入。
    * @param [out] nextState 下一时刻的状态。
    */
-  virtual void compute(const Scalar time, const Vector<Scalar, XDimision>& state, const Scalar nextTime, Vector<Scalar, UDimisions>& input, Vector<Scalar, XDimision>& nextState) = 0;
+  virtual void compute(const Scalar time, const Vector<Scalar, XDim>& state, const Scalar nextTime, Vector<Scalar, UDim>& input, Vector<Scalar, XDim>& nextState) = 0;
 
 protected:
   /** @brief 拷贝构造（保护）。 */

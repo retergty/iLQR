@@ -45,10 +45,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @brief 单约束惩罚封装：取值、二次近似与乘子初始化/更新，均委托 penalty_ptr_。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 输入维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  */
-template<typename Scalar, int XDimisions, int UDimisions>
+template<typename Scalar, int XDim, int UDim>
 class Penalty final
 {
 public:
@@ -80,21 +80,21 @@ public:
    * @param [in] l 拉格朗日乘子。
    * @return 惩罚的二次近似。
    */
-  ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> getQuadraticApproximation(const Scalar t, const ScalarFunctionLinearApproximation<Scalar, XDimisions, UDimisions>& h, const Scalar l) const
+  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> getQuadraticApproximation(const Scalar t, const ScalarFunctionLinearApproximation<Scalar, XDim, UDim>& h, const Scalar l) const
   {
     Scalar penaltyValue = 0.0;
     Scalar penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) = getPenaltyValue1stDev2ndDev(t, h.f, l);
-    const Vector<Scalar, XDimisions> penaltySecondDev_dhdx = penaltySecondDerivative * h.dfdx;
+    const Vector<Scalar, XDim> penaltySecondDev_dhdx = penaltySecondDerivative * h.dfdx;
 
     // to make sure that dfdux in the state-only case has a right size
-    ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> penaltyApproximation;
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> penaltyApproximation;
 
     penaltyApproximation.f = penaltyValue;
     penaltyApproximation.dfdx = h.dfdx * penaltyDerivative;
     penaltyApproximation.dfdxx = h.dfdx * penaltySecondDev_dhdx.transpose();
 
-    if constexpr (UDimisions > 0)
+    if constexpr (UDim > 0)
     {
       penaltyApproximation.dfdu = h.dfdu * penaltyDerivative;
       penaltyApproximation.dfdux = h.dfdu * penaltySecondDev_dhdx.transpose();
@@ -111,7 +111,7 @@ public:
    * @param [in] l 拉格朗日乘子。
    * @return 惩罚的二次近似。
    */
-  ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> getQuadraticApproximation(Scalar t, const ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>& h,
+  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> getQuadraticApproximation(Scalar t, const ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& h,
     const Scalar l) const
   {
     const auto stateDim = h.dfdx.cols();
@@ -121,10 +121,10 @@ public:
     Scalar penaltyValue = 0.0;
     Scalar penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) = getPenaltyValue1stDev2ndDev(t, h.f, l);
-    const Vector<Scalar, XDimisions> penaltySecondDev_dhdx = penaltySecondDerivative * h.dfdx;
+    const Vector<Scalar, XDim> penaltySecondDev_dhdx = penaltySecondDerivative * h.dfdx;
 
     // to make sure that dfdux in the state-only case has a right size
-    ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> penaltyApproximation;
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> penaltyApproximation;
 
     penaltyApproximation.f = penaltyValue;
     penaltyApproximation.dfdx = h.dfdx * penaltyDerivative;
@@ -132,7 +132,7 @@ public:
 
     penaltyApproximation.dfdxx += penaltyDerivative * h.dfdxx;
 
-    if constexpr (UDimisions > 0) {
+    if constexpr (UDim > 0) {
       penaltyApproximation.dfdu = h.dfdu * penaltyDerivative;
       penaltyApproximation.dfdux = h.dfdu * penaltySecondDev_dhdx.transpose();
       penaltyApproximation.dfduu = h.dfdu * penaltySecondDerivative * h.dfdu.transpose();

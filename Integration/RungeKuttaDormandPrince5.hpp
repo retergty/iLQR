@@ -7,9 +7,9 @@
 /**
  * @brief Dormand-Prince 5 阶单步器：给定 (t, x, dxdt) 与步长 dt，计算下一状态与导数。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
+ * @tparam XDim 状态维度。
  */
-template <typename Scalar, int XDimisions>
+template <typename Scalar, int XDim>
 class RungeKuttaDormandPrince5Stepper
 {
 public:
@@ -24,8 +24,8 @@ public:
    * @param [out] x_out 下一状态。
    * @param [out] dxdt_out 下一状态的导数。
    */
-  void doStep(const OdeBase<Scalar, XDimisions> &system, const Vector<Scalar, XDimisions> &x0, const Vector<Scalar, XDimisions> &dxdt,
-              const Scalar t, const Scalar dt, Vector<Scalar, XDimisions> &x_out, Vector<Scalar, XDimisions> &dxdt_out)
+  void doStep(const OdeBase<Scalar, XDim> &system, const Vector<Scalar, XDim> &x0, const Vector<Scalar, XDim> &dxdt,
+              const Scalar t, const Scalar dt, Vector<Scalar, XDim> &x_out, Vector<Scalar, XDim> &dxdt_out)
   {
     /* Runge Kutta Dormand-Prince Butcher tableau constants.
      * https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method */
@@ -62,7 +62,7 @@ public:
     constexpr Scalar c6 = 11.0 / 84;
 
     k1_ = dxdt; // k1 = system(x, t) from previous iteration
-    Vector<Scalar, XDimisions> x = x0 + dt * b21 * k1_;
+    Vector<Scalar, XDim> x = x0 + dt * b21 * k1_;
     k2_ = system.computeFlowMap(t + dt * a2, x);
     x = x0 + dt * b31 * k1_ + dt * b32 * k2_;
     k3_ = system.computeFlowMap(t + dt * a3, x);
@@ -89,15 +89,15 @@ private:
    * @param [in] relTol: The relative error tolerance.
    * @return maximal error value.
    */
-  static Scalar maxError(const Vector<Scalar, XDimisions> &x_old, const Vector<Scalar, XDimisions> &dxdt_old, const Vector<Scalar, XDimisions> &x_err,
+  static Scalar maxError(const Vector<Scalar, XDim> &x_old, const Vector<Scalar, XDim> &dxdt_old, const Vector<Scalar, XDim> &x_err,
                          const Scalar dt, const Scalar absTol, const Scalar relTol)
   {
-    const Vector<Scalar, XDimisions> err = x_err.array() / (absTol + relTol * (x_old.array().abs() + std::abs(dt) * dxdt_old.array().abs()));
+    const Vector<Scalar, XDim> err = x_err.array() / (absTol + relTol * (x_old.array().abs() + std::abs(dt) * dxdt_old.array().abs()));
     return err.template lpNorm<Eigen::Infinity>();
   }
 
   /** intermediate derivatives during Runge-Kutta step. */
-  Vector<Scalar, XDimisions> k1_, k2_, k3_, k4_, k5_, k6_;
+  Vector<Scalar, XDim> k1_, k2_, k3_, k4_, k5_, k6_;
 };
 
 /*
@@ -106,8 +106,8 @@ private:
  * The implementation is based on the boost odeint integrator with the controlled
  * boost::numeric::odeint::runge_kutta_dopri5 stepper.
  */
-template <typename Scalar, int XDimisions>
-class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDimisions>
+template <typename Scalar, int XDim>
+class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDim>
 {
 public:
   RungeKuttaDormandPrince5() {};
@@ -125,8 +125,8 @@ public:
    * @param [in] finalTime: Final time.
    * @param [in] dt: Time step.
    */
-  void integrateConst(OdeBase<Scalar, XDimisions> &system, Observer<Scalar, XDimisions> &observer,
-                      const Vector<Scalar, XDimisions> &initialState, const Scalar startTime, const Scalar finalTime, const Scalar dt) override
+  void integrateConst(OdeBase<Scalar, XDim> &system, Observer<Scalar, XDim> &observer,
+                      const Vector<Scalar, XDim> &initialState, const Scalar startTime, const Scalar finalTime, const Scalar dt) override
   {
     // TODO(mspieler): This does one redundant system() evaluation at the end.
 
@@ -134,8 +134,8 @@ public:
     Scalar finalTimeLocal = finalTime + 0.1 * dt;
 
     Scalar t = startTime;
-    Vector<Scalar, XDimisions> x = initialState;
-    Vector<Scalar, XDimisions> dxdt;
+    Vector<Scalar, XDim> x = initialState;
+    Vector<Scalar, XDim> dxdt;
     dxdt = system.computeFlowMap(t, x);
     int step = 0;
     while (lessWithSign(t + dt, finalTimeLocal, dt))
@@ -162,5 +162,5 @@ private:
   }
 
 private:
-  RungeKuttaDormandPrince5Stepper<Scalar, XDimisions> stepper_;
+  RungeKuttaDormandPrince5Stepper<Scalar, XDim> stepper_;
 };

@@ -18,10 +18,10 @@ enum class SensitivityIntegratorType
 /**
  * @brief 动力学离散化基类：由 (t,x,u,dt) 计算离散状态及线性近似 (A,B,b)。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 输入维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
+template <typename Scalar, int XDim, int UDim>
 class DynamicsDiscretizerBase
 {
 public:
@@ -37,8 +37,8 @@ public:
    * @param [in] dt 区间长度。
    * @return 下一状态 x_{k+1}。
    */
-  virtual Vector<Scalar, XDimisions> discretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                                                const Vector<Scalar, UDimisions> &u, const Scalar dt) = 0;
+  virtual Vector<Scalar, XDim> discretize(SystemDynamicsBase<Scalar, XDim, UDim> &system, const Scalar t, const Vector<Scalar, XDim> &x,
+                                                const Vector<Scalar, UDim> &u, const Scalar dt) = 0;
 
   /**
    * @brief 计算离散化流映射的线性近似 x_{k+1} ≈ A*dx + B*du + b。
@@ -49,34 +49,34 @@ public:
    * @param [in] dt 区间长度。
    * @return 线性近似 (f, dfdx, dfdu)。
    */
-  virtual VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
-  sensitivityDiscretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                        const Vector<Scalar, UDimisions> &u, const Scalar dt) = 0;
+  virtual VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>
+  sensitivityDiscretize(SystemDynamicsBase<Scalar, XDim, UDim> &system, const Scalar t, const Vector<Scalar, XDim> &x,
+                        const Vector<Scalar, UDim> &u, const Scalar dt) = 0;
 };
 
 /** @brief 前向欧拉离散化。 */
-template <typename Scalar, int XDimisions, int UDimisions>
-class EulerDynamicsDiscretizer : public DynamicsDiscretizerBase<Scalar, XDimisions, UDimisions>
+template <typename Scalar, int XDim, int UDim>
+class EulerDynamicsDiscretizer : public DynamicsDiscretizerBase<Scalar, XDim, UDim>
 {
 public:
-  Vector<Scalar, XDimisions> discretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                                        const Vector<Scalar, UDimisions> &u, const Scalar dt) override
+  Vector<Scalar, XDim> discretize(SystemDynamicsBase<Scalar, XDim, UDim> &system, const Scalar t, const Vector<Scalar, XDim> &x,
+                                        const Vector<Scalar, UDim> &u, const Scalar dt) override
   {
-    Vector<Scalar, XDimisions> tmp = system.computeFlowMap(t, x, u);
+    Vector<Scalar, XDim> tmp = system.computeFlowMap(t, x, u);
     tmp = x + dt * tmp;
     return tmp;
   }
-  VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
-  sensitivityDiscretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                        const Vector<Scalar, UDimisions> &u, const Scalar dt) override
+  VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>
+  sensitivityDiscretize(SystemDynamicsBase<Scalar, XDim, UDim> &system, const Scalar t, const Vector<Scalar, XDim> &x,
+                        const Vector<Scalar, UDim> &u, const Scalar dt) override
   {
     // x_{k+1} = A_{k} * dx_{k} + B_{k} * du_{k} + b_{k}
     // A_{k} = Id + dt * dfdx
     // B_{k} = dt * dfdu
     // b_{k} = x_{n} + dt * f(x_{n},u_{n})
-    VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> continuousApproximation = system.linearApproximation(t, x, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> continuousApproximation = system.linearApproximation(t, x, u);
     continuousApproximation.dfdx *= dt;
-    continuousApproximation.dfdx += Matrix<Scalar, XDimisions, XDimisions>::Identity(); // plus Identity()
+    continuousApproximation.dfdx += Matrix<Scalar, XDim, XDim>::Identity(); // plus Identity()
     continuousApproximation.dfdu *= dt;
     continuousApproximation.f = x + dt * continuousApproximation.f;
     return continuousApproximation;
@@ -84,33 +84,33 @@ public:
 };
 
 // Uses an Runge-Kutta 2nd order discretization
-template <typename Scalar, int XDimisions, int UDimisions>
-class EK2DynamicsDiscretizer : public DynamicsDiscretizerBase<Scalar, XDimisions, UDimisions>
+template <typename Scalar, int XDim, int UDim>
+class EK2DynamicsDiscretizer : public DynamicsDiscretizerBase<Scalar, XDim, UDim>
 {
 public:
-  Vector<Scalar, XDimisions> discretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                                        const Vector<Scalar, UDimisions> &u, const Scalar dt) override
+  Vector<Scalar, XDim> discretize(SystemDynamicsBase<Scalar, XDim, UDim> &system, const Scalar t, const Vector<Scalar, XDim> &x,
+                                        const Vector<Scalar, UDim> &u, const Scalar dt) override
   {
     const Scalar dt_halve = dt / 2.0;
 
     // System evaluations
-    const Vector<Scalar, XDimisions> k1 = system.computeFlowMap(t, x, u);
+    const Vector<Scalar, XDim> k1 = system.computeFlowMap(t, x, u);
 
-    Vector<Scalar, XDimisions> tmp = x + dt * k1;
-    const Vector<Scalar, XDimisions> k2 = system.computeFlowMap(t + dt, tmp, u);
+    Vector<Scalar, XDim> tmp = x + dt * k1;
+    const Vector<Scalar, XDim> k2 = system.computeFlowMap(t + dt, tmp, u);
 
     tmp = x + dt_halve * k1 + dt_halve * k2;
     return tmp;
   }
-  VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
-  sensitivityDiscretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                        const Vector<Scalar, UDimisions> &u, const Scalar dt) override
+  VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>
+  sensitivityDiscretize(SystemDynamicsBase<Scalar, XDim, UDim> &system, const Scalar t, const Vector<Scalar, XDim> &x,
+                        const Vector<Scalar, UDim> &u, const Scalar dt) override
   {
     const Scalar dt_halve = dt / 2.0;
 
     // System evaluations
-    VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> k1 = system.linearApproximation(t, x, u);
-    VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> k2 = system.linearApproximation(t + dt, x + dt * k1.f, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k1 = system.linearApproximation(t, x, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k2 = system.linearApproximation(t + dt, x + dt * k1.f, u);
 
     // Input sensitivity \dot{Su} = dfdx(t) Su + dfdu(t), with Su(0) = Zero()
     // Re-use memory from k.dfdu as dkduk
@@ -125,7 +125,7 @@ public:
     // Assemble discrete approximation
     // Re-use k1 to collect the result
     k1.dfdx = dt_halve * k1.dfdx + dt_halve * k2.dfdx;
-    k1.dfdx += Matrix<Scalar, XDimisions, XDimisions>::Identity(); // plus Identity()
+    k1.dfdx += Matrix<Scalar, XDim, XDim>::Identity(); // plus Identity()
     k1.dfdu = dt_halve * k1.dfdu + dt_halve * k2.dfdu;
     k1.f = x + dt_halve * k1.f + dt_halve * k2.f;
     return k1;
@@ -133,45 +133,45 @@ public:
 };
 
 // Uses an Runge-Kutta 4th order discretization.
-template <typename Scalar, int XDimisions, int UDimisions>
-class EK4DynamicsDiscretizer : public DynamicsDiscretizerBase<Scalar, XDimisions, UDimisions>
+template <typename Scalar, int XDim, int UDim>
+class EK4DynamicsDiscretizer : public DynamicsDiscretizerBase<Scalar, XDim, UDim>
 {
 public:
-  Vector<Scalar, XDimisions> discretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                                        const Vector<Scalar, UDimisions> &u, const Scalar dt) override
+  Vector<Scalar, XDim> discretize(SystemDynamicsBase<Scalar, XDim, UDim> &system, const Scalar t, const Vector<Scalar, XDim> &x,
+                                        const Vector<Scalar, UDim> &u, const Scalar dt) override
   {
     const Scalar dt_halve = dt / 2.0;
     const Scalar dt_sixth = dt / 6.0;
     const Scalar dt_third = dt / 3.0;
 
     // System evaluations
-    const Vector<Scalar, XDimisions> k1 = system.computeFlowMap(t, x, u);
-    Vector<Scalar, XDimisions> tmp = x + dt_halve * k1;
-    const Vector<Scalar, XDimisions> k2 = system.computeFlowMap(t + dt_halve, tmp, u);
+    const Vector<Scalar, XDim> k1 = system.computeFlowMap(t, x, u);
+    Vector<Scalar, XDim> tmp = x + dt_halve * k1;
+    const Vector<Scalar, XDim> k2 = system.computeFlowMap(t + dt_halve, tmp, u);
     tmp = x + dt_halve * k2;
-    const Vector<Scalar, XDimisions> k3 = system.computeFlowMap(t + dt_halve, tmp, u);
+    const Vector<Scalar, XDim> k3 = system.computeFlowMap(t + dt_halve, tmp, u);
     tmp = x + dt * k3;
-    const Vector<Scalar, XDimisions> k4 = system.computeFlowMap(t + dt, tmp, u);
+    const Vector<Scalar, XDim> k4 = system.computeFlowMap(t + dt, tmp, u);
 
     tmp = x + dt_sixth * k1 + dt_third * k2 + dt_third * k3 + dt_sixth * k4;
     return tmp;
   }
-  VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
-  sensitivityDiscretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                        const Vector<Scalar, UDimisions> &u, const Scalar dt) override
+  VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>
+  sensitivityDiscretize(SystemDynamicsBase<Scalar, XDim, UDim> &system, const Scalar t, const Vector<Scalar, XDim> &x,
+                        const Vector<Scalar, UDim> &u, const Scalar dt) override
   {
     const Scalar dt_halve = dt / 2.0;
     const Scalar dt_sixth = dt / 6.0;
     const Scalar dt_third = dt / 3.0;
 
     // System evaluations
-    VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> k1 = system.linearApproximation(t, x, u);
-    Vector<Scalar, XDimisions> tmpV = x + dt_halve * k1.f;
-    VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> k2 = system.linearApproximation(t + dt_halve, tmpV, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k1 = system.linearApproximation(t, x, u);
+    Vector<Scalar, XDim> tmpV = x + dt_halve * k1.f;
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k2 = system.linearApproximation(t + dt_halve, tmpV, u);
     tmpV = x + dt_halve * k2.f;
-    VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> k3 = system.linearApproximation(t + dt_halve, tmpV, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k3 = system.linearApproximation(t + dt_halve, tmpV, u);
     tmpV = x + dt * k3.f;
-    VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> k4 = system.linearApproximation(t + dt, tmpV, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k4 = system.linearApproximation(t + dt, tmpV, u);
 
     // Input sensitivity \dot{Su} = dfdx(t) Su + dfdu(t), with Su(0) = Zero()
     // Re-use memory from k.dfdu as dkduk
@@ -183,7 +183,7 @@ public:
     // State sensitivity \dot{Sx} = dfdx(t) Sx, with Sx(0) = Identity()
     // Re-use memory from k.dfdx as dkdxk
     // dk1dxk = k1.dfdx;
-    Matrix<Scalar, XDimisions, XDimisions> tmp = dt_halve * k2.dfdx * k1.dfdx; // need one temporary to avoid alias
+    Matrix<Scalar, XDim, XDim> tmp = dt_halve * k2.dfdx * k1.dfdx; // need one temporary to avoid alias
     k2.dfdx += tmp;
     tmp = dt_halve * k3.dfdx * k2.dfdx;
     k3.dfdx += tmp;
@@ -193,7 +193,7 @@ public:
     // Assemble discrete approximation
     // Re-use k1 to collect the result
     k1.dfdx = dt_sixth * k1.dfdx + dt_third * k2.dfdx + dt_third * k3.dfdx + dt_sixth * k4.dfdx;
-    k1.dfdx += Matrix<Scalar, XDimisions, XDimisions>::Identity(); // plus Identity()
+    k1.dfdx += Matrix<Scalar, XDim, XDim>::Identity(); // plus Identity()
     k1.dfdu = dt_sixth * k1.dfdu + dt_third * k2.dfdu + dt_third * k3.dfdu + dt_sixth * k4.dfdu;
     k1.f = x + dt_sixth * k1.f + dt_third * k2.f + dt_third * k3.f + dt_sixth * k4.f;
     return k1;

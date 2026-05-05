@@ -60,8 +60,8 @@ Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(const Fu
  * `d/dx [q_dot] = 0` 与 `d/dv [q_dot] = I` 结构，假设状态排列为 `[q, q_dot]`。
  *
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 输入维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  * @param [in] system 连续时间受控系统。
  * @param [in] t 当前时间。
  * @param [in] x 线性化状态。
@@ -71,14 +71,14 @@ Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(const Fu
  * @param [in] isSecondOrderSystem 是否按二阶系统结构修正 Jacobian。
  * @return 状态 Jacobian `A = d f / d x`。
  */
-template<typename Scalar, int XDimisions, int UDimisions>
-Matrix<Scalar, XDimisions, XDimisions> finiteDifferenceDerivativeState(ControlledSystemBase<Scalar, XDimisions, UDimisions>& system,
-  Scalar t, const Vector<Scalar, XDimisions>& x, const  Vector<Scalar, UDimisions>& u, Scalar eps,
+template<typename Scalar, int XDim, int UDim>
+Matrix<Scalar, XDim, XDim> finiteDifferenceDerivativeState(ControlledSystemBase<Scalar, XDim, UDim>& system,
+  Scalar t, const Vector<Scalar, XDim>& x, const  Vector<Scalar, UDim>& u, Scalar eps,
   bool doubleSidedDerivative, bool isSecondOrderSystem) {
-  auto f = [&](const Vector<Scalar, XDimisions>& var) -> Vector<Scalar, XDimisions> { return system.computeFlowMap(t, var, u); };
+  auto f = [&](const Vector<Scalar, XDim>& var) -> Vector<Scalar, XDim> { return system.computeFlowMap(t, var, u); };
 
-  Matrix<Scalar, XDimisions, XDimisions> A =
-      finiteDifferenceDerivative<Scalar, XDimisions, XDimisions>(f, x, eps, doubleSidedDerivative);
+  Matrix<Scalar, XDim, XDim> A =
+      finiteDifferenceDerivative<Scalar, XDim, XDim>(f, x, eps, doubleSidedDerivative);
 
   if (isSecondOrderSystem) {
     // Assumes state vector = [x, x_dot]
@@ -95,8 +95,8 @@ Matrix<Scalar, XDimisions, XDimisions> finiteDifferenceDerivativeState(Controlle
  * `[q, q_dot]` 形式下位置导数通常不直接依赖控制输入的结构假设。
  *
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 输入维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  * @param [in] system 连续时间受控系统。
  * @param [in] t 当前时间。
  * @param [in] x 线性化状态。
@@ -106,15 +106,15 @@ Matrix<Scalar, XDimisions, XDimisions> finiteDifferenceDerivativeState(Controlle
  * @param [in] isSecondOrderSystem 是否按二阶系统结构修正 Jacobian。
  * @return 输入 Jacobian `B = d f / d u`。
  */
-template<typename Scalar, int XDimisions, int UDimisions>
-Matrix<Scalar, XDimisions, UDimisions> finiteDifferenceDerivativeInput(ControlledSystemBase<Scalar, XDimisions, UDimisions>& system,
-  Scalar t, const Vector<Scalar, XDimisions>& x, const  Vector<Scalar, UDimisions>& u, Scalar eps,
+template<typename Scalar, int XDim, int UDim>
+Matrix<Scalar, XDim, UDim> finiteDifferenceDerivativeInput(ControlledSystemBase<Scalar, XDim, UDim>& system,
+  Scalar t, const Vector<Scalar, XDim>& x, const  Vector<Scalar, UDim>& u, Scalar eps,
   bool doubleSidedDerivative, bool isSecondOrderSystem)
 {
-  auto f = [&](const Vector<Scalar, UDimisions>& var) -> Vector<Scalar, XDimisions> { return system.computeFlowMap(t, x, var); };
+  auto f = [&](const Vector<Scalar, UDim>& var) -> Vector<Scalar, XDim> { return system.computeFlowMap(t, x, var); };
 
-  Matrix<Scalar, XDimisions, UDimisions> B =
-      finiteDifferenceDerivative<Scalar, XDimisions, UDimisions>(f, u, eps, doubleSidedDerivative);
+  Matrix<Scalar, XDim, UDim> B =
+      finiteDifferenceDerivative<Scalar, XDim, UDim>(f, u, eps, doubleSidedDerivative);
 
   if (isSecondOrderSystem) {
     // Assumes state vector = [x, x_dot]

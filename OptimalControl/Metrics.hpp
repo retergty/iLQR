@@ -12,21 +12,21 @@
 /**
  * @brief 单时刻的代价、动力学违反与各类约束的拉格朗日指标（等式/不等式、状态/状态-输入）。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  * @tparam StateEqConstrains 状态等式约束数。
  * @tparam StateIneqConstrains 状态不等式约束数。
  * @tparam StateInputEqConstrains 状态-输入等式约束数。
  * @tparam StateInputIneqConstrains 状态-输入不等式约束数。
  */
-template <typename Scalar, int XDimisions, int UDimisions, int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains>
+template <typename Scalar, int XDim, int UDim, int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains>
 struct Metrics
 {
     /** @brief 该时刻总代价。 */
     Scalar cost;
 
     /** @brief 动力学违反向量。 */
-    Vector<Scalar, XDimisions> dynamicsViolation;
+    Vector<Scalar, XDim> dynamicsViolation;
 
     /** @brief 状态等式约束的拉格朗日项数组。 */
     std::array<LagrangianMetrics<Scalar>, StateEqConstrains> stateEqLagrangian;

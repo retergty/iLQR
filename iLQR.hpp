@@ -34,8 +34,8 @@
 /**
  * @brief 迭代线性二次调节器（iLQR）：基于名义轨迹的 LQ 近似与离散时间 Riccati 反向递推的 DDP 求解器。
  * @tparam Scalar 标量类型（如 double）。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  * @tparam PredictLength 预测步数（时间节点数为 PredictLength+1）。
  * @tparam StateEqConstrains 状态等式约束数（中间时刻）。
  * @tparam StateIneqConstrains 状态不等式约束数（中间时刻）。
@@ -44,66 +44,66 @@
  * @tparam FinalStateEqConstrains 终端状态等式约束数。
  * @tparam FinalStateIneqConstrains 终端状态不等式约束数。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains = 0, int StateIneqConstrains = 0, int StateInputEqConstrains = 0, int StateInputIneqConstrains = 0,
           int FinalStateEqConstrains = 0, int FinalStateIneqConstrains = 0>
 class iLQR
 {
 public:
-    using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-    using ControlledSystemBase_t = ControlledSystemBase<Scalar, XDimisions, UDimisions>;
-    using SystemDynamicsBase_t = SystemDynamicsBase<Scalar, XDimisions, UDimisions>;
+    using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+    using ControlledSystemBase_t = ControlledSystemBase<Scalar, XDim, UDim>;
+    using SystemDynamicsBase_t = SystemDynamicsBase<Scalar, XDim, UDim>;
 
-    using StateVector_t = Vector<Scalar, XDimisions>;
-    using InputVector_t = Vector<Scalar, UDimisions>;
-    using LvVector_t = Vector<Scalar, UDimisions>;
-    using KmMatrix_t = Matrix<Scalar, UDimisions, XDimisions>;
-    using SmMatrix_t = Matrix<Scalar, XDimisions, XDimisions>;
-    using SvVector_t = Vector<Scalar, XDimisions>;
-    using GmMatrix_t = Matrix<Scalar, UDimisions, XDimisions>;
-    using HmMatrix_t = Matrix<Scalar, UDimisions, UDimisions>;
-    using GvVector_t = Vector<Scalar, UDimisions>;
+    using StateVector_t = Vector<Scalar, XDim>;
+    using InputVector_t = Vector<Scalar, UDim>;
+    using LvVector_t = Vector<Scalar, UDim>;
+    using KmMatrix_t = Matrix<Scalar, UDim, XDim>;
+    using SmMatrix_t = Matrix<Scalar, XDim, XDim>;
+    using SvVector_t = Vector<Scalar, XDim>;
+    using GmMatrix_t = Matrix<Scalar, UDim, XDim>;
+    using HmMatrix_t = Matrix<Scalar, UDim, UDim>;
+    using GvVector_t = Vector<Scalar, UDim>;
 
-    using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
+    using ModelData_t = ModelData<Scalar, XDim, UDim>;
     using IntermediateMultiplierCollection_t = MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>;
     using FinalMultiplierCollection_t = MultiplierCollection<Scalar, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
-    using IntermediateMetrics_t = Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>;
-    using FinalMetrics_t = Metrics<Scalar, XDimisions, UDimisions, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
-    using RolloutBase_t = RolloutBase<Scalar, XDimisions, UDimisions>;
-    using InitializerRollout_t = InitializerRollout<Scalar, XDimisions, UDimisions>;
-    using Initializer_t = Initializer<Scalar, XDimisions, UDimisions>;
+    using IntermediateMetrics_t = Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>;
+    using FinalMetrics_t = Metrics<Scalar, XDim, UDim, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
+    using RolloutBase_t = RolloutBase<Scalar, XDim, UDim>;
+    using InitializerRollout_t = InitializerRollout<Scalar, XDim, UDim>;
+    using Initializer_t = Initializer<Scalar, XDim, UDim>;
 
-    using TimeTriggeredRollout_t = TimeTriggeredRollout<Scalar, XDimisions, UDimisions>;
-    using RolloutTrajectoryPointer_t = RolloutTrajectoryPointer<Scalar, XDimisions, UDimisions>;
+    using TimeTriggeredRollout_t = TimeTriggeredRollout<Scalar, XDim, UDim>;
+    using RolloutTrajectoryPointer_t = RolloutTrajectoryPointer<Scalar, XDim, UDim>;
 
-    using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-    using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+    using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+    using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
 
-    using LinearController_t = LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1>;
-    using SearchStrategyBase_t = SearchStrategyBase<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-    using LineSearchStrategy_t = LineSearchStrategy<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-    using RiccatiModification_t = RiccatiModification<Scalar, XDimisions, UDimisions>;
+    using LinearController_t = LinearController<Scalar, XDim, UDim, PredictLength + 1>;
+    using SearchStrategyBase_t = SearchStrategyBase<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+    using LineSearchStrategy_t = LineSearchStrategy<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+    using RiccatiModification_t = RiccatiModification<Scalar, XDim, UDim>;
 
     using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
-    using StateTrajectory_t = std::array<Vector<Scalar, XDimisions>, PredictLength + 1>;
-    using InputTrajectory_t = std::array<Vector<Scalar, UDimisions>, PredictLength + 1>;
+    using StateTrajectory_t = std::array<Vector<Scalar, XDim>, PredictLength + 1>;
+    using InputTrajectory_t = std::array<Vector<Scalar, UDim>, PredictLength + 1>;
     using IntermediateMultiplierTrajectory_t = std::array<IntermediateMultiplierCollection_t, PredictLength>;
     using ModelDataTrajectory_t = std::array<ModelData_t, PredictLength>;
 
-    using PrimalSolution_t = PrimalSolution<Scalar, XDimisions, UDimisions, PredictLength>;
+    using PrimalSolution_t = PrimalSolution<Scalar, XDim, UDim, PredictLength>;
     using DualSolution_t = DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
     using DualSolutionRef_t = DualSolutionRef<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
-    using LinearQuadraticApproximator_t = LinearQuadraticApproximator<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-    using PrimalDataContainer_t = PrimalDataContainer<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-    using DualDataContainer_t = DualDataContainer<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-    using ProblemMetrics_t = ProblemMetrics<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+    using LinearQuadraticApproximator_t = LinearQuadraticApproximator<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+    using PrimalDataContainer_t = PrimalDataContainer<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+    using DualDataContainer_t = DualDataContainer<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+    using ProblemMetrics_t = ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
     using PerformanceIndex_t = PerformanceIndex<Scalar>;
     using IntermediatePerformanceIndexTrajectory_t = std::array<PerformanceIndex_t, PredictLength>;
 
-    using EK2DynamicsDiscretizer_t = EK2DynamicsDiscretizer<Scalar, XDimisions, UDimisions>;
+    using EK2DynamicsDiscretizer_t = EK2DynamicsDiscretizer<Scalar, XDim, UDim>;
 
-    using ValueFunctionQuadraticApproximation_t = ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>;
-    using DiscreteTimeRiccatiEquations_t = DiscreteTimeRiccatiEquations<Scalar, XDimisions, UDimisions>;
+    using ValueFunctionQuadraticApproximation_t = ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
+    using DiscreteTimeRiccatiEquations_t = DiscreteTimeRiccatiEquations<Scalar, XDim, UDim>;
 
     /**
      * @brief 构造 iLQR 求解器，绑定动力学与初始化器。
@@ -353,7 +353,7 @@ private:
      * @param [in] continuousTimeModelData 连续时间 LQ 模型数据。
      * @param [out] modelData 离散化后的模型数据。
      */
-    void discreteLQWorker(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, Scalar time, const StateVector_t &state, const InputVector_t &input, Scalar timeStep,
+    void discreteLQWorker(SystemDynamicsBase<Scalar, XDim, UDim> &system, Scalar time, const StateVector_t &state, const InputVector_t &input, Scalar timeStep,
                           const ModelData_t &continuousTimeModelData, ModelData_t &modelData)
     {
         modelData.time = continuousTimeModelData.time;
@@ -374,7 +374,7 @@ private:
      */
     HmMatrix_t computeHamiltonianHessian(const ModelData_t &modelData, const SmMatrix_t &Sm) const
     {
-        const Matrix<Scalar, UDimisions, XDimisions> BmTransSm = modelData.dynamics.dfdu.transpose() * Sm;
+        const Matrix<Scalar, UDim, XDim> BmTransSm = modelData.dynamics.dfdu.transpose() * Sm;
         HmMatrix_t Hm = modelData.cost.dfduu;
         Hm += BmTransSm * modelData.dynamics.dfdu;
         return lineSearchStrategy_.augmentHamiltonianHessian(modelData, Hm);
@@ -568,7 +568,7 @@ private:
         const StateVector_t &nominalState = primalData.primalSolution.stateTrajectory_[timeIndex];
         const InputVector_t &nominalInput = primalData.primalSolution.inputTrajectory_[timeIndex];
 
-        const Matrix<Scalar, UDimisions, UDimisions> &Qu = dualData.riccatiModificationTrajectory[timeIndex].constraintNullProjector_;
+        const Matrix<Scalar, UDim, UDim> &Qu = dualData.riccatiModificationTrajectory[timeIndex].constraintNullProjector_;
 
         // feedback gains
         dstController.gainArray_[timeIndex] = Qu * projectedKmTrajectoryStock_[timeIndex];

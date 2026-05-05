@@ -40,16 +40,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @brief 单节点 LQ 模型数据：时间、动力学线性近似（dfdx, dfdu, f）、代价二次近似（dfdxx, dfdux, dfduu, dfdx, dfdu, f）。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  */
-template<typename Scalar, int XDimisions, int UDimisions>
+template<typename Scalar, int XDim, int UDim>
 struct ModelData {
   Scalar time = 0.0;
 
   /** @brief 动力学线性近似：x_{k+1} ≈ dfdx*dx + dfdu*du + f。 */
-  VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions> dynamics;
+  VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> dynamics;
 
   /** @brief 代价二次近似（标量函数对 (x,u) 的系数）。 */
-  ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> cost;
+  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost;
 };

@@ -38,21 +38,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @brief 单节点 Riccati 修正：时间、状态代价修正 deltaQm、哈密顿量 Hessian Hm、约束零空间投影。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
+template <typename Scalar, int XDim, int UDim>
 struct RiccatiModification
 {
   /** @brief 该节点时间。 */
   Scalar time_ = 0.0;
 
   /** @brief 状态代价的 Riccati 修正矩阵（如 Hessian 修正等）。 */
-  Matrix<Scalar, XDimisions, XDimisions> deltaQm_;
+  Matrix<Scalar, XDim, XDim> deltaQm_;
 
   /** @brief 哈密顿量对控制的 Hessian 矩阵 Hm。 */
-  Matrix<Scalar, UDimisions, UDimisions> hamiltonianHessian_;
+  Matrix<Scalar, UDim, UDim> hamiltonianHessian_;
 
   /** @brief 约束零空间投影矩阵（无约束时为 inv(Hm) 的 UUT 因子）。 */
-  Matrix<Scalar, UDimisions, UDimisions> constraintNullProjector_;
+  Matrix<Scalar, UDim, UDim> constraintNullProjector_;
 };

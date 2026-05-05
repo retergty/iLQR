@@ -11,11 +11,11 @@
 /**
  * @brief 系统动力学与线性化基类：子类需实现 linearApproximation。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
-class SystemDynamicsBase : public ControlledSystemBase<Scalar, XDimisions, UDimisions>
+template <typename Scalar, int XDim, int UDim>
+class SystemDynamicsBase : public ControlledSystemBase<Scalar, XDim, UDim>
 {
 public:
   /** @brief 默认构造。 */
@@ -31,6 +31,6 @@ public:
    * @param [in] u 当前输入。
    * @return 状态对时间导数的线性近似（f, dfdx, dfdu）。
    */
-  virtual VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
-  linearApproximation(Scalar t, const Vector<Scalar, XDimisions> &x, const Vector<Scalar, UDimisions> &u) = 0;
+  virtual VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>
+  linearApproximation(Scalar t, const Vector<Scalar, XDim> &x, const Vector<Scalar, UDim> &u) = 0;
 };

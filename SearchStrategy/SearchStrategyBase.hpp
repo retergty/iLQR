@@ -16,19 +16,19 @@
 /**
  * @brief 搜索策略输出：平均步长、对偶解、原始解、问题指标与性能指标。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  * @tparam PredictLength 预测步数。
  * @tparam StateEqConstrains 等 约束维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
   int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
   int FinalStateEqConstrains, int FinalStateIneqConstrains>
 struct SearchStrategySolution
 {
-  using PrimalSolution_t = PrimalSolution<Scalar, XDimisions, UDimisions, PredictLength>;
+  using PrimalSolution_t = PrimalSolution<Scalar, XDim, UDim, PredictLength>;
   using DualSolution_t = DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
-  using ProblemMetrics_t = ProblemMetrics<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using ProblemMetrics_t = ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
   using PerformanceIndex_t = PerformanceIndex<Scalar>;
 
   /** @brief 平均时间步长。 */
@@ -46,16 +46,16 @@ struct SearchStrategySolution
 /**
  * @brief 搜索策略解的引用视图：绑定解的各成员引用，用于原地写回。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
   int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
   int FinalStateEqConstrains, int FinalStateIneqConstrains>
 struct SearchStrategySolutionRef
 {
-  using PrimalSolution_t = PrimalSolution<Scalar, XDimisions, UDimisions, PredictLength>;
+  using PrimalSolution_t = PrimalSolution<Scalar, XDim, UDim, PredictLength>;
   using DualSolution_t = DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
-  using ProblemMetrics_t = ProblemMetrics<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using ProblemMetrics_t = ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
   using PerformanceIndex_t = PerformanceIndex<Scalar>;
-  using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
 
   /** @brief 由 SearchStrategySolution 构造，绑定其各成员引用。 */
   SearchStrategySolutionRef(SearchStrategySolution_t& s)
@@ -103,24 +103,24 @@ struct SearchStrategySolutionRef
 /**
  * @brief 搜索策略抽象基类：线搜索、置信域等子问题求解的通用接口。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  * @tparam PredictLength 预测步数。
  * @tparam StateEqConstrains 等 约束维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
   int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
   int FinalStateEqConstrains, int FinalStateIneqConstrains>
 class SearchStrategyBase
 {
 public:
   using DualSolution_t = DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
-  using LinearController_t = LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1>;
-  using StateVector_t = Vector<Scalar, XDimisions>;
+  using LinearController_t = LinearController<Scalar, XDim, UDim, PredictLength + 1>;
+  using StateVector_t = Vector<Scalar, XDim>;
   using PerformanceIndex_t = PerformanceIndex<Scalar>;
-  using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
-  using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using ModelData_t = ModelData<Scalar, XDim, UDim>;
+  using SearchStrategySolution_t = SearchStrategySolution<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
 
   /** @brief 默认构造。 */
   explicit SearchStrategyBase() {}
@@ -162,7 +162,7 @@ public:
    * @param [in] projectedModelData 投影后的模型数据。
    * @param [out] deltaQm 代价对状态二阶导的 Riccati 修正。
    */
-  virtual void computeRiccatiModification(const ModelData_t& projectedModelData, Matrix<Scalar, XDimisions, XDimisions>& deltaQm) const = 0;
+  virtual void computeRiccatiModification(const ModelData_t& projectedModelData, Matrix<Scalar, XDim, XDim>& deltaQm) const = 0;
 
   /**
    * @brief 根据策略对哈密顿量 Hessian 进行增广（如数值稳定性修正）。
@@ -170,7 +170,7 @@ public:
    * @param [in] Hm 待增广的哈密顿量 Hessian。
    * @return 增广后的哈密顿量 Hessian。
    */
-  virtual Matrix<Scalar, UDimisions, UDimisions> augmentHamiltonianHessian(const ModelData_t& modelData, const Matrix<Scalar, UDimisions, UDimisions>& Hm) const = 0;
+  virtual Matrix<Scalar, UDim, UDim> augmentHamiltonianHessian(const ModelData_t& modelData, const Matrix<Scalar, UDim, UDim>& Hm) const = 0;
 
 protected:
   constexpr static SearchStrategyBaseSettings<Scalar> baseSettings_{};

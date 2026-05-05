@@ -20,10 +20,10 @@ enum class ControllerType
 /**
  * @brief 控制器基类：根据时间 t 与状态 x 计算控制 u，提供 clear/empty/display 等接口。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 控制维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
+template <typename Scalar, int XDim, int UDim>
 class ControllerBase
 {
 public:
@@ -39,10 +39,10 @@ public:
    * @param [in] x 当前状态。
    * @return 当前控制输入。
    */
-  virtual Vector<Scalar, UDimisions> computeInput(Scalar t, const Vector<Scalar, XDimisions>& x) const = 0;
+  virtual Vector<Scalar, UDim> computeInput(Scalar t, const Vector<Scalar, XDim>& x) const = 0;
 
   /** @brief 按离散时间索引与状态计算控制（用于固定时间网格）。 */
-  virtual Vector<Scalar, UDimisions> computeInput(size_t time_index, const Vector<Scalar, XDimisions>& x) const = 0;
+  virtual Vector<Scalar, UDim> computeInput(size_t time_index, const Vector<Scalar, XDim>& x) const = 0;
   /**
    * @brief 返回控制器类型。
    * @return 控制器类型枚举值。

@@ -15,10 +15,10 @@
  * @param [in] time 终端时间。
  * @param [out] multiplierCollection 待初始化的终端乘子集合。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
-void initializeFinalMultiplierCollection(const OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
+void initializeFinalMultiplierCollection(const OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
                                          Scalar time, MultiplierCollection<Scalar, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0> &multiplierCollection)
 {
   ocp.finalEqualityLagrangian.initializeLagrangian(time, multiplierCollection.stateEq);
@@ -31,10 +31,10 @@ void initializeFinalMultiplierCollection(const OptimalControlProblem<Scalar, XDi
  * @param [in] time 中间时刻。
  * @param [out] multiplierCollection 待初始化的中间乘子集合。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
-void initializeIntermediateMultiplierCollection(const OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
+void initializeIntermediateMultiplierCollection(const OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
                                                 Scalar time, MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &multiplierCollection)
 {
   ocp.stateEqualityLagrangian.initializeLagrangian(time, multiplierCollection.stateEq);
@@ -50,12 +50,12 @@ void initializeIntermediateMultiplierCollection(const OptimalControlProblem<Scal
  * @param [in] cachedDualSolution 缓存的对偶解（用于插值）。
  * @param [out] dualSolution 待初始化的对偶解。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
 void initializeDualSolution(
-    const OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
-    const PrimalSolution<Scalar, XDimisions, UDimisions, PredictLength> &primalSolution,
+    const OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
+    const PrimalSolution<Scalar, XDim, UDim, PredictLength> &primalSolution,
     const DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength> &cachedDualSolution,
     DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength> &dualSolution)
 {
@@ -100,19 +100,19 @@ void initializeDualSolution(
  * @param [in,out] problemMetrics 问题指标（其惩罚项将随对偶解更新）。
  * @param [out] dualSolution 待更新的对偶解（引用）。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
-void updateDualSolution(const OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
-                        const PrimalSolution<Scalar, XDimisions, UDimisions, PredictLength> &primalSolution,
-                        ProblemMetrics<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &problemMetrics,
+void updateDualSolution(const OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
+                        const PrimalSolution<Scalar, XDim, UDim, PredictLength> &primalSolution,
+                        ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &problemMetrics,
                         DualSolutionRef<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength> dualSolution)
 {
   // final
   {
     const Scalar &time = primalSolution.timeTrajectory_.back();
-    const Vector<Scalar, XDimisions> &state = primalSolution.stateTrajectory_.back();
-    Metrics<Scalar, XDimisions, UDimisions, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0> &metrics = problemMetrics.final;
+    const Vector<Scalar, XDim> &state = primalSolution.stateTrajectory_.back();
+    Metrics<Scalar, XDim, UDim, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0> &metrics = problemMetrics.final;
     MultiplierCollection<Scalar, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0> &multipliers = dualSolution.final;
     updateFinalMultiplierCollection(ocp, time, state, metrics, multipliers);
   }
@@ -124,9 +124,9 @@ void updateDualSolution(const OptimalControlProblem<Scalar, XDimisions, UDimisio
   for (size_t i = 0; i < PredictLength; i++)
   {
     const Scalar &time = primalSolution.timeTrajectory_[i];
-    const Vector<Scalar, XDimisions> &state = primalSolution.stateTrajectory_[i];
-    const Vector<Scalar, UDimisions> &input = primalSolution.inputTrajectory_[i];
-    Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &metrics = problemMetrics.intermediates[i];
+    const Vector<Scalar, XDim> &state = primalSolution.stateTrajectory_[i];
+    const Vector<Scalar, UDim> &input = primalSolution.inputTrajectory_[i];
+    Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &metrics = problemMetrics.intermediates[i];
     MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &multipliers = dualSolution.intermediates[i];
 
     updateIntermediateMultiplierCollection(ocp, time, state, input, metrics, multipliers);
@@ -141,12 +141,12 @@ void updateDualSolution(const OptimalControlProblem<Scalar, XDimisions, UDimisio
  * @param [in,out] metrics 终端 Metrics（惩罚项将随乘子更新）。
  * @param [out] multipliers 待更新的终端乘子集合。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
-void updateFinalMultiplierCollection(const OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
-                                     Scalar time, const Vector<Scalar, XDimisions> &state,
-                                     Metrics<Scalar, XDimisions, UDimisions, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0> &metrics,
+void updateFinalMultiplierCollection(const OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
+                                     Scalar time, const Vector<Scalar, XDim> &state,
+                                     Metrics<Scalar, XDim, UDim, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0> &metrics,
                                      MultiplierCollection<Scalar, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0> &multipliers)
 {
   ocp.finalEqualityLagrangian.updateLagrangian(time, state, metrics.stateEqLagrangian, multipliers.stateEq);
@@ -162,12 +162,12 @@ void updateFinalMultiplierCollection(const OptimalControlProblem<Scalar, XDimisi
  * @param [in,out] metrics 中间 Metrics（惩罚项将随乘子更新）。
  * @param [out] multipliers 待更新的中间乘子集合。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
-void updateIntermediateMultiplierCollection(const OptimalControlProblem<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
-                                            Scalar time, const Vector<Scalar, XDimisions> &state, const Vector<Scalar, UDimisions> &input,
-                                            Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &metrics,
+void updateIntermediateMultiplierCollection(const OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
+                                            Scalar time, const Vector<Scalar, XDim> &state, const Vector<Scalar, UDim> &input,
+                                            Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &metrics,
                                             MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> &multipliers)
 {
   ocp.stateEqualityLagrangian.updateLagrangian(time, state, metrics.stateEqLagrangian, multipliers.stateEq);

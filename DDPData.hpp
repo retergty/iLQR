@@ -44,14 +44,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @brief 原始数据容器：存放一次 rollout 的轨迹、控制器、中间/终端模型数据与 problem metrics。
  * @note 各轨迹与 modelData 应来自同一控制器的 rollout；用外部控制器初始化时需随后调用 run 以补齐数据。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
 struct PrimalDataContainer
 {
-  using PrimalSolution_t = PrimalSolution<Scalar, XDimisions, UDimisions, PredictLength>;
-  using ProblemMetrics_t = ProblemMetrics<Scalar, XDimisions, UDimisions, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
-  using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
+  using PrimalSolution_t = PrimalSolution<Scalar, XDim, UDim, PredictLength>;
+  using ProblemMetrics_t = ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using ModelData_t = ModelData<Scalar, XDim, UDim>;
 
   // Primal solution
   PrimalSolution_t primalSolution;
@@ -84,15 +84,15 @@ struct PrimalDataContainer
  * @brief 对偶数据容器：存放对偶解、投影模型轨迹、Riccati 修正轨迹与 value function 轨迹。
  * @note valueFunctionTrajectory 由 (projectedModelData, riccatiModification) 经 Riccati 递推得到。
  */
-template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
 struct DualDataContainer
 {
   using DualSolution_t = DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
-  using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
-  using RiccatiModification_t = RiccatiModification<Scalar, XDimisions, UDimisions>;
-  using ValueFunctionQuadraticApproximation_t = ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>;
+  using ModelData_t = ModelData<Scalar, XDim, UDim>;
+  using RiccatiModification_t = RiccatiModification<Scalar, XDim, UDim>;
+  using ValueFunctionQuadraticApproximation_t = ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
   // Dual solution
   DualSolution_t dualSolution;
   // projected model data trajectory

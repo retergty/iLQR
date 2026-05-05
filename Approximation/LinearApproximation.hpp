@@ -9,16 +9,16 @@
 /**
  * @brief 标量函数线性近似：f(x,u) = dfdx' dx + dfdu' du + f。
  * @tparam Scalar 标量类型。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 输入维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  */
-template <typename Scalar, int XDimisions, int UDimisions>
+template <typename Scalar, int XDim, int UDim>
 struct ScalarFunctionLinearApproximation
 {
   /** @brief 对状态的一阶导数。 */
-  Vector<Scalar, XDimisions> dfdx;
+  Vector<Scalar, XDim> dfdx;
   /** @brief 对输入的一阶导数。 */
-  Vector<Scalar, UDimisions> dfdu;
+  Vector<Scalar, UDim> dfdu;
   /** @brief 常数项。 */
   Scalar f{ 0 };
 
@@ -62,11 +62,11 @@ struct ScalarFunctionLinearApproximation
 };
 
 /** @brief 无输入时的标量函数线性近似特化（仅 dfdx 与 f）。 */
-template <typename Scalar, int XDimisions>
-struct ScalarFunctionLinearApproximation<Scalar, XDimisions, 0>
+template <typename Scalar, int XDim>
+struct ScalarFunctionLinearApproximation<Scalar, XDim, 0>
 {
   /** @brief 对状态的一阶导数。 */
-  Vector<Scalar, XDimisions> dfdx;
+  Vector<Scalar, XDim> dfdx;
   /** @brief 常数项。 */
   Scalar f{ 0 };
 
@@ -110,16 +110,16 @@ struct ScalarFunctionLinearApproximation<Scalar, XDimisions, 0>
  * @brief 向量函数线性近似：f(x,u) = dfdx*dx + dfdu*du + f。
  * @tparam Scalar 标量类型。
  * @tparam FDimisions 函数输出维度。
- * @tparam XDimisions 状态维度。
- * @tparam UDimisions 输入维度。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  */
-template <typename Scalar, int FDimisions, int XDimisions, int UDimisions>
+template <typename Scalar, int FDimisions, int XDim, int UDim>
 struct VectorFunctionLinearApproximation
 {
   /** @brief 对状态的雅可比。 */
-  Matrix<Scalar, FDimisions, XDimisions> dfdx;
+  Matrix<Scalar, FDimisions, XDim> dfdx;
   /** @brief 对输入的雅可比。 */
-  Matrix<Scalar, FDimisions, UDimisions> dfdu;
+  Matrix<Scalar, FDimisions, UDim> dfdu;
   /** @brief 常数项向量。 */
   Vector<Scalar, FDimisions> f;
 
@@ -145,11 +145,11 @@ struct VectorFunctionLinearApproximation
 };
 
 /** @brief 无输入时的向量函数线性近似特化。 */
-template <typename Scalar, int FDimisions, int XDimisions>
-struct VectorFunctionLinearApproximation<Scalar, FDimisions, XDimisions, 0>
+template <typename Scalar, int FDimisions, int XDim>
+struct VectorFunctionLinearApproximation<Scalar, FDimisions, XDim, 0>
 {
   /** @brief 对状态的雅可比。 */
-  Matrix<Scalar, FDimisions, XDimisions> dfdx;
+  Matrix<Scalar, FDimisions, XDim> dfdx;
   /** @brief 常数项向量。 */
   Vector<Scalar, FDimisions> f;
 
@@ -173,8 +173,8 @@ struct VectorFunctionLinearApproximation<Scalar, FDimisions, XDimisions, 0>
   }
 };
 
-template<typename Scalar, int XDimisions, int UDimisions>
-ScalarFunctionLinearApproximation<Scalar, XDimisions, UDimisions>& operator+=(ScalarFunctionLinearApproximation<Scalar, XDimisions, UDimisions>& lhs, ScalarFunctionLinearApproximation<Scalar, XDimisions, 0>& rhs)
+template<typename Scalar, int XDim, int UDim>
+ScalarFunctionLinearApproximation<Scalar, XDim, UDim>& operator+=(ScalarFunctionLinearApproximation<Scalar, XDim, UDim>& lhs, ScalarFunctionLinearApproximation<Scalar, XDim, 0>& rhs)
 {
   lhs.f += rhs.f;
   lhs.dfdx += rhs.dfdx;
