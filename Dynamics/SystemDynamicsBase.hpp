@@ -6,7 +6,7 @@
  * 线性化跳变映射：\f$ x^+ = G \delta x + H \delta u \f$
  */
 #pragma once
-#include "Dynamics.hpp"
+#include "ControlledSystemBase.hpp"
 
 /**
  * @brief 系统动力学与线性化基类：子类需实现 linearApproximation。

@@ -1,5 +1,5 @@
 /**
- * @file Dynamics.hpp
+ * @file ControlledSystemBase.hpp
  * @brief 受控系统动力学基类：支持按 (t,x) 或 (t,x,u) 计算状态导数，并绑定控制器。
  */
 #pragma once

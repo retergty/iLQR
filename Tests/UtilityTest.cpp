@@ -8,6 +8,7 @@
 #include "Multiplier.hpp"
 #include "Types.hpp"
 
+// 验证对角 Hessian 修正只会平移对角项。
 TEST(UtilityTest, ShiftHessianAddsOnlyDiagonalShift)
 {
     Eigen::Matrix2d matrix;
@@ -22,6 +23,7 @@ TEST(UtilityTest, ShiftHessianAddsOnlyDiagonalShift)
     EXPECT_TRUE(matrix.isApprox(expected, 1e-12));
 }
 
+// 验证返回的 UUT 因子可以重构原矩阵的逆。
 TEST(UtilityTest, ComputeInverseMatrixUUTReconstructsInverse)
 {
     Eigen::Matrix2d matrix;
@@ -34,6 +36,7 @@ TEST(UtilityTest, ComputeInverseMatrixUUTReconstructsInverse)
     EXPECT_TRUE((inverseFactor * inverseFactor.transpose()).isApprox(matrix.inverse(), 1e-12));
 }
 
+// 验证 DiagonalMatrix 的左右乘法和稠密矩阵转换结果正确。
 TEST(UtilityTest, DiagonalMatrixSupportsDenseOperations)
 {
     DiagonalMatrix<double, 2> diagonal;
@@ -61,6 +64,7 @@ TEST(UtilityTest, DiagonalMatrixSupportsDenseOperations)
     EXPECT_TRUE(asDense.isApprox(expectedDense, 1e-12));
 }
 
+// 验证 LinearController 在计算输入前会同时插值 bias 和 gain。
 TEST(UtilityTest, LinearControllerInterpolatesBiasAndGain)
 {
     LinearController<double, 2, 1, 2> controller;
@@ -80,6 +84,7 @@ TEST(UtilityTest, LinearControllerInterpolatesBiasAndGain)
     EXPECT_TRUE(controller.computeInput(1.0, state).isApprox(expected, 1e-12));
 }
 
+// 验证 clear() 和 swap() 后控制器的空与非空状态符合预期。
 TEST(UtilityTest, LinearControllerClearAndSwap)
 {
     LinearController<double, 2, 1, 2> first;
@@ -104,6 +109,7 @@ TEST(UtilityTest, LinearControllerClearAndSwap)
     EXPECT_TRUE(second.empty());
 }
 
+// 验证单个乘子插值会同时插值 penalty 和 lagrangian 字段。
 TEST(UtilityTest, MultiplierInterpolationInterpolatesAllFields)
 {
     std::array<Multiplier<double>, 3> multipliers = {
@@ -118,6 +124,7 @@ TEST(UtilityTest, MultiplierInterpolationInterpolatesAllFields)
     EXPECT_DOUBLE_EQ(interpolated.lagrangian, 25.0);
 }
 
+// 验证乘子集合插值会分别处理各类约束乘子。
 TEST(UtilityTest, MultiplierCollectionInterpolationInterpolatesEachCategory)
 {
     using Collection = MultiplierCollection<double, 1, 1, 1, 1>;
@@ -144,6 +151,7 @@ TEST(UtilityTest, MultiplierCollectionInterpolationInterpolatesEachCategory)
     EXPECT_DOUBLE_EQ(interpolated.stateInputIneq[0].lagrangian, 115.0);
 }
 
+// 验证默认初始化器保持状态不变并把输入初值清零。
 TEST(UtilityTest, DefaultInitializerKeepsStateAndZerosInput)
 {
     DefaultInitializer<double, 2, 1> initializer;

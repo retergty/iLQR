@@ -4,7 +4,7 @@
  */
 #pragma once
 #include "Types.hpp"
-#include "Dynamics.hpp"
+#include "ControlledSystemBase.hpp"
 #include "Cost.hpp"
 #include "Controller.hpp"
 #include "OptimalControlProblem.hpp"

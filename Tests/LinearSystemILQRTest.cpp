@@ -5,6 +5,7 @@
 #include "LinearSystemDynamics.hpp"
 #include "DefaultInitializer.hpp"
 
+// 验证 incrementController 保留时间戳和增益，只更新前馈偏置。
 TEST(LinearSystemILQRTest, IncrementControllerUpdatesOnlyFeedforwardBias)
 {
     using Solver = iLQR<double, 2, 1, 2>;
@@ -37,6 +38,7 @@ TEST(LinearSystemILQRTest, IncrementControllerUpdatesOnlyFeedforwardBias)
     }
 }
 
+// 验证控制器更新量的积分按梯形积分计算。
 TEST(LinearSystemILQRTest, ControllerUpdateIntegralUsesTrapezoidalRule)
 {
     using Solver = iLQR<double, 2, 1, 2>;
@@ -53,6 +55,7 @@ TEST(LinearSystemILQRTest, ControllerUpdateIntegralUsesTrapezoidalRule)
     EXPECT_DOUBLE_EQ(Solver::computeControllerUpdateIS(controller), 39.0);
 }
 
+// 验证 rolloutTrajectory 会把时间、状态和输入写回 primal solution。
 TEST(LinearSystemILQRTest, RolloutTrajectoryWritesPrimalSolution)
 {
     using Solver = iLQR<double, 2, 2, 4>;
@@ -89,6 +92,7 @@ TEST(LinearSystemILQRTest, RolloutTrajectoryWritesPrimalSolution)
     }
 }
 
+// 验证在 A = 0、B = I 时，常值开环输入的 rollout 与解析解一致。
 TEST(TimeTriggeredRolloutTest, ConstantInputMatchesAnalyticSolution)
 {
     Eigen::Matrix2d A = Eigen::Matrix2d::Zero();
@@ -129,6 +133,7 @@ TEST(TimeTriggeredRolloutTest, ConstantInputMatchesAnalyticSolution)
     }
 }
 
+// 验证 rollout 的时间戳和状态演化正确处理非零初始时刻。
 TEST(TimeTriggeredRolloutTest, RespectsNonZeroInitialTime)
 {
     Eigen::Matrix2d A = Eigen::Matrix2d::Zero();
@@ -167,6 +172,7 @@ TEST(TimeTriggeredRolloutTest, RespectsNonZeroInitialTime)
     }
 }
 
+// 验证关闭输入重建后，调用方提供的输入缓冲区不会被改写。
 TEST(TimeTriggeredRolloutTest, CanSkipInputTrajectoryReconstruction)
 {
     Eigen::Matrix<double, 1, 1> A;

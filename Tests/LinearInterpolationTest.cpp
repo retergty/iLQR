@@ -10,6 +10,7 @@
 
 using namespace LinearInterpolation;
 
+// 验证 findIndexInTimeArray 在区间内外都返回预期的插入位置。
 TEST(LinearInterpolationTest, FindIndexInTimeArray)
 {
     std::array<double, 5> times = {0.0, 1.0, 2.0, 3.0, 4.0};
@@ -23,6 +24,7 @@ TEST(LinearInterpolationTest, FindIndexInTimeArray)
     EXPECT_EQ(findIndexInTimeArray(times, 5.0), 5u);
 }
 
+// 验证 findIntervalInTimeArray 在边界和区间内外返回正确分段索引。
 TEST(LinearInterpolationTest, FindIntervalInTimeArray)
 {
     std::array<double, 5> times = {0.0, 1.0, 2.0, 3.0, 4.0};
@@ -37,6 +39,7 @@ TEST(LinearInterpolationTest, FindIntervalInTimeArray)
     EXPECT_EQ(findIntervalInTimeArray(times, 5.0), 4);
 }
 
+// 验证 timeSegment 返回的左端索引和插值权重正确。
 TEST(LinearInterpolationTest, TimeSegment)
 {
     std::array<double, 4> times = {0.0, 1.0, 2.0, 3.0};
@@ -58,6 +61,7 @@ TEST(LinearInterpolationTest, TimeSegment)
     EXPECT_DOUBLE_EQ(alpha3, 0.0);
 }
 
+// 验证向量样本在线性插值节点和中点处的结果正确。
 TEST(LinearInterpolationTest, InterpolateVector)
 {
     std::array<double, 3> times = {0.0, 1.0, 2.0};
@@ -83,6 +87,7 @@ TEST(LinearInterpolationTest, InterpolateVector)
     EXPECT_TRUE(r15.isApprox(expected15, 1e-10));
 }
 
+// 验证超出采样范围时插值结果会钳制到边界值。
 TEST(LinearInterpolationTest, InterpolateOutOfRangeClampsToBoundary)
 {
     std::array<double, 3> times = {0.0, 1.0, 2.0};
@@ -95,6 +100,7 @@ TEST(LinearInterpolationTest, InterpolateOutOfRangeClampsToBoundary)
     EXPECT_TRUE(interpolate(10.0, times, data).isApprox(data[2], 1e-10));
 }
 
+// 验证线性插值同样适用于矩阵样本。
 TEST(LinearInterpolationTest, InterpolateMatrix)
 {
     std::array<double, 2> times = {0.0, 2.0};
@@ -111,6 +117,7 @@ TEST(LinearInterpolationTest, InterpolateMatrix)
     EXPECT_TRUE(interpolate(1.0, times, data).isApprox(expected, 1e-10));
 }
 
+// 验证只有一个样本点时插值会退化为常值。
 TEST(LinearInterpolationTest, InterpolateSingleElement)
 {
     std::array<double, 1> times = {0.0};

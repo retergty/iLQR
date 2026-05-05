@@ -8,6 +8,7 @@
 #include <array>
 #include <cmath>
 
+// 验证状态代价在参考状态处取值为零。
 TEST(CostTest, QuadraticStateCost_ValueAtReference)
 {
     Eigen::Matrix2d Q = Eigen::Matrix2d::Identity();
@@ -23,6 +24,7 @@ TEST(CostTest, QuadraticStateCost_ValueAtReference)
     EXPECT_DOUBLE_EQ(val, 0.0);
 }
 
+// 验证状态代价会惩罚相对参考轨迹的偏差。
 TEST(CostTest, QuadraticStateCost_ValueDeviation)
 {
     Eigen::Matrix2d Q = Eigen::Matrix2d::Identity();
@@ -40,6 +42,7 @@ TEST(CostTest, QuadraticStateCost_ValueDeviation)
     EXPECT_DOUBLE_EQ(val, 0.5 * 4.0); // 0.5 * (2^2 + 0^2) = 2
 }
 
+// 验证状态代价的二次近似与解析形式一致。
 TEST(CostTest, QuadraticStateCost_QuadraticApproximation)
 {
     Eigen::Matrix2d Q = Eigen::Matrix2d::Identity();
@@ -60,6 +63,7 @@ TEST(CostTest, QuadraticStateCost_QuadraticApproximation)
     EXPECT_DOUBLE_EQ(approx.f, 0.5 * (1.0 + 4.0)); // 0.5 * x'x = 2.5
 }
 
+// 验证状态代价在时间上使用插值后的参考状态。
 TEST(CostTest, QuadraticStateCost_ValueUsesInterpolatedReference)
 {
     Eigen::Matrix2d Q;
@@ -81,6 +85,7 @@ TEST(CostTest, QuadraticStateCost_ValueUsesInterpolatedReference)
     EXPECT_DOUBLE_EQ(val, 6.0);
 }
 
+// 验证只有 Q 和 R 项时状态输入代价的取值。
 TEST(CostTest, QuadraticStateInputCost_ValueQROnly)
 {
     Eigen::Matrix2d Q = Eigen::Matrix2d::Identity();
@@ -103,6 +108,7 @@ TEST(CostTest, QuadraticStateInputCost_ValueQROnly)
     EXPECT_DOUBLE_EQ(val, 0.5 * 1.0 + 0.5 * 1.0); // 0.5*x'Q*x + 0.5*u'R*u = 0.5 + 0.5 = 1 (with P=0)
 }
 
+// 验证只有 Q 和 R 项时状态输入代价的二次近似。
 TEST(CostTest, QuadraticStateInputCost_QuadraticApproximationQROnly)
 {
     Eigen::Matrix2d Q = Eigen::Matrix2d::Identity();
@@ -130,6 +136,7 @@ TEST(CostTest, QuadraticStateInputCost_QuadraticApproximationQROnly)
     EXPECT_NEAR(approx.f, 0.5 * 2.0 + 0.5 * 2.0, 1e-10); // 0.5*x'x + 0.5*u'R*u = 1 + 1 = 2
 }
 
+// 验证状态输入交叉项会正确贡献到节点处的标量代价。
 TEST(CostTest, QuadraticStateInputCost_ValueIncludesCrossTermAtIndex)
 {
     Eigen::Matrix2d Q;
@@ -163,6 +170,7 @@ TEST(CostTest, QuadraticStateInputCost_ValueIncludesCrossTermAtIndex)
     EXPECT_DOUBLE_EQ(cost.getValue(1, x, u, timeTraj, stateTraj, inputTraj), expected);
 }
 
+// 验证状态输入交叉项会正确出现在二次近似中。
 TEST(CostTest, QuadraticStateInputCost_QuadraticApproximationIncludesCrossTerm)
 {
     Eigen::Matrix2d Q;

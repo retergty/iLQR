@@ -4,7 +4,7 @@
  */
 #pragma once
 #include "Types.hpp"
-#include "Dynamics.hpp"
+#include "ControlledSystemBase.hpp"
 #include "LinearApproximation.hpp"
 
 /** @brief 灵敏度积分器类型：欧拉、RK2、RK4。 */

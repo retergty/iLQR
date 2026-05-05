@@ -21,6 +21,13 @@
       "compilerPath": "/usr/bin/gcc",
       "cStandard": "gnu11",
       "cppStandard": "c++17"
+    },
+    {
+      "name": "CMake",
+      "compileCommands": "${config:cmake.buildDirectory}/compile_commands.json",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "configurationProvider": "ms-vscode.cmake-tools"
     }
   ],
   "version": 4

@@ -3,7 +3,7 @@
  * @brief 按固定时间步长做前向 rollout：用 RK45 积分受控动力学并可选地重建输入轨迹。
  */
 #pragma once
-#include "Dynamics.hpp"
+#include "ControlledSystemBase.hpp"
 #include "RolloutBase.hpp"
 #include "RungeKuttaDormandPrince5.hpp"
 

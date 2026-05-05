@@ -7,6 +7,7 @@
 #include "LinearController.hpp"
 #include "Types.hpp"
 
+// 验证线性系统的流映射返回 Ax + Bu。
 TEST(DynamicsTest, LinearSystem_FlowMap)
 {
     Eigen::Matrix2d A = Eigen::Matrix2d::Identity();
@@ -23,6 +24,7 @@ TEST(DynamicsTest, LinearSystem_FlowMap)
     EXPECT_TRUE(xdot.isApprox(expected, 1e-10));
 }
 
+// 验证控制输入为零时流映射退化为 Ax。
 TEST(DynamicsTest, LinearSystem_FlowMapZeroInput)
 {
     Eigen::Matrix3d A;
@@ -42,6 +44,7 @@ TEST(DynamicsTest, LinearSystem_FlowMapZeroInput)
     EXPECT_DOUBLE_EQ(xdot(2), -1.0);
 }
 
+// 验证线性近似返回的 A、B 和名义流值正确。
 TEST(DynamicsTest, LinearSystem_LinearApproximation)
 {
     Eigen::Matrix2d A, B;
@@ -61,6 +64,7 @@ TEST(DynamicsTest, LinearSystem_LinearApproximation)
     EXPECT_TRUE(approx.f.isApprox(expectedF, 1e-10));
 }
 
+// 验证受控流映射使用控制器插值得到的输入。
 TEST(DynamicsTest, ControlledFlowMap_UsesInterpolatedControllerInput)
 {
     Eigen::Matrix2d A = Eigen::Matrix2d::Zero();

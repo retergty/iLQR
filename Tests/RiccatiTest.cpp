@@ -10,6 +10,7 @@
 #include "LinearApproximation.hpp"
 #include "QuadraticApproximation.hpp"
 
+// 验证 reduced form 下单步 Riccati 递推与标量参考值一致。
 TEST(RiccatiTest, ReducedFormOneStepMatchesScalarReference)
 {
     using Scalar = double;
@@ -53,6 +54,7 @@ TEST(RiccatiTest, ReducedFormOneStepMatchesScalarReference)
     EXPECT_NEAR(s, -177.125, 1e-12);
 }
 
+// 验证零动力学情形下单步 Riccati 递推退化为终端代价形式。
 TEST(RiccatiTest, OneStep_ZeroDynamicsTerminalLike)
 {
     using Scalar = double;
@@ -92,6 +94,7 @@ TEST(RiccatiTest, OneStep_ZeroDynamicsTerminalLike)
     EXPECT_DOUBLE_EQ(s, 0.0);
 }
 
+// 验证 non-reduced form 下单步 Riccati 递推与标量参考值一致。
 TEST(RiccatiTest, NonReducedFormOneStepMatchesScalarReference)
 {
     using Scalar = double;

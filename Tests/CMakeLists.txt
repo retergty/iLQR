@@ -2,8 +2,7 @@
 include(FetchContent)
 FetchContent_Declare(
   googletest
-  URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  URL "https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip"
 )
 FetchContent_MakeAvailable(googletest)
 
@@ -22,6 +21,7 @@ set(TEST_SOURCES
     DynamicsTest.cpp
     RiccatiTest.cpp
     iLQREndToEndTest.cpp
+    #SystemDynamicsLinearizerTest.cpp
 )
 
 # 循环添加所有测试

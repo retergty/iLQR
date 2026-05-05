@@ -8,6 +8,7 @@
 #include "QuadraticApproximation.hpp"
 #include "QuadraticStateCost.hpp"
 
+// 验证输入变量变换只影响二次近似里与输入相关的项。
 TEST(ApproximationTest, ChangeOfInputVariablesTransformsQuadraticApproximation)
 {
     ScalarFunctionQuadraticApproximation<double, 2, 2> approximation;
@@ -42,6 +43,7 @@ TEST(ApproximationTest, ChangeOfInputVariablesTransformsQuadraticApproximation)
     EXPECT_DOUBLE_EQ(approximation.f, originalF);
 }
 
+// 验证输入变量变换只影响线性近似里的输入 Jacobian。
 TEST(ApproximationTest, ChangeOfInputVariablesTransformsLinearApproximation)
 {
     VectorFunctionLinearApproximation<double, 2, 2, 2> approximation;
@@ -66,6 +68,7 @@ TEST(ApproximationTest, ChangeOfInputVariablesTransformsLinearApproximation)
     EXPECT_TRUE(approximation.f.isApprox(originalF, 1e-12));
 }
 
+// 验证线性近似和二次近似结构体的基础代数运算。
 TEST(ApproximationTest, LinearAndQuadraticApproximationUtilities)
 {
     auto linear = ScalarFunctionLinearApproximation<double, 2, 1>::Zero();
@@ -108,6 +111,7 @@ TEST(ApproximationTest, LinearAndQuadraticApproximationUtilities)
     EXPECT_DOUBLE_EQ(scaled.f, 5.5);
 }
 
+// 验证 LQ 近似器对中间时刻代价和动力学线性化的计算结果。
 TEST(ApproximationTest, LinearQuadraticApproximatorComputesIntermediateCostAndLQ)
 {
     using Approximator = LinearQuadraticApproximator<double, 2, 2, 2, 0, 0, 0, 0, 0, 0>;
@@ -180,6 +184,7 @@ TEST(ApproximationTest, LinearQuadraticApproximatorComputesIntermediateCostAndLQ
     EXPECT_TRUE(modelData.cost.dfduu.isApprox(R, 1e-12));
 }
 
+// 验证 LQ 近似器对终端代价近似和终端模型数据的计算结果。
 TEST(ApproximationTest, LinearQuadraticApproximatorComputesFinalCostAndLQ)
 {
     using Approximator = LinearQuadraticApproximator<double, 2, 2, 2, 0, 0, 0, 0, 0, 0>;

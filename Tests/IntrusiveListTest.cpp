@@ -12,6 +12,7 @@ struct TestNode : public IntrusiveListNode<TestNode>
 };
 }
 
+// 验证空链表满足 begin() == end()。
 TEST(IntrusiveListTest, EmptyListBeginsAtEnd)
 {
     IntrusiveList<TestNode> list;
@@ -20,6 +21,7 @@ TEST(IntrusiveListTest, EmptyListBeginsAtEnd)
     EXPECT_EQ(list.begin(), list.end());
 }
 
+// 验证在末尾前插入节点后，元素顺序和迭代器遍历结果正确。
 TEST(IntrusiveListTest, InsertBeforeEndPreservesOrder)
 {
     IntrusiveList<TestNode> list;
@@ -51,6 +53,7 @@ TEST(IntrusiveListTest, InsertBeforeEndPreservesOrder)
     EXPECT_EQ(it->value, 2);
 }
 
+// 验证在头节点前插入时会正确更新链表头。
 TEST(IntrusiveListTest, InsertBeforeBeginUpdatesHead)
 {
     IntrusiveList<TestNode> list;
@@ -70,6 +73,7 @@ TEST(IntrusiveListTest, InsertBeforeBeginUpdatesHead)
     EXPECT_EQ(it, list.end());
 }
 
+// 验证 const 迭代器可以在不修改链表的情况下正确遍历。
 TEST(IntrusiveListTest, ConstIteratorTraversesReadOnlyList)
 {
     IntrusiveList<TestNode> list;
@@ -90,6 +94,7 @@ TEST(IntrusiveListTest, ConstIteratorTraversesReadOnlyList)
     EXPECT_EQ((constList.cbegin() + 1)->value, 2);
 }
 
+// 验证 erase 返回后继迭代器，并且被摘除的节点可以重新插入其他链表。
 TEST(IntrusiveListTest, EraseReturnsFollowingIteratorAndAllowsReinsert)
 {
     IntrusiveList<TestNode> list;
@@ -120,6 +125,7 @@ TEST(IntrusiveListTest, EraseReturnsFollowingIteratorAndAllowsReinsert)
     EXPECT_EQ(other.begin()->value, 2);
 }
 
+// 验证 remove 会更新归属关系，并允许脱离后的节点在链表间移动。
 TEST(IntrusiveListTest, RemoveUpdatesOwnerHeadAndDetachedNodeCanMove)
 {
     IntrusiveList<TestNode> source;

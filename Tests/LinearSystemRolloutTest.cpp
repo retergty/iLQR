@@ -6,6 +6,7 @@
 #include "LinearController.hpp"
 #include "LinearSystemDynamics.hpp"
 
+// 验证零输入 rollout 与 xdot = x 的解析解一致。
 TEST(LinearSystemRolloutTest, ZeroInputMatchesExponentialSolution)
 {
     Eigen::Matrix<double, 3, 3> A = Eigen::Matrix<double, 3, 3>::Identity();
@@ -48,6 +49,7 @@ TEST(LinearSystemRolloutTest, ZeroInputMatchesExponentialSolution)
     }
 }
 
+// 验证带反馈控制器的 rollout 与闭环解析解一致。
 TEST(LinearSystemRolloutTest, FeedbackControllerMatchesClosedLoopSolution)
 {
     Eigen::Matrix<double, 3, 3> A = Eigen::Matrix<double, 3, 3>::Identity();

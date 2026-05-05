@@ -12,8 +12,7 @@ if(NOT Eigen3_FOUND)
   include(FetchContent)
   FetchContent_Declare(
     eigen
-    URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    URL "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz"
   )
   FetchContent_MakeAvailable(eigen)
 
@@ -22,7 +21,8 @@ if(NOT Eigen3_FOUND)
   endif()
 endif()
 
-add_executable(iLQR iLQR.cpp)
+add_executable(iLQR iLQR.cpp
+  AutomaticDifferentation/FiniteDifferenceMethods.hpp)
 
 set(ILQR_HEADERS
   DDPData.hpp
@@ -40,6 +40,7 @@ set(ILQR_HEADERS
   AugmentedLagrangian/StateInputAugmentedLagrangian.hpp
   AugmentedLagrangian/StateInputAugmentedLagrangianCollection.hpp
   AugmentedLagrangian/StateInputAugmentedLagrangianInterface.hpp
+  AutomaticDifferentation/FiniteDifferenceMethods.hpp
   Constraint/ConstraintOrder.hpp
   Constraint/StateConstraint.hpp
   Constraint/StateInputConstraint.hpp
@@ -48,9 +49,10 @@ set(ILQR_HEADERS
   Cost/Cost.hpp
   Cost/CostCollection.hpp
   Cost/QuadraticStateCost.hpp
-  Dynamics/Dynamics.hpp
+  Dynamics/ControlledSystemBase.hpp
   Dynamics/LinearSystemDynamics.hpp
   Dynamics/SystemDynamicsBase.hpp
+  Dynamics/SystemDynamicsLinearizer.hpp
   Initialization/DefaultInitializer.hpp
   Initialization/Initializer.hpp
   Initialization/OperatingPoints.hpp

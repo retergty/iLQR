@@ -10,6 +10,7 @@
 #include "QuadraticStateCost.hpp"
 #include "Types.hpp"
 
+// 验证带二次跟踪代价的问题可以完整运行 iLQR 求解流程。
 TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost)
 {
     Eigen::Matrix2d A = Eigen::Matrix2d::Identity();
@@ -39,6 +40,7 @@ TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost)
     EXPECT_NO_THROW(solver.run(0.0, initState));
 }
 
+// 验证 rollout 统计出的中间代价和终端代价与二次跟踪代价一致。
 TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts)
 {
     using Solver = iLQR<double, 2, 2, 2>;

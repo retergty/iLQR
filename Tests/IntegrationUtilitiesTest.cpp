@@ -4,6 +4,7 @@
 #include "TrapezoidalIntegration.hpp"
 #include "Types.hpp"
 
+// 验证非均匀时间网格上的标量梯形积分结果正确。
 TEST(IntegrationUtilitiesTest, TrapezoidalIntegrationScalarNonUniformGrid)
 {
     std::array<double, 3> times = {0.0, 1.0, 3.0};
@@ -14,6 +15,7 @@ TEST(IntegrationUtilitiesTest, TrapezoidalIntegrationScalarNonUniformGrid)
     EXPECT_DOUBLE_EQ(result, 8.0);
 }
 
+// 验证向量梯形积分按分量独立计算。
 TEST(IntegrationUtilitiesTest, TrapezoidalIntegrationVector)
 {
     std::array<double, 2> times = {0.0, 2.0};
@@ -31,6 +33,7 @@ TEST(IntegrationUtilitiesTest, TrapezoidalIntegrationVector)
     EXPECT_TRUE(result.isApprox(expected, 1e-10));
 }
 
+// 验证 Observer 达到容量后停止写入，并且可通过 clear() 重置。
 TEST(IntegrationUtilitiesTest, ObserverStoresUpToCapacityAndCanClear)
 {
     std::array<double, 2> times = {};

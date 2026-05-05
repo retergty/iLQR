@@ -6,7 +6,7 @@
 
 #include "Cost.hpp"
 #include "CostCollection.hpp"
-#include "Dynamics.hpp"
+#include "ControlledSystemBase.hpp"
 #include "SystemDynamicsBase.hpp"
 #include "Controller.hpp"
 #include "Multiplier.hpp"

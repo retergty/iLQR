@@ -6,6 +6,7 @@
 #include "QuadraticPenalty.hpp"
 #include "SlacknessSquaredHingePenalty.hpp"
 
+// 验证二次罚函数的取值、导数和乘子更新公式。
 TEST(PenaltyTest, QuadraticPenaltyValueDerivativesAndMultiplierUpdate)
 {
     const QuadraticPenalty<double> penalty({4.0, 0.25});
@@ -20,6 +21,7 @@ TEST(PenaltyTest, QuadraticPenaltyValueDerivativesAndMultiplierUpdate)
     EXPECT_DOUBLE_EQ(penalty.initializeMultiplier(), 0.0);
 }
 
+// 验证松弛平方 hinge 罚函数两个分支及其乘子更新。
 TEST(PenaltyTest, SlacknessSquaredHingePenaltyBranchesAndMultiplierUpdate)
 {
     const SlacknessSquaredHingePenalty<double> penalty({10.0, 0.5});
@@ -38,6 +40,7 @@ TEST(PenaltyTest, SlacknessSquaredHingePenaltyBranchesAndMultiplierUpdate)
     EXPECT_DOUBLE_EQ(penalty.initializeMultiplier(), 0.0);
 }
 
+// 验证改进松弛 barrier 罚函数与对数分支和松弛分支公式一致。
 TEST(PenaltyTest, ModifiedRelaxedBarrierPenaltyMatchesLogAndRelaxedBranches)
 {
     const ModifiedRelaxedBarrierPenalty<double> penalty({10.0, 0.1, 0.5});
@@ -67,6 +70,7 @@ TEST(PenaltyTest, ModifiedRelaxedBarrierPenaltyMatchesLogAndRelaxedBranches)
     EXPECT_DOUBLE_EQ(penalty.initializeMultiplier(), 1.0);
 }
 
+// 验证罚函数包装器对纯状态线性约束正确应用链式法则。
 TEST(PenaltyTest, PenaltyWrapperLinearStateConstraintUsesChainRule)
 {
     QuadraticPenalty<double> quadraticPenalty({2.0, 0.5});
@@ -89,6 +93,7 @@ TEST(PenaltyTest, PenaltyWrapperLinearStateConstraintUsesChainRule)
     EXPECT_TRUE(approximation.dfdxx.isApprox(expectedDfdxx, 1e-12));
 }
 
+// 验证罚函数包装器对状态输入线性约束正确应用链式法则。
 TEST(PenaltyTest, PenaltyWrapperLinearStateInputConstraintUsesChainRule)
 {
     QuadraticPenalty<double> quadraticPenalty({4.0, 0.5});
