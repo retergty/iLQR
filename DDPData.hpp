@@ -27,6 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file DDPData.hpp
+ * @brief DDP 求解器用的原始/对偶数据容器：PrimalDataContainer 与 DualDataContainer。
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -35,14 +39,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "DualSolution.hpp"
 #include "ProblemMetrics.hpp"
 #include "RiccatiModification.hpp"
+
 /**
- * Primal data container
- *
- * The design philosophy behind is to keep all member variables consistent. All (time, post, .., modelDataEventTime)
- * trajectories should be the rollout result of the controller
- *
- * There is one exception that breaks the consistency. When using an external controller to initialize the controller, it is obvious that
- * the rest of member variables are not the result of the controller. But they will be cleared and populated when runInit is called.
+ * @brief 原始数据容器：存放一次 rollout 的轨迹、控制器、中间/终端模型数据与 problem metrics。
+ * @note 各轨迹与 modelData 应来自同一控制器的 rollout；用外部控制器初始化时需随后调用 run 以补齐数据。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
@@ -62,6 +62,7 @@ struct PrimalDataContainer
   // intermediate model data trajectory
   std::array<ModelData_t, PredictLength> modelDataTrajectory;
 
+  /** @brief 与另一容器交换内容。 */
   void swap(PrimalDataContainer &other)
   {
     primalSolution.swap(other.primalSolution);
@@ -70,20 +71,18 @@ struct PrimalDataContainer
     modelDataTrajectory.swap(other.modelDataTrajectory);
   }
 
+  /** @brief 清空 primal 解与 problem metrics；modelDataTrajectory 在下次近似时被覆盖。 */
   void clear()
   {
     primalSolution.clear();
     problemMetrics.clear();
-    modelDataTrajectory.clear();
+    // std::array has no clear(); modelDataTrajectory is overwritten on next approximateOptimalControlProblem()
   }
 };
 
 /**
- * Dual data container
- *
- * The design philosophy behind is to keep all member variables consistent. valueFunctionTrajectory is the direct result of
- * (projectedModelData,riccatiModification) trajectories.
- *
+ * @brief 对偶数据容器：存放对偶解、投影模型轨迹、Riccati 修正轨迹与 value function 轨迹。
+ * @note valueFunctionTrajectory 由 (projectedModelData, riccatiModification) 经 Riccati 递推得到。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
@@ -103,6 +102,7 @@ struct DualDataContainer
   // Riccati solution coefficients
   std::array<ValueFunctionQuadraticApproximation_t, PredictLength + 1> valueFunctionTrajectory;
 
+  /** @brief 与另一容器交换内容。 */
   void swap(DualDataContainer &other)
   {
     dualSolution.swap(other.dualSolution);

@@ -27,30 +27,18 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file ModifiedRelaxedBarrierPenalty.hpp
+ * @brief 修正松弛对数障碍惩罚：不等式 h≥0，p=(λ²/ρ)ψ(ρh/λ)，ψ 为平移二次松弛 log barrier，定义域 x>-1。
+ */
 #pragma once
 
 #include "AugmentedPenaltyBase.hpp"
 #include <math.h>
 
 /**
- *  Implements the augmented Lagrangian for a single inequality constraint \f$ h \geq 0 \f$ through the modified-log-barrier method.
- *
- *  This leads to the following augmented-Lagrangian penalty function (referred to as the smooth-PHR penalty in the corresponding paper):
- *  \f[
- *      p(h, \lambda) = \frac{\lambda^2}{\rho} \psi\left(\frac{\rho h}{\lambda}\right).
- *  \f]
- *
- *  where \f$ \pho \f$ is the scale. \f$ \psi(.) \f$ is defined as a shifted quadratically-relaxed log barrier function.
- *  Unlike the relaxed log barrier penalty, this function is defined over the domain \f$ x > -1 \f$. Therefore, the value of the
- *  relaxation parameter has to also belong to this domain.
- *
- *  This is then minimized by the solver, while the maximization of the approximate dual function is done by updating the Lagrange
- *  multipliers with the following update rule:
- *  \f[
- *      \lambda^*_{k+1} = -\alpha \lambda^*_k \psi'\left(\frac{\pho h^*_{k+1}}{\lambda^*_k}\right).
- *  \f]
- *
- * where \f$ \psi'(.) \f$ is the total derivative of \f$ \psi(.) \f$.
+ * @brief 单不等式约束的修正松弛障碍惩罚实现：乘子更新 λ_{k+1}=-α*λ_k*ψ'(ρh/λ_k)。
+ * @tparam Scalar 标量类型。
  */
 template <typename Scalar>
 class ModifiedRelaxedBarrierPenalty final : public AugmentedPenaltyBase<Scalar>

@@ -27,6 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file StateInputAugmentedLagrangian.hpp
+ * @brief 状态-输入增广拉格朗日实现：绑定约束与惩罚，提供取值、二次近似与乘子更新。
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -37,15 +41,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "LagrangianMetrics.hpp"
 #include "QuadraticApproximation.hpp"
 
-/** The base class for Augmented Lagrangian penalty of state-input constraint. */
+/**
+ * @brief 状态-输入约束的增广拉格朗日惩罚实现：委托约束与 Penalty 计算取值与二次近似。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 输入维度。
+ */
 template <typename Scalar, int XDimisions, int UDimisions>
 class StateInputAugmentedLagrangian final : public StateInputAugmentedLagrangianInterface<Scalar, XDimisions, UDimisions>
 {
 public:
   /**
-   * Constructor.
-   * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
-   * @param [in] penaltyPtrArray: An array of pointers to the penalty function on the constraint.
+   * @brief 用约束指针与惩罚指针构造。
+   * @param [in] constraintPtr 作为软约束的状态-输入约束。
+   * @param [in] augmented_penalty 约束上的惩罚函数。
    */
   StateInputAugmentedLagrangian(StateInputConstraint<Scalar, XDimisions, UDimisions> *constraintPtr, AugmentedPenaltyBase<Scalar> *augmented_penalty) : constraint_ptr_(constraintPtr), penalty_(augmented_penalty) {};
 

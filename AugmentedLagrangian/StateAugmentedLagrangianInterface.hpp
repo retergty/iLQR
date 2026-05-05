@@ -1,3 +1,7 @@
+/**
+ * @file StateAugmentedLagrangianInterface.hpp
+ * @brief 仅状态增广拉格朗日接口：约束惩罚取值、二次近似与乘子初始化/更新。
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -6,7 +10,11 @@
 #include "QuadraticApproximation.hpp"
 #include "IntrusiveList.hpp"
 
-/** The base class for Augmented Lagrangian penalty of state constraint. */
+/**
+ * @brief 仅状态约束的增广拉格朗日惩罚接口：提供取值、二次近似、乘子更新与初始化。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ */
 template<typename Scalar, int XDimisions>
 class StateAugmentedLagrangianInterface : IntrusiveListNode<StateAugmentedLagrangianInterface<Scalar, XDimisions>>
 {
@@ -14,15 +22,15 @@ public:
   StateAugmentedLagrangianInterface() = default;
   virtual ~StateAugmentedLagrangianInterface() = default;
 
-  /** Get the constraint and its penalty value */
+  /** @brief 获取约束与惩罚值（LagrangianMetrics）。 */
   virtual LagrangianMetrics<Scalar> getValue(Scalar time, const Vector<Scalar, XDimisions>& state, const Multiplier<Scalar>& multiplier) const = 0;
 
-  /** Get the constraint's penalty quadratic approximation */
+  /** @brief 获取约束惩罚的二次近似。 */
   virtual ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> getQuadraticApproximation(const Scalar time, const Vector<Scalar, XDimisions>& state, const Multiplier<Scalar>& multiplier) const = 0;
 
-  /** Update Lagrange/penalty multipliers and the penalty function value. */
+  /** @brief 更新拉格朗日/惩罚乘子并返回更新后乘子与惩罚值。 */
   virtual std::pair<Multiplier<Scalar>, Scalar> updateLagrangian(const Scalar time, const Vector<Scalar, XDimisions>& state, const Scalar constraint, const Multiplier<Scalar>& multiplier) const = 0;
 
-  /** Initialize Lagrange/penalty multipliers. */
+  /** @brief 初始化拉格朗日/惩罚乘子。 */
   virtual Multiplier<Scalar> initializeLagrangian(const Scalar time) const = 0;
 };

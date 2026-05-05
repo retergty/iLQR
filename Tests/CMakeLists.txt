@@ -3,6 +3,7 @@ include(FetchContent)
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(googletest)
 
@@ -11,6 +12,16 @@ set(TEST_SOURCES
     LinearSystemRolloutTest.cpp
     LinearSystemDiscreteTest.cpp
     LinearSystemILQRTest.cpp
+    LinearInterpolationTest.cpp
+    IntegrationUtilitiesTest.cpp
+    IntrusiveListTest.cpp
+    ApproximationTest.cpp
+    PenaltyTest.cpp
+    UtilityTest.cpp
+    CostTest.cpp
+    DynamicsTest.cpp
+    RiccatiTest.cpp
+    iLQREndToEndTest.cpp
 )
 
 # 循环添加所有测试

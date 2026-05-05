@@ -1,3 +1,7 @@
+/**
+ * @file OptimalControlProblem.hpp
+ * @brief 最优控制问题定义：代价、拉格朗日、参考轨迹与动力学指针。
+ */
 #pragma once
 
 #include "Cost.hpp"
@@ -9,22 +13,29 @@
 #include "StateAugmentedLagrangianCollection.hpp"
 #include "StateInputAugmentedLagrangianCollection.hpp"
 
-/** Optimal Control Problem definition */
+/**
+ * @brief 最优控制问题：中间/终端代价、等式/不等式增广拉格朗日、参考轨迹与系统动力学。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 控制维度。
+ * @tparam PredictLength 预测步数。
+ * @tparam StateEqLagrangianContrainNumbers 等 各约束维度。
+ */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
   int StateEqLagrangianContrainNumbers, int StateInputEqLagrangianContrainNumbers, int StateIneqLagrangianContrainNumbers, int StateInputIneqLagrangianContrainNumbers,
   int FinalStateEqLagrangianContrainNumbers, int FinalStateIneqFinalLagrangianContrainNumbers >
 struct OptimalControlProblem
 {
-  /** Default constructor */
+  /** @brief 默认构造。 */
   OptimalControlProblem() = default;
 
-  /** Default destructor */
+  /** @brief 析构函数。 */
   ~OptimalControlProblem() = default;
 
-  /** Copy constructor */
+  /** @brief 禁止拷贝构造。 */
   OptimalControlProblem(const OptimalControlProblem& other) = delete;
 
-  /** Copy assignment */
+  /** @brief 禁止拷贝赋值。 */
   OptimalControlProblem& operator=(const OptimalControlProblem& rhs) = delete;
 
   // /** Move constructor */
@@ -33,36 +44,35 @@ struct OptimalControlProblem
   // /** Move assignment */
   // OptimalControlProblem &operator=(OptimalControlProblem &&rhs) noexcept = default;
 
-  /* Cost */
-  /** Intermediate cost */
+  /** @brief 中间代价（状态-输入）。 */
   StateInputCostCollection<Scalar, XDimisions, UDimisions, PredictLength + 1> cost;
-  /** Intermediate state-only cost */
+  /** @brief 仅状态中间代价。 */
   StateCostCollection<Scalar, XDimisions, PredictLength + 1> stateCost;
 
-  // /** Final cost */
+  /** @brief 终端代价。 */
   StateCostCollection<Scalar, XDimisions, PredictLength + 1> finalCost;
 
-  // target trajectory
+  /** @brief 参考时间轨迹。 */
   std::array<Scalar, PredictLength + 1> timeTrajectory;
+  /** @brief 参考状态轨迹。 */
   std::array<Vector<Scalar, XDimisions>, PredictLength + 1> stateTrajectory;
+  /** @brief 参考输入轨迹。 */
   std::array<Vector<Scalar, UDimisions>, PredictLength + 1> inputTrajectory;
 
-  /* Lagrangians */
-  // /** Lagrangian for equality constraints */
+  /** @brief 状态-输入等式约束增广拉格朗日。 */
   StateInputAugmentedLagrangianCollection<Scalar, XDimisions, UDimisions, StateInputEqLagrangianContrainNumbers> equalityLagrangian;
-  // /** Lagrangian for state-only equality constraints */
+  /** @brief 仅状态等式约束增广拉格朗日。 */
   StateAugmentedLagrangianCollection<Scalar, XDimisions, StateEqLagrangianContrainNumbers> stateEqualityLagrangian;
-  // /** Lagrangian for inequality constraints */
+  /** @brief 状态-输入不等式约束增广拉格朗日。 */
   StateInputAugmentedLagrangianCollection<Scalar, XDimisions, UDimisions, StateInputIneqLagrangianContrainNumbers> inequalityLagrangian;
-  // /** Lagrangian for state-only inequality constraints */
+  /** @brief 仅状态不等式约束增广拉格朗日。 */
   StateAugmentedLagrangianCollection<Scalar, XDimisions, StateIneqLagrangianContrainNumbers> stateInequalityLagrangian;
 
-  /** Lagrangian for final equality constraints */
+  /** @brief 终端等式约束增广拉格朗日。 */
   StateAugmentedLagrangianCollection<Scalar, XDimisions, FinalStateEqLagrangianContrainNumbers> finalEqualityLagrangian;
-  /** Lagrangian for final inequality constraints */
+  /** @brief 终端不等式约束增广拉格朗日。 */
   StateAugmentedLagrangianCollection<Scalar, XDimisions, FinalStateIneqFinalLagrangianContrainNumbers> finalInequalityLagrangian;
 
-  /* Dynamics */
-  /** System dynamics pointer */
+  /** @brief 系统动力学指针。 */
   SystemDynamicsBase<Scalar, XDimisions, UDimisions>* dynamicsPtr;
 };

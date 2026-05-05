@@ -27,30 +27,17 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file SmoothAbsolutePenalty.hpp
+ * @brief 光滑绝对值惩罚：用于等式约束 h=0，p(h)=μ√(h²+δ²)，乘子更新 λ_{k+1}=λ_k-α*h。
+ */
 #pragma once
 
 #include "AugmentedPenaltyBase.hpp"
 
 /**
- * Implements the smooth-absolute function for a single equality constraint \f$ h = 0 \f$
- *
- * \f[
- *   p(h) = \mu sqrt(h^2 + \delta^2).
- * \f]
- *
- * where \f$ \mu > 0 \f$, and \f$ \delta > 0 \f$ are scale and relaxation parameters respectively. Note that
- * \f$ \delta \f$ defines the error bound between the absolute function and its approximation:
- *
- * \f[
- *   | x - sqrt(h^2 + \delta^2) | \leq \delta, \quad \forall x \in R
- * \f]
- *
- *  This is then minimized with the solver, while the Lagrange multipliers are updated as:
- * \f[
- *      \lambda^*_{k+1} = \lambda^*_k - \alpha h^*_{k+1}.
- * \f]
- *
- * with \f$ alpha \f$ is the step-length. In Augmented Lagrangian method this is often set to \f$ \mu \f$.
+ * @brief 单等式约束的光滑绝对值惩罚实现：p(h)=μ√(h²+δ²)，μ 为尺度、δ 为松弛参数。
+ * @tparam Scalar 标量类型。
  */
 template<typename Scalar>
 class SmoothAbsolutePenalty final : public AugmentedPenaltyBase {

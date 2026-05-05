@@ -27,26 +27,32 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
+/**
+ * @file RiccatiModification.hpp
+ * @brief Riccati 方程修正项：哈密顿量 Hessian、约束零空间投影、状态代价修正等。
+ */
 #pragma once
 
 #include "Types.hpp"
 
 /**
- * The struct contains Riccati equation modification terms.
+ * @brief 单节点 Riccati 修正：时间、状态代价修正 deltaQm、哈密顿量 Hessian Hm、约束零空间投影。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 控制维度。
  */
 template <typename Scalar, int XDimisions, int UDimisions>
 struct RiccatiModification
 {
+  /** @brief 该节点时间。 */
   Scalar time_ = 0.0;
 
+  /** @brief 状态代价的 Riccati 修正矩阵（如 Hessian 修正等）。 */
   Matrix<Scalar, XDimisions, XDimisions> deltaQm_;
-  // Matrix<Scalar, XDimisions, UDimisions> deltaGm_;
-  // Vector<Scalar, UDimisions> deltaGv_;
 
-  /** The Hessian matrix of the Hamiltonian, \f$Hm\f$. */
+  /** @brief 哈密顿量对控制的 Hessian 矩阵 Hm。 */
   Matrix<Scalar, UDimisions, UDimisions> hamiltonianHessian_;
-  // /** The right pseudo-inverse of \f$Dm\f$ */
-  // Matrix<Scalar, UDimisions, XDimisions> constraintRangeProjector_;
-  // /** \f$DmNull inv(DmNull^T * Hm * DmNull) * DmNull^T = (I - invHm * Dm^T * inv(Dm * invHm * Dm^T) * Dm) * invHm\f$ */
+
+  /** @brief 约束零空间投影矩阵（无约束时为 inv(Hm) 的 UUT 因子）。 */
   Matrix<Scalar, UDimisions, UDimisions> constraintNullProjector_;
 };

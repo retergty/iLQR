@@ -1,22 +1,26 @@
 #pragma once
 #include "Dynamics.hpp"
-
+#include "SystemDynamicsBase.hpp"
 /**
- *
- * A linear time invariant system with the following flow and jump maps:
- *
- * - \f$ \dot{x} = A * x + B * u   \quad \text{for intermediate times}, \f$
- *
- * where \f$ g(x) \f$ is the guard surface defined by OdeBase::computeGuardSurfaces(t, x).
+ * @file LinearSystemDynamics.hpp
+ * @brief 线性时不变系统动力学：流映射 \f$ \dot{x} = A x + B u \f$。
  */
 template <typename Scalar, int XDimisions, int UDimisions>
 class LinearSystemDynamics : public SystemDynamicsBase<Scalar, XDimisions, UDimisions>
 {
 public:
+    using SystemDynamicsBase<Scalar, XDimisions, UDimisions>::computeFlowMap;
+  /**
+   * @brief 用状态矩阵 A 与控制矩阵 B 构造线性系统。
+   * @param [in] A 状态矩阵。
+   * @param [in] B 控制矩阵。
+   */
   LinearSystemDynamics(const Matrix<Scalar, XDimisions, XDimisions> &A, const Matrix<Scalar, XDimisions, UDimisions> &B) : A_(A), B_(B) {};
 
+  /** @brief 析构函数。 */
   ~LinearSystemDynamics() override = default;
 
+  /** @brief 计算流映射：\f$ \dot{x} = A x + B u \f$。 */
   Vector<Scalar, XDimisions> computeFlowMap(Scalar t, const Vector<Scalar, XDimisions> &x, const Vector<Scalar, UDimisions> &u) const override
   {
     (void)t;
@@ -25,6 +29,7 @@ public:
     return f;
   }
 
+  /** @brief 返回线性近似：dfdx=A, dfdu=B, f=A*x+B*u。 */
   VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
   linearApproximation(Scalar t, const Vector<Scalar, XDimisions> &x, const Vector<Scalar, UDimisions> &u) override
   {
@@ -38,8 +43,11 @@ public:
   }
 
 protected:
+  /** @brief 拷贝构造（供子类使用）。 */
   LinearSystemDynamics(const LinearSystemDynamics &other) = default;
 
+  /** @brief 状态矩阵 A。 */
   Matrix<Scalar, XDimisions, XDimisions> A_;
+  /** @brief 控制矩阵 B。 */
   Matrix<Scalar, XDimisions, UDimisions> B_;
 };

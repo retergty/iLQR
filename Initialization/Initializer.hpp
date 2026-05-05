@@ -27,13 +27,19 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file Initializer.hpp
+ * @brief 轨迹初始化器接口：在无控制器的时间段内，由 (time, state) 与 nextTime 计算 input 与 nextState。
+ */
 #pragma once
 
 #include "Types.hpp"
 
 /**
- * This is the interface class that the solvers use to initialize the state and the input for the time steps that no controller
- * is available. For a trivial implementation of this class, refer to DefaultInitializer class.
+ * @brief 求解器在无控制器可用时使用的初始化器接口；简单实现见 DefaultInitializer。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimision 状态维度。
+ * @tparam UDimisions 控制维度。
  */
 template<typename Scalar, int XDimision, int UDimisions>
 class Initializer
@@ -43,18 +49,16 @@ public:
   virtual ~Initializer() = default;
 
   /**
-   * Computes the state and input of the next time step based on the current time and state. Note that it guaranteed that there is
-   * no event times in the interval [time, nextTime), but there might be an event at nextTime (with nextTime = time + timeStep).
-   *
-   * @param [in] time: The current time.
-   * @param [in] state: The current state.
-   * @param [in] nextTime: The next time step.
-   * @param [out] input: The current input.
-   * @param [out] nextState: The next state.
+   * @brief 由当前时间与状态及下一时刻，计算当前输入与下一状态。
+   * @param [in] time 当前时间。
+   * @param [in] state 当前状态。
+   * @param [in] nextTime 下一时刻（通常为 time + timeStep）。
+   * @param [out] input 当前段的输入。
+   * @param [out] nextState 下一时刻的状态。
    */
   virtual void compute(const Scalar time, const Vector<Scalar, XDimision>& state, const Scalar nextTime, Vector<Scalar, UDimisions>& input, Vector<Scalar, XDimision>& nextState) = 0;
 
 protected:
-  /** Copy constructor */
+  /** @brief 拷贝构造（保护）。 */
   Initializer(const Initializer& rhs) = default;
 };

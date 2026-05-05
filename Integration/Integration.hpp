@@ -1,31 +1,37 @@
+/**
+ * @file Integration.hpp
+ * @brief 常微分方程积分接口：自治系统基类 OdeBase、积分器类型与 IntegratorBase。
+ */
 #pragma once
 #include "Types.hpp"
 #include "Observer.hpp"
+
 /**
- * The base class for autonomous system dynamics.
+ * @brief 自治系统动力学基类：根据时间与状态计算状态导数 dx/dt。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
  */
 template <typename Scalar, int XDimisions>
 class OdeBase
 {
 public:
-  /** Default constructor */
+  /** @brief 默认构造。 */
   OdeBase() = default;
 
-  /** Default destructor */
+  /** @brief 虚析构。 */
   virtual ~OdeBase() = default;
 
   /**
-   * Computes the autonomous system dynamics.
-   * @param [in] t: Current time.
-   * @param [in] x: Current state.
-   * @return Current state time derivative
+   * @brief 计算当前时刻的状态导数。
+   * @param [in] t 当前时间。
+   * @param [in] x 当前状态。
+   * @return 状态对时间的导数。
    */
   virtual Vector<Scalar, XDimisions> computeFlowMap(Scalar t, const Vector<Scalar, XDimisions> &x) const = 0;
 };
 
 /**
- * @brief The IntegratorType enum
- * Enum used in selecting a specific integrator.
+ * @brief 积分器类型枚举：欧拉、ODE45、RK4 等。
  */
 enum class IntegratorType
 {
@@ -41,31 +47,28 @@ enum class IntegratorType
 };
 
 /**
- * The interface class for integration of autonomous systems.
+ * @brief 自治系统积分器基类：固定步长积分，将轨迹写入 Observer。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
  */
 template <typename Scalar, int XDimisions>
 class IntegratorBase
 {
 public:
-  /**
-   * Default constructor
-   */
+  /** @brief 默认构造。 */
   IntegratorBase() = default;
 
-  /**
-   * Default destructor
-   */
+  /** @brief 虚析构。 */
   virtual ~IntegratorBase() = default;
 
   /**
-   * Equidistant integration based on initial and final time as well as step length.
-   *
-   * @param [in] system: System dynamics
-   * @param [in] observer: Observer
-   * @param [in] initialState: Initial state.
-   * @param [in] startTime: Initial time.
-   * @param [in] finalTime: Final time.
-   * @param [in] dt: Time step.
+   * @brief 从 startTime 到 finalTime 以固定步长 dt 积分，结果通过 observer 输出。
+   * @param [in] system 系统动力学。
+   * @param [in,out] observer 观测器（接收时间与状态）。
+   * @param [in] initialState 初始状态。
+   * @param [in] startTime 初始时间。
+   * @param [in] finalTime 终止时间。
+   * @param [in] dt 时间步长。
    */
   virtual void integrateConst(OdeBase<Scalar, XDimisions> &system, Observer<Scalar, XDimisions> &observer, const Vector<Scalar, XDimisions> &initialState, const Scalar startTime, const Scalar finalTime, const Scalar dt) = 0;
 };

@@ -1,23 +1,30 @@
+/**
+ * @file LinearController.hpp
+ * @brief 线性控制器：u(t,x) = K(t)*x + uff(t)，支持时间/状态插值。
+ */
 #pragma once
 #include "Controller.hpp"
 #include "LinearInterpolation.hpp"
+
 /**
- * LinearController implements a time and state dependent controller of the
- * form u[x,t] = k[t] * x + uff[t]
+ * @brief 线性控制器，形式为 u[x,t] = k[t]*x + uff[t]，时间戳与增益/偏置为数组。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 控制维度。
+ * @tparam ArrayLen 时间节点数（时间戳与增益/偏置数组长度）。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t ArrayLen>
 class LinearController final : public ControllerBase<Scalar, XDimisions, UDimisions>
 {
 public:
-  /** Constructor, leaves object uninitialized */
+  /** @brief 默认构造，成员未初始化。 */
   LinearController() = default;
 
   /**
-   * @brief Constructor initializes all required members of the controller.
-   *
-   * @param [in] controllerTime: Time stamp array of the controller
-   * @param [in] controllerBias: The bias array.
-   * @param [in] controllerGain: The feedback gain array.
+   * @brief 用给定时间戳、前馈偏置与反馈增益数组初始化控制器。
+   * @param [in] controllerTime 时间戳数组。
+   * @param [in] controllerBias 前馈偏置数组 uff。
+   * @param [in] controllerGain 反馈增益数组 K。
    */
   LinearController(
       const std::array<Scalar, ArrayLen> &controllerTime,
@@ -27,13 +34,13 @@ public:
   {
   }
 
-  /** Copy constructor */
+  /** @brief 拷贝构造。 */
   LinearController(const LinearController &other) : LinearController(other.timeStamp_, other.biasArray_, other.gainArray_)
   {
     deltaBiasArray_ = other.deltaBiasArray_;
   }
 
-  /** Copy assignment (copy and swap idiom) */
+  /** @brief 拷贝赋值。 */
   LinearController &operator=(const LinearController &rhs)
   {
     timeStamp_ = rhs.timeStamp_;
@@ -44,14 +51,14 @@ public:
     return *this;
   }
 
-  /** Destructor */
+  /** @brief 析构函数。 */
   ~LinearController() override = default;
 
   /**
-   * @brief setController Assign control law
-   * @param [in] controllerTime: Time stamp array of the controller
-   * @param [in] controllerBias: The bias array.
-   * @param [in] controllerGain: The feedback gain array.
+   * @brief 设置控制律：时间戳、前馈偏置与反馈增益。
+   * @param [in] controllerTime 时间戳数组。
+   * @param [in] controllerBias 前馈偏置数组。
+   * @param [in] controllerGain 反馈增益数组。
    */
   void setController(
       const std::array<Scalar, ArrayLen> &controllerTime,
@@ -63,6 +70,7 @@ public:
     gainArray_ = controllerGain;
   }
 
+  /** @brief 按时间 t 与状态 x 计算控制：先时间插值得到 K 与 uff，再 u = uff + K*x。 */
   Vector<Scalar, UDimisions> computeInput(Scalar t, const Vector<Scalar, XDimisions> &x) const override
   {
     const std::pair<int, Scalar> indexAlpha = LinearInterpolation::timeSegment(t, timeStamp_);
@@ -74,6 +82,7 @@ public:
     return uff;
   }
 
+  /** @brief 按离散时间索引与状态计算控制（无插值）。 */
   Vector<Scalar, UDimisions> computeInput(size_t time_index, const Vector<Scalar, XDimisions> &x) const override
   {
     assert(time_index < ArrayLen);
@@ -84,15 +93,13 @@ public:
     return uff;
   }
 
+  /** @brief 返回控制器类型 LINEAR。 */
   ControllerType getType() const override
   {
     return ControllerType::LINEAR;
   }
 
-  /**
-   * @brief clears and reverts back to an empty controller.
-   * Therefore, if empty() method is called, it will return true.
-   */
+  /** @brief 清空控制器：时间戳置零，增益与偏置置零；之后 empty() 返回 true。 */
   void clear() override
   {
     for (size_t i = 0; i < ArrayLen; ++i)
@@ -104,11 +111,7 @@ public:
     }
   }
 
-  /**
-   * Returns whether the class contains any information.
-   *
-   * @return true if it contains no information, false otherwise.
-   */
+  /** @brief 判断是否为空：若所有时间戳近似为 0 则视为空。 */
   bool empty() const override
   {
     bool is_empty = true;
@@ -122,11 +125,13 @@ public:
     return is_empty;
   }
 
+  /** @brief 返回时间节点数（数组长度）。 */
   constexpr static size_t size()
   {
     return ArrayLen;
   }
 
+  /** @brief 与另一线性控制器交换时间戳、偏置、deltaBias、增益。 */
   void swap(LinearController &other)
   {
     timeStamp_.swap(other.timeStamp_);

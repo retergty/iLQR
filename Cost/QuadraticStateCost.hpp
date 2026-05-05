@@ -1,44 +1,52 @@
+/**
+ * @file QuadraticStateCost.hpp
+ * @brief 二次仅状态代价：l = 0.5 (x-x_ref)' Q (x-x_ref)，支持参考轨迹插值。
+ */
 #pragma once
 
 #include "Cost.hpp"
 
+/**
+ * @brief 二次仅状态代价项：l = 0.5 (x - x_ref)' Q (x - x_ref)，x_ref 由参考轨迹插值得到。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam ArrayLength 轨迹长度。
+ */
 template <typename Scalar, int XDimisions, int ArrayLength>
-/** Quadratic state-only cost term */
 class QuadraticStateCost : public StateCost<Scalar, XDimisions, ArrayLength>
 {
 public:
   /**
-   * Constructor for the quadratic cost function defined as the following:
-   * \f$ \l = 0.5(x-x_{n})' Q (x-x_{n}) \f$.
-   * @param [in] Q: \f$ Q \f$
+   * @brief 用权重矩阵 Q 构造二次代价。
+   * @param [in] Q 半正定权重矩阵。
    */
-  explicit QuadraticStateCost(const Matrix<Scalar, XDimisions, XDimisions>& Q) : Q_(Q) {};
+  explicit QuadraticStateCost(const Matrix<Scalar, XDimisions, XDimisions>& Q) : StateCost<Scalar, XDimisions, ArrayLength>(0), Q_(Q) {};
   ~QuadraticStateCost() override = default;
 
-  /** Get cost term value */
+  /** @brief 获取代价值 0.5 * (x-x_ref)' Q (x-x_ref)。 */
   Scalar getValue(Scalar time, const Vector<Scalar, XDimisions>& state,
     const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength>& stateTrajectoy) const final
   {
-    const Vector<Scalar, XDimisions> xDeviation = getStateDeviation(time, state, stateTrajectoy);
+    const Vector<Scalar, XDimisions> xDeviation = getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
     return 0.5 * xDeviation.dot(Q_ * xDeviation);
   }
 
-  /** Get cost term value */
+  /** @brief 按时间索引获取代价值。 */
   Scalar getValue(
     int time_index, const Vector<Scalar, XDimisions>& state,
     const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength>& stateTrajectoy) const final
   {
-    const Vector<Scalar, XDimisions> xDeviation = getStateDeviation(time_index, state, stateTrajectoy);
+    const Vector<Scalar, XDimisions> xDeviation = getStateDeviation(time_index, state, timeTrajectory, stateTrajectoy);
     return 0.5 * xDeviation.dot(Q_ * xDeviation);
   }
 
-  /** Get cost term quadratic approximation */
+  /** @brief 获取代价的二次近似（dfdxx=Q, dfdx=Q*(x-x_ref), f=0.5*(x-x_ref)'*dfdx）。 */
   ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>
     getQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDimisions>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength>& stateTrajectoy) const final
   {
-    const Vector<Scalar, XDimisions> xDeviation = getStateDeviation(time, state, stateTrajectoy);
+    const Vector<Scalar, XDimisions> xDeviation = getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
 
     ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> Phi;
     Phi.dfdxx = Q_;
@@ -53,7 +61,7 @@ public:
       int time_index, const Vector<Scalar, XDimisions>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength>& stateTrajectoy) const final
   {
-    const Vector<Scalar, XDimisions> xDeviation = getStateDeviation(time_index, state, stateTrajectoy);
+    const Vector<Scalar, XDimisions> xDeviation = getStateDeviation(time_index, state, timeTrajectory, stateTrajectoy);
 
     ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> Phi;
     Phi.dfdxx = Q_;
@@ -79,6 +87,7 @@ protected:
   Vector<Scalar, XDimisions> getStateDeviation(int time_index, const Vector<Scalar, XDimisions>& state,
     const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength>& stateTrajectoy) const
   {
+      (void)timeTrajectory;
     return state - stateTrajectoy[time_index];
   }
 
@@ -100,13 +109,13 @@ public:
    */
   QuadraticStateInputCost(const Matrix<Scalar, XDimisions, XDimisions>& Q,
     const Matrix<Scalar, UDimisions, UDimisions>& R,
-    const Matrix<Scalar, UDimisions, XDimisions>& P) : Q_(Q), R_(R), P_(P)
+    const Matrix<Scalar, UDimisions, XDimisions>& P) : StateInputCost<Scalar, XDimisions, UDimisions, ArrayLength>(0), Q_(Q), R_(R), P_(P)
   {
     has_P_ = true;
   };
 
   QuadraticStateInputCost(const Matrix<Scalar, XDimisions, XDimisions>& Q,
-    const Matrix<Scalar, UDimisions, UDimisions>& R)
+    const Matrix<Scalar, UDimisions, UDimisions>& R) : StateInputCost<Scalar, XDimisions, UDimisions, ArrayLength>(0), Q_(Q), R_(R)
   {
     P_.setZero();
     has_P_ = false;
@@ -118,17 +127,17 @@ public:
   Scalar getValue(Scalar time, const Vector<Scalar, XDimisions>& state, const Vector<Scalar, UDimisions>& input,
     const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength>& stateTrajectoy, const std::array<Vector<Scalar, UDimisions>, ArrayLength>& inputTrajectory) const final
   {
-    Vector<Scalar, XDimisions> stateDeviation = getStateDeviation(time, state, stateTrajectoy);
-    Vector<Scalar, UDimisions> inputDeviation = getInputDeviation(time, input, inputTrajectory);
+    Vector<Scalar, XDimisions> stateDeviation = getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
+    Vector<Scalar, UDimisions> inputDeviation = getInputDeviation(time, input, timeTrajectory, inputTrajectory);
 
     if (has_P_)
     {
-      return 0.5 * stateDeviation.dot(Q_ * stateDeviation) + 0.5 * inputDeviation.dot(R_ * inputDeviation);
+      return 0.5 * stateDeviation.dot(Q_ * stateDeviation) + 0.5 * inputDeviation.dot(R_ * inputDeviation) +
+      inputDeviation.dot(P_ * stateDeviation);
     }
     else
     {
-      return 0.5 * stateDeviation.dot(Q_ * stateDeviation) + 0.5 * inputDeviation.dot(R_ * inputDeviation) +
-        inputDeviation.dot(P_ * stateDeviation);
+      return 0.5 * stateDeviation.dot(Q_ * stateDeviation) + 0.5 * inputDeviation.dot(R_ * inputDeviation);
     }
   }
 
@@ -136,17 +145,18 @@ public:
   Scalar getValue(int time_index, const Vector<Scalar, XDimisions>& state, const Vector<Scalar, UDimisions>& input,
     const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength>& stateTrajectoy, const std::array<Vector<Scalar, UDimisions>, ArrayLength>& inputTrajectory) const final
   {
-    Vector<Scalar, XDimisions> stateDeviation = getStateDeviation(time_index, state, stateTrajectoy);
-    Vector<Scalar, UDimisions> inputDeviation = getInputDeviation(time_index, input, inputTrajectory);
+    (void)timeTrajectory;
+    Vector<Scalar, XDimisions> stateDeviation = getStateDeviation(time_index, state, timeTrajectory, stateTrajectoy);
+    Vector<Scalar, UDimisions> inputDeviation = getInputDeviation(time_index, input, timeTrajectory, inputTrajectory);
 
     if (has_P_)
     {
-      return 0.5 * stateDeviation.dot(Q_ * stateDeviation) + 0.5 * inputDeviation.dot(R_ * inputDeviation);
+      return 0.5 * stateDeviation.dot(Q_ * stateDeviation) + 0.5 * inputDeviation.dot(R_ * inputDeviation) +
+        inputDeviation.dot(P_ * stateDeviation);
     }
     else
     {
-      return 0.5 * stateDeviation.dot(Q_ * stateDeviation) + 0.5 * inputDeviation.dot(R_ * inputDeviation) +
-        inputDeviation.dot(P_ * stateDeviation);
+      return 0.5 * stateDeviation.dot(Q_ * stateDeviation) + 0.5 * inputDeviation.dot(R_ * inputDeviation);
     }
   }
 
@@ -155,8 +165,9 @@ public:
     getQuadraticApproximation(Scalar time, const Vector<Scalar, XDimisions>& state, const Vector<Scalar, UDimisions>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength>& stateTrajectoy, const std::array<Vector<Scalar, UDimisions>, ArrayLength>& inputTrajectory) const final
   {
-    Vector<Scalar, XDimisions> stateDeviation = getStateDeviation(time, state, stateTrajectoy);
-    Vector<Scalar, UDimisions> inputDeviation = getInputDeviation(time, input, inputTrajectory);
+      (void)timeTrajectory;
+    Vector<Scalar, XDimisions> stateDeviation = getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
+    Vector<Scalar, UDimisions> inputDeviation = getInputDeviation(time, input, timeTrajectory, inputTrajectory);
 
     ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> L;
     L.dfdxx = Q_;
@@ -189,23 +200,25 @@ protected:
   Vector<Scalar, XDimisions> getStateDeviation(Scalar time, const Vector<Scalar, XDimisions>& state,
     const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength>& stateTrajectoy) const
   {
-    return state - LinearInterpolation::interpolate(time, timeTrajectory, timeTrajectory);
+    return state - LinearInterpolation::interpolate(time, timeTrajectory, stateTrajectoy);
   }
   /** Computes the state-input deviation pair around the nominal state and input.
    * This method can be overwritten if desiredTrajectory has a different dimensions. */
   Vector<Scalar, XDimisions> getStateDeviation(int time_index, const Vector<Scalar, XDimisions>& state,
     const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength>& stateTrajectoy) const
   {
+    (void)timeTrajectory;
     return  state - stateTrajectoy[time_index];
   }
-  Vector<Scalar, XDimisions> getInputDeviation(Scalar time, const Vector<Scalar, UDimisions>& input,
+  Vector<Scalar, UDimisions> getInputDeviation(Scalar time, const Vector<Scalar, UDimisions>& input,
     const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, UDimisions>, ArrayLength>& inputTrajectory) const
   {
     return input - LinearInterpolation::interpolate(time, timeTrajectory, inputTrajectory);
   }
-  Vector<Scalar, XDimisions> getInputDeviation(int time_index, const Vector<Scalar, UDimisions>& input,
+  Vector<Scalar, UDimisions> getInputDeviation(int time_index, const Vector<Scalar, UDimisions>& input,
     const std::array<Scalar, ArrayLength>& timeTrajectory, const std::array<Vector<Scalar, UDimisions>, ArrayLength>& inputTrajectory) const
   {
+    (void)timeTrajectory;
     return input - inputTrajectory[time_index];
   }
 

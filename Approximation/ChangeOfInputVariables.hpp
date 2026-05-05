@@ -27,22 +27,20 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
+/**
+ * @file ChangeOfInputVariables.hpp
+ * @brief 输入变量变换：对二次近似做 δu = Pu * δũ，将输入维度由 m 变为 p（Pu 为 m×p 矩阵）。
+ */
 #pragma once
 
 #include "Types.hpp"
 #include "LinearApproximation.hpp"
 #include "QuadraticApproximation.hpp"
+
 /**
- * Applies the following change of input variables to the quadraticApproximation (stateDim=n, inputDim=m):
- * \delta u = Pu * \tilde{\delta u}
- * with sizes Pu (m x p)
- *
- * The altered model data will be of size stateDim=n, inputDim=p
- *
- * A Px / u0 of zeros can be efficiently applied by passing an empty matrix / vector (of size 0).
- *
- * @param quadraticApproximation : Approximation to be adapted in-place
- * @param Pu : Matrix defining the range of \tilde{\delta u}
+ * @brief 对二次近似施加输入变换 δu = Pu * δũ，变换后状态维 n、输入维 p；Pu 为空矩阵时表示零输入。
+ * @param [in,out] quadraticApproximation 待变换的二次近似（原地修改）。
+ * @param [in] Pu 定义 δũ 范围的矩阵（m×p）。
  */
 template <typename Scalar, int XDimisions, int UDimisions>
 void changeOfInputVariables(ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> &quadraticApproximation,

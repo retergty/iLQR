@@ -27,6 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
+/**
+ * @file LinearQuadraticApproximator.hpp
+ * @brief 线性二次近似器：在名义轨迹上对最优控制问题做 LQ 近似，得到各节点 ModelData 与 Metrics。
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -37,6 +41,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ModelData.hpp"
 #include "Metrics.hpp"
 
+/**
+ * @brief 在给定名义轨迹与对偶解下，对 OCP 做 LQ 近似，填充中间/终端 ModelData 与可选的 Metrics。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 输入维度。
+ * @tparam PredictLength 预测步数。
+ * @tparam StateEqLagrangianConstrains 等 各约束维度。
+ */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqLagrangianConstrains, int StateIneqLagrangianConstrains, int StateInputEqLagrangianConstrains, int StateInputIneqLagrangianConstrains,
           int FinalStateEqLagrangianConstrains, int FinalStateIneqFinalLagrangianConstrains>

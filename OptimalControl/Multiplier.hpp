@@ -1,3 +1,7 @@
+/**
+ * @file Multiplier.hpp
+ * @brief 拉格朗日乘子：单约束的惩罚与拉格朗日值，及按时刻的乘子集合与插值。
+ */
 #pragma once
 #include "Types.hpp"
 #include <array>
@@ -5,36 +9,45 @@
 #include <type_traits>
 #include "LinearInterpolation.hpp"
 
+/**
+ * @brief 单约束的乘子：惩罚项与拉格朗日项。
+ * @tparam Scalar 标量类型。
+ */
 template<typename Scalar>
 struct Multiplier
 {
+  /** @brief 默认构造，penalty 与 lagrangian 为 0。 */
   Multiplier() : Multiplier(0, 0) {}
+  /** @brief 用给定惩罚与拉格朗日值构造。 */
   Multiplier(const Scalar penaltyArg, const Scalar lagrangianArg) : penalty(penaltyArg), lagrangian(lagrangianArg) {}
 
+  /** @brief 惩罚值。 */
   Scalar penalty;
+  /** @brief 拉格朗日值。 */
   Scalar lagrangian;
 };
 
 /**
- * The collection of Multiplier structure for all possible constraint terms in a particular time point.
- * stateEq : An array of state equality constraint terms.
- * stateIneq : An array of state inequality constraint terms.
- * stateInputEq : An array of state-input equality constraint terms.
- * stateInputIneq : An array of state-input inequality constraint terms.
+ * @brief 某时刻所有约束的乘子集合：状态等式/不等式、状态-输入等式/不等式。
+ * @tparam Scalar 标量类型。
+ * @tparam StateEqConstrains 状态等式约束数。
+ * @tparam StateIneqConstrains 状态不等式约束数。
+ * @tparam StateInputEqConstrains 状态-输入等式约束数。
+ * @tparam StateInputIneqConstrains 状态-输入不等式约束数。
  */
 template<typename Scalar, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains>
 struct MultiplierCollection
 {
-  // state equality
+  /** @brief 状态等式约束乘子数组。 */
   std::array<Multiplier<Scalar>, StateEqConstrains> stateEq;
-  // state inequality
+  /** @brief 状态不等式约束乘子数组。 */
   std::array<Multiplier<Scalar>, StateIneqConstrains> stateIneq;
-  // state-input equality
+  /** @brief 状态-输入等式约束乘子数组。 */
   std::array<Multiplier<Scalar>, StateInputEqConstrains> stateInputEq;
-  // state-input inequality
+  /** @brief 状态-输入不等式约束乘子数组。 */
   std::array<Multiplier<Scalar>, StateInputIneqConstrains> stateInputIneq;
 
-  /** Exchanges the values of MultiplierCollection. */
+  /** @brief 与另一 MultiplierCollection 交换内容。 */
   void swap(MultiplierCollection& other) {
     stateEq.swap(other.stateEq);
     stateIneq.swap(other.stateIneq);
@@ -46,11 +59,10 @@ struct MultiplierCollection
 namespace LinearInterpolation {
 
   /**
-   * Linearly interpolates a trajectory of Multipliers.
-   *
-   * @param [in] indexAlpha : index and interpolation coefficient (alpha) pair.
-   * @param [in] dataArray : A trajectory of MultiplierConstRef.
-   * @return The interpolated Multiplier at indexAlpha.
+   * @brief 对乘子轨迹做线性插值。
+   * @param [in] indexAlpha 索引与插值系数 (alpha) 对。
+   * @param [in] dataArray 乘子轨迹。
+   * @return 插值得到的乘子。
    */
   template<typename Scalar, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains, size_t ArrayLen>
   Multiplier<Scalar> interpolate(const std::pair<int, Scalar>& indexAlpha, const std::array<Multiplier<Scalar>, ArrayLen>& dataArray)
@@ -65,11 +77,10 @@ namespace LinearInterpolation {
   }
 
   /**
-   * Linearly interpolates a trajectory of MultiplierCollections.
-   *
-   * @param [in] indexAlpha : index and interpolation coefficient (alpha) pair.
-   * @param [in] dataArray : A trajectory of MultiplierCollections.
-   * @return The interpolated MultiplierCollection at indexAlpha.
+   * @brief 对乘子集合轨迹做线性插值。
+   * @param [in] indexAlpha 索引与插值系数对。
+   * @param [in] dataArray 乘子集合轨迹。
+   * @return 插值得到的乘子集合。
    */
   template<typename Scalar, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains, size_t ArrayLen>
   MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains> interpolate(const std::pair<int, Scalar>& indexAlpha,

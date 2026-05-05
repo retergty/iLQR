@@ -1,3 +1,7 @@
+/**
+ * @file OptimalControlProblemHelperFunction.hpp
+ * @brief 最优控制问题辅助函数：初始化乘子、对偶解及近似等。
+ */
 #pragma once
 #include "OptimalControlProblem.hpp"
 #include "PrimalSolution.hpp"
@@ -6,11 +10,10 @@
 #include "Metrics.hpp"
 
 /**
- * Initializes final MultiplierCollection for equality and inequality Lagrangians.
- *
- * @param [in] ocp : A const reference to the optimal control problem.
- * @param [in] time : Final time.
- * @param [out] multiplierCollection : The initialized final MultiplierCollection.
+ * @brief 初始化终端时刻的乘子集合（等式与不等式拉格朗日）。
+ * @param [in] ocp 最优控制问题。
+ * @param [in] time 终端时间。
+ * @param [out] multiplierCollection 待初始化的终端乘子集合。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
@@ -23,11 +26,10 @@ void initializeFinalMultiplierCollection(const OptimalControlProblem<Scalar, XDi
 }
 
 /**
- * Initializes intermediate MultiplierCollection for equality and inequality Lagrangians.
- *
- * @param [in] ocp : A const reference to the optimal control problem.
- * @param [in] time : Intermediate time.
- * @param [out] multiplierCollection : The initialized intermediate MultiplierCollection.
+ * @brief 初始化中间时刻的乘子集合（等式与不等式拉格朗日）。
+ * @param [in] ocp 最优控制问题。
+ * @param [in] time 中间时刻。
+ * @param [out] multiplierCollection 待初始化的中间乘子集合。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
@@ -42,13 +44,11 @@ void initializeIntermediateMultiplierCollection(const OptimalControlProblem<Scal
 }
 
 /**
- * Initializes the dual solution based on the cached dual solution. It will use interpolation if cachedDualSolution has any component
- * in the same mode otherwise it will use the Lagrangian initialization method of ocp.
- *
- * @param [in] ocp : A const reference to the optimal control problem.
- * @param [in] primalSolution : The primal solution.
- * @param [in] cachedDualSolution : The cached dual solution which will be used for interpolation.
- * @param [out] dualSolution : The initialized dual solution.
+ * @brief 根据缓存的对偶解初始化对偶解：若缓存非空则插值，否则用 ocp 的拉格朗日初始化。
+ * @param [in] ocp 最优控制问题。
+ * @param [in] primalSolution 原始解（时间轨迹）。
+ * @param [in] cachedDualSolution 缓存的对偶解（用于插值）。
+ * @param [out] dualSolution 待初始化的对偶解。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
@@ -94,13 +94,11 @@ void initializeDualSolution(
 }
 
 /**
- * Updates in-place the dual solution based on its current solution and state-input values using the Lagrangian update method in ocp.
- * Moreover it also updates the penalties of ProblemMetrics based on the update of dual solution.
- *
- * @param [in] ocp : A const reference to the optimal control problem.
- * @param [in] primalSolution : The primal solution.
- * @param [in, out] problemMetrics : The problem metric. Its penalties will be updated based on the update of dualSolution.
- * @param [out] dualSolution : The updated dual solution.
+ * @brief 根据当前状态-输入与 ocp 的拉格朗日更新规则原地更新对偶解，并同步更新 problemMetrics 的惩罚项。
+ * @param [in] ocp 最优控制问题。
+ * @param [in] primalSolution 原始解。
+ * @param [in,out] problemMetrics 问题指标（其惩罚项将随对偶解更新）。
+ * @param [out] dualSolution 待更新的对偶解（引用）。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
@@ -136,14 +134,12 @@ void updateDualSolution(const OptimalControlProblem<Scalar, XDimisions, UDimisio
 }
 
 /**
- * Updates in-place final MultiplierCollection for equality and inequality Lagrangians.
- * Moreover it also updates the penalties of Metrics based on the update of multipliers.
- *
- * @param [in] ocp : A const reference to the optimal control problem.
- * @param [in] time : Final time.
- * @param [in] state : Final state.
- * @param [in, out] metrics: The final Metrics. Its penalties will be updated based on the update of multiplierCollection.
- * @param [out] multipliers : The updated final MultiplierCollection.
+ * @brief 原地更新终端乘子集合（等式与不等式），并同步更新 metrics 的惩罚项。
+ * @param [in] ocp 最优控制问题。
+ * @param [in] time 终端时间。
+ * @param [in] state 终端状态。
+ * @param [in,out] metrics 终端 Metrics（惩罚项将随乘子更新）。
+ * @param [out] multipliers 待更新的终端乘子集合。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
@@ -158,15 +154,13 @@ void updateFinalMultiplierCollection(const OptimalControlProblem<Scalar, XDimisi
 }
 
 /**
- * Updates in-place intermediate MultiplierCollection for equality and inequality Lagrangians.
- * Moreover it also updates the penalties of Metrics based on the update of multipliers.
- *
- * @param [in] ocp : A const reference to the optimal control problem.
- * @param [in] time : Intermediate time.
- * @param [in] state : Intermediate state.
- * @param [in] input : Intermediate input.
- * @param [in, out] metrics: The intermediate Metrics. Its penalties will be updated based on the update of multiplierCollection.
- * @param [out] multipliers : The updated Intermediate MultiplierCollection.
+ * @brief 原地更新中间乘子集合（等式与不等式），并同步更新 metrics 的惩罚项。
+ * @param [in] ocp 最优控制问题。
+ * @param [in] time 中间时刻。
+ * @param [in] state 中间状态。
+ * @param [in] input 中间输入。
+ * @param [in,out] metrics 中间 Metrics（惩罚项将随乘子更新）。
+ * @param [out] multipliers 待更新的中间乘子集合。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,

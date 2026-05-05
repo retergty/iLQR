@@ -1,28 +1,34 @@
+/**
+ * @file QuadraticApproximation.hpp
+ * @brief 二次近似：标量函数的二阶近似结构（Hessian、一阶项与常数项）。
+ */
 #pragma once
 #include <array>
 #include "Types.hpp"
 
 /**
- * Defines the quadratic approximation of a scalar function
- * f(x,u) = 1/2 dx' dfdxx dx + du' dfdux dx + 1/2 du' dfduu du + dfdx' dx + dfdu' du + f
+ * @brief 标量函数二次近似：f = 1/2 dx' dfdxx dx + du' dfdux dx + 1/2 du' dfduu du + dfdx' dx + dfdu' du + f。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 输入维度。
  */
 template <typename Scalar, int XDimisions, int UDimisions>
 struct ScalarFunctionQuadraticApproximation
 {
-  /** Second derivative w.r.t state */
+  /** @brief 对状态的二阶导数（Hessian）。 */
   Matrix<Scalar, XDimisions, XDimisions> dfdxx;
-  /** Second derivative w.r.t input (lhs) and state (rhs) */
+  /** @brief 对输入-状态的混合二阶导数。 */
   Matrix<Scalar, UDimisions, XDimisions> dfdux;
-  /** Second derivative w.r.t input */
+  /** @brief 对输入的二阶导数。 */
   Matrix<Scalar, UDimisions, UDimisions> dfduu;
-  /** First derivative w.r.t state */
+  /** @brief 对状态的一阶导数。 */
   Vector<Scalar, XDimisions> dfdx;
-  /** First derivative w.r.t input */
+  /** @brief 对输入的一阶导数。 */
   Vector<Scalar, UDimisions> dfdu;
-  /** Constant term */
+  /** @brief 常数项。 */
   Scalar f{ 0 };
 
-  /** Default constructor */
+  /** @brief 默认构造。 */
   ScalarFunctionQuadraticApproximation() = default;
 
   ScalarFunctionQuadraticApproximation(const ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>& rhs) : dfdxx(rhs.dfdxx), dfdx(rhs.dfdx), f(rhs.f)
@@ -32,7 +38,7 @@ struct ScalarFunctionQuadraticApproximation
     dfdu.setZero();
   }
 
-  /** Compound addition assignment operator */
+  /** @brief 复合加法赋值。 */
   ScalarFunctionQuadraticApproximation& operator+=(const ScalarFunctionQuadraticApproximation& rhs)
   {
     dfdxx += rhs.dfdxx;
@@ -45,7 +51,7 @@ struct ScalarFunctionQuadraticApproximation
     return *this;
   }
 
-  /** Compound scalar multiplication and assignment operator */
+  /** @brief 复合标量乘法赋值。 */
   ScalarFunctionQuadraticApproximation& operator*=(Scalar s)
   {
     dfdxx *= s;
@@ -58,9 +64,7 @@ struct ScalarFunctionQuadraticApproximation
     return *this;
   }
 
-  /**
-   * sets all coefficients to zero.
-   */
+  /** @brief 将各系数置零。 */
   ScalarFunctionQuadraticApproximation& setZero()
   {
     dfdxx.setZero();
@@ -72,10 +76,7 @@ struct ScalarFunctionQuadraticApproximation
     return *this;
   }
 
-  /**
-   * Factory function with zero initialization
-   * @return Zero initialized object.
-   */
+  /** @brief 返回零初始化的近似对象。 */
   static ScalarFunctionQuadraticApproximation Zero()
   {
     ScalarFunctionQuadraticApproximation f;
@@ -85,22 +86,21 @@ struct ScalarFunctionQuadraticApproximation
   }
 };
 
-/** no input
- */
+/** @brief 无输入时的标量函数二次近似特化（仅 dfdxx、dfdx、f）。 */
 template <typename Scalar, int XDimisions>
 struct ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>
 {
-  /** Second derivative w.r.t state */
+  /** @brief 对状态的二阶导数。 */
   Matrix<Scalar, XDimisions, XDimisions> dfdxx;
-  /** First derivative w.r.t state */
+  /** @brief 对状态的一阶导数。 */
   Vector<Scalar, XDimisions> dfdx;
-  /** Constant term */
+  /** @brief 常数项。 */
   Scalar f{ 0 };
 
-  /** Default constructor */
+  /** @brief 默认构造。 */
   ScalarFunctionQuadraticApproximation() = default;
 
-  /** Compound addition assignment operator */
+  /** @brief 复合加法赋值。 */
   ScalarFunctionQuadraticApproximation& operator+=(const ScalarFunctionQuadraticApproximation& rhs)
   {
     dfdxx += rhs.dfdxx;
@@ -110,7 +110,7 @@ struct ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>
     return *this;
   }
 
-  /** Compound scalar multiplication and assignment operator */
+  /** @brief 复合标量乘法赋值。 */
   ScalarFunctionQuadraticApproximation& operator*=(Scalar s)
   {
     dfdxx *= s;
@@ -120,9 +120,7 @@ struct ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>
     return *this;
   }
 
-  /**
-   * Resizes the members to the given size, and sets all coefficients to zero.
-   */
+  /** @brief 将各系数置零。 */
   ScalarFunctionQuadraticApproximation& setZero()
   {
     dfdxx.setZero();
@@ -131,10 +129,7 @@ struct ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>
     return *this;
   }
 
-  /**
-   * Factory function with zero initialization
-   * @return Zero initialized object.
-   */
+  /** @brief 返回零初始化的近似对象。 */
   static ScalarFunctionQuadraticApproximation Zero()
   {
     ScalarFunctionQuadraticApproximation f;

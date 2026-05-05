@@ -27,6 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file StateInputAugmentedLagrangianInterface.hpp
+ * @brief 状态-输入增广拉格朗日接口：约束惩罚取值、二次近似与乘子初始化/更新。
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -35,7 +39,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "QuadraticApproximation.hpp"
 #include "IntrusiveList.hpp"
 
-/** The base class for Augmented Lagrangian penalty of state-input constraint. */
+/**
+ * @brief 状态-输入约束的增广拉格朗日惩罚接口：提供取值、二次近似、乘子更新与初始化。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 输入维度。
+ */
 template<typename Scalar, int XDimisions, int UDimisions>
 class StateInputAugmentedLagrangianInterface : IntrusiveListNode<StateInputAugmentedLagrangianInterface<Scalar, XDimisions, UDimisions>>
 {

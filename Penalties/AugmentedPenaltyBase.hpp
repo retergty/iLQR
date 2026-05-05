@@ -27,6 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file AugmentedPenaltyBase.hpp
+ * @brief 增广惩罚基类接口：约束违反的惩罚项，依赖时间、拉格朗日乘子与约束值，提供取值、一阶/二阶导数及乘子更新。
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -34,14 +38,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "QuadraticApproximation.hpp"
 
 /**
- * The penalty function interface class is used to penalize constraint violation by adding a penalty term to the cost function.
- * We assume that the penalty function is convex. In general, the penalty is a function of time, Lagrange multiplier, and
- * constraint violation.
+ * @brief 惩罚函数接口：在代价中加入惩罚项以处理约束违反，假设惩罚为凸；一般为时间、乘子与约束值的函数。
+ * @tparam Scalar 标量类型。
  */
 template<typename Scalar>
 class AugmentedPenaltyBase {
 public:
-  /** Default constructor */
+  /** @brief 默认构造。 */
   AugmentedPenaltyBase() = default;
 
   /** Default destructor */

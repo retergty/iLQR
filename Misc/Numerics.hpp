@@ -27,6 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file Numerics.hpp
+ * @brief 数值比较工具：基于机器精度的浮点近似相等、近似小于等于、近似大于等于。
+ */
 #pragma once
 
 #include <cmath>
@@ -36,17 +40,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace numerics
 {
   /**
- * Almost equal which uses machine epsilon to compare floating-point values for equality.
- * refer to: https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
- *
- * @tparam T1: data type of x.
- * @tparam T2: data type of y.
- * @tparam T3: data type of prec.
- * @param [in] x: First floating-point number.
- * @param [in] y: Second floating-point number.
- * @param [in] prec: The comparison precision.
- * @return bool: true if x=y.
- */
+   * @brief 在给定精度下判断两浮点数是否近似相等（考虑量级与机器精度）。
+   * @tparam T1 第一个参数类型。
+   * @tparam T2 第二个参数类型。
+   * @tparam T3 精度类型。
+   * @param [in] x 第一个浮点数。
+   * @param [in] y 第二个浮点数。
+   * @param [in] prec 比较精度。
+   * @return 近似相等返回 true。
+   */
   template <class T1, class T2, class T3>
   constexpr bool almost_eq(T1&& x, T2&& y, T3&& prec) {
     static_assert(std::is_floating_point<typename std::remove_reference<T1>::type>::value, "First argument is not floating point!");
@@ -61,14 +63,10 @@ namespace numerics
   }
 
   /**
-   * Almost equal which uses machine epsilon to compare floating-point values for equality.
-   * refer to: https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
-   *
-   * @tparam T1: data type of x.
-   * @tparam T2: data type of y.
-   * @param [in] x: First floating-point number.
-   * @param [in] y: Second floating-point number.
-   * @return bool: true if x=y.
+   * @brief 使用机器精度判断两浮点数是否近似相等。
+   * @param [in] x 第一个浮点数。
+   * @param [in] y 第二个浮点数。
+   * @return 近似相等返回 true。
    */
   template <class T1, class T2>
   constexpr bool almost_eq(T1&& x, T2&& y) {
@@ -77,15 +75,11 @@ namespace numerics
   }
 
   /**
-   * Almost less-equal which uses machine epsilon to compare floating-point values for equality.
-   *
-   * @tparam T1: data type of x.
-   * @tparam T2: data type of y.
-   * @tparam T3: data type of prec.
-   * @param [in] x: First floating-point number.
-   * @param [in] y: Second floating-point number.
-   * @param [in] prec: The comparison precision.
-   * @return bool: true if x<=y.
+   * @brief 在给定精度下判断 x 是否近似小于等于 y。
+   * @param [in] x 第一个浮点数。
+   * @param [in] y 第二个浮点数。
+   * @param [in] prec 比较精度。
+   * @return x <= y 或近似相等时返回 true。
    */
   template <class T1, class T2, class T3>
   bool almost_le(T1&& x, T2&& y, T3&& prec) {
@@ -93,13 +87,10 @@ namespace numerics
   }
 
   /**
-   * Almost less-equal which uses machine epsilon to compare floating-point values for equality.
-   *
-   * @tparam T1: data type of x.
-   * @tparam T2: data type of y.
-   * @param [in] x: First floating-point number.
-   * @param [in] y: Second floating-point number.
-   * @return bool: true if x<=y.
+   * @brief 使用机器精度判断 x 是否近似小于等于 y。
+   * @param [in] x 第一个浮点数。
+   * @param [in] y 第二个浮点数。
+   * @return x <= y 或近似相等时返回 true。
    */
   template <class T1, class T2, class T3>
   constexpr bool almost_le(T1&& x, T2&& y) {
@@ -107,15 +98,11 @@ namespace numerics
   }
 
   /**
-   * Almost greater-equal which uses machine epsilon to compare floating-point values for equality.
-   *
-   * @tparam T1: data type of x.
-   * @tparam T2: data type of y.
-   * @tparam T3: data type of prec.
-   * @param [in] x: First floating-point number.
-   * @param [in] y: Second floating-point number.
-   * @param [in] prec: The comparison precision.
-   * @return bool: true if x>=y.
+   * @brief 在给定精度下判断 x 是否近似大于等于 y。
+   * @param [in] x 第一个浮点数。
+   * @param [in] y 第二个浮点数。
+   * @param [in] prec 比较精度。
+   * @return x >= y 或近似相等时返回 true。
    */
   template <class T1, class T2, class T3>
   constexpr bool almost_ge(T1&& x, T2&& y, T3&& prec) {
@@ -123,13 +110,10 @@ namespace numerics
   }
 
   /**
-   * Almost greater-equal which uses machine epsilon to compare floating-point values for equality.
-   *
-   * @tparam T1: data type of x.
-   * @tparam T2: data type of y.
-   * @param [in] x: First floating-point number.
-   * @param [in] y: Second floating-point number.
-   * @return bool: true if x>=y.
+   * @brief 使用机器精度判断 x 是否近似大于等于 y。
+   * @param [in] x 第一个浮点数。
+   * @param [in] y 第二个浮点数。
+   * @return x >= y 或近似相等时返回 true。
    */
   template <class T1, class T2>
   constexpr bool almost_ge(T1&& x, T2&& y) {

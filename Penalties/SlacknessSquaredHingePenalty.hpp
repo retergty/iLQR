@@ -27,31 +27,17 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file SlacknessSquaredHingePenalty.hpp
+ * @brief 松弛平方铰链惩罚（PHR）：不等式 h≥0 的增广拉格朗日惩罚，引入松弛 s 后 p=(1/2ρ)(max(0,λ-ρh)²-λ²)。
+ */
 #pragma once
 
 #include "AugmentedPenaltyBase.hpp"
 
 /**
- *  Implements the augmented Lagrangian for a single inequality constraint \f$ h \geq 0 \f$ by transforming it to the following form:
- *
- *  \f[ \left\lbrace
- *              \begin{array}{ll}
- *                  h - s = 0, \\
- *                  s \geq 0.
- *              \end{array}
- *            \right.
- *  \f]
- *
- *  This leads to the following augmented-Lagrangian penalty function (referred to as PHR penalty in the corresponding paper):
- *  \f[
- *      p(h, \lambda) = \frac{1}{2 \rho} (\max\{ 0, \lambda - \rho h \}^2 - \lambda^2).
- *  \f]
- *
- *  where \rho is the scale factor of the penalty. This is then minimized with the DDP algorithm, while the maximization of the
- *  approximate dual function is done by updating the Lagrange multipliers with a gradient ascent step as such:
- * \f[
- *      \lambda^*_{k+1} = \max\{ \lambda^*_k - \alpha h^*_{k+1}, (1 - \frac{\alpha}{\rho}) \lambda^*_k \}.
- * \f]
+ * @brief 单不等式约束的 PHR 惩罚实现：乘子更新为 λ_{k+1}=max(λ_k-α*h, (1-α/ρ)λ_k)。
+ * @tparam Scalar 标量类型。
  */
 template<typename Scalar>
 class SlacknessSquaredHingePenalty final : public AugmentedPenaltyBase<Scalar>

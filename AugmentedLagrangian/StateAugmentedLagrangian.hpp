@@ -1,3 +1,7 @@
+/**
+ * @file StateAugmentedLagrangian.hpp
+ * @brief 仅状态增广拉格朗日实现：绑定约束与惩罚，提供取值、二次近似与乘子更新。
+ */
 #pragma once
 #include "Types.hpp"
 #include "StateAugmentedLagrangianInterface.hpp"
@@ -7,15 +11,19 @@
 #include "LagrangianMetrics.hpp"
 #include "QuadraticApproximation.hpp"
 
-/** The base class for Augmented Lagrangian penalty of state constraint. */
+/**
+ * @brief 仅状态约束的增广拉格朗日惩罚实现：委托约束与 Penalty 计算取值与二次近似。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ */
 template <typename Scalar, int XDimisions>
 class StateAugmentedLagrangian final : public StateAugmentedLagrangianInterface<Scalar, XDimisions>
 {
 public:
   /**
-   * Constructor.
-   * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
-   * @param [in] augmented_penalty: pointer to the penalty function on the constraint.
+   * @brief 用约束指针与惩罚指针构造。
+   * @param [in] constraint 作为软约束的仅状态约束。
+   * @param [in] augmented_penalty 约束上的惩罚函数。
    */
   StateAugmentedLagrangian(StateConstraint<Scalar, XDimisions> *constraint, AugmentedPenaltyBase<Scalar> *augmented_penalty) : constraint_ptr_(constraint), penalty_(augmented_penalty) {};
 

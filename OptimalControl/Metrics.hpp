@@ -1,50 +1,66 @@
+/**
+ * @file Metrics.hpp
+ * @brief 单时刻的指标：代价、动力学违反、各约束的拉格朗日项（惩罚与约束值）。
+ */
 #pragma once
 
 #include "Types.hpp"
 #include "LagrangianMetrics.hpp"
 #include "Numerics.hpp"
 #include <cmath>
+
 /**
- * The collection of cost, dynamics violation, constraints, and LagrangianMetrics structure for all possible constraint
- * terms (handled by Lagrangian method) in a point of time.
- *     cost : The total cost in a particular time point.
- *     dynamicsViolation : The vector of dynamics violation.
- *     stateEqLagrangian : An array of state equality constraint terms handled by Lagrangian method.
- *     stateIneqLagrangian : An array of state inequality constraint terms handled by Lagrangian method.
- *     stateInputEqLagrangian : An array of state-input equality constraint terms handled by Lagrangian method.
- *     stateInputIneqLagrangian : An array of state-input inequality constraint terms handled by Lagrangian method.
+ * @brief 单时刻的代价、动力学违反与各类约束的拉格朗日指标（等式/不等式、状态/状态-输入）。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 控制维度。
+ * @tparam StateEqConstrains 状态等式约束数。
+ * @tparam StateIneqConstrains 状态不等式约束数。
+ * @tparam StateInputEqConstrains 状态-输入等式约束数。
+ * @tparam StateInputIneqConstrains 状态-输入不等式约束数。
  */
 template <typename Scalar, int XDimisions, int UDimisions, int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains>
 struct Metrics
 {
-    // Cost
+    /** @brief 该时刻总代价。 */
     Scalar cost;
 
-    // Dynamics violation
+    /** @brief 动力学违反向量。 */
     Vector<Scalar, XDimisions> dynamicsViolation;
 
-    // Lagrangians
+    /** @brief 状态等式约束的拉格朗日项数组。 */
     std::array<LagrangianMetrics<Scalar>, StateEqConstrains> stateEqLagrangian;
+    /** @brief 状态不等式约束的拉格朗日项数组。 */
     std::array<LagrangianMetrics<Scalar>, StateIneqConstrains> stateIneqLagrangian;
+    /** @brief 状态-输入等式约束的拉格朗日项数组。 */
     std::array<LagrangianMetrics<Scalar>, StateInputEqConstrains> stateInputEqLagrangian;
+    /** @brief 状态-输入不等式约束的拉格朗日项数组。 */
     std::array<LagrangianMetrics<Scalar>, StateInputIneqConstrains> stateInputIneqLagrangian;
 
-    /** Exchanges the values of Metrics */
+    /** @brief 与另一 Metrics 交换各成员。 */
     void swap(Metrics& other)
     {
-        // Cost
         std::swap(cost, other.cost);
-        // Dynamics violation
         dynamicsViolation.swap(other.dynamicsViolation);
-        // Lagrangians
         stateEqLagrangian.swap(other.stateEqLagrangian);
         stateIneqLagrangian.swap(other.stateIneqLagrangian);
         stateInputEqLagrangian.swap(other.stateInputEqLagrangian);
         stateInputIneqLagrangian.swap(other.stateInputIneqLagrangian);
     }
+
+    /** @brief 清空/重置：代价置零、动力学违反置零；拉格朗日数组由 computeRolloutMetrics 覆盖。 */
+    void clear()
+    {
+        cost = 0;
+        dynamicsViolation.setZero();
+    }
 };
 
-/** Sums penalties of an array of LagrangianMetrics. */
+/**
+ * @brief 求一组 LagrangianMetrics 的惩罚值之和。
+ * @param [in] metricsArray 拉格朗日指标数组。
+ * @return 所有元素的 penalty 之和。
+ */
 template<typename Scalar, size_t ArrayLen>
 inline Scalar sumPenalties(const std::array<LagrangianMetrics<Scalar>, ArrayLen>& metricsArray)
 {
@@ -57,7 +73,11 @@ inline Scalar sumPenalties(const std::array<LagrangianMetrics<Scalar>, ArrayLen>
     return s;
 }
 
-/** Computes the sum of squared norm of constraints of an array of LagrangianMetrics. */
+/**
+ * @brief 求一组 LagrangianMetrics 的约束值绝对值之和（标量约束）。
+ * @param [in] metricsArray 拉格朗日指标数组。
+ * @return 各元素 constraint 的绝对值之和。
+ */
 template<typename Scalar, size_t ArrayLen>
 inline Scalar constraintsSquaredNorm(const std::array<LagrangianMetrics<Scalar>, ArrayLen>& metricsArray) {
     Scalar s = 0.0;
@@ -69,7 +89,11 @@ inline Scalar constraintsSquaredNorm(const std::array<LagrangianMetrics<Scalar>,
     return s;
 }
 
-/** Computes the sum of squared norm of a vector of equality constraints violation. */
+/**
+ * @brief 求等式约束违反向量的平方范数（SSE）。
+ * @param [in] eqConstraint 等式约束违反向量。
+ * @return eqConstraint.squaredNorm()，Dimisions==0 时为 0。
+ */
 template<typename Scalar, int Dimisions>
 inline Scalar getEqConstraintsSSE(const Vector<Scalar, Dimisions>& eqConstraint)
 {

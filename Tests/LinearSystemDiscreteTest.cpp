@@ -7,98 +7,142 @@
 
 TEST(LinearSystemTest, DiscreteEK2Test)
 {
-    Eigen::Matrix<double, 3, 3> A = Eigen::Matrix<double, 3, 3>::Random();
-    Eigen::Matrix<double, 3, 2> B = Eigen::Matrix<double, 3, 2>::Random();
+    Eigen::Matrix2d A;
+    A << 0.0, 1.0,
+         0.0, 0.0;
 
-    LinearSystemDynamics<double, 3, 2> lin_sys(A, B);
+    Eigen::Matrix<double, 2, 1> B;
+    B << 0.0, 1.0;
 
-    TimeTriggeredRollout<double, 3, 2> rollout(&lin_sys, 1);
+    LinearSystemDynamics<double, 2, 1> lin_sys(A, B);
+    EK2DynamicsDiscretizer<double, 2, 1> ek2Discretizer;
 
-    const double initTime = 0;
-    const double finalTime = 10;
-    Eigen::Vector<double, 3> initState = Eigen::Vector<double, 3>::Random();
+    Eigen::Vector2d x;
+    x << 1.0, 2.0;
 
-    LinearController<double, 3, 2, 11> controller;
+    Eigen::Vector<double, 1> u;
+    u << 3.0;
 
-    for (int i = 0; i < 11; ++i)
-    {
-        controller.timeStamp_[i] = i;
-        controller.biasArray_[i] = Eigen::Vector2d::Random();
-        controller.gainArray_[i] = Eigen::Matrix<double, 2, 3>::Random();
-    }
+    const double t = 0.0;
+    const double dt = 0.5;
+    const Eigen::Vector2d k1 = A * x + B * u;
+    const Eigen::Vector2d k2 = A * (x + dt * k1) + B * u;
+    const Eigen::Vector2d expected = x + 0.5 * dt * (k1 + k2);
 
-    std::array<double, 11> rolloutTimeTrajectory;
-    std::array<Eigen::Vector3d, 11> rolloutStateTrajectory;
-    std::array<Eigen::Vector2d, 11> rolloutInputTrajectory;
+    const Eigen::Vector2d actual = ek2Discretizer.discretize(lin_sys, t, x, u, dt);
 
-    RolloutTrajectoryPointer<double, 3, 2> rolloutTrajectoryPointer(rolloutTimeTrajectory.data(), rolloutStateTrajectory.data(), rolloutInputTrajectory.data(), 11);
-    rollout.run(initTime, initState, finalTime, &controller, rolloutTrajectoryPointer);
+    EXPECT_TRUE(actual.isApprox(expected, 1e-12));
+}
 
-    EK2DynamicsDiscretizer<double, 3, 2> ek2Discretizer;
+TEST(LinearSystemTest, DiscreteEulerTest)
+{
+    Eigen::Matrix2d A;
+    A << 1.0, 2.0,
+         0.0, -1.0;
 
-    std::array<double, 11> testTimeTrajectory = rolloutTimeTrajectory;
-    std::array<Eigen::Vector3d, 11> testStateTrajectory;
+    Eigen::Matrix<double, 2, 1> B;
+    B << 0.5, 2.0;
 
-    testStateTrajectory[0] = initState;
+    LinearSystemDynamics<double, 2, 1> lin_sys(A, B);
+    EulerDynamicsDiscretizer<double, 2, 1> eulerDiscretizer;
 
-    for (int i = 0; i < 10; ++i)
-    {
-        testStateTrajectory[i + 1] = ek2Discretizer.discretize(lin_sys, testTimeTrajectory[i], testStateTrajectory[i], rolloutInputTrajectory[i], 1.0);
-    }
+    Eigen::Vector2d x;
+    x << 1.0, -2.0;
 
-    for (int i = 0; i < 11; ++i)
-    {
-        EXPECT_FLOAT_EQ(testTimeTrajectory[i], rolloutTimeTrajectory[i]);
-        EXPECT_TRUE(testStateTrajectory[i].isApprox(rolloutStateTrajectory[i], 1)) << "i = " << i;
-    }
+    Eigen::Vector<double, 1> u;
+    u << 3.0;
+
+    const double dt = 0.25;
+    const Eigen::Vector2d expected = x + dt * (A * x + B * u);
+    const Eigen::Vector2d actual = eulerDiscretizer.discretize(lin_sys, 1.0, x, u, dt);
+
+    EXPECT_TRUE(actual.isApprox(expected, 1e-12));
+}
+
+TEST(LinearSystemTest, EulerSensitivityMatchesLinearSystemAnalyticResult)
+{
+    Eigen::Matrix2d A;
+    A << 1.0, 2.0,
+         0.0, -1.0;
+
+    Eigen::Matrix<double, 2, 1> B;
+    B << 0.5, 2.0;
+
+    LinearSystemDynamics<double, 2, 1> lin_sys(A, B);
+    EulerDynamicsDiscretizer<double, 2, 1> eulerDiscretizer;
+
+    Eigen::Vector2d x;
+    x << 1.0, -2.0;
+
+    Eigen::Vector<double, 1> u;
+    u << 3.0;
+
+    const double dt = 0.25;
+    const auto approx = eulerDiscretizer.sensitivityDiscretize(lin_sys, 1.0, x, u, dt);
+
+    EXPECT_TRUE(approx.dfdx.isApprox(Eigen::Matrix2d::Identity() + dt * A, 1e-12));
+    EXPECT_TRUE(approx.dfdu.isApprox(dt * B, 1e-12));
+    EXPECT_TRUE(approx.f.isApprox(x + dt * (A * x + B * u), 1e-12));
+}
+
+TEST(LinearSystemTest, EK2SensitivityMatchesLinearSystemAnalyticResult)
+{
+    Eigen::Matrix2d A;
+    A << 0.0, 1.0,
+         -2.0, -3.0;
+
+    Eigen::Matrix<double, 2, 1> B;
+    B << 0.0, 1.0;
+
+    LinearSystemDynamics<double, 2, 1> lin_sys(A, B);
+    EK2DynamicsDiscretizer<double, 2, 1> ek2Discretizer;
+
+    Eigen::Vector2d x;
+    x << 1.0, -1.0;
+
+    Eigen::Vector<double, 1> u;
+    u << 2.0;
+
+    const double dt = 0.1;
+    const auto approx = ek2Discretizer.sensitivityDiscretize(lin_sys, 0.0, x, u, dt);
+    const Eigen::Matrix2d expectedDfdx = Eigen::Matrix2d::Identity() + dt * A + 0.5 * dt * dt * A * A;
+    const Eigen::Matrix<double, 2, 1> expectedDfdu = dt * B + 0.5 * dt * dt * A * B;
+    const Eigen::Vector2d expectedF = ek2Discretizer.discretize(lin_sys, 0.0, x, u, dt);
+
+    EXPECT_TRUE(approx.dfdx.isApprox(expectedDfdx, 1e-12));
+    EXPECT_TRUE(approx.dfdu.isApprox(expectedDfdu, 1e-12));
+    EXPECT_TRUE(approx.f.isApprox(expectedF, 1e-12));
 }
 
 TEST(LinearSystemTest, DiscreteEK4Test)
 {
-    Eigen::Matrix<double, 3, 3> A = Eigen::Matrix<double, 3, 3>::Random();
-    Eigen::Matrix<double, 3, 2> B = Eigen::Matrix<double, 3, 2>::Random();
+    Eigen::Matrix2d A;
+    A << 0.0, 1.0,
+         -2.0, -3.0;
 
-    LinearSystemDynamics<double, 3, 2> lin_sys(A, B);
+    Eigen::Matrix<double, 2, 1> B;
+    B << 0.0, 1.0;
 
-    TimeTriggeredRollout<double, 3, 2> rollout(&lin_sys, 1);
+    LinearSystemDynamics<double, 2, 1> lin_sys(A, B);
+    EK4DynamicsDiscretizer<double, 2, 1> ek4Discretizer;
 
-    const double initTime = 0;
-    const double finalTime = 10;
-    Eigen::Vector<double, 3> initState = Eigen::Vector<double, 3>::Random();
+    Eigen::Vector2d x;
+    x << 1.0, -1.0;
 
-    LinearController<double, 3, 2, 11> controller;
+    Eigen::Vector<double, 1> u;
+    u << 2.0;
 
-    for (int i = 0; i < 11; ++i)
-    {
-        controller.timeStamp_[i] = i;
-        controller.biasArray_[i] = Eigen::Vector2d::Zero();
-        controller.gainArray_[i] = Eigen::Matrix<double, 2, 3>::Zero();
-    }
+    const double t = 0.0;
+    const double dt = 0.1;
+    const Eigen::Vector2d k1 = A * x + B * u;
+    const Eigen::Vector2d k2 = A * (x + 0.5 * dt * k1) + B * u;
+    const Eigen::Vector2d k3 = A * (x + 0.5 * dt * k2) + B * u;
+    const Eigen::Vector2d k4 = A * (x + dt * k3) + B * u;
+    const Eigen::Vector2d expected = x + dt * (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0;
 
-    std::array<double, 11> rolloutTimeTrajectory;
-    std::array<Eigen::Vector3d, 11> rolloutStateTrajectory;
-    std::array<Eigen::Vector2d, 11> rolloutInputTrajectory;
+    const Eigen::Vector2d actual = ek4Discretizer.discretize(lin_sys, t, x, u, dt);
 
-    RolloutTrajectoryPointer<double, 3, 2> rolloutTrajectoryPointer(rolloutTimeTrajectory.data(), rolloutStateTrajectory.data(), rolloutInputTrajectory.data(), 11);
-    rollout.run(initTime, initState, finalTime, &controller, rolloutTrajectoryPointer);
-
-    EK4DynamicsDiscretizer<double, 3, 2> ek4Discretizer;
-
-    std::array<double, 11> testTimeTrajectory = rolloutTimeTrajectory;
-    std::array<Eigen::Vector3d, 11> testStateTrajectory;
-
-    testStateTrajectory[0] = initState;
-
-    for (int i = 0; i < 10; ++i)
-    {
-        testStateTrajectory[i + 1] = ek4Discretizer.discretize(lin_sys, testTimeTrajectory[i], testStateTrajectory[i], rolloutInputTrajectory[i], 1.0);
-    }
-
-    for (int i = 0; i < 11; ++i)
-    {
-        EXPECT_FLOAT_EQ(testTimeTrajectory[i], rolloutTimeTrajectory[i]);
-        EXPECT_TRUE(testStateTrajectory[i].isApprox(rolloutStateTrajectory[i], 0.1)) << "i = " << i;
-    }
+    EXPECT_TRUE(actual.isApprox(expected, 1e-12));
 }
 
 int main(int argc, char **argv)

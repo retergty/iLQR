@@ -27,6 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file StateInputAugmentedLagrangianCollection.hpp
+ * @brief 状态-输入增广拉格朗日集合：汇总多个状态-输入约束的惩罚项，提供总取值与总二次近似。
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -34,10 +38,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <array>
 
 /**
- * State-input Augmented Lagrangian penalty class combining a collection of constraint terms.
- *
- * This class collects a variable number of Augmented Lagrangian penalty terms and provides methods to get the
- * summed values and quadratic approximations. Each term can be accessed through its string name.
+ * @brief 状态-输入增广拉格朗日惩罚项集合：对多个 StateInputAugmentedLagrangian 求和。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 输入维度。
+ * @tparam StateInputAugmentLagrangianNumbers 项数。
  */
 template<typename Scalar, int XDimisions, int UDimisions, int StateInputAugmentLagrangianNumbers>
 class StateInputAugmentedLagrangianCollection
@@ -45,7 +50,7 @@ class StateInputAugmentedLagrangianCollection
 public:
   StateInputAugmentedLagrangianCollection() = default;
 
-  /** Get state constraints and their penalties for each active term */
+  /** @brief 获取各激活项的状态-输入约束与惩罚值数组。 */
   std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers> getValue(const Scalar time, const Vector<Scalar, XDimisions>& state, const Vector<Scalar, UDimisions>& input, const std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>& termsMultiplier) const
   {
     std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers> termsConstraintPenalty;

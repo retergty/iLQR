@@ -1,14 +1,17 @@
+/**
+ * @file CostCollection.hpp
+ * @brief 代价项集合：汇总多个仅状态或状态-输入代价项，提供总代价与总二次近似。
+ */
 #pragma once
 #include "Cost.hpp"
 #include <memory>
 #include "IntrusiveList.hpp"
 
 /**
- * Cost function combining a collection of cost terms.
- *
- * This class collects a variable number of cost terms and provides methods to get the
- * summed cost values and quadratic approximations. Each cost term can be accessed through its
- * string name and can be activated or deactivated.
+ * @brief 仅状态代价项集合：对多个 StateCost 求和得到总代价与总二次近似。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam ArrayLength 轨迹长度。
  */
 template <typename Scalar, int XDimisions, int ArrayLength>
 class StateCostCollection
@@ -17,7 +20,7 @@ public:
   StateCostCollection() = default;
   virtual ~StateCostCollection() = default;
 
-  /** Get state-only cost value */
+  /** @brief 获取仅状态总代价值。 */
   Scalar getValue(Scalar time, const Vector<Scalar, XDimisions> &state, const std::array<Scalar, ArrayLength> &timeTrajectories, const std::array<Vector<Scalar, XDimisions>, ArrayLength> &stateTrajectoies) const
   {
     Scalar cost = 0;
@@ -28,11 +31,12 @@ public:
     return cost;
   }
 
-  /** Get state-only cost quadratic approximation */
+  /** @brief 获取仅状态总代价的二次近似。 */
   ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0>
   getQuadraticApproximation(Scalar time, const Vector<Scalar, XDimisions> &state, const std::array<Scalar, ArrayLength> &timeTrajectories, const std::array<Vector<Scalar, XDimisions>, ArrayLength> &stateTrajectoies) const
   {
     ScalarFunctionQuadraticApproximation<Scalar, XDimisions, 0> cost_appro;
+    cost_appro.setZero();
     for (auto it = list_.begin(); it != list_.end(); ++it)
     {
       cost_appro += it->getQuadraticApproximation(time, state, timeTrajectories, stateTrajectoies);
@@ -40,8 +44,8 @@ public:
     return cost_appro;
   }
 
-  // add cost to list end
-  void add(const StateCost<Scalar, XDimisions, ArrayLength> &cost)
+  /** @brief 在链表末尾添加代价项。 */
+  void add(StateCost<Scalar, XDimisions, ArrayLength> &cost)
   {
     list_.insert(list_.end(), cost);
   }
@@ -51,11 +55,11 @@ private:
 };
 
 /**
- * State Input Cost function combining a collection of cost terms.
- *
- * This class collects a variable number of cost terms and provides methods to get the
- * summed cost values and quadratic approximations. Each cost term can be accessed through its
- * string name and can be activated or deactivated.
+ * @brief 状态-输入代价项集合：对多个 StateInputCost 求和得到总代价与总二次近似。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 输入维度。
+ * @tparam ArrayLength 轨迹长度。
  */
 template <typename Scalar, int XDimisions, int UDimisions, int ArrayLength>
 class StateInputCostCollection
@@ -83,6 +87,7 @@ public:
                             const std::array<Scalar, ArrayLength> &timeTrajectory, const std::array<Vector<Scalar, XDimisions>, ArrayLength> &stateTrajectoy, const std::array<Vector<Scalar, UDimisions>, ArrayLength> &inputTrajectory) const
   {
     ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions> cost_appro;
+    cost_appro.setZero();
     for (auto it = list_.begin(); it != list_.end(); ++it)
     {
       cost_appro += it->getQuadraticApproximation(time, state, input, timeTrajectory, stateTrajectoy, inputTrajectory);
@@ -91,7 +96,7 @@ public:
   }
 
   // add cost to list end
-  void add(const StateInputCost<Scalar, XDimisions, UDimisions, ArrayLength> &cost)
+  void add(StateInputCost<Scalar, XDimisions, UDimisions, ArrayLength> &cost)
   {
     list_.insert(list_.end(), cost);
   }

@@ -27,6 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file PerformanceIndex.hpp
+ * @brief 单次 rollout 的性能指标：代价、merit、对偶可行性 SSE、动力学违反、等式/不等式拉格朗日等。
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -34,41 +38,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Metrics.hpp"
 
 /**
- * Defines the performance indices for a rollout
+ * @brief 单次 rollout 的性能指标汇总，用于收敛判断与 merit 计算。
+ * @tparam Scalar 标量类型。
  */
 template<typename Scalar>
 struct PerformanceIndex {
-  /** The merit function of a rollout. */
+  /** @brief 该次 rollout 的 merit 函数值（用于线搜索与收敛判据）。 */
   Scalar merit = 0.0;
 
-  /** The total cost of a rollout. */
+  /** @brief 该次 rollout 的总代价。 */
   Scalar cost = 0.0;
 
-  /** Sum of Squared Error (SSE) of the dual feasibilities:
-   * - Final: squared norm of violation in the dual feasibilities
-   * - PreJumps: sum of squared norm of violation in the dual feasibilities
-   * - Intermediates: sum of squared norm of violation in the dual feasibilities
-   */
+  /** @brief 对偶可行性的误差平方和（终端/中间时刻违反的平方范数之和）。 */
   Scalar dualFeasibilitiesSSE = 0.0;
 
-  /** Sum of Squared Error (SSE) of system dynamics violation */
+  /** @brief 系统动力学违反的误差平方和。 */
   Scalar dynamicsViolationSSE = 0.0;
 
-  /** Sum of equality Lagrangians:
-   * - Final: penalty for violation in state equality constraints
-   * - PreJumps: penalty for violation in state equality constraints
-   * - Intermediates: penalty for violation in state/state-input equality constraints
-   */
+  /** @brief 等式约束拉格朗日项之和（状态等式、状态-输入等式惩罚）。 */
   Scalar equalityLagrangian = 0.0;
 
-  /** Sum of inequality Lagrangians:
-   * - Final: penalty for violation in state inequality constraints
-   * - PreJumps: penalty for violation in state inequality constraints
-   * - Intermediates: penalty for violation in state/state-input inequality constraints
-   */
+  /** @brief 不等式约束拉格朗日项之和（状态不等式、状态-输入不等式惩罚）。 */
   Scalar inequalityLagrangian = 0.0;
 
-  /** Add performance indices. */
+  /** @brief 将另一性能指标逐项加到本对象。 */
   PerformanceIndex& operator+=(const PerformanceIndex& rhs)
   {
     this->merit += rhs.merit;
@@ -80,7 +73,7 @@ struct PerformanceIndex {
     return *this;
   }
 
-  /** Multiply by a scalar. */
+  /** @brief 将本性能指标各分量乘以标量 c。 */
   PerformanceIndex& operator*=(const Scalar c)
   {
     this->merit *= c;
@@ -92,7 +85,12 @@ struct PerformanceIndex {
     return *this;
   }
 
-  /** Returns true if *this is approximately equal to other, within the precision determined by prec. */
+  /**
+   * @brief 判断与另一性能指标是否在给定精度内近似相等。
+   * @param [in] other 另一性能指标。
+   * @param [in] prec 数值比较精度，默认 1e-8。
+   * @return 各分量均在 prec 内近似相等则返回 true。
+   */
   bool isApprox(const PerformanceIndex& other, const Scalar prec = 1e-8) const
   {
     return numerics::almost_eq(this->merit, other.merit, prec) && numerics::almost_eq(this->cost, other.cost, prec) &&
@@ -103,28 +101,28 @@ struct PerformanceIndex {
   }
 };
 
-/** Add performance indices. */
+/** @brief 两个性能指标逐项相加，返回新对象。 */
 template<typename Scalar>
 inline PerformanceIndex<Scalar> operator+(PerformanceIndex<Scalar> lhs, const PerformanceIndex<Scalar>& rhs) {
-  lhs += rhs;  // copied lhs, add rhs to it.
+  lhs += rhs;
   return lhs;
 }
 
-/** Multiply by a scalar. */
+/** @brief 性能指标各分量乘以标量 c。 */
 template<typename Scalar>
 inline PerformanceIndex<Scalar> operator*(PerformanceIndex<Scalar> lhs, const Scalar c) {
-  lhs *= c;  // copied lhs
+  lhs *= c;
   return lhs;
 }
 
-/** Multiply by a scalar. */
+/** @brief 标量 c 乘以性能指标（与 operator*(lhs, c) 等价）。 */
 template<typename Scalar>
 inline PerformanceIndex<Scalar> operator*(const Scalar c, PerformanceIndex<Scalar> rhs) {
-  rhs *= c;  // copied rhs
+  rhs *= c;
   return rhs;
 }
 
-/** Swaps performance indices. */
+/** @brief 交换两个性能指标对象的内容。 */
 template<typename Scalar>
 void swap(PerformanceIndex<Scalar>& lhs, PerformanceIndex<Scalar>& rhs)
 {
@@ -136,7 +134,11 @@ void swap(PerformanceIndex<Scalar>& lhs, PerformanceIndex<Scalar>& rhs)
   std::swap(lhs.inequalityLagrangian, rhs.inequalityLagrangian);
 }
 
-/** Computes the PerformanceIndex based on a given continuous-time Metrics. */
+/**
+ * @brief 由单点连续时间 Metrics 计算对应的 PerformanceIndex（代价、动力学违反、等式/不等式拉格朗日等）。
+ * @param [in] m 该时刻的 Metrics。
+ * @return 填充 cost、dynamicsViolationSSE、equalityLagrangian、inequalityLagrangian 等的 PerformanceIndex。
+ */
 template <typename Scalar, int XDimisions, int UDimisions, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains>
 PerformanceIndex<Scalar> toPerformanceIndex(const Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>& m)
 {
@@ -150,14 +152,17 @@ PerformanceIndex<Scalar> toPerformanceIndex(const Metrics<Scalar, XDimisions, UD
   return performanceIndex;
 }
 
-/** Computes the PerformanceIndex based on a given discrete-time Metrics. */
+/**
+ * @brief 由单点离散时间 Metrics 及时间步长 dt 计算 PerformanceIndex，部分 SSE 项乘以 dt。
+ * @param [in] m 该时刻的 Metrics。
+ * @param [in] dt 时间步长。
+ * @return 乘以 dt 后的 PerformanceIndex（cost 已在 computeIntermediateMetrics 中考虑）。
+ */
 template <typename Scalar, int XDimisions, int UDimisions, int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains>
 PerformanceIndex<Scalar> toPerformanceIndex(const Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>& m, const Scalar dt)
 {
   auto performanceIndex = toPerformanceIndex(m);
-  //  performanceIndex.cost *= dt  no need since it is already considered in multiple_shooting::computeIntermediateMetrics()
   performanceIndex.dualFeasibilitiesSSE *= dt;
   performanceIndex.dynamicsViolationSSE *= dt;
-  performanceIndex.inequalityConstraintsSSE *= dt;
   return performanceIndex;
 }

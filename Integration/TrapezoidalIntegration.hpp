@@ -27,14 +27,20 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file TrapezoidalIntegration.hpp
+ * @brief 梯形积分：对时间-值轨迹做梯形法则积分，需 VALUE 支持加法与标量乘法。
+ */
 #pragma once
 
 #include "Types.hpp"
 
 /**
- * Compute the trapezoidal integration of a trajectory of VALUE_T given the time stamp timeTrajectory and initial value initialValue.
- *
- * @note It requires that the VALUE_T has overwrite operator+(VALUE_T, VALUE_T) and define VALUE_T::operator*(SCALAR_T)
+ * @brief 对 (timeTrajectory, valueTrajectory) 做梯形积分，从 initialValue 起累加。
+ * @param [in] timeTrajectory 时间序列。
+ * @param [in] valueTrajectory 值序列。
+ * @param [in] initialValue 初始累加值。
+ * @return 梯形积分结果。
  */
 template <typename Scalar, typename VALUE, size_t TimeArrayLen, size_t ValueArrayLen>
 VALUE trapezoidalIntegration(const std::array<Scalar, TimeArrayLen> &timeTrajectory, const std::array<VALUE, ValueArrayLen> &valueTrajectory,
@@ -49,7 +55,7 @@ VALUE trapezoidalIntegration(const std::array<Scalar, TimeArrayLen> &timeTraject
 
   for (std::size_t k = 1; k < ArrayLen; k++)
   {
-    auto temp = valueTrajectory[k - 1] + valueTrajectory[k];
+    VALUE temp = valueTrajectory[k - 1] + valueTrajectory[k];
     temp *= (0.5 * (timeTrajectory[k] - timeTrajectory[k - 1]));
     initialValue += temp;
   } // end of k loop

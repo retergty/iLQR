@@ -27,13 +27,18 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
+/**
+ * @file DiscreteTimeRiccatiEquations.hpp
+ * @brief 离散时间 Riccati 差分方程：单步递推计算 value function (Sm,Sv,s) 与 projected 反馈/前馈 (Km,Lv)。
+ */
 #pragma once
 
 #include "Types.hpp"
 #include "RiccatiModification.hpp"
+#include "ModelData.hpp"
 
 /**
- * Data cache for discrete-time Riccati equation
+ * @brief 离散时间 Riccati 单步递推的中间缓存（Sm*Am, Sm*Bm, Gm, Gv, Hm*Km 等）。
  */
 template <typename Scalar, int XDimisions, int UDimisions>
 struct DiscreteTimeRiccatiData
@@ -53,7 +58,10 @@ struct DiscreteTimeRiccatiData
 };
 
 /**
- * This class implements the Riccati difference equations for iLQR problem.
+ * @brief 实现 iLQR 的离散时间 Riccati 差分方程：由下一时刻的 (Sm,Sv,s) 与当前投影模型数据递推当前 (Sm,Sv,s) 与 (Km,Lv)。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 控制维度。
  */
 template <typename Scalar, int XDimisions, int UDimisions>
 class DiscreteTimeRiccatiEquations
@@ -63,32 +71,26 @@ public:
   using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
   using RiccatiModification_t = RiccatiModification<Scalar, XDimisions, UDimisions>;
   /**
-   * Constructor.
-   *
-   * @param [in] reducedFormRiccati: The reduced form of the Riccati equation is yield by assuming that Hessein of
-   * the Hamiltonian is positive definite. In this case, the computation of Riccati equation is more efficient.
-   * @param [in] isRiskSensitive: Neither the risk sensitive variant is used or not.
+   * @brief 构造离散时间 Riccati 求解器。
+   * @param [in] reducedFormRiccati 若为 true，假设哈密顿量 Hessian 正定，使用简化公式（不显式构造 Hm），计算更高效。
    */
   explicit DiscreteTimeRiccatiEquations(bool reducedFormRiccati = true) : reducedFormRiccati_(reducedFormRiccati) {};
 
-  /**
-   * Default destructor.
-   */
+  /** @brief 析构函数。 */
   ~DiscreteTimeRiccatiEquations() = default;
 
   /**
-   * Computes one step Riccati difference equations.
-   *
-   * @param [in] projectedModelData: The projected model data.
-   * @param [in] riccatiModification: The RiccatiModification.
-   * @param [in] SmNext: The Riccati matrix of the next time step.
-   * @param [in] SvNext: The Riccati vector of the next time step.
-   * @param [in] sNext: The Riccati scalar of the next time step.
-   * @param [out] projectedKm: The projected feedback controller.
-   * @param [out] projectedLv: The projected feedforward controller.
-   * @param [out] Sm: The current Riccati matrix.
-   * @param [out] Sv: The current Riccati vector.
-   * @param [out] s: The current Riccati scalar.
+   * @brief 计算一步 Riccati 差分：由 (SmNext, SvNext, sNext) 与当前投影模型数据得到当前 (Sm, Sv, s) 与 (projectedKm, projectedLv)。
+   * @param [in] projectedModelData 当前节点投影后的模型数据。
+   * @param [in] riccatiModification Riccati 修正（deltaQm 等）。
+   * @param [in] SmNext 下一时刻 Riccati 矩阵。
+   * @param [in] SvNext 下一时刻 Riccati 向量。
+   * @param [in] sNext 下一时刻 Riccati 标量。
+   * @param [out] projectedKm 当前投影反馈增益。
+   * @param [out] projectedLv 当前投影前馈项。
+   * @param [out] Sm 当前 Riccati 矩阵。
+   * @param [out] Sv 当前 Riccati 向量。
+   * @param [out] s 当前 Riccati 标量。
    */
   void computeMap(const ModelData_t &projectedModelData, const RiccatiModification_t &riccatiModification,
                   const Matrix<Scalar, XDimisions, XDimisions> &SmNext, const Vector<Scalar, XDimisions> &SvNext, const Scalar &sNext,
@@ -101,19 +103,18 @@ public:
 
 private:
   /**
-   * Computes one step Riccati difference equations for ILQR formulation.
-   *
-   * @param [in] projectedModelData: The projected model data.
-   * @param [in] riccatiModification: The RiccatiModification.
-   * @param [in] SmNext: The Riccati matrix of the next time step.
-   * @param [in] SvNext: The Riccati vector of the next time step.
-   * @param [in] sNext: The Riccati scalar of the next time step.
-   * @param [out] dreCache: The discrete-time Riccati equation cache date.
-   * @param [out] projectedKm: The projected feedback controller.
-   * @param [out] projectedLv: The projected feedforward controller.
-   * @param [out] Sm: The current Riccati matrix.
-   * @param [out] Sv: The current Riccati vector.
-   * @param [out] s: The current Riccati scalar.
+   * @brief iLQR 形式的一步 Riccati 差分方程实现（由 computeMap 调用）。
+   * @param [in] projectedModelData 投影后的模型数据。
+   * @param [in] riccatiModification Riccati 修正。
+   * @param [in] SmNext 下一时刻 Riccati 矩阵。
+   * @param [in] SvNext 下一时刻 Riccati 向量。
+   * @param [in] sNext 下一时刻 Riccati 标量。
+   * @param [out] dreCache 离散时间 Riccati 缓存。
+   * @param [out] projectedKm 当前投影反馈增益。
+   * @param [out] projectedLv 当前投影前馈项。
+   * @param [out] Sm 当前 Riccati 矩阵。
+   * @param [out] Sv 当前 Riccati 向量。
+   * @param [out] s 当前 Riccati 标量。
    */
   void computeMapILQR(const ModelData_t &projectedModelData, const RiccatiModification_t &riccatiModification,
                       const Matrix<Scalar, XDimisions, XDimisions> &SmNext, const Vector<Scalar, XDimisions> &SvNext, const Scalar &sNext, DiscreteTimeRiccatiData_t &dreCache,
@@ -160,7 +161,7 @@ private:
     Sm += dreCache.Sm_projectedAm_.transpose() * projectedModelData.dynamics.dfdx;
     if (reducedFormRiccati_)
     {
-      // += Km^T * Gm + Gm^T * Km
+      // += Km^T * Gm (in reduced form Km = -Gm so Km^T*Gm = -Gm^T*Gm is symmetric; OCS2 only adds once)
       Sm += dreCache.projectedKm_T_projectedGm_;
     }
     else

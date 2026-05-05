@@ -27,27 +27,17 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file QuadraticPenalty.hpp
+ * @brief 二次惩罚：等式约束 h=0 的增广拉格朗日惩罚 p(h,λ)=λh+(μ/2)h²，乘子更新 λ_{k+1}=λ_k-α*h。
+ */
 #pragma once
 
 #include "AugmentedPenaltyBase.hpp"
 
 /**
- *  Implements the augmented Lagrangian for a single equality constraint \f$ h = 0 \f$. This leads to the following
- *  augmented Lagrangian:
- *
- *  \f[
- *      L_{A} = L * \lambda h + \frac{\mu}{2} h^2.
- *  \f]
- *
- *  where \f$ L \f$ is the Lagrangian and \f$ \mu \f$ is the scale, while the remaining terms form the penalty
- *  function \f$ p(h, \lambda) \f$.
- *
- *  This is then minimized with the solver, while the Lagrange multipliers are updated as:
- * \f[
- *      \lambda^*_{k+1} = \lambda^*_k - \alpha h^*_{k+1}.
- * \f]
- *
- * with \f$ alpha \f$ is the step-length. In Augmented Lagrangian method this is often set to \f$ \mu \f$.
+ * @brief 单等式约束的二次惩罚实现：惩罚项 p = λh + (μ/2)h²，μ 为尺度参数。
+ * @tparam Scalar 标量类型。
  */
 template<typename Scalar>
 class QuadraticPenalty final : public AugmentedPenaltyBase<Scalar>

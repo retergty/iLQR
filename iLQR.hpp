@@ -1,3 +1,7 @@
+/**
+ * @file iLQR.hpp
+ * @brief 离散时间 iLQR 求解器：在名义轨迹上做 LQ 近似并迭代求解 Riccati，支持线搜索与约束投影。
+ */
 #pragma once
 #include "Types.hpp"
 #include "Dynamics.hpp"
@@ -27,6 +31,19 @@
 #include "InitializerRollout.hpp"
 #include "DefaultInitializer.hpp"
 
+/**
+ * @brief 迭代线性二次调节器（iLQR）：基于名义轨迹的 LQ 近似与离散时间 Riccati 反向递推的 DDP 求解器。
+ * @tparam Scalar 标量类型（如 double）。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 控制维度。
+ * @tparam PredictLength 预测步数（时间节点数为 PredictLength+1）。
+ * @tparam StateEqConstrains 状态等式约束数（中间时刻）。
+ * @tparam StateIneqConstrains 状态不等式约束数（中间时刻）。
+ * @tparam StateInputEqConstrains 状态-输入等式约束数。
+ * @tparam StateInputIneqConstrains 状态-输入不等式约束数。
+ * @tparam FinalStateEqConstrains 终端状态等式约束数。
+ * @tparam FinalStateIneqConstrains 终端状态不等式约束数。
+ */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains = 0, int StateIneqConstrains = 0, int StateInputEqConstrains = 0, int StateInputIneqConstrains = 0,
           int FinalStateEqConstrains = 0, int FinalStateIneqConstrains = 0>
@@ -88,6 +105,11 @@ public:
     using ValueFunctionQuadraticApproximation_t = ScalarFunctionQuadraticApproximation<Scalar, XDimisions, UDimisions>;
     using DiscreteTimeRiccatiEquations_t = DiscreteTimeRiccatiEquations<Scalar, XDimisions, UDimisions>;
 
+    /**
+     * @brief 构造 iLQR 求解器，绑定动力学与初始化器。
+     * @param [in] systemPtr 系统动力学指针（用于 rollout 与离散化），不可为 nullptr。
+     * @param [in] initializer 轨迹初始化器，用于填补无控制器的时间段。
+     */
     iLQR(SystemDynamicsBase_t *systemPtr, Initializer_t *initializer) : rollout_(systemPtr, ddpSettings_.timeStep_),
                                                                         initializerRollout_(*initializer, ddpSettings_.timeStep_),
                                                                         lineSearchStrategy_(*this)
@@ -101,8 +123,8 @@ public:
     /**
      * The main routine of solver which runs the optimizer for a given initial state, initial time, and final time.
      *
-     * @param [in] initTime: The initial time.
-     * @param [in] initState: The initial state.
+     * @param [in] initTime 初始时间。
+     * @param [in] initState 初始状态。
      */
     void run(Scalar initTime, const StateVector_t &initState)
     {
@@ -162,6 +184,12 @@ public:
         } // end of while loop
     }
 
+    /**
+     * @brief 设置参考轨迹（时间、状态、输入），用于跟踪型代价与初始化。
+     * @param [in] timeTrajectory 时间序列，长度为 PredictLength+1。
+     * @param [in] stateTrajectory 参考状态轨迹。
+     * @param [in] inputTrajectory 参考输入轨迹。
+     */
     void setDesireTrajectory(const TimeTrajectory_t &timeTrajectory, const StateTrajectory_t &stateTrajectory, const InputTrajectory_t &inputTrajectory)
     {
         optimalControlProblem_.timeTrajectory = timeTrajectory;
@@ -194,15 +222,15 @@ private:
      * However, if inputPrimalSolution's controller does not cover the period [initTime, finalTime], it will use the
      * controller till the final time of the controller
      *
-     * @param [in] inputPrimalSolution: Its controller will be used for rollout.
-     * @param [out] outputPrimalSolution: The resulting PrimalSolution.
-     * @return number of steps are covered.
+     * @param [in] inputPrimalSolution 其控制器将用于前向积分。
+     * @param [out] outputPrimalSolution 得到的原始解（轨迹与控制器）。
+     * @return 被覆盖的步数。
      */
     int rolloutInitialController(PrimalSolution_t &inputPrimalSolution, PrimalSolution_t &outputPrimalSolution)
     {
         // Ensure that finalTime is included by adding a fraction of dt such that: N * dt <= finalTime < (N + 1) * dt.
         Scalar finalTimeLocal = std::min(lastFinalTime_, finalTime_) + static_cast<Scalar>(0.01) * ddpSettings_.timeStep_;
-        int numSteps = (finalTimeLocal - initTime_) / PredictLength;
+        int numSteps = std::min(static_cast<int>((finalTimeLocal - initTime_) / ddpSettings_.timeStep_), static_cast<int>(PredictLength));
 
         outputPrimalSolution.controller_ = inputPrimalSolution.controller_;
         rolloutTrajectory(rollout_, initTime_, initState_, lastFinalTime_, outputPrimalSolution);
@@ -276,8 +304,8 @@ private:
     /**
      * Calculates an LQ approximate of the optimal control problem for the nodes.
      *
-     * @param [in] dualSolution: The dual solution
-     * @param [in,out] primalData: The primal Data
+     * @param [in] dualSolution 对偶解。
+     * @param [in,out] primalData 原始数据（读轨迹，写 modelDataTrajectory）。
      */
     void approximateIntermediateLQ(const DualSolution_t &dualSolution, PrimalDataContainer_t &primalData)
     {
@@ -317,13 +345,13 @@ private:
     /**
      * Calculates the discrete-time LQ approximation from the continuous-time LQ approximation.
      *
-     * @param [in] system: system dynamic.
-     * @param [in] time: time t_k.
-     * @param [in] state: state x_k.
-     * @param [in] input: input u_k.
-     * @param [in] timeStep: Time step between the x_{k} and x_{k+1}.
-     * @param [in] continuousTimeModelData: continuous time model data.
-     * @param [out] modelData: Discretized mode data.
+     * @param [in] system 系统动力学。
+     * @param [in] time 当前时刻 t_k。
+     * @param [in] state 当前状态 x_k。
+     * @param [in] input 当前输入 u_k。
+     * @param [in] timeStep x_k 到 x_{k+1} 的时间步长。
+     * @param [in] continuousTimeModelData 连续时间 LQ 模型数据。
+     * @param [out] modelData 离散化后的模型数据。
      */
     void discreteLQWorker(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, Scalar time, const StateVector_t &state, const InputVector_t &input, Scalar timeStep,
                           const ModelData_t &continuousTimeModelData, ModelData_t &modelData)
@@ -339,11 +367,10 @@ private:
     }
 
     /**
-     * Computes the Hessian of Hamiltonian based on the search strategy and algorithm.
-     *
-     * @param [in] modelData: The model data.
-     * @param [in] Sm: The Riccati matrix.
-     * @return The Hessian matrix of the Hamiltonian.
+     * @brief 计算哈密顿量对控制的 Hessian（Hm = dfduu + B^T Sm B），并可能被搜索策略修正。
+     * @param [in] modelData 当前节点模型数据。
+     * @param [in] Sm 当前价值函数二阶导（Riccati 矩阵）。
+     * @return 哈密顿量 Hessian 矩阵 Hm。
      */
     HmMatrix_t computeHamiltonianHessian(const ModelData_t &modelData, const SmMatrix_t &Sm) const
     {
@@ -354,10 +381,9 @@ private:
     }
 
     /**
-     *
-     * @param [in] Hm: inv(Hm) defines the oblique projection for state-input equality constraints.
-     * @param [out] constraintRangeProjector: The projection matrix to the constrained subspace.
-     * @param [out] constraintNullProjector: The projection matrix to the null space of constrained.
+     * @brief 由 Hm 的 UUT 分解得到 inv(Hm)，用作约束零空间投影（无约束时即 inv(Hm)）。
+     * @param [in] Hm 哈密顿量对控制的 Hessian（正定）。
+     * @param [out] constraintNullProjector 输出投影矩阵（当前实现为 inv(Hm) 的 UUT 因子）。
      */
     void computeProjections(const HmMatrix_t &Hm, HmMatrix_t &constraintNullProjector) const
     {
@@ -371,12 +397,10 @@ private:
     }
 
     /**
-     * Projects the unconstrained LQ coefficients to constrained ones.
-     *
-     * @param [in] modelData: The model data.
-     * @param [in] constraintRangeProjector: The projection matrix to the constrained subspace.
-     * @param [in] constraintNullProjector: The projection matrix to the null space of constrained.
-     * @param [out] projectedModelData: The projected model data.
+     * @brief 将 LQ 模型按 u = Pu * tilde{u} 做变量替换，得到投影后的动力学与代价系数。
+     * @param [in] modelData 原始模型数据。
+     * @param [in] constraintNullProjector 投影矩阵 Pu（约束零空间）。
+     * @param [out] projectedModelData 投影后的模型数据。
      */
     void projectLQ(const ModelData_t &modelData, const HmMatrix_t &constraintNullProjector, ModelData_t &projectedModelData) const
     {
@@ -401,10 +425,10 @@ private:
      * projections, defines the projected LQ model. (4) Finally, defines the Riccati equation modifiers based on the
      * search strategy.
      *
-     * @param [in] modelData: The model data.
-     * @param [in] Sm: The Riccati matrix.
-     * @param [out] projectedModelData: The projected model data.
-     * @param [out] riccatiModification: The Riccati equation modifier.
+     * @param [in] modelData 当前节点模型数据。
+     * @param [in] Sm 下一时刻 Riccati 矩阵。
+     * @param [out] projectedModelData 投影后的模型数据。
+     * @param [out] riccatiModification Riccati 修正项。
      */
     void computeProjectionAndRiccatiModification(const ModelData_t &modelData, const SmMatrix_t &Sm, ModelData_t &projectedModelData,
                                                  RiccatiModification_t &riccatiModification) const
@@ -424,13 +448,9 @@ private:
     }
 
     /**
-     * Solves Riccati equations.
-
-        // dynamics bias
-        projectedModelData.dynamicsBias = modelDat
-     *
-     * @param [in] finalValueFunction: The final value of Sm (dfdxx), Sv (dfdx), s (f), for Riccati equation.
-     * @return average time step
+     * @brief 从终端到初始时刻顺序求解 Riccati 方程，得到 value function 与 projected Lv/Km。
+     * @param [in] finalValueFunction 终端价值函数二次近似（Sm=dfdxx, Sv=dfdx, s=f）。
+     * @return 平均时间步长（用于统计）。
      */
     Scalar solveSequentialRiccatiEquations(const ValueFunctionQuadraticApproximation_t &finalValueFunction)
     {
@@ -460,8 +480,8 @@ private:
     /**
      * The implementation for solving Riccati equations for all the partitions.
      *
-     * @param [in] finalValueFunction The final Sm(dfdxx), Sv(dfdx), s(f), for Riccati equation.
-     * @return average time step
+     * @param [in] finalValueFunction 终端价值函数（Sm=dfdxx, Sv=dfdx, s=f）。
+     * @return 平均时间步长。
      */
     Scalar solveSequentialRiccatiEquationsImpl(const ValueFunctionQuadraticApproximation_t &finalValueFunction)
     {
@@ -476,8 +496,7 @@ private:
     /**
      * Solves a Riccati equations and type_1 constraints error correction compensation for the partition in the given index.
      *
-     * @param [in] workerIndex: Current worker index
-     * @param [in] finalValueFunction The final Sm(dfdxx), Sv(dfdx), s(f), for Riccati equation.
+     * @param [in] finalValueFunction 终端价值函数，用于反向递推的初值。
      */
     void riccatiEquationsWorker(const ValueFunctionQuadraticApproximation_t &finalValueFunction)
     {
@@ -538,10 +557,10 @@ private:
     /**
      * Calculate controller for the timeIndex by using primal and dual and write the result back to dstController
      *
-     * @param [in] timeIndex: The current time index
-     * @param [in] primalData: Primal data used to calculate controller
-     * @param [in] dualData: Dual data used to calculate controller
-     * @param [out] dstController: The destination controller
+     * @param [in] timeIndex 当前时间索引。
+     * @param [in] primalData 用于计算控制器的原始数据。
+     * @param [in] dualData 用于计算控制器的对偶数据。
+     * @param [out] dstController 输出的控制器（增益、偏置、deltaBias 写入对应索引）。
      */
     void calculateControllerWorker(size_t timeIndex, const PrimalDataContainer_t &primalData, const DualDataContainer_t &dualData,
                                    LinearController_t &dstController)
@@ -598,8 +617,8 @@ public:
     /**
      * Calculates the merit function based on the performance index .
      *
-     * @param [in] performanceIndex: The performance index which includes the uninitialized merit, cost, and ISEs of constraints.
-     * @return The merit function
+     * @param [in] performanceIndex 性能指标（含 cost、等式/不等式拉格朗日等）。
+     * @return 用于线搜索与收敛判据的 merit 值。
      */
     static Scalar calculateRolloutMerit(const PerformanceIndex_t &performanceIndex)
     {
@@ -616,10 +635,10 @@ public:
     /**
      * Computes cost, soft constraints and constraints values of each point in the the primalSolution rollout.
      *
-     * @param [in] problem: A reference to the optimal control problem.
-     * @param [in] primalSolution: The primal solution.
-     * @param [in] dualSolution: Const reference view to the dual solution
-     * @param [out] problemMetrics: The cost, soft constraints and constraints values of the rollout.
+     * @param [in] problem 最优控制问题。
+     * @param [in] primalSolution 原始解（轨迹）。
+     * @param [in] dualSolution 对偶解。
+     * @param [out] problemMetrics 各时刻代价、软约束与约束值。
      */
     static void computeRolloutMetrics(OptimalControlProblem_t &problem, const PrimalSolution_t &primalSolution,
                                       DualSolution_t &dualSolution, ProblemMetrics_t &problemMetrics)
@@ -643,15 +662,12 @@ public:
      * Forward integrate the system dynamics with given controller. It uses the given control policies and initial state,
      * to integrate the system dynamics in time period [initTime, finalTime].
      *
-     * @param [in] rollout: A reference to the rollout class.
-     * @param [in] initTime: The initial time.
-     * @param [in] initState: The initial state.
-     * @param [in] finalTime: The final time.
-     * @param [in, out] primalSolution: The resulting primal solution. Make sure that primalSolution::controllerPtr is set since
-     *                                  the rollout is performed based on the controller stored in primalSolution. Moreover,
-     *                                  except for StateTriggeredRollout, one should also set primalSolution::modeSchedule.
-     *
-     * @return average time step.
+     * @param [in] rollout 前向积分用的 rollout 对象。
+     * @param [in] initTime 初始时间。
+     * @param [in] initState 初始状态。
+     * @param [in] finalTime 终止时间。
+     * @param [in,out] primalSolution 结果写入其时间/状态/输入轨迹；需已设置 controller 供 rollout 使用。
+     * @return 平均时间步长。
      */
     static Scalar rolloutTrajectory(RolloutBase_t &rollout,
                                     Scalar initTime, const StateVector_t &initState, Scalar finalTime,
@@ -666,10 +682,9 @@ public:
     /**
      * Calculates the PerformanceIndex associated to the given ProblemMetrics.
      *
-     * @param [in] timeTrajectory: Time stamp of the rollout.
-     * @param [in] problemMetrics: The cost, soft constraints and constraints values of the rollout.
-     *
-     * @return The PerformanceIndex of the trajectory.
+     * @param [in] timeTrajectory rollout 的时间戳序列。
+     * @param [in] problemMetrics 各时刻代价与约束指标。
+     * @return 整条轨迹的 PerformanceIndex（梯形积分汇总）。
      */
     static PerformanceIndex_t computeRolloutPerformanceIndex(
         const TimeTrajectory_t &timeTrajectory,
@@ -690,8 +705,10 @@ public:
     }
 
     /**
-     * Outputs a controller with the same time stamp and gains as unoptimizedController. However, bias is incremented based on:
-     * biasArray = unoptimizedController.biasArray + stepLength * unoptimizedController.deltaBiasArray
+     * @brief 按步长生成控制器：时间戳与增益与 unoptimizedController 相同，bias = bias + stepLength * deltaBias。
+     * @param [in] stepLength 线搜索步长。
+     * @param [in] unoptimizedController 未优化控制器（含 deltaBiasArray）。
+     * @param [out] controller 输出控制器。
      */
     static void incrementController(Scalar stepLength, const LinearController_t &unoptimizedController, LinearController_t &controller)
     {
@@ -704,7 +721,10 @@ public:
     }
 
     /**
-     * biasArray = unoptimizedController.biasArray + stepLength * unoptimizedController.deltaBiasArray
+     * @brief 仅更新控制器的 bias：biasArray = unoptimizedController.biasArray + stepLength * deltaBiasArray。
+     * @param [in] stepLength 步长。
+     * @param [in] unoptimizedController 源控制器。
+     * @param [out] controller 目标控制器（仅 biasArray_ 被写入）。
      */
     static void changeControllerStepLength(Scalar stepLength, const LinearController_t &unoptimizedController, LinearController_t &controller)
     {
@@ -717,8 +737,8 @@ public:
     /**
      * Computes the integral of the squared (IS) norm of the controller update.
      *
-     * @param [in] controller: Input controller.
-     * @return The integral of the squared (IS) norm of the controller update.
+     * @param [in] controller 控制器（含 deltaBiasArray）。
+     * @return 控制器更新量的平方范数沿时间的积分（梯形积分）。
      */
     static Scalar computeControllerUpdateIS(const LinearController_t &controller)
     {
@@ -742,7 +762,7 @@ public:
 
 private:
     // linear approximator
-    static LinearQuadraticApproximator_t approximator_;
+    inline static LinearQuadraticApproximator_t approximator_{};
 
     constexpr static DDPSettings<Scalar> ddpSettings_{};
 

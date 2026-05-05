@@ -27,38 +27,48 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file OperatingPoints.hpp
+ * @brief 工作点初始化器：用固定状态/输入工作点生成轨迹，不依赖动力学积分。
+ */
 #pragma once
 
 #include "Initializer.hpp"
 
 /**
- * This is an implementation of Initializer class that uses operating trajectories or single point for state-input initialization.
+ * @brief 基于工作点的初始化器：输出恒为给定状态工作点与输入工作点，nextState 为状态工作点。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimision 状态维度。
+ * @tparam UDimisions 控制维度。
  */
 template<typename Scalar, int XDimision, int UDimisions>
 class OperatingPoints final : public Initializer<Scalar, XDimision, UDimisions>
 {
 public:
   /**
-   * Constructor
-   * @param [in] stateOperatingPoint: An operating point for state.
-   * @param [in] inputOperatingPoint: An operating point for input.
+   * @brief 用状态工作点与输入工作点构造。
+   * @param [in] stateOperatingPoint 状态工作点。
+   * @param [in] inputOperatingPoint 输入工作点。
    */
   OperatingPoints(const Vector<Scalar, XDimision>& stateOperatingPoint, const Vector<Scalar, UDimisions>& inputOperatingPoint)
     : stateTrajectory_(stateOperatingPoint), inputTrajectory_(inputOperatingPoint) {
   }
 
-  /** Destructor */
+  /** @brief 析构函数。 */
   ~OperatingPoints() override = default;
 
+  /** @brief 将 input 设为输入工作点，nextState 设为状态工作点。 */
   void compute(const Scalar time, const Vector<Scalar, XDimision>& state, const Scalar nextTime, Vector<Scalar, UDimisions>& input, Vector<Scalar, XDimision>& nextState) override {
     input = inputTrajectory_;
     nextState = stateTrajectory_;
   }
 
 private:
-  /** Copy constructor */
+  /** @brief 拷贝构造（保护）。 */
   OperatingPoints(const OperatingPoints& other) = default;
 
+  /** @brief 状态工作点。 */
   const Vector<Scalar, XDimision> stateTrajectory_;
+  /** @brief 输入工作点。 */
   const Vector<Scalar, UDimisions> inputTrajectory_;
 };

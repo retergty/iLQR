@@ -1,19 +1,28 @@
+/**
+ * @file PrimalSolution.hpp
+ * @brief 原始问题解：时间/状态/输入轨迹及线性控制器。
+ */
 #pragma once
 #include <array>
 #include "LinearController.hpp"
+
 /**
- * This class contains the primal problem's solution.
+ * @brief 原始问题解：一条 rollout 的时间、状态、输入轨迹及对应的线性控制器。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 控制维度。
+ * @tparam PredictLength 预测步数（轨迹点数为 PredictLength+1）。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength>
 struct PrimalSolution
 {
-  /** Constructor */
+  /** @brief 默认构造。 */
   PrimalSolution() = default;
 
-  /** Destructor */
+  /** @brief 析构函数。 */
   ~PrimalSolution() = default;
 
-  /** Copy constructor */
+  /** @brief 拷贝构造。 */
   PrimalSolution(const PrimalSolution &other)
       : timeTrajectory_(other.timeTrajectory_),
         stateTrajectory_(other.stateTrajectory_),
@@ -22,7 +31,7 @@ struct PrimalSolution
   {
   }
 
-  /** Copy Assignment */
+  /** @brief 拷贝赋值。 */
   PrimalSolution &operator=(const PrimalSolution &other)
   {
     timeTrajectory_ = other.timeTrajectory_;
@@ -32,13 +41,13 @@ struct PrimalSolution
     return *this;
   }
 
-  /** Move constructor */
+  /** @brief 移动构造。 */
   PrimalSolution(PrimalSolution &&other) noexcept = default;
 
-  /** Move Assignment */
+  /** @brief 移动赋值。 */
   PrimalSolution &operator=(PrimalSolution &&other) noexcept = default;
 
-  /** Swap */
+  /** @brief 与另一 PrimalSolution 交换时间/状态/输入轨迹及控制器。 */
   void swap(PrimalSolution &other)
   {
     timeTrajectory_.swap(other.timeTrajectory_);
@@ -47,6 +56,7 @@ struct PrimalSolution
     controller_.swap(other.controller_);
   }
 
+  /** @brief 清空：控制器清空，时间/状态/输入轨迹置零。 */
   void clear()
   {
     controller_.clear();
@@ -57,8 +67,13 @@ struct PrimalSolution
       inputTrajectory_[i].setZero();
     }
   }
+
+  /** @brief 时间序列，长度 PredictLength+1。 */
   std::array<Scalar, PredictLength + 1> timeTrajectory_;
+  /** @brief 状态轨迹。 */
   std::array<Vector<Scalar, XDimisions>, PredictLength + 1> stateTrajectory_;
+  /** @brief 输入轨迹。 */
   std::array<Vector<Scalar, UDimisions>, PredictLength + 1> inputTrajectory_;
+  /** @brief 线性控制器（时间戳与增益/偏置数组）。 */
   LinearController<Scalar, XDimisions, UDimisions, PredictLength + 1> controller_;
 };

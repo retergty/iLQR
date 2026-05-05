@@ -27,6 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file LineSearchStrategy.hpp
+ * @brief 线搜索策略：在控制器前馈上做 Armijo 回溯，选取最大可接受步长并更新优化解。
+ */
 #pragma once
 
 #include "SearchStrategyBase.hpp"
@@ -40,8 +44,7 @@ template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
 class iLQR;
 
 /**
- * Line search strategy: The class computes the nominal controller and the nominal trajectories as well the corresponding performance
- * indices. It line-searches on the feedforward parts of the controller and chooses the largest acceptable step-size.
+ * @brief 线搜索策略：用未优化控制器做 rollout，在步长上做 Armijo 回溯，选取满足下降条件的最大步长并写回解。
  */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
@@ -64,6 +67,7 @@ public:
                                                   FinalStateEqConstrains, FinalStateIneqConstrains>;
   using ModelData_t = ModelData<Scalar, XDimisions, UDimisions>;
 
+  /** @brief 构造线搜索策略，绑定 iLQR 实例（用于 rollout、merit 等）。 */
   LineSearchStrategy(iLQR_t &ilqr) : ilqr_(ilqr)
   {
   }
@@ -74,6 +78,16 @@ public:
 
   void reset() override {}
 
+  /**
+   * @brief 执行线搜索：从最大步长起尝试，选满足 Armijo 的最大步长，将最优轨迹与 dual 写回 solutionRef。
+   * @param [in] timePeriod 积分时间区间 (initTime, finalTime)。
+   * @param [in] initState 初始状态。
+   * @param [in] expectedCost 期望代价（当前未使用）。
+   * @param [in] unoptimizedController 未优化控制器（含 deltaBias）。
+   * @param [in] dualSolution 对偶解。
+   * @param [in,out] solutionRef 输出解引用（primal/dual/metrics/performanceIndex 被写入）。
+   * @return 当前实现恒返回 true。
+   */
   bool run(const std::pair<Scalar, Scalar> &timePeriod, const StateVector_t &initState, const Scalar expectedCost,
            const LinearController_t &unoptimizedController, const DualSolution_t &dualSolution, SearchStrategySolutionRef_t &solutionRef) override
   {
@@ -102,6 +116,13 @@ public:
     return true;
   }
 
+  /**
+   * @brief 判断是否收敛：基于前后两次 performance index 的总代价相对变化与 minRelCost 比较。
+   * @param [in] unreliableControllerIncrement 当前未使用。
+   * @param [in] previousPerformanceIndex 上一迭代的 performance index。
+   * @param [in] currentPerformanceIndex 当前迭代的 performance index。
+   * @return 若总代价相对变化 <= minRelCost 则返回 true。
+   */
   bool checkConvergence(bool unreliableControllerIncrement,
                         const PerformanceIndex_t &previousPerformanceIndex,
                         const PerformanceIndex_t &currentPerformanceIndex) const override
@@ -119,6 +140,11 @@ public:
     return isOptimizationConverged;
   }
 
+  /**
+   * @brief 计算 Riccati 修正：当前实现将 deltaQm 置零并施加 Hessian 修正（shift）。
+   * @param [in] projectedModelData 投影后模型数据（当前未使用）。
+   * @param [out] deltaQm 输出的 Riccati 修正矩阵（被设为 shift 后的零矩阵）。
+   */
   void computeRiccatiModification(const ModelData_t &projectedModelData, Matrix<Scalar, XDimisions, XDimisions> &deltaQm) const override
   {
     // const auto &QmProjected = projectedModelData.cost.dfdxx;
@@ -136,6 +162,7 @@ public:
     // deltaQm -= Q_minus_PTRinvP;
   }
 
+  /** @brief 对哈密顿量 Hessian 的额外修正；当前实现直接返回 Hm，不做修改。 */
   Matrix<Scalar, UDimisions, UDimisions> augmentHamiltonianHessian(const ModelData_t & /*modelData*/, const Matrix<Scalar, UDimisions, UDimisions> &Hm) const override { return Hm; }
 
 private:
@@ -169,14 +196,18 @@ private:
 
       while (result >= ratio)
       {
-        result *= settings_.contractionRate;
+        result *= settings.contractionRate;
         maxNumOfLineSearches++;
       }
     }
     return maxNumOfLineSearches;
   }
 
-  /** Computes the solution on a given stepLength  */
+  /**
+   * @brief 对给定步长计算解：更新控制器 bias、执行 rollout、计算 metrics 与 performance index。
+   * @param [in] stepLength 线搜索步长。
+   * @param [out] solution 输出的轨迹、dual、metrics、performanceIndex。
+   */
   void computeSolution(Scalar stepLength, SearchStrategySolution_t &solution)
   {
     // compute primal solution
@@ -197,13 +228,12 @@ private:
   }
 
   /**
-   * Defines line search task on a thread with various learning rates and choose the largest acceptable step-size.
-   * The class computes the nominal controller and the nominal trajectories as well the corresponding performance indices.
+   * @brief 从最大步长开始按收缩率递减尝试，选取满足 Armijo 条件的最大步长并更新 bestSolutionRef_。
    */
   void lineSearchTask()
   {
     Scalar stepLength = settings_.maxStepLength;
-    constexpr size_t MaxSearch = maxNumOfSearches(settings_);
+    const size_t MaxSearch = maxNumOfSearches(settings_);
     for (size_t alphaExp = 0; alphaExp < MaxSearch; ++alphaExp)
     {
       /*

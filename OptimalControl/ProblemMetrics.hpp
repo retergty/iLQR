@@ -27,24 +27,45 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file ProblemMetrics.hpp
+ * @brief 整条轨迹的问题指标：各中间时刻与终端时刻的 Metrics 汇总。
+ */
 #pragma once
 
 #include "Types.hpp"
 #include "Metrics.hpp"
 
+/**
+ * @brief 整条 rollout 的问题指标容器：终端一点 Metrics + 中间 PredictLength 个点的 Metrics。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 控制维度。
+ * @tparam PredictLength 预测步数。
+ * @tparam StateEqConstrains 等 约束维度（中间/终端）。
+ */
 template <typename Scalar, int XDimisions, int UDimisions, size_t PredictLength,
   int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains,
   int FinalStateEqConstrains, int FinalStateIneqConstrains>
 struct ProblemMetrics {
-  using IntermediateMetrics_t = Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateIneqConstrains, StateInputIneqConstrains>;
+  using IntermediateMetrics_t = Metrics<Scalar, XDimisions, UDimisions, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>;
   using FinalMetrics_t = Metrics<Scalar, XDimisions, UDimisions, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
 
+  /** @brief 终端时刻的 Metrics。 */
   FinalMetrics_t final;
+  /** @brief 各中间时刻的 Metrics，长度为 PredictLength。 */
   std::array<IntermediateMetrics_t, PredictLength> intermediates;
 
-  /** Exchanges the content of ProblemMetrics */
+  /** @brief 与另一 ProblemMetrics 交换内容。 */
   void swap(ProblemMetrics& other) {
     final.swap(other.final);
     intermediates.swap(other.intermediates);
+  }
+
+  /** @brief 清空/重置各 Metrics（用于重新初始化）。 */
+  void clear() {
+    final.clear();
+    for (size_t i = 0; i < intermediates.size(); ++i)
+      intermediates[i].clear();
   }
 };

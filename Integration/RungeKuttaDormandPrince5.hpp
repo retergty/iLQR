@@ -1,21 +1,28 @@
+/**
+ * @file RungeKuttaDormandPrince5.hpp
+ * @brief Runge-Kutta Dormand-Prince 5(4) 单步积分器与固定步长积分封装。
+ */
 #include "Integration.hpp"
 
-/** Runge Kutta Dormand-Prince stepper */
+/**
+ * @brief Dormand-Prince 5 阶单步器：给定 (t, x, dxdt) 与步长 dt，计算下一状态与导数。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ */
 template <typename Scalar, int XDimisions>
 class RungeKuttaDormandPrince5Stepper
 {
 public:
   RungeKuttaDormandPrince5Stepper() = default;
   /**
-   * Perform one Dormand-Prince step.
-   *
-   * @param [in] system: System function.
-   * @param [in] x0: current state.
-   * @param [in] dxdt: current derivative wrt. time.
-   * @param [in] t: current time.
-   * @param [in] dt: step size.
-   * @param [out] x_out: next state (can be same reference as x0).
-   * @param [out] dxdt_out: derivative at next state (can be same reference as dxdt).
+   * @brief 执行一步 Dormand-Prince 积分。
+   * @param [in] system 系统动力学。
+   * @param [in] x0 当前状态。
+   * @param [in] dxdt 当前状态导数。
+   * @param [in] t 当前时间。
+   * @param [in] dt 步长。
+   * @param [out] x_out 下一状态。
+   * @param [out] dxdt_out 下一状态的导数。
    */
   void doStep(const OdeBase<Scalar, XDimisions> &system, const Vector<Scalar, XDimisions> &x0, const Vector<Scalar, XDimisions> &dxdt,
               const Scalar t, const Scalar dt, Vector<Scalar, XDimisions> &x_out, Vector<Scalar, XDimisions> &dxdt_out)

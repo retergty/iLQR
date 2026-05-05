@@ -27,13 +27,16 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+/**
+ * @file HessianCorrection.hpp
+ * @brief Hessian 修正策略：对角平移等，保证 Riccati 递推数值稳定性。
+ */
 #pragma once
 
 #include "Types.hpp"
 
 /**
- * @brief The Hessian matrix correction strategy
- * Enum used in selecting either DIAGONAL_SHIFT, CHOLESKY_MODIFICATION, EIGENVALUE_MODIFICATION, or GERSHGORIN_MODIFICATION strategies.
+ * @brief Hessian 矩阵修正策略枚举（当前支持对角平移 DIAGONAL_SHIFT）。
  */
 enum class HessianCorrectionStrategy
 {
@@ -44,11 +47,10 @@ enum class HessianCorrectionStrategy
 };
 
 /**
- * Shifts the Hessian based on the strategy defined by Line_Search::hessianCorrectionStrategy_.
- *
- * @param [in] strategy: Hessian matrix correction strategy.
- * @param [in, out] matrix: The Hessian matrix.
- * @param [in] minEigenvalue: The minimum expected eigenvalue after correction.
+ * @brief 按给定策略对 Hessian 矩阵进行修正，使最小特征值不低于 minEigenvalue。
+ * @param [in] strategy 修正策略（如对角平移）。
+ * @param [in,out] matrix 待修正的 Hessian 矩阵（原地修改）。
+ * @param [in] minEigenvalue 修正后期望的最小特征值，默认 1e-6。
  */
 template <typename Scalar, int Dimisions>
 void shiftHessian(HessianCorrectionStrategy strategy, Matrix<Scalar, Dimisions, Dimisions> &matrix, Scalar minEigenvalue = 1e-6)

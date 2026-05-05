@@ -1,7 +1,13 @@
+/**
+ * @file SensitivityIntegrator.hpp
+ * @brief 动力学离散化与灵敏度：将连续时间动力学离散为 x_{k+1}=A*dx+B*du+b，支持欧拉/RK2/RK4。
+ */
 #pragma once
 #include "Types.hpp"
 #include "Dynamics.hpp"
 #include "LinearApproximation.hpp"
+
+/** @brief 灵敏度积分器类型：欧拉、RK2、RK4。 */
 enum class SensitivityIntegratorType
 {
   EULER,
@@ -9,6 +15,12 @@ enum class SensitivityIntegratorType
   RK4
 };
 
+/**
+ * @brief 动力学离散化基类：由 (t,x,u,dt) 计算离散状态及线性近似 (A,B,b)。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 输入维度。
+ */
 template <typename Scalar, int XDimisions, int UDimisions>
 class DynamicsDiscretizerBase
 {
@@ -17,34 +29,32 @@ public:
   virtual ~DynamicsDiscretizerBase() = default;
 
   /**
-   * A function to computes the discrete approximation of the system's flowmap.
-   * @param system : system to be discretized
-   * @param t : starting time of the discretization interval
-   * @param x : starting state x_{k}
-   * @param u : input u_{k}, assumed constant over the entire interval
-   * @param dt : interval duration
-   * Returns x_{k+1}
+   * @brief 计算离散化流映射 x_{k+1}。
+   * @param [in] system 待离散的系统动力学。
+   * @param [in] t 区间起始时间。
+   * @param [in] x 起始状态 x_k。
+   * @param [in] u 输入 u_k（区间内常值）。
+   * @param [in] dt 区间长度。
+   * @return 下一状态 x_{k+1}。
    */
   virtual Vector<Scalar, XDimisions> discretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
                                                 const Vector<Scalar, UDimisions> &u, const Scalar dt) = 0;
 
   /**
-   * A function to compute the linear approximation of the discretized system's flowmap.
-   *
-   * @param system : system to be discretized
-   * @param t : starting time of the discretization interval
-   * @param x : starting state x_{k}
-   * @param u : input u_{k}, assumed constant over the entire interval
-   * @param dt : interval duration
-   * Returns an approximation of the form:
-   *      x_{k+1} = A_{k} * dx_{k} + B_{k} * du_{k} + b_{k}
+   * @brief 计算离散化流映射的线性近似 x_{k+1} ≈ A*dx + B*du + b。
+   * @param [in] system 待离散的系统动力学。
+   * @param [in] t 区间起始时间。
+   * @param [in] x 起始状态。
+   * @param [in] u 输入。
+   * @param [in] dt 区间长度。
+   * @return 线性近似 (f, dfdx, dfdu)。
    */
   virtual VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
   sensitivityDiscretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
                         const Vector<Scalar, UDimisions> &u, const Scalar dt) = 0;
 };
 
-// Uses an Forward euler discretization.
+/** @brief 前向欧拉离散化。 */
 template <typename Scalar, int XDimisions, int UDimisions>
 class EulerDynamicsDiscretizer : public DynamicsDiscretizerBase<Scalar, XDimisions, UDimisions>
 {
@@ -58,7 +68,7 @@ public:
   }
   VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
   sensitivityDiscretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                        const Vector<Scalar, UDimisions> &u, const Scalar dt)
+                        const Vector<Scalar, UDimisions> &u, const Scalar dt) override
   {
     // x_{k+1} = A_{k} * dx_{k} + B_{k} * du_{k} + b_{k}
     // A_{k} = Id + dt * dfdx
@@ -94,7 +104,7 @@ public:
   }
   VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
   sensitivityDiscretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                        const Vector<Scalar, UDimisions> &u, const Scalar dt)
+                        const Vector<Scalar, UDimisions> &u, const Scalar dt) override
   {
     const Scalar dt_halve = dt / 2.0;
 
@@ -148,7 +158,7 @@ public:
   }
   VectorFunctionLinearApproximation<Scalar, XDimisions, XDimisions, UDimisions>
   sensitivityDiscretize(SystemDynamicsBase<Scalar, XDimisions, UDimisions> &system, const Scalar t, const Vector<Scalar, XDimisions> &x,
-                        const Vector<Scalar, UDimisions> &u, const Scalar dt)
+                        const Vector<Scalar, UDimisions> &u, const Scalar dt) override
   {
     const Scalar dt_halve = dt / 2.0;
     const Scalar dt_sixth = dt / 6.0;

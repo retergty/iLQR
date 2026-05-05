@@ -1,3 +1,7 @@
+/**
+ * @file LinearAlgebra.hpp
+ * @brief 线性代数工具：对称正定矩阵的逆的 UUT 分解（用于投影等）。
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -7,11 +11,9 @@
 namespace LinearAlgebra
 {
     /**
-     * Computes the U*U^T decomposition associated to the inverse of the input matrix, where U is an upper triangular
-     * matrix. Note that the U*U^T decomposition is different from the Cholesky decomposition (U^T*U).
-     *
-     * @param [in] Am: A symmetric square positive definite matrix
-     * @param [out] AmInvUmUmT: The upper-triangular matrix associated to the UUT decomposition of inv(Am) matrix.
+     * @brief 计算 inv(Am) 的 U*U^T 分解中的上三角因子 U（Am = L*L^T，inv(Am)=inv(L^T)*inv(L)）。
+     * @param [in] Am 对称正定方阵。
+     * @param [out] AmInvUmUmT 上三角矩阵，满足 AmInvUmUmT * AmInvUmUmT^T = inv(Am)。
      */
     template <typename Scalar, int Dimisions>
     void computeInverseMatrixUUT(const Matrix<Scalar, Dimisions, Dimisions> &Am, Matrix<Scalar, Dimisions, Dimisions> &AmInvUmUmT)

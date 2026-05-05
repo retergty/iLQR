@@ -27,12 +27,20 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
+/**
+ * @file InitializerRollout.hpp
+ * @brief 用 Initializer 生成轨迹的 rollout：不积分动力学，按步长调用 initializer.compute 得到状态与输入。
+ */
 #pragma once
 
 #include "RolloutBase.hpp"
 #include "Initializer.hpp"
+
 /**
- * This class is an interface class for forward rollout of the initializer.
+ * @brief 基于初始化器的 rollout：在 [initTime, finalTime] 上按固定步长调用 initializer，填充时间/状态/输入轨迹。
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 控制维度。
  */
 template <typename Scalar, int XDimisions, int UDimisions>
 class InitializerRollout : RolloutBase<Scalar, XDimisions, UDimisions>
@@ -41,10 +49,9 @@ public:
   using Initializer_t = Initializer<Scalar, XDimisions, UDimisions>;
   using RolloutTrajectoryPointer_t = typename RolloutBase<Scalar, XDimisions, UDimisions>::RolloutTrajectoryPointer_t;
   /**
-   * Constructor.
-   *
-   * @param [in] initializer: The initializer for the state and the input.
-   * @param [in] rolloutSettings: The rollout settings.
+   * @brief 构造：绑定初始化器与步长。
+   * @param [in] initializer 用于生成状态与输入的初始化器。
+   * @param [in] timeStep 时间步长。
    */
   explicit InitializerRollout(Initializer_t &initializer, const Scalar timeStep) : initializer_(initializer)
   {
@@ -53,6 +60,15 @@ public:
 
   ~InitializerRollout() override = default;
 
+  /**
+   * @brief 从 initTime 到 finalTime 按步长调用 initializer.compute，将时间/状态/输入写入 trajectory。
+   * @param [in] initTime 初始时间。
+   * @param [in] initState 初始状态。
+   * @param [in] finalTime 终止时间。
+   * @param [in] controller 未使用。
+   * @param [in,out] trajectory 输出轨迹。
+   * @return 步数（写入点数减 1）。
+   */
   int run(const Scalar initTime, const Vector<Scalar, XDimisions> &initState, const Scalar finalTime, ControllerBase<Scalar, XDimisions, UDimisions> *controller,
           RolloutTrajectoryPointer_t &trajectory) override
   {
