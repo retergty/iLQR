@@ -1,10 +1,13 @@
+/**
+ * @file SystemDynamicsLinearizerTest.cpp
+ * @brief SystemDynamicsLinearizer 测试：验证数值线性化结果与解析 Jacobian 一致。
+ */
 #include <gtest/gtest.h>
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdlib>
-#include <memory>
 
 #include "LinearSystemDynamics.hpp"
 #include "SystemDynamicsLinearizer.hpp"
@@ -14,7 +17,9 @@
 namespace
 {
 
+// 数值线性化与解析 Jacobian 对比时允许的误差。
 constexpr double kTolerance = 1e-5;
+// 有限差分基础步长。
 constexpr double kEpsilon = 1e-10;
 constexpr int kStateDim = 2;
 constexpr int kInputDim = 1;
@@ -26,13 +31,13 @@ using InputVector = Vector<Scalar, kInputDim>;
 using StateMatrix = Matrix<Scalar, kStateDim, kStateDim>;
 using InputMatrix = Matrix<Scalar, kStateDim, kInputDim>;
 using LinearApproximation = VectorFunctionLinearApproximation<Scalar, kStateDim, kStateDim, kInputDim>;
-using ControlledSystem = ControlledSystemBase<Scalar, kStateDim, kInputDim>;
 using SystemDynamics = SystemDynamicsBase<Scalar, kStateDim, kInputDim>;
 using LinearSystem = LinearSystemDynamics<Scalar, kStateDim, kInputDim>;
 
+// 比较两个系统在线性化点处的 A、B 是否足够接近。
 bool derivativeChecker(SystemDynamics &sys1, SystemDynamics &sys2, Scalar tolerance, Scalar t, const StateVector &x, const InputVector &u);
 
-// Pendulum system, theta = 0 is upright.
+// 简单摆系统，theta = 0 对应竖直向上平衡点。
 class PendulumSystem final : public SystemDynamics
 {
 public:
@@ -60,6 +65,7 @@ public:
     }
 };
 
+// 验证辅助比较函数能识别 Jacobian 不一致的系统。
 TEST(testSystemDynamicsLinearizer, testDerivativeChecker)
 {
     const Scalar time = 0.0;
@@ -82,6 +88,7 @@ TEST(testSystemDynamicsLinearizer, testDerivativeChecker)
     ASSERT_FALSE(derivativeChecker(linSys, alteredSys, kTolerance, time, state, input));
 }
 
+// 验证线性系统经有限差分线性化后与其解析 Jacobian 一致。
 TEST(testSystemDynamicsLinearizer, testLinearSystem)
 {
     const Scalar time = 0.0;
@@ -98,13 +105,14 @@ TEST(testSystemDynamicsLinearizer, testLinearSystem)
     LinearSystem linSys(A, B);
 
     SystemDynamicsLinearizer<Scalar, kStateDim, kInputDim> linearizedSys(
-        std::unique_ptr<ControlledSystem>(std::make_unique<LinearSystem>(linSys)),
+        &linSys,
         /*doubleSidedDerivative=*/true,
         /*isSecondOrderSystem=*/false,
         kEpsilon);
     ASSERT_TRUE(derivativeChecker(linSys, linearizedSys, kTolerance, time, state, input));
 }
 
+// 在一组摆角采样点上验证数值线性化与解析摆动力学 Jacobian 一致。
 TEST(testSystemDynamicsLinearizer, testPendulum)
 {
     std::srand(0);
@@ -126,7 +134,7 @@ TEST(testSystemDynamicsLinearizer, testPendulum)
     PendulumSystem nonLinSys;
 
     SystemDynamicsLinearizer<Scalar, kStateDim, kInputDim> linearizedSys(
-        std::unique_ptr<ControlledSystem>(std::make_unique<PendulumSystem>(nonLinSys)),
+        &nonLinSys,
         /*doubleSidedDerivative=*/true,
         /*isSecondOrderSystem=*/false,
         kEpsilon);
@@ -136,6 +144,7 @@ TEST(testSystemDynamicsLinearizer, testPendulum)
     }
 }
 
+// 仅比较对状态和输入的一阶 Jacobian；名义流值在这里不参与判定。
 bool derivativeChecker(SystemDynamics &sys1, SystemDynamics &sys2, Scalar tolerance, Scalar t, const StateVector &x, const InputVector &u)
 {
     const auto derivatives1 = sys1.linearApproximation(t, x, u);

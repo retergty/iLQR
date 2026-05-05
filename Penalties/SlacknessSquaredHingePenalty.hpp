@@ -35,10 +35,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AugmentedPenaltyBase.hpp"
 
-/**
- * @brief 单不等式约束的 PHR 惩罚实现：乘子更新为 λ_{k+1}=max(λ_k-α*h, (1-α/ρ)λ_k)。
- * @tparam Scalar 标量类型。
- */
+ /**
+  * @brief 单不等式约束的 PHR 惩罚实现：乘子更新为 λ_{k+1}=max(λ_k-α*h, (1-α/ρ)λ_k)。
+  * @tparam Scalar 标量类型。
+  */
 template<typename Scalar>
 class SlacknessSquaredHingePenalty final : public AugmentedPenaltyBase<Scalar>
 {
@@ -61,14 +61,20 @@ public:
   ~SlacknessSquaredHingePenalty() override = default;
 
   Scalar getValue(const Scalar t, const Scalar l, const Scalar h) const override {
+    (void)t;
     return (h < l / config_.scale) ? (-l * h + 0.5 * config_.scale * h * h) : (-0.5 * l * l / config_.scale);
   }
   Scalar getDerivative(const Scalar t, const Scalar l, const Scalar h) const override {
+    (void)t;
     return (h < l / config_.scale) ? (-l + config_.scale * h) : 0.0;
   }
-  Scalar getSecondDerivative(const Scalar t, const Scalar l, const Scalar h) const override { return (h < l / config_.scale) ? config_.scale : 0.0; }
+  Scalar getSecondDerivative(const Scalar t, const Scalar l, const Scalar h) const override {
+    (void)t;
+    return (h < l / config_.scale) ? config_.scale : 0.0;
+  }
 
   Scalar updateMultiplier(const Scalar t, const Scalar l, const Scalar h) const override {
+    (void)t;
     return std::max(0.0, std::max(l - config_.stepSize * config_.scale * h, (1.0 - config_.stepSize) * l));
   }
   Scalar initializeMultiplier() const override { return 0.0; }

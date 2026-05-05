@@ -35,10 +35,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AugmentedPenaltyBase.hpp"
 
-/**
- * @brief 单等式约束的二次惩罚实现：惩罚项 p = λh + (μ/2)h²，μ 为尺度参数。
- * @tparam Scalar 标量类型。
- */
+ /**
+  * @brief 单等式约束的二次惩罚实现：惩罚项 p = λh + (μ/2)h²，μ 为尺度参数。
+  * @tparam Scalar 标量类型。
+  */
 template<typename Scalar>
 class QuadraticPenalty final : public AugmentedPenaltyBase<Scalar>
 {
@@ -60,11 +60,26 @@ public:
 
   ~QuadraticPenalty() override = default;
 
-  Scalar getValue(const Scalar t, const Scalar l, const Scalar h) const override { return -l * h + 0.5 * config_.scale * h * h; }
-  Scalar getDerivative(const Scalar t, const Scalar l, const Scalar h) const override { return -l + config_.scale * h; }
-  Scalar getSecondDerivative(const Scalar t, const Scalar l, const Scalar h) const override { return config_.scale; }
+  Scalar getValue(const Scalar t, const Scalar l, const Scalar h) const override {
+    (void)t;
+    return -l * h + 0.5 * config_.scale * h * h;
+  }
+  Scalar getDerivative(const Scalar t, const Scalar l, const Scalar h) const override
+  {
+    (void)t;
+    return -l + config_.scale * h;
+  }
+  Scalar getSecondDerivative(const Scalar t, const Scalar l, const Scalar h) const override {
+    (void)t;
+    (void)l;
+    (void)h;
+    return config_.scale;
+  }
 
-  Scalar updateMultiplier(const Scalar t, const Scalar l, const Scalar h) const override { return l - config_.stepSize * config_.scale * h; }
+  Scalar updateMultiplier(const Scalar t, const Scalar l, const Scalar h) const override {
+    (void)t;
+    return l - config_.stepSize * config_.scale * h;
+  }
   Scalar initializeMultiplier() const override { return 0.0; }
 
 private:

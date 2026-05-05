@@ -21,7 +21,7 @@ set(TEST_SOURCES
     DynamicsTest.cpp
     RiccatiTest.cpp
     iLQREndToEndTest.cpp
-    #SystemDynamicsLinearizerTest.cpp
+    SystemDynamicsLinearizerTest.cpp
 )
 
 # 循环添加所有测试

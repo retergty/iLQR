@@ -1,11 +1,32 @@
+/**
+ * @file FiniteDifferenceMethods.hpp
+ * @brief 有限差分数值求导工具：用于计算向量函数对状态或输入的 Jacobian。
+ */
 #pragma once
 #include "Types.hpp"
 #include <functional>
 #include <math.h>
 #include "ControlledSystemBase.hpp"
+#include <algorithm>
 
-template<typename Scalar, int StateDimisions, int VarDimisions>
-Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(std::function<Vector<Scalar, StateDimisions>(const Vector<Scalar, VarDimisions>&)> f,
+/**
+ * @brief 用有限差分计算向量函数对变量的 Jacobian。
+ *
+ * 步长会按变量当前量级缩放，以降低固定步长在大/小数值下的舍入误差。
+ * 当 `doubleSidedDerivative=true` 时使用中心差分，否则使用前向差分。
+ *
+ * @tparam Scalar 标量类型。
+ * @tparam StateDimisions 函数输出维度。
+ * @tparam VarDimisions 自变量维度。
+ * @tparam Function 可调用对象类型，签名应兼容 `Vector -> Vector`。
+ * @param [in] f 待求导函数。
+ * @param [in] x0 线性化点。
+ * @param [in] eps 基础扰动尺度。
+ * @param [in] doubleSidedDerivative 是否使用中心差分。
+ * @return 在 `x0` 处计算得到的 Jacobian。
+ */
+template<typename Scalar, int StateDimisions, int VarDimisions, typename Function>
+Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(const Function& f,
   const Vector<Scalar, VarDimisions>& x0, Scalar eps,
   bool doubleSidedDerivative) {
   const Vector<Scalar, StateDimisions> f0 = f(x0);
@@ -32,13 +53,32 @@ Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(std::fun
 }
 
 
+/**
+ * @brief 用有限差分计算动力学对状态的 Jacobian。
+ *
+ * 当 `isSecondOrderSystem=true` 时，会将上半部分修正为二阶系统常见的
+ * `d/dx [q_dot] = 0` 与 `d/dv [q_dot] = I` 结构，假设状态排列为 `[q, q_dot]`。
+ *
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 输入维度。
+ * @param [in] system 连续时间受控系统。
+ * @param [in] t 当前时间。
+ * @param [in] x 线性化状态。
+ * @param [in] u 线性化输入。
+ * @param [in] eps 基础扰动尺度。
+ * @param [in] doubleSidedDerivative 是否使用中心差分。
+ * @param [in] isSecondOrderSystem 是否按二阶系统结构修正 Jacobian。
+ * @return 状态 Jacobian `A = d f / d x`。
+ */
 template<typename Scalar, int XDimisions, int UDimisions>
 Matrix<Scalar, XDimisions, XDimisions> finiteDifferenceDerivativeState(ControlledSystemBase<Scalar, XDimisions, UDimisions>& system,
   Scalar t, const Vector<Scalar, XDimisions>& x, const  Vector<Scalar, UDimisions>& u, Scalar eps,
   bool doubleSidedDerivative, bool isSecondOrderSystem) {
   auto f = [&](const Vector<Scalar, XDimisions>& var) -> Vector<Scalar, XDimisions> { return system.computeFlowMap(t, var, u); };
 
-  Matrix<Scalar, XDimisions, XDimisions> A = finiteDifferenceDerivative(f, x, eps, doubleSidedDerivative);
+  Matrix<Scalar, XDimisions, XDimisions> A =
+      finiteDifferenceDerivative<Scalar, XDimisions, XDimisions>(f, x, eps, doubleSidedDerivative);
 
   if (isSecondOrderSystem) {
     // Assumes state vector = [x, x_dot]
@@ -48,6 +88,24 @@ Matrix<Scalar, XDimisions, XDimisions> finiteDifferenceDerivativeState(Controlle
   return A;
 }
 
+/**
+ * @brief 用有限差分计算动力学对输入的 Jacobian。
+ *
+ * 当 `isSecondOrderSystem=true` 时，会将上半部分置零，反映
+ * `[q, q_dot]` 形式下位置导数通常不直接依赖控制输入的结构假设。
+ *
+ * @tparam Scalar 标量类型。
+ * @tparam XDimisions 状态维度。
+ * @tparam UDimisions 输入维度。
+ * @param [in] system 连续时间受控系统。
+ * @param [in] t 当前时间。
+ * @param [in] x 线性化状态。
+ * @param [in] u 线性化输入。
+ * @param [in] eps 基础扰动尺度。
+ * @param [in] doubleSidedDerivative 是否使用中心差分。
+ * @param [in] isSecondOrderSystem 是否按二阶系统结构修正 Jacobian。
+ * @return 输入 Jacobian `B = d f / d u`。
+ */
 template<typename Scalar, int XDimisions, int UDimisions>
 Matrix<Scalar, XDimisions, UDimisions> finiteDifferenceDerivativeInput(ControlledSystemBase<Scalar, XDimisions, UDimisions>& system,
   Scalar t, const Vector<Scalar, XDimisions>& x, const  Vector<Scalar, UDimisions>& u, Scalar eps,
@@ -55,7 +113,8 @@ Matrix<Scalar, XDimisions, UDimisions> finiteDifferenceDerivativeInput(Controlle
 {
   auto f = [&](const Vector<Scalar, UDimisions>& var) -> Vector<Scalar, XDimisions> { return system.computeFlowMap(t, x, var); };
 
-  Matrix<Scalar, XDimisions, UDimisions> B = finiteDifferenceDerivative(f, u, eps, doubleSidedDerivative);
+  Matrix<Scalar, XDimisions, UDimisions> B =
+      finiteDifferenceDerivative<Scalar, XDimisions, UDimisions>(f, u, eps, doubleSidedDerivative);
 
   if (isSecondOrderSystem) {
     // Assumes state vector = [x, x_dot]

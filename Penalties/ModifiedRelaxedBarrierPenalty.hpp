@@ -36,10 +36,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AugmentedPenaltyBase.hpp"
 #include <math.h>
 
-/**
- * @brief 单不等式约束的修正松弛障碍惩罚实现：乘子更新 λ_{k+1}=-α*λ_k*ψ'(ρh/λ_k)。
- * @tparam Scalar 标量类型。
- */
+ /**
+  * @brief 单不等式约束的修正松弛障碍惩罚实现：乘子更新 λ_{k+1}=-α*λ_k*ψ'(ρh/λ_k)。
+  * @tparam Scalar 标量类型。
+  */
 template <typename Scalar>
 class ModifiedRelaxedBarrierPenalty final : public AugmentedPenaltyBase<Scalar>
 {
@@ -54,7 +54,7 @@ public:
   {
     Config() : Config(10.0, 0.0, 1.0) {}
     Config(const Scalar scaleParam, const Scalar relaxationParam, const Scalar stepSizeParam)
-        : scale(scaleParam), relaxation(relaxationParam), stepSize(stepSizeParam)
+      : scale(scaleParam), relaxation(relaxationParam), stepSize(stepSizeParam)
     {
     }
     Scalar scale;
@@ -63,12 +63,13 @@ public:
   };
 
   /** Constructor */
-  explicit ModifiedRelaxedBarrierPenalty(const Config &config) : config_(config), quadCoeff_(config) {}
+  explicit ModifiedRelaxedBarrierPenalty(const Config& config) : config_(config), quadCoeff_(config) {}
 
   ~ModifiedRelaxedBarrierPenalty() override = default;
 
   Scalar getValue(const Scalar t, const Scalar l, const Scalar h) const override
   {
+    (void)t;
     const Scalar v = vFunc(l, h);
     if (v > config_.relaxation)
     {
@@ -83,6 +84,7 @@ public:
 
   Scalar getDerivative(const Scalar t, const Scalar l, const Scalar h) const override
   {
+    (void)t;
     const Scalar v = vFunc(l, h);
     if (v > config_.relaxation)
     {
@@ -96,6 +98,7 @@ public:
 
   Scalar getSecondDerivative(const Scalar t, const Scalar l, const Scalar h) const override
   {
+    (void)t;
     const Scalar v = vFunc(l, h);
     const Scalar dvdh = dvdhFunc(l);
     if (v > config_.relaxation)
@@ -110,6 +113,7 @@ public:
 
   Scalar updateMultiplier(const Scalar t, const Scalar l, const Scalar h) const override
   {
+    (void)t;
     const Scalar v = vFunc(l, h);
     constexpr Scalar lambdaMin = 1e-4;
     if (v > config_.relaxation)
@@ -125,7 +129,7 @@ public:
   Scalar initializeMultiplier() const override { return 1.0; }
 
 private:
-  ModifiedRelaxedBarrierPenalty(const ModifiedRelaxedBarrierPenalty &other) = default;
+  ModifiedRelaxedBarrierPenalty(const ModifiedRelaxedBarrierPenalty& other) = default;
 
   Scalar wFunc(const Scalar l) const { return l * l / config_.scale; }
   Scalar dvdhFunc(const Scalar l) const { return config_.scale / l; }
@@ -133,7 +137,7 @@ private:
 
   struct QuadCoeff
   {
-    QuadCoeff(const Config &config)
+    QuadCoeff(const Config& config)
     {
       c2 = 1.0 / std::pow(1.0 + config.relaxation, 2);
       c1 = -1.0 / (1.0 + config.relaxation);
