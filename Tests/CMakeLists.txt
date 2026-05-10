@@ -28,6 +28,9 @@ set(TEST_SOURCES
     RiccatiTest.cpp
     iLQREndToEndTest.cpp
     SystemDynamicsLinearizerTest.cpp
+    TestTools/DiscreteTranscriptionTest.cpp
+    TestTools/testQpSolver.cpp
+    TestTools/testOcs2QpSolver.cpp
 )
 
 # 循环添加所有测试

@@ -53,12 +53,12 @@ namespace qp_solver {
     // Copy lhs into sum
     ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> sum(lhs);
 
-    for (int k = 0; k < sum.inputTrajectory.size(); ++k) {
+    for (size_t k = 0; k < sum.inputTrajectory.size(); ++k) {
       sum.inputTrajectory[k] += rhs.inputTrajectory[k];
     }
 
     // Sum states
-    for (int k = 0; k < sum.stateTrajectory.size(); ++k) {
+    for (size_t k = 0; k < sum.stateTrajectory.size(); ++k) {
       sum.stateTrajectory[k] += rhs.stateTrajectory[k];
     }
     return sum;
