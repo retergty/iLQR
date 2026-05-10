@@ -163,11 +163,11 @@ public:
 
             // iteration info
             ++totalNumIterations_;
-            performanceIndexLast_ = performanceIndex_;
 
             // check convergence
             isConverged = lineSearchStrategy_.checkConvergence(
                 !initialSolutionExists, performanceIndexLast_, performanceIndex_);
+            performanceIndexLast_ = performanceIndex_;
             initialSolutionExists = true;
 
             if (isConverged || (totalNumIterations_ - initIteration) == ddpSettings_.maxNumIterations_)
@@ -742,7 +742,7 @@ public:
      */
     static Scalar computeControllerUpdateIS(const LinearController_t &controller)
     {
-        std::array<Scalar, controller.size()> biasArraySquaredNorm;
+        std::array<Scalar, LinearController_t::size()> biasArraySquaredNorm;
 
         for (size_t i = 0; i < controller.size(); ++i)
         {

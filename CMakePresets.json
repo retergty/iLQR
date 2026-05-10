@@ -29,6 +29,32 @@
       }
     },
     {
+      "name": "clang-debug",
+      "displayName": "Clang Debug",
+      "description": "Single-config Debug build using Ninja and the clang/clang++ toolchain.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "clang-release",
+      "displayName": "Clang Release",
+      "description": "Single-config Release build using Ninja and the clang/clang++ toolchain.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
       "name": "clang-cl-debug",
       "displayName": "clang-cl Debug",
       "description": "Single-config Debug build using Ninja and the MSVC-compatible clang-cl compiler.",
@@ -67,6 +93,16 @@
       "configurePreset": "ninja-release"
     },
     {
+      "name": "clang-debug",
+      "displayName": "Clang Debug",
+      "configurePreset": "clang-debug"
+    },
+    {
+      "name": "clang-release",
+      "displayName": "Clang Release",
+      "configurePreset": "clang-release"
+    },
+    {
       "name": "clang-cl-debug",
       "displayName": "clang-cl Debug",
       "configurePreset": "clang-cl-debug"
@@ -90,6 +126,22 @@
       "name": "ninja-release",
       "displayName": "Ninja Release Tests (Visual Studio)",
       "configurePreset": "ninja-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "clang-debug",
+      "displayName": "Clang Debug Tests",
+      "configurePreset": "clang-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "clang-release",
+      "displayName": "Clang Release Tests",
+      "configurePreset": "clang-release",
       "output": {
         "outputOnFailure": true
       }

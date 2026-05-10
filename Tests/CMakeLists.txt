@@ -9,12 +9,18 @@ FetchContent_MakeAvailable(googletest)
 # 创建测试可执行文件列表
 set(TEST_SOURCES
     LinearSystemRolloutTest.cpp
+    testTimeTriggeredRollout.cpp
     LinearSystemDiscreteTest.cpp
     LinearSystemILQRTest.cpp
     LinearInterpolationTest.cpp
     IntegrationUtilitiesTest.cpp
+    integration/IntegrationTest.cpp
+    integration/TrapezoidalIntegrationTest.cpp
+    integration/testRungeKuttaDormandPrince5.cpp
+    integration/testSensitivityIntegrator.cpp
     IntrusiveListTest.cpp
     ApproximationTest.cpp
+    #CorrectnessTest.cpp
     PenaltyTest.cpp
     UtilityTest.cpp
     CostTest.cpp

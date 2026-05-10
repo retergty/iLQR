@@ -35,12 +35,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Initializer.hpp"
 
-/**
- * @brief 基于工作点的初始化器：输出恒为给定状态工作点与输入工作点，nextState 为状态工作点。
- * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam UDim 控制维度。
- */
+ /**
+  * @brief 基于工作点的初始化器：输出恒为给定状态工作点与输入工作点，nextState 为状态工作点。
+  * @tparam Scalar 标量类型。
+  * @tparam XDim 状态维度。
+  * @tparam UDim 控制维度。
+  */
 template<typename Scalar, int XDim, int UDim>
 class OperatingPoints final : public Initializer<Scalar, XDim, UDim>
 {
@@ -59,6 +59,9 @@ public:
 
   /** @brief 将 input 设为输入工作点，nextState 设为状态工作点。 */
   void compute(const Scalar time, const Vector<Scalar, XDim>& state, const Scalar nextTime, Vector<Scalar, UDim>& input, Vector<Scalar, XDim>& nextState) override {
+    (void)time;
+    (void)state;
+    (void)nextTime;
     input = inputTrajectory_;
     nextState = stateTrajectory_;
   }

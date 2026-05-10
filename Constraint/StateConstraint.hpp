@@ -10,11 +10,11 @@
 #include "QuadraticApproximation.hpp"
 #include <type_traits>
 
-/**
- * @brief 仅状态约束函数基类：按时间与状态返回约束值及线性/二次近似（子类实现）。
- * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- */
+ /**
+  * @brief 仅状态约束函数基类：按时间与状态返回约束值及线性/二次近似（子类实现）。
+  * @tparam Scalar 标量类型。
+  * @tparam XDim 状态维度。
+  */
 template<typename Scalar, int XDim>
 class StateConstraint
 {
@@ -32,12 +32,16 @@ public:
   /** @brief 获取约束的线性近似（默认无效，子类可重写）。 */
   virtual ScalarFunctionLinearApproximation<Scalar, XDim, 0> getLinearApproximation(const Scalar time, const Vector<Scalar, XDim>& state) const
   {
+    (void)time;
+    (void)state;
     static_assert(!std::is_same_v<Scalar, Scalar>, "invalid!");
   }
 
   /** @brief 获取约束的二次近似（默认无效，子类可重写）。 */
   virtual ScalarFunctionLinearApproximation<Scalar, XDim, 0> getQuadraticApproximation(const Scalar time, const Vector<Scalar, XDim>& state) const
   {
+    (void)time;
+    (void)state;
     static_assert(!std::is_same_v<Scalar, Scalar>, "invalid!");
   }
 

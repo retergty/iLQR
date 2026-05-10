@@ -37,13 +37,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "StateInputAugmentedLagrangian.hpp"
 #include <array>
 
-/**
- * @brief 状态-输入增广拉格朗日惩罚项集合：对多个 StateInputAugmentedLagrangian 求和。
- * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam UDim 输入维度。
- * @tparam StateInputAugmentLagrangianNumbers 项数。
- */
+ /**
+  * @brief 状态-输入增广拉格朗日惩罚项集合：对多个 StateInputAugmentedLagrangian 求和。
+  * @tparam Scalar 标量类型。
+  * @tparam XDim 状态维度。
+  * @tparam UDim 输入维度。
+  * @tparam StateInputAugmentLagrangianNumbers 项数。
+  */
 template<typename Scalar, int XDim, int UDim, int StateInputAugmentLagrangianNumbers>
 class StateInputAugmentedLagrangianCollection
 {
@@ -53,6 +53,8 @@ public:
   /** @brief 获取各激活项的状态-输入约束与惩罚值数组。 */
   std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers> getValue(const Scalar time, const Vector<Scalar, XDim>& state, const Vector<Scalar, UDim>& input, const std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>& termsMultiplier) const
   {
+    (void)input;
+    (void)termsMultiplier;
     std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers> termsConstraintPenalty;
 
     // int i = 0;
@@ -76,6 +78,7 @@ public:
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> getQuadraticApproximation(const Scalar time, const Vector<Scalar, XDim>& state, const Vector<Scalar, UDim>& input,
     const std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>& termsMultiplier) const
   {
+    (void)input;
     ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> penalty;
     penalty.setZero();
 
