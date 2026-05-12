@@ -42,12 +42,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 对约束 h(x,u)，惩罚为 p(t, h, l)；本类用链式法则计算约束-惩罚的二阶近似，
  * 并委托底层惩罚类更新拉格朗日乘子。
  */
-/**
- * @brief 单约束惩罚封装：取值、二次近似与乘子初始化/更新，均委托 penalty_ptr_。
- * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam UDim 输入维度。
- */
+ /**
+  * @brief 单约束惩罚封装：取值、二次近似与乘子初始化/更新，均委托 penalty_ptr_。
+  * @tparam Scalar 标量类型。
+  * @tparam XDim 状态维度。
+  * @tparam UDim 输入维度。
+  */
 template<typename Scalar, int XDim, int UDim>
 class Penalty final
 {
@@ -114,10 +114,6 @@ public:
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> getQuadraticApproximation(Scalar t, const ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& h,
     const Scalar l) const
   {
-    const auto stateDim = h.dfdx.cols();
-    const auto inputDim = h.dfdu.cols();
-    const auto numConstraints = h.f.rows();
-
     Scalar penaltyValue = 0.0;
     Scalar penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) = getPenaltyValue1stDev2ndDev(t, h.f, l);

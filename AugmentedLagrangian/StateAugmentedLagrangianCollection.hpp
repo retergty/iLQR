@@ -37,12 +37,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "StateAugmentedLagrangian.hpp"
 #include <array>
 
-/**
- * @brief 仅状态增广拉格朗日惩罚项集合：对多个 StateAugmentedLagrangian 求和。
- * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam StateAugmentLagrangianNumbers 项数。
- */
+ /**
+  * @brief 仅状态增广拉格朗日惩罚项集合：对多个 StateAugmentedLagrangian 求和。
+  * @tparam Scalar 标量类型。
+  * @tparam XDim 状态维度。
+  * @tparam StateAugmentLagrangianNumbers 项数。
+  */
 template<typename Scalar, int XDim, int StateAugmentLagrangianNumbers>
 class StateAugmentedLagrangianCollection
 {
@@ -56,7 +56,7 @@ public:
 
     for (int i = 0;i < num_;++i)
     {
-      termsConstraintPenalty[i] = lagrangian_[i].getValue(time, state, termsMultiplier[i]);
+      termsConstraintPenalty[i] = lagrangian_[i]->getValue(time, state, termsMultiplier[i]);
     }
     return termsConstraintPenalty;
   }
@@ -68,7 +68,7 @@ public:
 
     for (int i = 0;i < num_;++i)
     {
-      penalty += lagrangian_[i].getQuadraticApproximation(time, state, termsMultiplier[i]);
+      penalty += lagrangian_[i]->getQuadraticApproximation(time, state, termsMultiplier[i]);
     }
     return penalty;
   }
@@ -78,7 +78,7 @@ public:
   {
     for (int i = 0;i < num_;++i)
     {
-      std::tie(termsMultiplier[i], termsMetrics[i].penalty) = lagrangian_[i].updateLagrangian(time, state, termsMetrics[i].constraint, termsMultiplier[i]);
+      std::tie(termsMultiplier[i], termsMetrics[i].penalty) = lagrangian_[i]->updateLagrangian(time, state, termsMetrics[i].constraint, termsMultiplier[i]);
     }
   }
 
@@ -87,12 +87,12 @@ public:
   {
     for (int i = 0;i < num_; ++i)
     {
-      termsMultiplier[i] = lagrangian_[i].initializeLagrangian(time);
+      termsMultiplier[i] = lagrangian_[i]->initializeLagrangian(time);
     }
   }
 
   // add cost to list end
-  void add(const StateAugmentedLagrangian<Scalar, XDim>& state_augment_lagrangian)
+  void add(const StateAugmentedLagrangian<Scalar, XDim>* state_augment_lagrangian)
   {
     assert(num_ < StateAugmentLagrangianNumbers);
     lagrangian_[num_] = state_augment_lagrangian;
@@ -101,5 +101,5 @@ public:
 
 private:
   int num_{ 0 };
-  std::array<StateAugmentedLagrangian<Scalar, XDim>, StateAugmentLagrangianNumbers> lagrangian_;
+  std::array<const StateAugmentedLagrangian<Scalar, XDim>*, StateAugmentLagrangianNumbers> lagrangian_;
 };

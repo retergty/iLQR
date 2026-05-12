@@ -96,11 +96,12 @@ set(ILQR_HEADERS
   TestTools/QpSolver.hpp
   TestTools/QpDiscreteTranscription.hpp
   TestTools/Ocs2QpSolver.hpp
+  Models/CircularKinematics.hpp
 )
 
 add_library(iLQR_Include INTERFACE)
 target_sources(iLQR_Include INTERFACE ${ILQR_HEADERS})
-target_include_directories(iLQR_Include INTERFACE Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Misc Initialization AutomaticDifferentation TestTools ${CMAKE_SOURCE_DIR})
+target_include_directories(iLQR_Include INTERFACE Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Misc Initialization AutomaticDifferentation TestTools Models ${CMAKE_SOURCE_DIR})
 target_link_libraries(iLQR_Include INTERFACE Eigen3::Eigen)
 target_compile_options(iLQR_Include INTERFACE
   $<$<CXX_COMPILER_ID:MSVC>:/utf-8>

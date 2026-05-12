@@ -8,7 +8,8 @@
 #include "ConstraintOrder.hpp"
 #include "LinearApproximation.hpp"
 #include "QuadraticApproximation.hpp"
-#include <type_traits>
+#include <cassert>
+#include <cstdlib>
 
  /**
   * @brief 仅状态约束函数基类：按时间与状态返回约束值及线性/二次近似（子类实现）。
@@ -34,15 +35,17 @@ public:
   {
     (void)time;
     (void)state;
-    static_assert(!std::is_same_v<Scalar, Scalar>, "invalid!");
+    assert(false && "Linear approximation is not implemented for this constraint.");
+    std::abort();
   }
 
   /** @brief 获取约束的二次近似（默认无效，子类可重写）。 */
-  virtual ScalarFunctionLinearApproximation<Scalar, XDim, 0> getQuadraticApproximation(const Scalar time, const Vector<Scalar, XDim>& state) const
+  virtual ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> getQuadraticApproximation(const Scalar time, const Vector<Scalar, XDim>& state) const
   {
     (void)time;
     (void)state;
-    static_assert(!std::is_same_v<Scalar, Scalar>, "invalid!");
+    assert(false && "Quadratic approximation is not implemented for this constraint.");
+    std::abort();
   }
 
 private:

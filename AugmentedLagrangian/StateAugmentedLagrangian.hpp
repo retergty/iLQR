@@ -30,7 +30,7 @@ public:
   LagrangianMetrics<Scalar> getValue(const Scalar time, const Vector<Scalar, XDim> &state, const Multiplier<Scalar> &multiplier) const override
   {
     const Scalar h = constraint_ptr_->getValue(time, state);
-    const Scalar p = multiplier.penalty * penalty_.getValue(time, h, &multiplier.lagrangian);
+    const Scalar p = multiplier.penalty * penalty_.getValue(time, h, multiplier.lagrangian);
     return {p, h};
   }
 
@@ -39,9 +39,9 @@ public:
     switch (constraint_ptr_->getOrder())
     {
     case ConstraintOrder::Linear:
-      return multiplier.penalty * penalty_.getQuadraticApproximation(time, constraint_ptr_->getLinearApproximation(time, state), &multiplier.lagrangian);
+      return multiplier.penalty * penalty_.getQuadraticApproximation(time, constraint_ptr_->getLinearApproximation(time, state), multiplier.lagrangian);
     case ConstraintOrder::Quadratic:
-      return multiplier.penalty * penalty_.getQuadraticApproximation(time, constraint_ptr_->getQuadraticApproximation(time, state), &multiplier.lagrangian);
+      return multiplier.penalty * penalty_.getQuadraticApproximation(time, constraint_ptr_->getQuadraticApproximation(time, state), multiplier.lagrangian);
     default:
       return ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>();
     }

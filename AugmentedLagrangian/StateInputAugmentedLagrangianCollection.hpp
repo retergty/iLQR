@@ -53,23 +53,10 @@ public:
   /** @brief 获取各激活项的状态-输入约束与惩罚值数组。 */
   std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers> getValue(const Scalar time, const Vector<Scalar, XDim>& state, const Vector<Scalar, UDim>& input, const std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>& termsMultiplier) const
   {
-    (void)input;
-    (void)termsMultiplier;
     std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers> termsConstraintPenalty;
-
-    // int i = 0;
-    // for (auto it = list_.begin();it != list_.end();++it)
-    // {
-    //   assert(i < StateInputAugmentLagrangianNumbers);
-
-    //   termsConstraintPenalty[i] = it->getValue(time, state, input, termsMultiplier[i]);
-    //   i++;
-    // }
-    // return termsConstraintPenalty;
-
     for (int i = 0;i < num_;++i)
     {
-      termsConstraintPenalty[i] = lagrangian_[i].getValue(time, state, termsMultiplier[i]);
+      termsConstraintPenalty[i] = lagrangian_[i]->getValue(time, state, input, termsMultiplier[i]);
     }
     return termsConstraintPenalty;
   }
@@ -78,8 +65,7 @@ public:
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> getQuadraticApproximation(const Scalar time, const Vector<Scalar, XDim>& state, const Vector<Scalar, UDim>& input,
     const std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>& termsMultiplier) const
   {
-    (void)input;
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> penalty;
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> penalty;
     penalty.setZero();
 
     // // accumulate terms
@@ -94,7 +80,7 @@ public:
 
     for (int i = 0;i < num_;++i)
     {
-      penalty += lagrangian_[i].getQuadraticApproximation(time, state, termsMultiplier[i]);
+      penalty += lagrangian_[i]->getQuadraticApproximation(time, state, input, termsMultiplier[i]);
     }
     return penalty;
   }
@@ -103,22 +89,9 @@ public:
   void updateLagrangian(const Scalar time, const Vector<Scalar, XDim>& state, const Vector<Scalar, UDim>& input, std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers>& termsMetrics,
     std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>& termsMultiplier) const
   {
-    // int i = 0;
-    // for (auto it = list_.begin();it != list_.end();++it)
-    // {
-    //   assert(i < StateInputAugmentLagrangianNumbers);
-
-    //   // Multiplier<Scalar> updatedLagrangian;
-    //   // std::tie(updatedLagrangian, termsMetrics[i].penalty) = it->updateLagrangian(time, state, termsMetrics[i].constraint, termsMultiplier[i]);
-    //   // termsMultiplier[i] = updatedLagrangian;
-
-    //   std::tie(termsMultiplier[i], termsMetrics[i].penalty) = it->updateLagrangian(time, state, input, termsMetrics[i].constraint, termsMultiplier[i]);
-
-    //   i++;
-    // }
     for (int i = 0;i < num_;++i)
     {
-      std::tie(termsMultiplier[i], termsMetrics[i].penalty) = lagrangian_[i].updateLagrangian(time, state, input, termsMetrics[i].constraint, termsMultiplier[i]);
+      std::tie(termsMultiplier[i], termsMetrics[i].penalty) = lagrangian_[i]->updateLagrangian(time, state, input, termsMetrics[i].constraint, termsMultiplier[i]);
     }
   }
 
@@ -136,12 +109,12 @@ public:
 
     for (int i = 0;i < num_; ++i)
     {
-      termsMultiplier[i] = lagrangian_[i].initializeLagrangian(time);
+      termsMultiplier[i] = lagrangian_[i]->initializeLagrangian(time);
     }
   }
 
   // add cost to list end
-  void add(const StateInputAugmentedLagrangian<Scalar, XDim, UDim>& state_input_augment_lagrangian)
+  void add(const StateInputAugmentedLagrangian<Scalar, XDim, UDim>* state_input_augment_lagrangian)
   {
     // list_.insert(list_.end(), state_input_augment_lagrangian);
     // num_++;
@@ -154,5 +127,5 @@ public:
 private:
   int num_{ 0 };
   //IntrusiveList<StateInputAugmentedLagrangian<Scalar, XDim, UDim>> list_;
-  std::array<StateInputAugmentedLagrangian<Scalar, XDim, UDim>, StateInputAugmentLagrangianNumbers> lagrangian_;
+  std::array<const StateInputAugmentedLagrangian<Scalar, XDim, UDim>*, StateInputAugmentLagrangianNumbers> lagrangian_;
 };
