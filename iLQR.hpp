@@ -197,6 +197,11 @@ public:
         optimalControlProblem_.inputTrajectory = inputTrajectory;
     }
 
+    const PrimalSolution_t& primalSolution() const
+    {
+        return optimizedPrimalSolution_;
+    }
+
 private:
     /** Initializes the nominal primal based on the optimized ones.
      * @return True if the rollout is not purely from the Initializer.

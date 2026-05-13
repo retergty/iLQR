@@ -31,122 +31,137 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <memory>
+#include <string>
 
+#include "DefaultInitializer.hpp"
 #include "EXP0.hpp"
 #include "iLQR.hpp"
 
 class Exp0 : public testing::Test {
 protected:
   using Scalar = double;
-  static constexpr int STATE_DIM = 2;
-  static constexpr int INPUT_DIM = 1;
+  static constexpr int STATE_DIM = exp0::STATE_DIM;
+  static constexpr int INPUT_DIM = exp0::INPUT_DIM;
   static constexpr Scalar timeStep = 1e-2;
   static constexpr Scalar minRelCost = 1e-3;
   static constexpr Scalar expectedCost = 9.766;
+  static constexpr size_t PredictLength = 200;
 
-  Exp0() {
-    // event times
-    const ocs2::scalar_array_t eventTimes{0.1897};
-    const std::vector<size_t> modeSequence{0, 1};
-    referenceManagerPtr = ocs2::getExp0ReferenceManager(eventTimes, modeSequence);
+  using Solver_t = iLQR<Scalar, STATE_DIM, INPUT_DIM, PredictLength>;
+  using Problem_t = typename Solver_t::OptimalControlProblem_t;
+  using Initializer_t = DefaultInitializer<Scalar, STATE_DIM, INPUT_DIM>;
+  using StateVector_t = Vector<Scalar, STATE_DIM>;
+  using InputVector_t = Vector<Scalar, INPUT_DIM>;
+  using RolloutSettings_t = RolloutSettings<Scalar>;
+  using DDPSettings_t = DDPSettings<Scalar>;
 
-    // optimal control problem
-    problem = ocs2::createExp0Problem(referenceManagerPtr);
-
-    // operatingTrajectories
-    initializerPtr.reset(new ocs2::DefaultInitializer(INPUT_DIM));
+  Exp0()
+    : problem(exp0::createExp0Problem<Scalar, PredictLength>()),
+    initializerPtr(std::make_unique<Initializer_t>())
+  {
+    setConstantReferenceTrajectory();
   }
 
   // rollout settings
-  ocs2::rollout::Settings rolloutSettings() const {
-    ocs2::rollout::Settings rolloutSettings;
-    rolloutSettings.absTolODE = 1e-10;
-    rolloutSettings.relTolODE = 1e-7;
+  RolloutSettings_t rolloutSettings() const {
+    RolloutSettings_t rolloutSettings;
     rolloutSettings.timeStep = timeStep;
-    rolloutSettings.integratorType = ocs2::IntegratorType::ODE45;
-    rolloutSettings.maxNumStepsPerSecond = 10000;
     return rolloutSettings;
   };
 
-  ocs2::ddp::Settings getSettings(ocs2::ddp::Algorithm algorithmType, size_t numThreads, ocs2::search_strategy::Type strategy,
-                                  bool display = false) const {
-    ocs2::ddp::Settings ddpSettings;
-    ddpSettings.algorithm_ = algorithmType;
-    ddpSettings.nThreads_ = numThreads;
-    ddpSettings.preComputeRiccatiTerms_ = true;
-    ddpSettings.displayInfo_ = false;
-    ddpSettings.displayShortSummary_ = display;
-    ddpSettings.absTolODE_ = 1e-10;
-    ddpSettings.relTolODE_ = 1e-7;
+  DDPSettings_t getSettings(SearchStrategyType strategy, bool useFeedbackPolicy = true) const {
+    DDPSettings_t ddpSettings;
     ddpSettings.timeStep_ = timeStep;
-    ddpSettings.backwardPassIntegratorType_ = ocs2::IntegratorType::ODE45;
-    ddpSettings.maxNumStepsPerSecond_ = 10000;
     ddpSettings.maxNumIterations_ = 30;
     ddpSettings.minRelCost_ = minRelCost;
-    ddpSettings.checkNumericalStability_ = true;
-    ddpSettings.useFeedbackPolicy_ = true;
-    ddpSettings.debugPrintRollout_ = false;
+    ddpSettings.useFeedbackPolicy_ = useFeedbackPolicy;
     ddpSettings.strategy_ = strategy;
     ddpSettings.lineSearch_.minStepLength = 0.0001;
     return ddpSettings;
   }
 
-  std::string getTestName(const ocs2::ddp::Settings& ddpSettings) const {
+  std::string getTestName(const DDPSettings_t& ddpSettings) const {
     std::string testName;
     testName += "EXP0 Test { ";
-    testName += "Algorithm: " + ocs2::ddp::toAlgorithmName(ddpSettings.algorithm_) + ",  ";
-    testName += "Strategy: " + ocs2::search_strategy::toString(ddpSettings.strategy_) + ",  ";
-    testName += "#threads: " + std::to_string(ddpSettings.nThreads_) + " }";
+    testName += "Algorithm: iLQR,  ";
+    testName += "Strategy: " + searchStrategyToString(ddpSettings.strategy_) + " }";
     return testName;
   }
 
-  void performanceIndexTest(const ocs2::ddp::Settings& ddpSettings, const ocs2::PerformanceIndex& performanceIndex) const {
+  void performanceIndexTest(const DDPSettings_t& ddpSettings, const PerformanceIndex<Scalar>& performanceIndex) const {
     const auto testName = getTestName(ddpSettings);
     EXPECT_NEAR(performanceIndex.cost, expectedCost, 10.0 * minRelCost) << "MESSAGE: " << testName << ": failed in the total cost test!";
-    EXPECT_NEAR(performanceIndex.equalityConstraintsSSE, 0.0, 10.0 * ddpSettings.constraintTolerance_)
-        << "MESSAGE: " << testName << ": failed in state-input equality constraint ISE test!";
+    EXPECT_NEAR(performanceIndex.equalityLagrangian, 0.0, 10.0 * ddpSettings.constraintTolerance_)
+      << "MESSAGE: " << testName << ": failed in state-input equality constraint ISE test!";
   }
 
-  const ocs2::scalar_t startTime = 0.0;
-  const ocs2::scalar_t finalTime = 2.0;
-  const ocs2::vector_t initState = (ocs2::vector_t(STATE_DIM) << 0.0, 2.0).finished();
-  std::shared_ptr<ocs2::ReferenceManager> referenceManagerPtr;
+  void setConstantReferenceTrajectory() {
+    const StateVector_t targetState = exp0::getExp0TargetState<Scalar>();
+    const InputVector_t targetInput = exp0::getExp0TargetInput<Scalar>();
 
-  ocs2::OptimalControlProblem problem;
-  std::unique_ptr<ocs2::Initializer> initializerPtr;
+    for (size_t k = 0; k < PredictLength + 1; ++k) {
+      problem.timeTrajectory[k] = static_cast<Scalar>(k) * timeStep;
+      problem.stateTrajectory[k] = targetState;
+      problem.inputTrajectory[k] = targetInput;
+    }
+  }
+
+  static std::string searchStrategyToString(SearchStrategyType strategy) {
+    switch (strategy) {
+    case SearchStrategyType::LINE_SEARCH:
+      return "LINE_SEARCH";
+    case SearchStrategyType::LEVENBERG_MARQUARDT:
+      return "LEVENBERG_MARQUARDT";
+    default:
+      return "UNKNOWN";
+    }
+  }
+
+  const Scalar startTime = 0.0;
+  const Scalar finalTime = 2.0;
+  const StateVector_t initState = (StateVector_t() << 0.0, 2.0).finished();
+
+  Problem_t& problem;
+  std::unique_ptr<Initializer_t> initializerPtr;
 };
 
-constexpr size_t Exp0::STATE_DIM;
-constexpr size_t Exp0::INPUT_DIM;
-constexpr ocs2::scalar_t Exp0::timeStep;
-constexpr ocs2::scalar_t Exp0::minRelCost;
-constexpr ocs2::scalar_t Exp0::expectedCost;
+constexpr int Exp0::STATE_DIM;
+constexpr int Exp0::INPUT_DIM;
+constexpr Exp0::Scalar Exp0::timeStep;
+constexpr Exp0::Scalar Exp0::minRelCost;
+constexpr Exp0::Scalar Exp0::expectedCost;
+constexpr size_t Exp0::PredictLength;
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
 TEST_F(Exp0, ddp_feedback_policy) {
   // ddp settings
-  auto ddpSettings = getSettings(ocs2::ddp::Algorithm::SLQ, 2, ocs2::search_strategy::Type::LINE_SEARCH);
-  ddpSettings.useFeedbackPolicy_ = true;
+  auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, true);
+  (void)ddpSettings;
 
   // dynamics and rollout
-  ocs2::EXP0_System systemDynamics(referenceManagerPtr);
-  ocs2::TimeTriggeredRollout rollout(systemDynamics, rolloutSettings());
+  exp0::EXP0_Sys1<Scalar> systemDynamics;
 
   // instantiate
-  ocs2::SLQ ddp(ddpSettings, rollout, problem, *initializerPtr);
-  ddp.setReferenceManager(referenceManagerPtr);
+  Solver_t ddp(&systemDynamics, initializerPtr.get());
+  exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
+  exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
+  ddp.optimalControlProblem_.cost.add(cost);
+  ddp.optimalControlProblem_.finalCost.add(finalCost);
+  ddp.setDesireTrajectory(problem.timeTrajectory, problem.stateTrajectory, problem.inputTrajectory);
 
   // run ddp
-  ddp.run(startTime, initState, finalTime);
-  // get solution
-  const auto solution = ddp.primalSolution(finalTime);
-  const auto* ctrlPtr = dynamic_cast<ocs2::LinearController*>(solution.controllerPtr_.get());
+  EXPECT_NO_THROW(ddp.run(startTime, initState));
 
-  EXPECT_TRUE(ctrlPtr != nullptr) << "MESSAGE: SLQ solution does not contain a linear feedback policy!";
-  EXPECT_DOUBLE_EQ(ctrlPtr->timeStamp_.back(), finalTime) << "MESSAGE: SLQ failed in policy final time of controller!";
-  EXPECT_DOUBLE_EQ(solution.timeTrajectory_.back(), finalTime) << "MESSAGE: SLQ failed in policy final time of trajectory!";
+  // get solution
+  const auto& solution = ddp.primalSolution();
+  const auto& ctrl = solution.controller_;
+
+  EXPECT_EQ(ctrl.getType(), ControllerType::LINEAR) << "MESSAGE: iLQR solution does not contain a linear feedback policy!";
+  EXPECT_DOUBLE_EQ(ctrl.timeStamp_.back(), finalTime) << "MESSAGE: iLQR failed in policy final time of controller!";
+  EXPECT_DOUBLE_EQ(solution.timeTrajectory_.back(), finalTime) << "MESSAGE: iLQR failed in policy final time of trajectory!";
 }
 
 /******************************************************************************************************/
@@ -185,8 +200,8 @@ TEST_F(Exp0, ddp_moving_horizon) {
   const auto ddpSettings = getSettings(ocs2::ddp::Algorithm::SLQ, numThreads, ocs2::search_strategy::Type::LINE_SEARCH);
 
   // event times
-  const ocs2::scalar_array_t eventTimes{1.0};
-  const ocs2::size_array_t modeSequence{0, 1};
+  const ocs2::scalar_array_t eventTimes{ 1.0 };
+  const ocs2::size_array_t modeSequence{ 0, 1 };
   referenceManagerPtr = ocs2::getExp0ReferenceManager(eventTimes, modeSequence);
 
   // dynamics and rollout
@@ -295,7 +310,7 @@ TEST_F(Exp0, ddp_hamiltonian) {
 /******************************************************************************************************/
 /* Add parameterized test suite */
 class Exp0Param : public Exp0, public testing::WithParamInterface<std::tuple<ocs2::search_strategy::Type, size_t>> {
- protected:
+protected:
   ocs2::search_strategy::Type getSearchStrategy() { return std::get<0>(GetParam()); }
 
   size_t getNumThreads() { return std::get<1>(GetParam()); }
@@ -361,13 +376,13 @@ TEST_P(Exp0Param, ILQR) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 INSTANTIATE_TEST_CASE_P(Exp0ParamCase, Exp0Param,
-                        testing::Combine(testing::ValuesIn({ocs2::search_strategy::Type::LINE_SEARCH,
-                                                            ocs2::search_strategy::Type::LEVENBERG_MARQUARDT}),
-                                         testing::ValuesIn({size_t(1), size_t(3)})), /* num threads */
-                        [](const testing::TestParamInfo<Exp0Param::ParamType>& info) {
-                          /* returns test name for gtest summary */
-                          std::string name;
-                          name += ocs2::search_strategy::toString(std::get<0>(info.param)) + "__";
-                          name += std::get<1>(info.param) == 1 ? "SINGLE_THREAD" : "MULTI_THREAD";
-                          return name;
-                        });
+  testing::Combine(testing::ValuesIn({ ocs2::search_strategy::Type::LINE_SEARCH,
+                                      ocs2::search_strategy::Type::LEVENBERG_MARQUARDT }),
+    testing::ValuesIn({ size_t(1), size_t(3) })), /* num threads */
+  [](const testing::TestParamInfo<Exp0Param::ParamType>& info) {
+    /* returns test name for gtest summary */
+    std::string name;
+    name += ocs2::search_strategy::toString(std::get<0>(info.param)) + "__";
+    name += std::get<1>(info.param) == 1 ? "SINGLE_THREAD" : "MULTI_THREAD";
+    return name;
+  });
