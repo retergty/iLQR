@@ -97,6 +97,8 @@ set(ILQR_HEADERS
   TestTools/QpDiscreteTranscription.hpp
   TestTools/Ocs2QpSolver.hpp
   Models/CircularKinematics.hpp
+  Models/DoubleIntegratorReachingTask.hpp
+  Models/EXP0.hpp
 )
 
 add_library(iLQR_Include INTERFACE)

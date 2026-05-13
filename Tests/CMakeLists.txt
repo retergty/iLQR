@@ -31,6 +31,7 @@ set(TEST_SOURCES
     TestTools/DiscreteTranscriptionTest.cpp
     TestTools/testQpSolver.cpp
     TestTools/testOcs2QpSolver.cpp
+    OptimalControl/Exp0Test.cpp
 )
 
 # 循环添加所有测试
