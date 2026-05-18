@@ -3,15 +3,15 @@
  * @brief 代价模块测试：匹配当前项目中的 QuadraticStateCost /
  * QuadraticStateInputCost 接口。
  */
-#include <array>
-
 #include <gtest/gtest.h>
+
+#include <array>
 
 #include "QuadraticStateCost.hpp"
 #include "Types.hpp"
 
 class QuadraticCostTest : public testing::Test {
-protected:
+ protected:
   using Scalar = double;
   static constexpr int XDim = 2;
   static constexpr int UDim = 1;
@@ -114,7 +114,7 @@ TEST_F(QuadraticCostTest, StateCostApproximation) {
   EXPECT_TRUE(approximation.dfdxx.isApprox(Qf_, kPrecision));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

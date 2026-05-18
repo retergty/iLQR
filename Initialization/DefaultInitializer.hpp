@@ -43,16 +43,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 template <typename Scalar, int XDim, int UDim>
 class DefaultInitializer final : public Initializer<Scalar, XDim, UDim> {
-public:
+ public:
   /** @brief 默认构造。 */
   explicit DefaultInitializer() = default;
 
   ~DefaultInitializer() override = default;
 
   /** @brief 将 input 置零，nextState 设为当前 state。 */
-  void compute(const Scalar time, const Vector<Scalar, XDim> &state,
-               const Scalar nextTime, Vector<Scalar, UDim> &input,
-               Vector<Scalar, XDim> &nextState) override {
+  void compute(const Scalar time, const Vector<Scalar, XDim>& state,
+               const Scalar nextTime, Vector<Scalar, UDim>& input,
+               Vector<Scalar, XDim>& nextState) override {
     (void)time;
     (void)nextTime;
     (void)state;
@@ -61,6 +61,6 @@ public:
     nextState = state;
   }
 
-protected:
-  DefaultInitializer(const DefaultInitializer &rhs) = default;
+ protected:
+  DefaultInitializer(const DefaultInitializer& rhs) = default;
 };

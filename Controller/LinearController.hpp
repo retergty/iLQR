@@ -15,7 +15,7 @@
  */
 template <typename Scalar, int XDim, int UDim, size_t ArrayLen>
 class LinearController final : public ControllerBase<Scalar, XDim, UDim> {
-public:
+ public:
   /** @brief 默认构造，成员未初始化。 */
   LinearController() = default;
 
@@ -26,20 +26,21 @@ public:
    * @param [in] controllerGain 反馈增益数组 K。
    */
   LinearController(
-      const std::array<Scalar, ArrayLen> &controllerTime,
-      const std::array<Vector<Scalar, UDim>, ArrayLen> &controllerBias,
-      const std::array<Matrix<Scalar, UDim, XDim>, ArrayLen> &controllerGain)
-      : timeStamp_(controllerTime), biasArray_(controllerBias),
+      const std::array<Scalar, ArrayLen>& controllerTime,
+      const std::array<Vector<Scalar, UDim>, ArrayLen>& controllerBias,
+      const std::array<Matrix<Scalar, UDim, XDim>, ArrayLen>& controllerGain)
+      : timeStamp_(controllerTime),
+        biasArray_(controllerBias),
         gainArray_(controllerGain) {}
 
   /** @brief 拷贝构造。 */
-  LinearController(const LinearController &other)
+  LinearController(const LinearController& other)
       : LinearController(other.timeStamp_, other.biasArray_, other.gainArray_) {
     deltaBiasArray_ = other.deltaBiasArray_;
   }
 
   /** @brief 拷贝赋值。 */
-  LinearController &operator=(const LinearController &rhs) {
+  LinearController& operator=(const LinearController& rhs) {
     timeStamp_ = rhs.timeStamp_;
     biasArray_ = rhs.biasArray_;
     gainArray_ = rhs.gainArray_;
@@ -58,9 +59,9 @@ public:
    * @param [in] controllerGain 反馈增益数组。
    */
   void setController(
-      const std::array<Scalar, ArrayLen> &controllerTime,
-      const std::array<Vector<Scalar, UDim>, ArrayLen> &controllerBias,
-      const std::array<Matrix<Scalar, UDim, XDim>, ArrayLen> &controllerGain) {
+      const std::array<Scalar, ArrayLen>& controllerTime,
+      const std::array<Vector<Scalar, UDim>, ArrayLen>& controllerBias,
+      const std::array<Matrix<Scalar, UDim, XDim>, ArrayLen>& controllerGain) {
     timeStamp_ = controllerTime;
     biasArray_ = controllerBias;
     gainArray_ = controllerGain;
@@ -68,8 +69,8 @@ public:
 
   /** @brief 按时间 t 与状态 x 计算控制：先时间插值得到 K 与 uff，再 u = uff +
    * K*x。 */
-  Vector<Scalar, UDim>
-  computeInput(Scalar t, const Vector<Scalar, XDim> &x) const override {
+  Vector<Scalar, UDim> computeInput(
+      Scalar t, const Vector<Scalar, XDim>& x) const override {
     const std::pair<int, Scalar> indexAlpha =
         LinearInterpolation::timeSegment(t, timeStamp_);
 
@@ -83,12 +84,11 @@ public:
   }
 
   /** @brief 按离散时间索引与状态计算控制（无插值）。 */
-  Vector<Scalar, UDim>
-  computeInput(size_t time_index,
-               const Vector<Scalar, XDim> &x) const override {
+  Vector<Scalar, UDim> computeInput(
+      size_t time_index, const Vector<Scalar, XDim>& x) const override {
     assert(time_index < ArrayLen);
     Vector<Scalar, UDim> uff = biasArray_[time_index];
-    const Matrix<Scalar, UDim, XDim> &k = gainArray_[time_index];
+    const Matrix<Scalar, UDim, XDim>& k = gainArray_[time_index];
 
     uff += k * x;
     return uff;
@@ -122,14 +122,14 @@ public:
   constexpr static size_t size() { return ArrayLen; }
 
   /** @brief 与另一线性控制器交换时间戳、偏置、deltaBias、增益。 */
-  void swap(LinearController &other) {
+  void swap(LinearController& other) {
     timeStamp_.swap(other.timeStamp_);
     biasArray_.swap(other.biasArray_);
     deltaBiasArray_.swap(other.deltaBiasArray_);
     gainArray_.swap(other.gainArray_);
   }
 
-public:
+ public:
   std::array<Scalar, ArrayLen> timeStamp_;
   std::array<Vector<Scalar, UDim>, ArrayLen> biasArray_;
   std::array<Vector<Scalar, UDim>, ArrayLen> deltaBiasArray_;

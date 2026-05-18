@@ -49,7 +49,7 @@ namespace numerics {
  * @return 近似相等返回 true。
  */
 template <class T1, class T2, class T3>
-constexpr bool almost_eq(T1 &&x, T2 &&y, T3 &&prec) {
+constexpr bool almost_eq(T1&& x, T2&& y, T3&& prec) {
   static_assert(
       std::is_floating_point<typename std::remove_reference<T1>::type>::value,
       "First argument is not floating point!");
@@ -74,7 +74,8 @@ constexpr bool almost_eq(T1 &&x, T2 &&y, T3 &&prec) {
  * @param [in] y 第二个浮点数。
  * @return 近似相等返回 true。
  */
-template <class T1, class T2> constexpr bool almost_eq(T1 &&x, T2 &&y) {
+template <class T1, class T2>
+constexpr bool almost_eq(T1&& x, T2&& y) {
   const auto prec = std::numeric_limits<std::remove_reference_t<T1>>::epsilon();
   return almost_eq(x, y, prec);
 }
@@ -87,7 +88,7 @@ template <class T1, class T2> constexpr bool almost_eq(T1 &&x, T2 &&y) {
  * @return x <= y 或近似相等时返回 true。
  */
 template <class T1, class T2, class T3>
-bool almost_le(T1 &&x, T2 &&y, T3 &&prec) {
+bool almost_le(T1&& x, T2&& y, T3&& prec) {
   return x < y || almost_eq(x, y, prec);
 }
 
@@ -98,7 +99,7 @@ bool almost_le(T1 &&x, T2 &&y, T3 &&prec) {
  * @return x <= y 或近似相等时返回 true。
  */
 template <class T1, class T2, class T3>
-constexpr bool almost_le(T1 &&x, T2 &&y) {
+constexpr bool almost_le(T1&& x, T2&& y) {
   return x < y || almost_eq(x, y);
 }
 
@@ -110,7 +111,7 @@ constexpr bool almost_le(T1 &&x, T2 &&y) {
  * @return x >= y 或近似相等时返回 true。
  */
 template <class T1, class T2, class T3>
-constexpr bool almost_ge(T1 &&x, T2 &&y, T3 &&prec) {
+constexpr bool almost_ge(T1&& x, T2&& y, T3&& prec) {
   return x > y || almost_eq(x, y, prec);
 }
 
@@ -120,7 +121,8 @@ constexpr bool almost_ge(T1 &&x, T2 &&y, T3 &&prec) {
  * @param [in] y 第二个浮点数。
  * @return x >= y 或近似相等时返回 true。
  */
-template <class T1, class T2> constexpr bool almost_ge(T1 &&x, T2 &&y) {
+template <class T1, class T2>
+constexpr bool almost_ge(T1&& x, T2&& y) {
   return x > y || almost_eq(x, y);
 }
-} // namespace numerics
+}  // namespace numerics

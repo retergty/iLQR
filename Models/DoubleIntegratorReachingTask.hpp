@@ -13,12 +13,13 @@
 #include "SmoothAbsolutePenalty.hpp"
 
 namespace double_integrator {
-template <typename Scalar, int ArrayLength> class DoubleIntegratorReachingTask {
-public:
+template <typename Scalar, int ArrayLength>
+class DoubleIntegratorReachingTask {
+ public:
   static constexpr int STATE_DIM = 2;
   static constexpr int INPUT_DIM = 1;
   static constexpr Scalar timeStep = 1e-2;
-  static constexpr Scalar minRelCost = 1e-12; // to avoid early termination
+  static constexpr Scalar minRelCost = 1e-12;  // to avoid early termination
   static constexpr Scalar constraintTolerance = 1e-3;
   using StateVector_t = Vector<Scalar, STATE_DIM>;
   using StateMatrix_t = Matrix<Scalar, STATE_DIM, STATE_DIM>;
@@ -41,7 +42,7 @@ public:
   DoubleIntegratorReachingTask() = default;
   virtual ~DoubleIntegratorReachingTask() = default;
 
-protected:
+ protected:
   const Scalar tGoal = 1.0;
   const StateVector_t xInit = StateVector_t::Zero();
   const StateVector_t xGoal = (StateVector_t << 2.0, 0.0).finished();
@@ -70,9 +71,8 @@ protected:
     return std::make_unique<LinearSystemDynamics_t>(std::move(A), std::move(B));
   }
 
-  std::unique_ptr<StateAugmentedLagrangian>
-  getGoalReachingAugmentedLagrangian(const StateVector_t &xGoal,
-                                     PenaltyType penaltyType) {
+  std::unique_ptr<StateAugmentedLagrangian> getGoalReachingAugmentedLagrangian(
+      const StateVector_t& xGoal, PenaltyType penaltyType) {
     constexpr Scalar scale = 10.0;
     constexpr Scalar stepSize = 1.0;
 
@@ -80,32 +80,32 @@ protected:
         -xGoal, matrix_t::Identity(xGoal.size(), xGoal.size()));
 
     switch (penaltyType) {
-    case PenaltyType::QuadraticPenalty: {
-      using penalty_type = augmented::QuadraticPenalty;
-      penalty_type::Config boundsConfig{scale, stepSize};
-      return create(std::move(goalReachingConstraintPtr),
-                    penalty_type::create(boundsConfig));
-    }
-    case PenaltyType::SmoothAbsolutePenalty: {
-      using penalty_type = augmented::SmoothAbsolutePenalty;
-      penalty_type::Config boundsConfig{scale, 0.1, stepSize};
-      return create(std::move(goalReachingConstraintPtr),
-                    penalty_type::create(boundsConfig));
-    }
-    default:
-      return nullptr;
+      case PenaltyType::QuadraticPenalty: {
+        using penalty_type = augmented::QuadraticPenalty;
+        penalty_type::Config boundsConfig{scale, stepSize};
+        return create(std::move(goalReachingConstraintPtr),
+                      penalty_type::create(boundsConfig));
+      }
+      case PenaltyType::SmoothAbsolutePenalty: {
+        using penalty_type = augmented::SmoothAbsolutePenalty;
+        penalty_type::Config boundsConfig{scale, 0.1, stepSize};
+        return create(std::move(goalReachingConstraintPtr),
+                      penalty_type::create(boundsConfig));
+      }
+      default:
+        return nullptr;
     }
   }
 
   /** This class enforces zero force at the second mode (mode = 1)*/
   class ZeroInputConstraint final : public StateInputConstraint {
-  public:
-    ZeroInputConstraint(const ReferenceManager &referenceManager)
+   public:
+    ZeroInputConstraint(const ReferenceManager& referenceManager)
         : StateInputConstraint(ConstraintOrder::Linear),
           referenceManagerPtr_(&referenceManager) {}
 
     ~ZeroInputConstraint() override = default;
-    ZeroInputConstraint *clone() const override {
+    ZeroInputConstraint* clone() const override {
       return new ZeroInputConstraint(*this);
     }
 
@@ -118,14 +118,14 @@ protected:
                  : false;
     }
 
-    vector_t getValue(Scalar t, const vector_t &x, const vector_t &u,
-                      const PreComputation &) const override {
+    vector_t getValue(Scalar t, const vector_t& x, const vector_t& u,
+                      const PreComputation&) const override {
       return u;
     }
 
-    VectorFunctionLinearApproximation
-    getLinearApproximation(Scalar t, const vector_t &x, const vector_t &u,
-                           const PreComputation &) const override {
+    VectorFunctionLinearApproximation getLinearApproximation(
+        Scalar t, const vector_t& x, const vector_t& u,
+        const PreComputation&) const override {
       VectorFunctionLinearApproximation approx;
       approx.f = u;
       approx.dfdx.setZero(getNumConstraints(t), x.size());
@@ -133,9 +133,9 @@ protected:
       return approx;
     }
 
-  private:
-    ZeroInputConstraint(const ZeroInputConstraint &) = default;
-    const ReferenceManager *referenceManagerPtr_;
+   private:
+    ZeroInputConstraint(const ZeroInputConstraint&) = default;
+    const ReferenceManager* referenceManagerPtr_;
   };
 
   /*
@@ -145,28 +145,28 @@ protected:
    * subplot(2, 1, 2); plot(timeTrajectory, inputTrajectory);
    * xlabel("time [sec]"); legend("force");
    */
-  void printSolution(const PrimalSolution &primalSolution, bool display) const {
+  void printSolution(const PrimalSolution& primalSolution, bool display) const {
     if (display) {
       std::cerr << "\n";
       // time
       std::cerr << "timeTrajectory = [";
-      for (const auto &t : primalSolution.timeTrajectory_) {
+      for (const auto& t : primalSolution.timeTrajectory_) {
         std::cerr << t << "; ";
       }
       std::cerr << "];\n";
       // state
       std::cerr << "stateTrajectory = [";
-      for (const auto &x : primalSolution.stateTrajectory_) {
+      for (const auto& x : primalSolution.stateTrajectory_) {
         std::cerr << x.transpose() << "; ";
       }
       std::cerr << "];\n";
       // input
       std::cerr << "inputTrajectory = [";
-      for (const auto &u : primalSolution.inputTrajectory_) {
+      for (const auto& u : primalSolution.inputTrajectory_) {
         std::cerr << u.transpose() << "; ";
       }
       std::cerr << "];\n";
     }
   }
 };
-}; // namespace double_integrator
+};  // namespace double_integrator

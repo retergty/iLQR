@@ -23,11 +23,11 @@ void initializeFinalMultiplierCollection(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqConstrains,
         StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
-        FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
+        FinalStateEqConstrains, FinalStateIneqConstrains>& ocp,
     Scalar time,
     MultiplierCollection<Scalar, FinalStateEqConstrains,
-                         FinalStateIneqConstrains, 0, 0>
-        &multiplierCollection) {
+                         FinalStateIneqConstrains, 0, 0>&
+        multiplierCollection) {
   ocp.finalEqualityLagrangian.initializeLagrangian(
       time, multiplierCollection.stateEq);
   ocp.finalInequalityLagrangian.initializeLagrangian(
@@ -48,11 +48,11 @@ void initializeIntermediateMultiplierCollection(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqConstrains,
         StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
-        FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
+        FinalStateEqConstrains, FinalStateIneqConstrains>& ocp,
     Scalar time,
     MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                         StateInputEqConstrains, StateInputIneqConstrains>
-        &multiplierCollection) {
+                         StateInputEqConstrains, StateInputIneqConstrains>&
+        multiplierCollection) {
   ocp.stateEqualityLagrangian.initializeLagrangian(
       time, multiplierCollection.stateEq);
   ocp.stateInequalityLagrangian.initializeLagrangian(
@@ -79,16 +79,16 @@ void initializeDualSolution(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqConstrains,
         StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
-        FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
-    const PrimalSolution<Scalar, XDim, UDim, PredictLength> &primalSolution,
+        FinalStateEqConstrains, FinalStateIneqConstrains>& ocp,
+    const PrimalSolution<Scalar, XDim, UDim, PredictLength>& primalSolution,
     const DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
                        StateInputEqConstrains, StateInputIneqConstrains,
                        FinalStateEqConstrains, FinalStateIneqConstrains,
-                       PredictLength> &cachedDualSolution,
+                       PredictLength>& cachedDualSolution,
     DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
                  StateInputEqConstrains, StateInputIneqConstrains,
                  FinalStateEqConstrains, FinalStateIneqConstrains,
-                 PredictLength> &dualSolution) {
+                 PredictLength>& dualSolution) {
   dualSolution.timeTrajectory = primalSolution.timeTrajectory_;
 
   if (!cachedDualSolution.empty()) {
@@ -102,19 +102,19 @@ void initializeDualSolution(
   if (!cachedDualSolution.empty()) {
     // intermediates
     for (size_t i = 0; i < PredictLength; i++) {
-      const Scalar &time = primalSolution.timeTrajectory_[i];
+      const Scalar& time = primalSolution.timeTrajectory_[i];
       MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                           StateInputEqConstrains, StateInputIneqConstrains>
-          &multipliers = dualSolution.intermediates[i];
+                           StateInputEqConstrains, StateInputIneqConstrains>&
+          multipliers = dualSolution.intermediates[i];
       multipliers = getIntermediateDualSolutionAtTime(cachedDualSolution, time);
     }
   } else {
     // intermediates
     for (size_t i = 0; i < PredictLength; i++) {
-      const Scalar &time = primalSolution.timeTrajectory_[i];
+      const Scalar& time = primalSolution.timeTrajectory_[i];
       MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                           StateInputEqConstrains, StateInputIneqConstrains>
-          &multipliers = dualSolution.intermediates[i];
+                           StateInputEqConstrains, StateInputIneqConstrains>&
+          multipliers = dualSolution.intermediates[i];
       initializeIntermediateMultiplierCollection(ocp, time, multipliers);
     }
   }
@@ -136,12 +136,12 @@ void updateDualSolution(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqConstrains,
         StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
-        FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
-    const PrimalSolution<Scalar, XDim, UDim, PredictLength> &primalSolution,
+        FinalStateEqConstrains, FinalStateIneqConstrains>& ocp,
+    const PrimalSolution<Scalar, XDim, UDim, PredictLength>& primalSolution,
     ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
                    StateIneqConstrains, StateInputEqConstrains,
                    StateInputIneqConstrains, FinalStateEqConstrains,
-                   FinalStateIneqConstrains> &problemMetrics,
+                   FinalStateIneqConstrains>& problemMetrics,
     DualSolutionRef<Scalar, StateEqConstrains, StateIneqConstrains,
                     StateInputEqConstrains, StateInputIneqConstrains,
                     FinalStateEqConstrains, FinalStateIneqConstrains,
@@ -149,12 +149,12 @@ void updateDualSolution(
         dualSolution) {
   // final
   {
-    const Scalar &time = primalSolution.timeTrajectory_.back();
-    const Vector<Scalar, XDim> &state = primalSolution.stateTrajectory_.back();
+    const Scalar& time = primalSolution.timeTrajectory_.back();
+    const Vector<Scalar, XDim>& state = primalSolution.stateTrajectory_.back();
     Metrics<Scalar, XDim, UDim, FinalStateEqConstrains,
-            FinalStateIneqConstrains, 0, 0> &metrics = problemMetrics.final;
+            FinalStateIneqConstrains, 0, 0>& metrics = problemMetrics.final;
     MultiplierCollection<Scalar, FinalStateEqConstrains,
-                         FinalStateIneqConstrains, 0, 0> &multipliers =
+                         FinalStateIneqConstrains, 0, 0>& multipliers =
         dualSolution.final;
     updateFinalMultiplierCollection(ocp, time, state, metrics, multipliers);
   }
@@ -166,15 +166,15 @@ void updateDualSolution(
   // primalSolution.timeTrajectory_.size());
 
   for (size_t i = 0; i < PredictLength; i++) {
-    const Scalar &time = primalSolution.timeTrajectory_[i];
-    const Vector<Scalar, XDim> &state = primalSolution.stateTrajectory_[i];
-    const Vector<Scalar, UDim> &input = primalSolution.inputTrajectory_[i];
+    const Scalar& time = primalSolution.timeTrajectory_[i];
+    const Vector<Scalar, XDim>& state = primalSolution.stateTrajectory_[i];
+    const Vector<Scalar, UDim>& input = primalSolution.inputTrajectory_[i];
     Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains,
-            StateInputEqConstrains, StateInputIneqConstrains> &metrics =
+            StateInputEqConstrains, StateInputIneqConstrains>& metrics =
         problemMetrics.intermediates[i];
     MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                         StateInputEqConstrains, StateInputIneqConstrains>
-        &multipliers = dualSolution.intermediates[i];
+                         StateInputEqConstrains, StateInputIneqConstrains>&
+        multipliers = dualSolution.intermediates[i];
 
     updateIntermediateMultiplierCollection(ocp, time, state, input, metrics,
                                            multipliers);
@@ -197,12 +197,12 @@ void updateFinalMultiplierCollection(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqConstrains,
         StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
-        FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
-    Scalar time, const Vector<Scalar, XDim> &state,
+        FinalStateEqConstrains, FinalStateIneqConstrains>& ocp,
+    Scalar time, const Vector<Scalar, XDim>& state,
     Metrics<Scalar, XDim, UDim, FinalStateEqConstrains,
-            FinalStateIneqConstrains, 0, 0> &metrics,
+            FinalStateIneqConstrains, 0, 0>& metrics,
     MultiplierCollection<Scalar, FinalStateEqConstrains,
-                         FinalStateIneqConstrains, 0, 0> &multipliers) {
+                         FinalStateIneqConstrains, 0, 0>& multipliers) {
   ocp.finalEqualityLagrangian.updateLagrangian(
       time, state, metrics.stateEqLagrangian, multipliers.stateEq);
   ocp.finalInequalityLagrangian.updateLagrangian(
@@ -226,14 +226,14 @@ void updateIntermediateMultiplierCollection(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqConstrains,
         StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
-        FinalStateEqConstrains, FinalStateIneqConstrains> &ocp,
-    Scalar time, const Vector<Scalar, XDim> &state,
-    const Vector<Scalar, UDim> &input,
+        FinalStateEqConstrains, FinalStateIneqConstrains>& ocp,
+    Scalar time, const Vector<Scalar, XDim>& state,
+    const Vector<Scalar, UDim>& input,
     Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains,
-            StateInputEqConstrains, StateInputIneqConstrains> &metrics,
+            StateInputEqConstrains, StateInputIneqConstrains>& metrics,
     MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                         StateInputEqConstrains, StateInputIneqConstrains>
-        &multipliers) {
+                         StateInputEqConstrains, StateInputIneqConstrains>&
+        multipliers) {
   ocp.stateEqualityLagrangian.updateLagrangian(
       time, state, metrics.stateEqLagrangian, multipliers.stateEq);
   ocp.stateInequalityLagrangian.updateLagrangian(

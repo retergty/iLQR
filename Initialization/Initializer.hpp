@@ -43,8 +43,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDim, int UDim> class Initializer {
-public:
+template <typename Scalar, int XDim, int UDim>
+class Initializer {
+ public:
   Initializer() = default;
   virtual ~Initializer() = default;
 
@@ -56,11 +57,11 @@ public:
    * @param [out] input 当前段的输入。
    * @param [out] nextState 下一时刻的状态。
    */
-  virtual void compute(const Scalar time, const Vector<Scalar, XDim> &state,
-                       const Scalar nextTime, Vector<Scalar, UDim> &input,
-                       Vector<Scalar, XDim> &nextState) = 0;
+  virtual void compute(const Scalar time, const Vector<Scalar, XDim>& state,
+                       const Scalar nextTime, Vector<Scalar, UDim>& input,
+                       Vector<Scalar, XDim>& nextState) = 0;
 
-protected:
+ protected:
   /** @brief 拷贝构造（保护）。 */
-  Initializer(const Initializer &rhs) = default;
+  Initializer(const Initializer& rhs) = default;
 };

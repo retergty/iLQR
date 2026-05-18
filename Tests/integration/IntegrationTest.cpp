@@ -2,10 +2,10 @@
  * @file IntegrationTest.cpp
  * @brief Integration 抽象接口测试：通过 IntegratorBase 指针驱动固定步长积分。
  */
+#include <gtest/gtest.h>
+
 #include <array>
 #include <memory>
-
-#include <gtest/gtest.h>
 
 #include "Integration.hpp"
 #include "LinearController.hpp"
@@ -33,14 +33,14 @@ System makeSecondOrderSystem() {
 }
 
 Controller makeConstantController(Scalar t0, Scalar t1,
-                                  const InputVector &input) {
+                                  const InputVector& input) {
   std::array<Scalar, ControllerLen> controllerTime = {t0, t1};
   std::array<InputVector, ControllerLen> controllerBias = {input, input};
   std::array<Matrix<Scalar, UDim, XDim>, ControllerLen> controllerGain = {
       Matrix<Scalar, UDim, XDim>::Zero(), Matrix<Scalar, UDim, XDim>::Zero()};
   return Controller(controllerTime, controllerBias, controllerGain);
 }
-} // namespace
+}  // namespace
 
 TEST(IntegrationTest, IntegratorBaseIntegratesControlledSecondOrderSystem) {
   constexpr Scalar t0 = 0.0;
@@ -106,7 +106,7 @@ TEST(IntegrationTest, IntegratorBaseSupportsBackwardIntegration) {
   EXPECT_LT((backwardStates.back() - x0).norm(), 2e-3);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

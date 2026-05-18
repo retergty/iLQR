@@ -27,9 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include <gtest/gtest.h>
+
 #include <cstdlib>
 #include <ctime>
-#include <gtest/gtest.h>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -39,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "iLQR.hpp"
 
 class Exp0 : public testing::Test {
-protected:
+ protected:
   using Scalar = double;
   static constexpr int STATE_DIM = exp0::STATE_DIM;
   static constexpr int INPUT_DIM = exp0::INPUT_DIM;
@@ -81,7 +82,7 @@ protected:
     return ddpSettings;
   }
 
-  std::string getTestName(const DDPSettings_t &ddpSettings) const {
+  std::string getTestName(const DDPSettings_t& ddpSettings) const {
     std::string testName;
     testName += "EXP0 Test { ";
     testName += "Algorithm: iLQR,  ";
@@ -90,9 +91,9 @@ protected:
     return testName;
   }
 
-  void
-  performanceIndexTest(const DDPSettings_t &ddpSettings,
-                       const PerformanceIndex<Scalar> &performanceIndex) const {
+  void performanceIndexTest(
+      const DDPSettings_t& ddpSettings,
+      const PerformanceIndex<Scalar>& performanceIndex) const {
     const auto testName = getTestName(ddpSettings);
     EXPECT_NEAR(performanceIndex.cost, expectedCost, 10.0 * minRelCost)
         << "MESSAGE: " << testName << ": failed in the total cost test!";
@@ -115,12 +116,12 @@ protected:
 
   static std::string searchStrategyToString(SearchStrategyType strategy) {
     switch (strategy) {
-    case SearchStrategyType::LINE_SEARCH:
-      return "LINE_SEARCH";
-    case SearchStrategyType::LEVENBERG_MARQUARDT:
-      return "LEVENBERG_MARQUARDT";
-    default:
-      return "UNKNOWN";
+      case SearchStrategyType::LINE_SEARCH:
+        return "LINE_SEARCH";
+      case SearchStrategyType::LEVENBERG_MARQUARDT:
+        return "LEVENBERG_MARQUARDT";
+      default:
+        return "UNKNOWN";
     }
   }
 
@@ -128,7 +129,7 @@ protected:
   const Scalar finalTime = 2.0;
   const StateVector_t initState = (StateVector_t() << 0.0, 2.0).finished();
 
-  Problem_t &problem;
+  Problem_t& problem;
   std::unique_ptr<Initializer_t> initializerPtr;
 };
 
@@ -162,8 +163,8 @@ TEST_F(Exp0, ddp_feedback_policy) {
   EXPECT_NO_THROW(ddp.run(startTime, initState));
 
   // get solution
-  const auto &solution = ddp.primalSolution();
-  const auto &ctrl = solution.controller_;
+  const auto& solution = ddp.primalSolution();
+  const auto& ctrl = solution.controller_;
 
   EXPECT_EQ(ctrl.getType(), ControllerType::LINEAR)
       << "MESSAGE: iLQR solution does not contain a linear feedback policy!";
@@ -196,8 +197,8 @@ TEST_F(Exp0, ddp_feedforward_policy) {
   EXPECT_NO_THROW(ddp.run(startTime, initState));
 
   // get solution
-  const auto &solution = ddp.primalSolution();
-  const auto &ctrl = solution.controller_;
+  const auto& solution = ddp.primalSolution();
+  const auto& ctrl = solution.controller_;
 
   EXPECT_EQ(ctrl.getType(), ControllerType::LINEAR)
       << "MESSAGE: iLQR solution does not contain a controller with "
@@ -230,7 +231,7 @@ TEST_F(Exp0, ddp_moving_horizon) {
                           problem.inputTrajectory);
 
   const auto expectSolutionEndsAt = [&ddp](Scalar expectedFinalTime) {
-    const auto &solution = ddp.primalSolution();
+    const auto& solution = ddp.primalSolution();
     EXPECT_DOUBLE_EQ(solution.controller_.timeStamp_.back(), expectedFinalTime)
         << "MESSAGE: iLQR failed in policy final time of controller!";
     EXPECT_DOUBLE_EQ(solution.timeTrajectory_.back(), expectedFinalTime)
@@ -269,8 +270,8 @@ TEST_F(Exp0, ddp_q_function) {
   // ddp settings
   auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, true);
   ddpSettings.maxNumIterations_ = 50;
-  ddpSettings.minRelCost_ = 1e-9; // to allow more iterations that the effect of
-                                  // final linesearch is negligible
+  ddpSettings.minRelCost_ = 1e-9;  // to allow more iterations that the effect
+                                   // of final linesearch is negligible
 
   // dynamics and rollout
   exp0::EXP0_Sys1<Scalar> systemDynamics;
@@ -287,8 +288,8 @@ TEST_F(Exp0, ddp_q_function) {
   // run ddp
   ddp.run(startTime, initState);
   // get solution
-  const auto &solution = ddp.primalSolution();
-  const auto &controller = solution.controller_;
+  const auto& solution = ddp.primalSolution();
+  const auto& controller = solution.controller_;
 
   // define precision for tests
   constexpr Scalar precision = 1e-3;
@@ -360,7 +361,7 @@ TEST_F(Exp0, ddp_q_function) {
 /* Add parameterized test suite */
 class Exp0Param : public Exp0,
                   public testing::WithParamInterface<SearchStrategyType> {
-protected:
+ protected:
   SearchStrategyType getSearchStrategy() const { return GetParam(); }
 };
 
@@ -387,8 +388,8 @@ TEST_P(Exp0Param, ILQR) {
   EXPECT_NO_THROW(ddp.run(startTime, initState));
 
   // get solution
-  const auto &solution = ddp.primalSolution();
-  const auto &ctrl = solution.controller_;
+  const auto& solution = ddp.primalSolution();
+  const auto& ctrl = solution.controller_;
 
   EXPECT_EQ(ctrl.getType(), ControllerType::LINEAR)
       << "MESSAGE: " << getTestName(ddpSettings)
@@ -408,14 +409,14 @@ INSTANTIATE_TEST_SUITE_P(
     Exp0ParamCase, Exp0Param,
     testing::ValuesIn({SearchStrategyType::LINE_SEARCH,
                        SearchStrategyType::LEVENBERG_MARQUARDT}),
-    [](const testing::TestParamInfo<Exp0Param::ParamType> &info) {
+    [](const testing::TestParamInfo<Exp0Param::ParamType>& info) {
       /* returns test name for gtest summary */
       switch (info.param) {
-      case SearchStrategyType::LINE_SEARCH:
-        return std::string("LINE_SEARCH");
-      case SearchStrategyType::LEVENBERG_MARQUARDT:
-        return std::string("LEVENBERG_MARQUARDT");
-      default:
-        return std::string("UNKNOWN");
+        case SearchStrategyType::LINE_SEARCH:
+          return std::string("LINE_SEARCH");
+        case SearchStrategyType::LEVENBERG_MARQUARDT:
+          return std::string("LEVENBERG_MARQUARDT");
+        default:
+          return std::string("UNKNOWN");
       }
     });

@@ -3,10 +3,11 @@
  * @brief 对偶解：各时刻的乘子集合及按时间插值查询。
  */
 #pragma once
+#include <array>
+
 #include "LinearInterpolation.hpp"
 #include "Multiplier.hpp"
 #include "Numerics.hpp"
-#include <array>
 
 /**
  * @brief 对偶解：时间序列、终端乘子与各中间时刻乘子集合。
@@ -35,7 +36,7 @@ struct DualSolution {
   std::array<IntermediateMultiplierCollection_t, PredictLength> intermediates;
 
   /** @brief 与另一 DualSolution 交换内容。 */
-  void swap(DualSolution &other) {
+  void swap(DualSolution& other) {
     timeTrajectory.swap(other.timeTrajectory);
     intermediates.swap(other.intermediates);
     final.swap(other.final);
@@ -83,19 +84,19 @@ struct DualSolutionRef {
                            FinalStateIneqConstrains, 0, 0>;
 
   /** @brief 由 DualSolution 构造，引用其 final 与 intermediates。 */
-  DualSolutionRef(DualSolution_t &dualSolution)
+  DualSolutionRef(DualSolution_t& dualSolution)
       : DualSolutionRef(dualSolution.final, dualSolution.intermediates) {}
 
   /** @brief 直接引用给定的 final 与 intermediates 数组。 */
-  DualSolutionRef(FinalMultiplierCollection_t &finalRef,
-                  std::array<IntermediateMultiplierCollection_t, PredictLength>
-                      &intermediatesRef)
+  DualSolutionRef(FinalMultiplierCollection_t& finalRef,
+                  std::array<IntermediateMultiplierCollection_t, PredictLength>&
+                      intermediatesRef)
       : final(finalRef), intermediates(intermediatesRef) {}
 
   /** @brief 终端乘子集合的引用。 */
-  FinalMultiplierCollection_t &final;
+  FinalMultiplierCollection_t& final;
   /** @brief 中间时刻乘子集合的引用。 */
-  std::array<IntermediateMultiplierCollection_t, PredictLength> &intermediates;
+  std::array<IntermediateMultiplierCollection_t, PredictLength>& intermediates;
 };
 
 /**
@@ -114,7 +115,7 @@ getIntermediateDualSolutionAtTime(
     const DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
                        StateInputEqConstrains, StateInputIneqConstrains,
                        FinalStateEqConstrains, FinalStateIneqConstrains,
-                       PredictLength> &dualSolution,
+                       PredictLength>& dualSolution,
     Scalar time) {
   const std::pair<int, Scalar> indexAlpha =
       LinearInterpolation::timeSegment(time, dualSolution.timeTrajectory);

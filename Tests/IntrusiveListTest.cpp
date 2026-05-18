@@ -8,7 +8,7 @@ struct TestNode : public IntrusiveListNode<TestNode> {
 
   int value;
 };
-} // namespace
+}  // namespace
 
 // 验证空链表满足 begin() == end()。
 TEST(IntrusiveListTest, EmptyListBeginsAtEnd) {
@@ -77,7 +77,7 @@ TEST(IntrusiveListTest, ConstIteratorTraversesReadOnlyList) {
   list.insert(list.end(), first);
   list.insert(list.end(), second);
 
-  const IntrusiveList<TestNode> &constList = list;
+  const IntrusiveList<TestNode>& constList = list;
   auto it = constList.begin();
   ASSERT_NE(it, constList.end());
   EXPECT_EQ(it->value, 1);
@@ -150,7 +150,7 @@ TEST(IntrusiveListTest, RemoveUpdatesOwnerHeadAndDetachedNodeCanMove) {
   EXPECT_EQ(source.remove(&second), -1);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

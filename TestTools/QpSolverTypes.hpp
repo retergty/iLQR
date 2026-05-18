@@ -36,7 +36,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace qp_solver {
 
 /** Defines the quadratic cost and  linear dynamics at a give stage */
-template <typename Scalar, int XDim, int UDim> struct LinearQuadraticStage {
+template <typename Scalar, int XDim, int UDim>
+struct LinearQuadraticStage {
   using CostApproximation_t =
       ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
   using DynamicsApproximation_t =
@@ -61,4 +62,4 @@ template <typename Scalar, int XDim, int UDim> struct LinearQuadraticStage {
       : cost(std::move(c)), dynamics(std::move(d)), constraints(std::move(g)) {}
 };
 
-} // namespace qp_solver
+}  // namespace qp_solver

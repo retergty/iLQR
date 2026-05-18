@@ -29,11 +29,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
+#include <tuple>
+
 #include "AugmentedPenaltyBase.hpp"
 #include "LinearApproximation.hpp"
 #include "QuadraticApproximation.hpp"
 #include "Types.hpp"
-#include <tuple>
 
 /**
  * @file Penalty.hpp
@@ -49,17 +50,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @tparam XDim 状态维度。
  * @tparam UDim 输入维度。
  */
-template <typename Scalar, int XDim, int UDim> class Penalty final {
-public:
+template <typename Scalar, int XDim, int UDim>
+class Penalty final {
+ public:
   /** @brief 用增广惩罚基类指针构造。 */
-  Penalty(AugmentedPenaltyBase<Scalar> *penaltyPtr)
+  Penalty(AugmentedPenaltyBase<Scalar>* penaltyPtr)
       : penalty_ptr_(penaltyPtr) {};
 
   /** @brief 析构函数。 */
   ~Penalty() = default;
 
   /** @brief 禁止拷贝。 */
-  Penalty(const Penalty &other) = delete;
+  Penalty(const Penalty& other) = delete;
 
   /**
    * @brief 获取惩罚代价值 p(t, h, l)。
@@ -82,7 +84,7 @@ public:
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   getQuadraticApproximation(
       const Scalar t,
-      const ScalarFunctionLinearApproximation<Scalar, XDim, UDim> &h,
+      const ScalarFunctionLinearApproximation<Scalar, XDim, UDim>& h,
       const Scalar l) const {
     Scalar penaltyValue = 0.0;
     Scalar penaltyDerivative, penaltySecondDerivative;
@@ -119,7 +121,7 @@ public:
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   getQuadraticApproximation(
       Scalar t,
-      const ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> &h,
+      const ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& h,
       const Scalar l) const {
     Scalar penaltyValue = 0.0;
     Scalar penaltyDerivative, penaltySecondDerivative;
@@ -167,10 +169,9 @@ public:
     return penalty_ptr_->initializeMultiplier();
   }
 
-private:
-  std::tuple<Scalar, Scalar, Scalar>
-  getPenaltyValue1stDev2ndDev(const Scalar t, const Scalar h,
-                              const Scalar l) const {
+ private:
+  std::tuple<Scalar, Scalar, Scalar> getPenaltyValue1stDev2ndDev(
+      const Scalar t, const Scalar h, const Scalar l) const {
     Scalar penaltyValue = penalty_ptr_->getValue(t, l, h);
     Scalar penaltyDerivative = penalty_ptr_->getDerivative(t, l, h);
     Scalar penaltySecondDerivative = penalty_ptr_->getSecondDerivative(t, l, h);
@@ -178,5 +179,5 @@ private:
     return {penaltyValue, penaltyDerivative, penaltySecondDerivative};
   }
 
-  AugmentedPenaltyBase<Scalar> *penalty_ptr_;
+  AugmentedPenaltyBase<Scalar>* penalty_ptr_;
 };

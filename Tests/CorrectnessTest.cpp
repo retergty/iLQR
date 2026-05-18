@@ -27,9 +27,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include <gtest/gtest.h>
+
 #include <cstdlib>
 #include <ctime>
-#include <gtest/gtest.h>
 #include <iostream>
 
 #include "iLQR.hpp"
@@ -40,7 +41,7 @@ enum class Constraining { CONSTARINED, UNCONSTRAINED };
 class DDPCorrectness
     : public testing::TestWithParam<
           std::tuple<ocs2::search_strategy::Type, Constraining, NumThreads>> {
-protected:
+ protected:
   static constexpr size_t N = 50;
   static constexpr size_t STATE_DIM = 3;
   static constexpr size_t INPUT_DIM = 2;
@@ -142,18 +143,20 @@ protected:
 
   /** Modifies given trajectory to satisfy the constraints */
   ocs2::qp_solver::ContinuousTrajectory getFeasibleTrajectory(
-      const ocs2::VectorFunctionLinearApproximation &qpConstraints,
-      const ocs2::qp_solver::ContinuousTrajectory &trajectory) const {
-    const auto &A = qpConstraints.dfdx; // A w + b = 0,  A must be full row-rank
-                                        // such that (A A') is invertible
-    const auto &b =
-        qpConstraints.f; // b = [x0; e[0]; b[0]; ... e[N-1]; b[N-1]; e[N]]
+      const ocs2::VectorFunctionLinearApproximation& qpConstraints,
+      const ocs2::qp_solver::ContinuousTrajectory& trajectory) const {
+    const auto& A =
+        qpConstraints.dfdx;  // A w + b = 0,  A must be full row-rank
+                             // such that (A A') is invertible
+    const auto& b =
+        qpConstraints.f;  // b = [x0; e[0]; b[0]; ... e[N-1]; b[N-1]; e[N]]
 
     /* Find the trajectory correction w to satisfy the constraint by solving
      *   min  1/2 w' w
      *   s.t. A w + b = 0  */
-    const ocs2::vector_t w = -A.transpose() * (A * A.transpose()).inverse() *
-                             b; // w = [dx[0], du[0], dx[1],  du[1], ..., dx[N]]
+    const ocs2::vector_t w =
+        -A.transpose() * (A * A.transpose()).inverse() *
+        b;  // w = [dx[0], du[0], dx[1],  du[1], ..., dx[N]]
 
     // Make trajectory feasible
     auto feasibleTrajectory = trajectory;
@@ -163,13 +166,13 @@ protected:
       const auto nx = feasibleTrajectory.stateTrajectory[k].size();
       const auto nu = feasibleTrajectory.inputTrajectory[k].size();
       feasibleTrajectory.stateTrajectory[k] +=
-          w.segment(nextIndex, nx); // dx[k]
+          w.segment(nextIndex, nx);  // dx[k]
       feasibleTrajectory.inputTrajectory[k] +=
-          w.segment(nextIndex + nx, nu); // du[k]
+          w.segment(nextIndex + nx, nu);  // du[k]
       nextIndex += nx + nu;
     }
     feasibleTrajectory.stateTrajectory[N] += w.segment(
-        nextIndex, feasibleTrajectory.stateTrajectory[N].size()); // dx[N]
+        nextIndex, feasibleTrajectory.stateTrajectory[N].size());  // dx[N]
 
     return feasibleTrajectory;
   }
@@ -202,16 +205,16 @@ protected:
     ddpSettings.nThreads_ = numThreads;
     ddpSettings.maxNumIterations_ =
         2 + (numThreads -
-             1); // need an extra iteration for each added time partition
+             1);  // need an extra iteration for each added time partition
     ddpSettings.strategy_ = strategy;
     ddpSettings.lineSearch_.minStepLength = 1e-4;
     return ddpSettings;
   }
 
-  ocs2::scalar_t
-  getQpCost(const ocs2::qp_solver::ContinuousTrajectory &qpSolution) const {
-    auto costFunc = [this](ocs2::scalar_t t, const ocs2::vector_t &x,
-                           const ocs2::vector_t &u) {
+  ocs2::scalar_t getQpCost(
+      const ocs2::qp_solver::ContinuousTrajectory& qpSolution) const {
+    auto costFunc = [this](ocs2::scalar_t t, const ocs2::vector_t& x,
+                           const ocs2::vector_t& u) {
       return problemPtr->costPtr->getValue(t, x, u, targetTrajectories,
                                            ocs2::PreComputation());
     };
@@ -227,7 +230,7 @@ protected:
                         ocs2::PreComputation());
   }
 
-  std::string getTestName(const ocs2::ddp::Settings &ddpSettings) const {
+  std::string getTestName(const ocs2::ddp::Settings& ddpSettings) const {
     std::string testName;
     testName += "Correctness Test { ";
     testName +=
@@ -240,9 +243,9 @@ protected:
     return testName;
   }
 
-  void correctnessTest(const ocs2::ddp::Settings &ddpSettings,
-                       const ocs2::PerformanceIndex &performanceIndex,
-                       const ocs2::PrimalSolution &ddpSolution) const {
+  void correctnessTest(const ocs2::ddp::Settings& ddpSettings,
+                       const ocs2::PerformanceIndex& performanceIndex,
+                       const ocs2::PrimalSolution& ddpSolution) const {
     const auto testName = getTestName(ddpSettings);
     EXPECT_NEAR(performanceIndex.cost, qpCost, 10.0 * minRelCost)
         << "MESSAGE: " << testName << ": failed in the optimal cost test!";
@@ -259,7 +262,7 @@ protected:
   }
 
   ocs2::scalar_t relError(ocs2::vector_t ddpSol,
-                          const ocs2::vector_t &qpSol) const {
+                          const ocs2::vector_t& qpSol) const {
     return (ddpSol - qpSol).norm() / ddpSol.norm();
   }
 
@@ -327,8 +330,8 @@ TEST_P(DDPCorrectness, TestILQR) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /* Test name printed in gtest results */
-std::string
-testName(const testing::TestParamInfo<DDPCorrectness::ParamType> &info) {
+std::string testName(
+    const testing::TestParamInfo<DDPCorrectness::ParamType>& info) {
   std::string name;
   name += ocs2::search_strategy::toString(std::get<0>(info.param)) + "__";
   name += std::get<1>(info.param) == Constraining::CONSTARINED

@@ -34,8 +34,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #pragma once
 
-#include "AugmentedPenaltyBase.hpp"
 #include <math.h>
+
+#include "AugmentedPenaltyBase.hpp"
 
 /**
  * @brief 单不等式约束的修正松弛障碍惩罚实现：乘子更新
@@ -45,7 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 template <typename Scalar>
 class ModifiedRelaxedBarrierPenalty final
     : public AugmentedPenaltyBase<Scalar> {
-public:
+ public:
   /**
    * Configuration object for the modified relaxed barrier penalty.
    * scale: scaling factor, see class description
@@ -56,7 +57,8 @@ public:
     Config() : Config(10.0, 0.0, 1.0) {}
     Config(const Scalar scaleParam, const Scalar relaxationParam,
            const Scalar stepSizeParam)
-        : scale(scaleParam), relaxation(relaxationParam),
+        : scale(scaleParam),
+          relaxation(relaxationParam),
           stepSize(stepSizeParam) {}
     Scalar scale;
     Scalar relaxation;
@@ -64,7 +66,7 @@ public:
   };
 
   /** Constructor */
-  explicit ModifiedRelaxedBarrierPenalty(const Config &config)
+  explicit ModifiedRelaxedBarrierPenalty(const Config& config)
       : config_(config), quadCoeff_(config) {}
 
   ~ModifiedRelaxedBarrierPenalty() override = default;
@@ -126,8 +128,8 @@ public:
 
   Scalar initializeMultiplier() const override { return 1.0; }
 
-private:
-  ModifiedRelaxedBarrierPenalty(const ModifiedRelaxedBarrierPenalty &other) =
+ private:
+  ModifiedRelaxedBarrierPenalty(const ModifiedRelaxedBarrierPenalty& other) =
       default;
 
   Scalar wFunc(const Scalar l) const { return l * l / config_.scale; }
@@ -137,7 +139,7 @@ private:
   }
 
   struct QuadCoeff {
-    QuadCoeff(const Config &config) {
+    QuadCoeff(const Config& config) {
       c2 = 1.0 / std::pow(1.0 + config.relaxation, 2);
       c1 = -1.0 / (1.0 + config.relaxation);
       c0 = -log(1.0 + config.relaxation);

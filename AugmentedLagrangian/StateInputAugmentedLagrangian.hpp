@@ -52,21 +52,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 template <typename Scalar, int XDim, int UDim>
 class StateInputAugmentedLagrangian final
     : public StateInputAugmentedLagrangianInterface<Scalar, XDim, UDim> {
-public:
+ public:
   /**
    * @brief 用约束指针与惩罚指针构造。
    * @param [in] constraintPtr 作为软约束的状态-输入约束。
    * @param [in] augmented_penalty 约束上的惩罚函数。
    */
   StateInputAugmentedLagrangian(
-      StateInputConstraint<Scalar, XDim, UDim> *constraintPtr,
-      AugmentedPenaltyBase<Scalar> *augmented_penalty)
+      StateInputConstraint<Scalar, XDim, UDim>* constraintPtr,
+      AugmentedPenaltyBase<Scalar>* augmented_penalty)
       : constraint_ptr_(constraintPtr), penalty_(augmented_penalty) {};
 
-  LagrangianMetrics<Scalar>
-  getValue(const Scalar time, const Vector<Scalar, XDim> &state,
-           const Vector<Scalar, UDim> &input,
-           const Multiplier<Scalar> &multiplier) const override {
+  LagrangianMetrics<Scalar> getValue(
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input,
+      const Multiplier<Scalar>& multiplier) const override {
     const Scalar h = constraint_ptr_->getValue(time, state, input);
     const Scalar p =
         multiplier.penalty * penalty_.getValue(time, h, multiplier.lagrangian);
@@ -75,31 +75,32 @@ public:
 
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   getQuadraticApproximation(
-      const Scalar time, const Vector<Scalar, XDim> &state,
-      const Vector<Scalar, UDim> &input,
-      const Multiplier<Scalar> &multiplier) const override {
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input,
+      const Multiplier<Scalar>& multiplier) const override {
     switch (constraint_ptr_->getOrder()) {
-    case ConstraintOrder::Linear:
-      return multiplier.penalty *
-             penalty_.getQuadraticApproximation(
-                 time,
-                 constraint_ptr_->getLinearApproximation(time, state, input),
-                 multiplier.lagrangian);
-    case ConstraintOrder::Quadratic:
-      return multiplier.penalty *
-             penalty_.getQuadraticApproximation(
-                 time,
-                 constraint_ptr_->getQuadraticApproximation(time, state, input),
-                 multiplier.lagrangian);
-    default:
-      return ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>();
+      case ConstraintOrder::Linear:
+        return multiplier.penalty *
+               penalty_.getQuadraticApproximation(
+                   time,
+                   constraint_ptr_->getLinearApproximation(time, state, input),
+                   multiplier.lagrangian);
+      case ConstraintOrder::Quadratic:
+        return multiplier.penalty *
+               penalty_.getQuadraticApproximation(
+                   time,
+                   constraint_ptr_->getQuadraticApproximation(time, state,
+                                                              input),
+                   multiplier.lagrangian);
+      default:
+        return ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>();
     }
   }
 
-  std::pair<Multiplier<Scalar>, Scalar>
-  updateLagrangian(const Scalar time, const Vector<Scalar, XDim> &state,
-                   const Vector<Scalar, UDim> &input, const Scalar constraint,
-                   const Multiplier<Scalar> &multiplier) const override {
+  std::pair<Multiplier<Scalar>, Scalar> updateLagrangian(
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input, const Scalar constraint,
+      const Multiplier<Scalar>& multiplier) const override {
     (void)input;
     (void)state;
 
@@ -117,7 +118,7 @@ public:
     return {1.0, penalty_.initializeMultipliers()};
   }
 
-private:
-  StateInputConstraint<Scalar, XDim, UDim> *constraint_ptr_;
+ private:
+  StateInputConstraint<Scalar, XDim, UDim>* constraint_ptr_;
   Penalty<Scalar, XDim, UDim> penalty_;
 };

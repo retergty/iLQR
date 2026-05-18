@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 template <typename Scalar>
 class SlacknessSquaredHingePenalty final : public AugmentedPenaltyBase<Scalar> {
-public:
+ public:
   /**
    * Configuration object for the squared hinge penalty.
    * @param [in] scale : scaling factor. In the class description, it is
@@ -60,7 +60,7 @@ public:
   };
 
   /** Constructor */
-  SlacknessSquaredHingePenalty(const Config &config) : config_(config) {}
+  SlacknessSquaredHingePenalty(const Config& config) : config_(config) {}
 
   ~SlacknessSquaredHingePenalty() override = default;
 
@@ -89,8 +89,8 @@ public:
   }
   Scalar initializeMultiplier() const override { return 0.0; }
 
-private:
-  SlacknessSquaredHingePenalty(const SlacknessSquaredHingePenalty &other) =
+ private:
+  SlacknessSquaredHingePenalty(const SlacknessSquaredHingePenalty& other) =
       default;
 
   const Config config_;

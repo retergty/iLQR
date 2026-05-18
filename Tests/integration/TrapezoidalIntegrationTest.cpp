@@ -2,9 +2,9 @@
  * @file TrapezoidalIntegrationTest.cpp
  * @brief 梯形积分测试：验证标量轨迹积分在简单几何曲线上的结果。
  */
-#include <array>
-
 #include <gtest/gtest.h>
+
+#include <array>
 
 #include "TrapezoidalIntegration.hpp"
 
@@ -45,7 +45,7 @@ TEST(TrapezoidalIntegrationTest, RightTriangle) {
   EXPECT_NEAR(area, width * height / 2.0, 1e-12);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -87,9 +87,9 @@ getRandomDynamics() {
 }
 
 template <typename Scalar, int XDim, int UDim>
-std::unique_ptr<LinearSystemDynamics<Scalar, XDim, UDim>>
-getOcs2Dynamics(const VectorFunctionLinearApproximation<Scalar, XDim, XDim,
-                                                        UDim> &dynamics) {
+std::unique_ptr<LinearSystemDynamics<Scalar, XDim, UDim>> getOcs2Dynamics(
+    const VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>&
+        dynamics) {
   return std::make_unique<LinearSystemDynamics<Scalar, XDim, UDim>>(
       dynamics.dfdx, dynamics.dfdu);
 }
@@ -108,4 +108,4 @@ getRandomTrajectory(Scalar dt) {
   return trajectory;
 }
 
-} // namespace test_tools
+}  // namespace test_tools

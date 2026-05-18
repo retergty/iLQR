@@ -64,14 +64,14 @@ makeZeroDynamics() {
 
 template <typename Scalar, int XDim, int UDim>
 typename LinearQuadraticStage<Scalar, XDim, UDim>::DynamicsApproximation_t
-approximateDynamics(const ModelData<Scalar, XDim, UDim> &modelData,
+approximateDynamics(const ModelData<Scalar, XDim, UDim>& modelData,
                     TrajectoryRef<Scalar, XDim, UDim> start, Scalar dt) {
   // Forward Euler discretization
   // x[k+1] = x[k] + dt * dxdt[k]
   // x[k+1] = (x0[k] + dx[k]) + dt * dxdt[k]
   // x[k+1] = (x0[k] + dx[k]) + dt * (A_c dx[k] + B_c du[k] + b_c)
   // x[k+1] = (I + A_c * dt) dx[k] + (B_c * dt) du[k] + (b_c * dt + x0[k])
-  const auto &continuousDynamics = modelData.dynamics;
+  const auto& continuousDynamics = modelData.dynamics;
   typename LinearQuadraticStage<Scalar, XDim, UDim>::DynamicsApproximation_t
       discreteDynamics;
   discreteDynamics.dfdx = continuousDynamics.dfdx * dt;
@@ -95,15 +95,14 @@ LinearQuadraticStage<Scalar, XDim, UDim> approximateStage(
         StateIneqLagrangianConstrainNumbers,
         StateInputIneqLagrangianConstrainNumbers,
         FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers> &optimalControlProblem,
+        FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
     TrajectoryRef<Scalar, XDim, UDim> start,
     StateTrajectoryRef<Scalar, XDim> end,
     const MultiplierCollection<Scalar, StateEqLagrangianConstrainNumbers,
                                StateIneqLagrangianConstrainNumbers,
                                StateInputEqLagrangianConstrainNumbers,
-                               StateInputIneqLagrangianConstrainNumbers>
-        &multipliers) {
-
+                               StateInputIneqLagrangianConstrainNumbers>&
+        multipliers) {
   using Approximator_t = LinearQuadraticApproximator<
       Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
       StateIneqLagrangianConstrainNumbers,
@@ -151,22 +150,22 @@ getLinearQuadraticApproximation(
         StateIneqLagrangianConstrainNumbers,
         StateInputIneqLagrangianConstrainNumbers,
         FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers> &optimalControlProblem,
-    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
-        &nominalTrajectory,
+        FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
+    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>&
+        nominalTrajectory,
     const std::array<
         MultiplierCollection<Scalar, StateEqLagrangianConstrainNumbers,
                              StateIneqLagrangianConstrainNumbers,
                              StateInputEqLagrangianConstrainNumbers,
                              StateInputIneqLagrangianConstrainNumbers>,
-        PredictLength> &intermediateMultipliers,
+        PredictLength>& intermediateMultipliers,
     const MultiplierCollection<Scalar, FinalStateEqLagrangianConstrainNumbers,
                                FinalStateIneqFinalLagrangianConstrainNumbers, 0,
-                               0> &finalMultipliers) {
-
+                               0>& finalMultipliers) {
   if (optimalControlProblem.dynamicsPtr == nullptr) {
-    throw std::runtime_error("[qp_solver::getLinearQuadraticApproximation] "
-                             "dynamicsPtr should not be null.");
+    throw std::runtime_error(
+        "[qp_solver::getLinearQuadraticApproximation] "
+        "dynamicsPtr should not be null.");
   }
 
   using Approximator_t = LinearQuadraticApproximator<
@@ -177,16 +176,16 @@ getLinearQuadraticApproximation(
       FinalStateEqLagrangianConstrainNumbers,
       FinalStateIneqFinalLagrangianConstrainNumbers>;
 
-  const auto &t = nominalTrajectory.timeTrajectory;
-  const auto &x = nominalTrajectory.stateTrajectory;
-  const auto &u = nominalTrajectory.inputTrajectory;
+  const auto& t = nominalTrajectory.timeTrajectory;
+  const auto& x = nominalTrajectory.stateTrajectory;
+  const auto& u = nominalTrajectory.inputTrajectory;
   constexpr size_t N = PredictLength;
 
   // LinearQuadraticProblem with N+1 elements. Terminal stage lqp[N].dynamics is
   // ignored.
   std::vector<LinearQuadraticStage<Scalar, XDim, UDim>> lqp;
   lqp.reserve(N + 1);
-  for (size_t k = 0; k < N; ++k) { // Intermediate stages
+  for (size_t k = 0; k < N; ++k) {  // Intermediate stages
     lqp.emplace_back(approximateStage(optimalControlProblem, {t[k], x[k], u[k]},
                                       {t[k + 1], x[k + 1]},
                                       intermediateMultipliers[k]));
@@ -216,10 +215,9 @@ getLinearQuadraticApproximation(
         StateIneqLagrangianConstrainNumbers,
         StateInputIneqLagrangianConstrainNumbers,
         FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers> &optimalControlProblem,
-    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
-        &nominalTrajectory) {
-
+        FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
+    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>&
+        nominalTrajectory) {
   std::array<MultiplierCollection<Scalar, StateEqLagrangianConstrainNumbers,
                                   StateIneqLagrangianConstrainNumbers,
                                   StateInputEqLagrangianConstrainNumbers,
@@ -234,4 +232,4 @@ getLinearQuadraticApproximation(
       finalMultipliers);
 }
 
-} // namespace qp_solver
+}  // namespace qp_solver

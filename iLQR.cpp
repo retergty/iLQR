@@ -1,4 +1,5 @@
 #include "iLQR.hpp"
+
 #include <iostream>
 
 int main() {

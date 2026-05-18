@@ -3,11 +3,13 @@
  * @brief 有限差分数值求导工具：用于计算向量函数对状态或输入的 Jacobian。
  */
 #pragma once
-#include "ControlledSystemBase.hpp"
-#include "Types.hpp"
+#include <math.h>
+
 #include <algorithm>
 #include <functional>
-#include <math.h>
+
+#include "ControlledSystemBase.hpp"
+#include "Types.hpp"
 
 /**
  * @brief 用有限差分计算向量函数对变量的 Jacobian。
@@ -27,10 +29,9 @@
  */
 template <typename Scalar, int StateDimisions, int VarDimisions,
           typename Function>
-Matrix<Scalar, StateDimisions, VarDimisions>
-finiteDifferenceDerivative(const Function &f,
-                           const Vector<Scalar, VarDimisions> &x0, Scalar eps,
-                           bool doubleSidedDerivative) {
+Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(
+    const Function& f, const Vector<Scalar, VarDimisions>& x0, Scalar eps,
+    bool doubleSidedDerivative) {
   const Vector<Scalar, StateDimisions> f0 = f(x0);
   Matrix<Scalar, StateDimisions, VarDimisions> jacobian;
 
@@ -74,10 +75,10 @@ finiteDifferenceDerivative(const Function &f,
  */
 template <typename Scalar, int XDim, int UDim>
 Matrix<Scalar, XDim, XDim> finiteDifferenceDerivativeState(
-    ControlledSystemBase<Scalar, XDim, UDim> &system, Scalar t,
-    const Vector<Scalar, XDim> &x, const Vector<Scalar, UDim> &u, Scalar eps,
+    ControlledSystemBase<Scalar, XDim, UDim>& system, Scalar t,
+    const Vector<Scalar, XDim>& x, const Vector<Scalar, UDim>& u, Scalar eps,
     bool doubleSidedDerivative, bool isSecondOrderSystem) {
-  auto f = [&](const Vector<Scalar, XDim> &var) -> Vector<Scalar, XDim> {
+  auto f = [&](const Vector<Scalar, XDim>& var) -> Vector<Scalar, XDim> {
     return system.computeFlowMap(t, var, u);
   };
 
@@ -112,10 +113,10 @@ Matrix<Scalar, XDim, XDim> finiteDifferenceDerivativeState(
  */
 template <typename Scalar, int XDim, int UDim>
 Matrix<Scalar, XDim, UDim> finiteDifferenceDerivativeInput(
-    ControlledSystemBase<Scalar, XDim, UDim> &system, Scalar t,
-    const Vector<Scalar, XDim> &x, const Vector<Scalar, UDim> &u, Scalar eps,
+    ControlledSystemBase<Scalar, XDim, UDim>& system, Scalar t,
+    const Vector<Scalar, XDim>& x, const Vector<Scalar, UDim>& u, Scalar eps,
     bool doubleSidedDerivative, bool isSecondOrderSystem) {
-  auto f = [&](const Vector<Scalar, UDim> &var) -> Vector<Scalar, XDim> {
+  auto f = [&](const Vector<Scalar, UDim>& var) -> Vector<Scalar, XDim> {
     return system.computeFlowMap(t, x, var);
   };
 

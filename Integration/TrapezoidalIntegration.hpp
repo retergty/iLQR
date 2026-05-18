@@ -46,8 +46,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 template <typename Scalar, typename VALUE, size_t TimeArrayLen,
           size_t ValueArrayLen>
 VALUE trapezoidalIntegration(
-    const std::array<Scalar, TimeArrayLen> &timeTrajectory,
-    const std::array<VALUE, ValueArrayLen> &valueTrajectory,
+    const std::array<Scalar, TimeArrayLen>& timeTrajectory,
+    const std::array<VALUE, ValueArrayLen>& valueTrajectory,
     VALUE initialValue) {
   constexpr size_t ArrayLen = std::min(TimeArrayLen, ValueArrayLen);
 
@@ -59,7 +59,7 @@ VALUE trapezoidalIntegration(
     VALUE temp = valueTrajectory[k - 1] + valueTrajectory[k];
     temp *= (0.5 * (timeTrajectory[k] - timeTrajectory[k - 1]));
     initialValue += temp;
-  } // end of k loop
+  }  // end of k loop
 
   return initialValue;
 }

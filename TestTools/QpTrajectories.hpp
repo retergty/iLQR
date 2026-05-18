@@ -50,9 +50,9 @@ struct ContinuousTrajectory {
 
 /** Adds state and inputs of two trajectories, time is not added. */
 template <typename Scalar, int XDim, int UDim, size_t PredictLength>
-ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
-operator+(const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> &lhs,
-          const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> &rhs) {
+ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> operator+(
+    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>& lhs,
+    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>& rhs) {
   // Copy lhs into sum
   ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> sum(lhs);
 
@@ -69,25 +69,27 @@ operator+(const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> &lhs,
 
 /** Reference to a point along a trajectory. Does not own the state-input data.
  */
-template <typename Scalar, int XDim, int UDim> struct TrajectoryRef {
+template <typename Scalar, int XDim, int UDim>
+struct TrajectoryRef {
   using StateVector_t = Vector<Scalar, XDim>;
   using InputVector_t = Vector<Scalar, UDim>;
   /** time */
   Scalar t;
   /** state */
-  const StateVector_t &x;
+  const StateVector_t& x;
   /** input */
-  const InputVector_t &u;
+  const InputVector_t& u;
 };
 
 /** Reference to the state at a point along a trajectory. Does not own the state
  * data. */
-template <typename Scalar, int XDim> struct StateTrajectoryRef {
+template <typename Scalar, int XDim>
+struct StateTrajectoryRef {
   using StateVector_t = Vector<Scalar, XDim>;
   /** time */
   Scalar t;
   /** state */
-  const StateVector_t &x;
+  const StateVector_t& x;
 };
 
-} // namespace qp_solver
+}  // namespace qp_solver

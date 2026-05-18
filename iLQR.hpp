@@ -51,7 +51,7 @@ template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateInputEqConstrains = 0, int StateInputIneqConstrains = 0,
           int FinalStateEqConstrains = 0, int FinalStateIneqConstrains = 0>
 class iLQR {
-public:
+ public:
   using OptimalControlProblem_t =
       OptimalControlProblem<Scalar, XDim, UDim, PredictLength,
                             StateEqConstrains, StateIneqConstrains,
@@ -170,9 +170,10 @@ public:
    * nullptr。
    * @param [in] initializer 轨迹初始化器，用于填补无控制器的时间段。
    */
-  iLQR(const DDPSettings<Scalar> &ddp_setting, SystemDynamicsBase_t *systemPtr,
-       Initializer_t *initializer)
-      : ddpSettings_(ddp_setting), rollout_(systemPtr, ddpSettings_.timeStep_),
+  iLQR(const DDPSettings<Scalar>& ddp_setting, SystemDynamicsBase_t* systemPtr,
+       Initializer_t* initializer)
+      : ddpSettings_(ddp_setting),
+        rollout_(systemPtr, ddpSettings_.timeStep_),
         initializerRollout_(*initializer, ddpSettings_.timeStep_),
         lineSearchStrategy_(*this) {
     optimalControlProblem_.dynamicsPtr = systemPtr;
@@ -188,7 +189,7 @@ public:
    * @param [in] initTime 初始时间。
    * @param [in] initState 初始状态。
    */
-  void run(Scalar initTime, const StateVector_t &initState) {
+  void run(Scalar initTime, const StateVector_t& initState) {
     // initialize parameters
     initTime_ = initTime;
     initState_ = initState;
@@ -199,8 +200,8 @@ public:
     // optimized --> nominal: initializes the nominal primal and dual solutions
     // based on the optimized ones
     bool initialSolutionExists =
-        initializePrimalSolution(); // true if the rollout is not purely from
-                                    // the Initializer
+        initializePrimalSolution();  // true if the rollout is not purely from
+                                     // the Initializer
     initializeDualSolutionAndMetrics();
 
     performanceIndexLast_ = performanceIndex_;
@@ -250,7 +251,7 @@ public:
         optimizedPrimalSolution_.swap(nominalPrimalData_.primalSolution);
         optimizedProblemMetrics_.swap(nominalPrimalData_.problemMetrics);
       }
-    } // end of while loop
+    }  // end of while loop
   }
 
   /**
@@ -259,19 +260,19 @@ public:
    * @param [in] stateTrajectory 参考状态轨迹。
    * @param [in] inputTrajectory 参考输入轨迹。
    */
-  void setDesireTrajectory(const TimeTrajectory_t &timeTrajectory,
-                           const StateTrajectory_t &stateTrajectory,
-                           const InputTrajectory_t &inputTrajectory) {
+  void setDesireTrajectory(const TimeTrajectory_t& timeTrajectory,
+                           const StateTrajectory_t& stateTrajectory,
+                           const InputTrajectory_t& inputTrajectory) {
     optimalControlProblem_.timeTrajectory = timeTrajectory;
     optimalControlProblem_.stateTrajectory = stateTrajectory;
     optimalControlProblem_.inputTrajectory = inputTrajectory;
   }
 
-  const PrimalSolution_t &primalSolution() const {
+  const PrimalSolution_t& primalSolution() const {
     return optimizedPrimalSolution_;
   }
 
-private:
+ private:
   /** Initializes the nominal primal based on the optimized ones.
    * @return True if the rollout is not purely from the Initializer.
    */
@@ -301,8 +302,8 @@ private:
    * @param [out] outputPrimalSolution 得到的原始解（轨迹与控制器）。
    * @return 被覆盖的步数。
    */
-  int rolloutInitialController(PrimalSolution_t &inputPrimalSolution,
-                               PrimalSolution_t &outputPrimalSolution) {
+  int rolloutInitialController(PrimalSolution_t& inputPrimalSolution,
+                               PrimalSolution_t& outputPrimalSolution) {
     // Ensure that finalTime is included by adding a fraction of dt such that: N
     // * dt <= finalTime < (N + 1) * dt.
     Scalar finalTimeLocal = std::min(lastFinalTime_, finalTime_) +
@@ -323,17 +324,17 @@ private:
    * smaller than the current solver finalTime_, it will concatenate it with the
    * result of Initializer.
    */
-  void rolloutInitializer(PrimalSolution_t &primalSolution, int numSteps) {
-    RolloutTrajectoryPointer_t rolloutTrajectortPtr(
+  void rolloutInitializer(PrimalSolution_t& primalSolution, int numSteps) {
+    RolloutTrajectoryPointer_t rolloutTrajectoryPtr(
         primalSolution.timeTrajectory_.data() + numSteps,
         primalSolution.stateTrajectory_.data() + numSteps,
         primalSolution.inputTrajectory_.data() + numSteps,
         PredictLength - numSteps + 1);
-    Scalar initTime = lastFinalTime_;
-    const StateVector_t &initState = primalSolution.stateTrajectory_[numSteps];
+    const Scalar initTime = lastFinalTime_;
+    const StateVector_t& initState = primalSolution.stateTrajectory_[numSteps];
 
     initializerRollout_.run(initTime, initState, finalTime_, nullptr,
-                            rolloutTrajectortPtr);
+                            rolloutTrajectoryPtr);
   }
 
   /**
@@ -376,12 +377,12 @@ private:
      * compute the Heuristics function at the final time. Also call shiftHessian
      * on the Heuristics 2nd order derivative.
      */
-    ModelData_t &modelData = nominalPrimalData_.modelDataFinalTime;
-    const Scalar &time =
+    ModelData_t& modelData = nominalPrimalData_.modelDataFinalTime;
+    const Scalar& time =
         nominalPrimalData_.primalSolution.timeTrajectory_.back();
-    const StateVector_t &state =
+    const StateVector_t& state =
         nominalPrimalData_.primalSolution.stateTrajectory_.back();
-    const FinalMultiplierCollection_t &multiplier =
+    const FinalMultiplierCollection_t& multiplier =
         nominalDualData_.dualSolution.final;
     modelData = approximator_.approximateFinalLQ(optimalControlProblem_, time,
                                                  state, multiplier);
@@ -400,18 +401,18 @@ private:
    * @param [in] dualSolution 对偶解。
    * @param [in,out] primalData 原始数据（读轨迹，写 modelDataTrajectory）。
    */
-  void approximateIntermediateLQ(const DualSolution_t &dualSolution,
-                                 PrimalDataContainer_t &primalData) {
+  void approximateIntermediateLQ(const DualSolution_t& dualSolution,
+                                 PrimalDataContainer_t& primalData) {
     // create alias
-    const TimeTrajectory_t &timeTrajectory =
+    const TimeTrajectory_t& timeTrajectory =
         primalData.primalSolution.timeTrajectory_;
-    const StateTrajectory_t &stateTrajectory =
+    const StateTrajectory_t& stateTrajectory =
         primalData.primalSolution.stateTrajectory_;
-    const InputTrajectory_t &inputTrajectory =
+    const InputTrajectory_t& inputTrajectory =
         primalData.primalSolution.inputTrajectory_;
-    const IntermediateMultiplierTrajectory_t &multiplierTrajectory =
+    const IntermediateMultiplierTrajectory_t& multiplierTrajectory =
         dualSolution.intermediates;
-    ModelDataTrajectory_t &modelDataTrajectory = primalData.modelDataTrajectory;
+    ModelDataTrajectory_t& modelDataTrajectory = primalData.modelDataTrajectory;
 
     for (size_t timeIndex = 0; timeIndex < PredictLength; ++timeIndex) {
       // approximate continuous LQ for the given time index
@@ -460,17 +461,17 @@ private:
    * @param [in] continuousTimeModelData 连续时间 LQ 模型数据。
    * @param [out] modelData 离散化后的模型数据。
    */
-  void discreteLQWorker(SystemDynamicsBase<Scalar, XDim, UDim> &system,
-                        Scalar time, const StateVector_t &state,
-                        const InputVector_t &input, Scalar timeStep,
-                        const ModelData_t &continuousTimeModelData,
-                        ModelData_t &modelData) {
+  void discreteLQWorker(SystemDynamicsBase<Scalar, XDim, UDim>& system,
+                        Scalar time, const StateVector_t& state,
+                        const InputVector_t& input, Scalar timeStep,
+                        const ModelData_t& continuousTimeModelData,
+                        ModelData_t& modelData) {
     modelData.time = continuousTimeModelData.time;
 
     // linearize system dynamics
     modelData.dynamics = discretizer_.sensitivityDiscretize(system, time, state,
                                                             input, timeStep);
-    modelData.dynamics.f.setZero(); // why?
+    modelData.dynamics.f.setZero();  // why?
 
     // quadratic approximation to the cost function
     modelData.cost = continuousTimeModelData.cost * timeStep;
@@ -483,8 +484,8 @@ private:
    * @param [in] Sm 当前价值函数二阶导（Riccati 矩阵）。
    * @return 哈密顿量 Hessian 矩阵 Hm。
    */
-  HmMatrix_t computeHamiltonianHessian(const ModelData_t &modelData,
-                                       const SmMatrix_t &Sm) const {
+  HmMatrix_t computeHamiltonianHessian(const ModelData_t& modelData,
+                                       const SmMatrix_t& Sm) const {
     const Matrix<Scalar, UDim, XDim> BmTransSm =
         modelData.dynamics.dfdu.transpose() * Sm;
     HmMatrix_t Hm = modelData.cost.dfduu;
@@ -499,8 +500,8 @@ private:
    * @param [out] constraintNullProjector 输出投影矩阵（当前实现为 inv(Hm) 的
    * UUT 因子）。
    */
-  void computeProjections(const HmMatrix_t &Hm,
-                          HmMatrix_t &constraintNullProjector) const {
+  void computeProjections(const HmMatrix_t& Hm,
+                          HmMatrix_t& constraintNullProjector) const {
     // UUT decomposition of inv(Hm)
     HmMatrix_t HmInvUmUmT;
 
@@ -517,9 +518,9 @@ private:
    * @param [in] constraintNullProjector 投影矩阵 Pu（约束零空间）。
    * @param [out] projectedModelData 投影后的模型数据。
    */
-  void projectLQ(const ModelData_t &modelData,
-                 const HmMatrix_t &constraintNullProjector,
-                 ModelData_t &projectedModelData) const {
+  void projectLQ(const ModelData_t& modelData,
+                 const HmMatrix_t& constraintNullProjector,
+                 ModelData_t& projectedModelData) const {
     // dimensions and time
     projectedModelData.time = modelData.time;
 
@@ -549,9 +550,9 @@ private:
    * @param [out] riccatiModification Riccati 修正项。
    */
   void computeProjectionAndRiccatiModification(
-      const ModelData_t &modelData, const SmMatrix_t &Sm,
-      ModelData_t &projectedModelData,
-      RiccatiModification_t &riccatiModification) const {
+      const ModelData_t& modelData, const SmMatrix_t& Sm,
+      ModelData_t& projectedModelData,
+      RiccatiModification_t& riccatiModification) const {
     // compute the Hamiltonian's Hessian
     riccatiModification.time_ = modelData.time;
     riccatiModification.hamiltonianHessian_ =
@@ -578,14 +579,14 @@ private:
    * @return 平均时间步长（用于统计）。
    */
   Scalar solveSequentialRiccatiEquations(
-      const ValueFunctionQuadraticApproximation_t &finalValueFunction) {
-    const ModelData_t &finalModelData = nominalPrimalData_.modelDataFinalTime;
-    RiccatiModification_t &finalRiccatiModification =
+      const ValueFunctionQuadraticApproximation_t& finalValueFunction) {
+    const ModelData_t& finalModelData = nominalPrimalData_.modelDataFinalTime;
+    RiccatiModification_t& finalRiccatiModification =
         nominalDualData_.riccatiModificationTrajectory.back();
-    ModelData_t &finalProjectedModelData =
+    ModelData_t& finalProjectedModelData =
         nominalDualData_.projectedModelDataTrajectory.back();
-    LvVector_t &finalProjectedLvFinal = projectedLvTrajectoryStock_.back();
-    KmMatrix_t &finalProjectedKmFinal = projectedKmTrajectoryStock_.back();
+    LvVector_t& finalProjectedLvFinal = projectedLvTrajectoryStock_.back();
+    KmMatrix_t& finalProjectedKmFinal = projectedKmTrajectoryStock_.back();
 
     SmMatrix_t SmDummy;
     SmDummy.setZero();
@@ -617,7 +618,7 @@ private:
    * @return 平均时间步长。
    */
   Scalar solveSequentialRiccatiEquationsImpl(
-      const ValueFunctionQuadraticApproximation_t &finalValueFunction) {
+      const ValueFunctionQuadraticApproximation_t& finalValueFunction) {
     nominalDualData_.valueFunctionTrajectory.back() = finalValueFunction;
 
     riccatiEquationsWorker(finalValueFunction);
@@ -633,30 +634,30 @@ private:
    * @param [in] finalValueFunction 终端价值函数，用于反向递推的初值。
    */
   void riccatiEquationsWorker(
-      const ValueFunctionQuadraticApproximation_t &finalValueFunction) {
+      const ValueFunctionQuadraticApproximation_t& finalValueFunction) {
     /*
      * solving the Riccati equations
      */
-    const ValueFunctionQuadraticApproximation_t *valueFunctionNext =
+    const ValueFunctionQuadraticApproximation_t* valueFunctionNext =
         &finalValueFunction;
 
     int curIndex = PredictLength - 1;
     constexpr int stopIndex = 0;
     while (curIndex >= stopIndex) {
-      LvVector_t &curProjectedLv = projectedLvTrajectoryStock_[curIndex];
-      KmMatrix_t &curProjectedKm = projectedKmTrajectoryStock_[curIndex];
-      ModelData_t &curProjectedModelData =
+      LvVector_t& curProjectedLv = projectedLvTrajectoryStock_[curIndex];
+      KmMatrix_t& curProjectedKm = projectedKmTrajectoryStock_[curIndex];
+      ModelData_t& curProjectedModelData =
           nominalDualData_.projectedModelDataTrajectory[curIndex];
-      RiccatiModification_t &curRiccatiModification =
+      RiccatiModification_t& curRiccatiModification =
           nominalDualData_.riccatiModificationTrajectory[curIndex];
-      const ModelData_t &curModelData =
+      const ModelData_t& curModelData =
           nominalPrimalData_.modelDataTrajectory[curIndex];
 
-      SmMatrix_t &curSm =
+      SmMatrix_t& curSm =
           nominalDualData_.valueFunctionTrajectory[curIndex].dfdxx;
-      SvVector_t &curSv =
+      SvVector_t& curSv =
           nominalDualData_.valueFunctionTrajectory[curIndex].dfdx;
-      Scalar &curs = nominalDualData_.valueFunctionTrajectory[curIndex].f;
+      Scalar& curs = nominalDualData_.valueFunctionTrajectory[curIndex].f;
 
       computeProjectionAndRiccatiModification(
           curModelData, valueFunctionNext->dfdxx, curProjectedModelData,
@@ -670,7 +671,7 @@ private:
       valueFunctionNext = &(nominalDualData_.valueFunctionTrajectory[curIndex]);
 
       --curIndex;
-    } // while
+    }  // while
   }
 
   /**
@@ -712,15 +713,15 @@ private:
    * 写入对应索引）。
    */
   void calculateControllerWorker(size_t timeIndex,
-                                 const PrimalDataContainer_t &primalData,
-                                 const DualDataContainer_t &dualData,
-                                 LinearController_t &dstController) {
-    const StateVector_t &nominalState =
+                                 const PrimalDataContainer_t& primalData,
+                                 const DualDataContainer_t& dualData,
+                                 LinearController_t& dstController) {
+    const StateVector_t& nominalState =
         primalData.primalSolution.stateTrajectory_[timeIndex];
-    const InputVector_t &nominalInput =
+    const InputVector_t& nominalInput =
         primalData.primalSolution.inputTrajectory_[timeIndex];
 
-    const Matrix<Scalar, UDim, UDim> &Qu =
+    const Matrix<Scalar, UDim, UDim>& Qu =
         dualData.riccatiModificationTrajectory[timeIndex]
             .constraintNullProjector_;
 
@@ -772,9 +773,9 @@ private:
     }
   }
   ValueFunctionQuadraticApproximation_t getValueFunctionImpl(
-      const Scalar time, const StateVector_t &state,
-      const PrimalSolution_t &primalSolution,
-      const ValueFunctionTrajectory_t &valueFunctionTrajectory) const {
+      const Scalar time, const StateVector_t& state,
+      const PrimalSolution_t& primalSolution,
+      const ValueFunctionTrajectory_t& valueFunctionTrajectory) const {
     // result
     ValueFunctionQuadraticApproximation_t valueFunction;
     valueFunction.dfdu.setZero();
@@ -784,16 +785,16 @@ private:
         LinearInterpolation::timeSegment(time, primalSolution.timeTrajectory_);
     valueFunction.f = LinearInterpolation::interpolate(
         indexAlpha, valueFunctionTrajectory,
-        +[](const ValueFunctionTrajectory_t &trajectory,
-            size_t ind) -> const Scalar & { return trajectory[ind].f; });
+        +[](const ValueFunctionTrajectory_t& trajectory,
+            size_t ind) -> const Scalar& { return trajectory[ind].f; });
     valueFunction.dfdx = LinearInterpolation::interpolate(
         indexAlpha, valueFunctionTrajectory,
-        +[](const ValueFunctionTrajectory_t &trajectory, size_t ind)
-            -> const StateVector_t & { return trajectory[ind].dfdx; });
+        +[](const ValueFunctionTrajectory_t& trajectory, size_t ind)
+            -> const StateVector_t& { return trajectory[ind].dfdx; });
     valueFunction.dfdxx = LinearInterpolation::interpolate(
         indexAlpha, valueFunctionTrajectory,
-        +[](const ValueFunctionTrajectory_t &trajectory, size_t ind)
-            -> const SmMatrix_t & { return trajectory[ind].dfdxx; });
+        +[](const ValueFunctionTrajectory_t& trajectory,
+            size_t ind) -> const SmMatrix_t& { return trajectory[ind].dfdxx; });
 
     // Re-center around query state
     const StateVector_t xNominal = LinearInterpolation::interpolate(
@@ -801,15 +802,15 @@ private:
     const StateVector_t deltaX = state - xNominal;
     const StateVector_t SmDeltaX = valueFunction.dfdxx * deltaX;
     valueFunction.f += deltaX.dot(0.5 * SmDeltaX + valueFunction.dfdx);
-    valueFunction.dfdx += SmDeltaX; // Adapt dfdx after f!
+    valueFunction.dfdx += SmDeltaX;  // Adapt dfdx after f!
 
     return valueFunction;
   }
 
   ValueFunctionQuadraticApproximation_t getValueFunctionImpl(
-      size_t timeIndex, const StateVector_t &state,
-      const PrimalSolution_t &primalSolution,
-      const ValueFunctionTrajectory_t &valueFunctionTrajectory) const {
+      size_t timeIndex, const StateVector_t& state,
+      const PrimalSolution_t& primalSolution,
+      const ValueFunctionTrajectory_t& valueFunctionTrajectory) const {
     assert(timeIndex <= PredictLength);
 
     ValueFunctionQuadraticApproximation_t valueFunction =
@@ -822,33 +823,33 @@ private:
         state - primalSolution.stateTrajectory_[timeIndex];
     const StateVector_t SmDeltaX = valueFunction.dfdxx * deltaX;
     valueFunction.f += deltaX.dot(Scalar(0.5) * SmDeltaX + valueFunction.dfdx);
-    valueFunction.dfdx += SmDeltaX; // Adapt dfdx after f!
+    valueFunction.dfdx += SmDeltaX;  // Adapt dfdx after f!
 
     return valueFunction;
   }
 
-public:
-  ValueFunctionQuadraticApproximation_t
-  getValueFunction(const Scalar time, const StateVector_t &state) const {
+ public:
+  ValueFunctionQuadraticApproximation_t getValueFunction(
+      const Scalar time, const StateVector_t& state) const {
     return getValueFunctionImpl(time, state, nominalPrimalData_.primalSolution,
                                 nominalDualData_.valueFunctionTrajectory);
   }
 
-  ValueFunctionQuadraticApproximation_t
-  getValueFunction(size_t timeIndex, const StateVector_t &state) const {
+  ValueFunctionQuadraticApproximation_t getValueFunction(
+      size_t timeIndex, const StateVector_t& state) const {
     return getValueFunctionImpl(timeIndex, state,
                                 nominalPrimalData_.primalSolution,
                                 nominalDualData_.valueFunctionTrajectory);
   }
 
-  ValueFunctionQuadraticApproximation_t
-  getQFunction(size_t timeIndex, const StateVector_t &state,
-               const InputVector_t &input) const {
+  ValueFunctionQuadraticApproximation_t getQFunction(
+      size_t timeIndex, const StateVector_t& state,
+      const InputVector_t& input) const {
     assert(timeIndex < PredictLength);
 
-    const ModelData_t &modelData =
+    const ModelData_t& modelData =
         nominalPrimalData_.modelDataTrajectory[timeIndex];
-    const ValueFunctionQuadraticApproximation_t &nextValueFunction =
+    const ValueFunctionQuadraticApproximation_t& nextValueFunction =
         nominalDualData_.valueFunctionTrajectory[timeIndex + 1];
 
     ValueFunctionQuadraticApproximation_t qFunction = modelData.cost;
@@ -892,8 +893,8 @@ public:
    * @param [in] performanceIndex 性能指标（含 cost、等式/不等式拉格朗日等）。
    * @return 用于线搜索与收敛判据的 merit 值。
    */
-  static Scalar
-  calculateRolloutMerit(const PerformanceIndex_t &performanceIndex) {
+  static Scalar calculateRolloutMerit(
+      const PerformanceIndex_t& performanceIndex) {
     // cost
     Scalar merit = performanceIndex.cost;
     // state/state-input equality Lagrangian
@@ -913,13 +914,13 @@ public:
    * @param [in] dualSolution 对偶解。
    * @param [out] problemMetrics 各时刻代价、软约束与约束值。
    */
-  static void computeRolloutMetrics(OptimalControlProblem_t &problem,
-                                    const PrimalSolution_t &primalSolution,
-                                    DualSolution_t &dualSolution,
-                                    ProblemMetrics_t &problemMetrics) {
-    const TimeTrajectory_t &tTrajectory = primalSolution.timeTrajectory_;
-    const StateTrajectory_t &xTrajectory = primalSolution.stateTrajectory_;
-    const InputTrajectory_t &uTrajectory = primalSolution.inputTrajectory_;
+  static void computeRolloutMetrics(OptimalControlProblem_t& problem,
+                                    const PrimalSolution_t& primalSolution,
+                                    DualSolution_t& dualSolution,
+                                    ProblemMetrics_t& problemMetrics) {
+    const TimeTrajectory_t& tTrajectory = primalSolution.timeTrajectory_;
+    const StateTrajectory_t& xTrajectory = primalSolution.stateTrajectory_;
+    const InputTrajectory_t& uTrajectory = primalSolution.inputTrajectory_;
 
     for (size_t k = 0; k < PredictLength; k++) {
       // intermediate time cost and constraints
@@ -947,10 +948,10 @@ public:
    * controller 供 rollout 使用。
    * @return 平均时间步长。
    */
-  static Scalar rolloutTrajectory(RolloutBase_t &rollout, Scalar initTime,
-                                  const StateVector_t &initState,
+  static Scalar rolloutTrajectory(RolloutBase_t& rollout, Scalar initTime,
+                                  const StateVector_t& initState,
                                   Scalar finalTime,
-                                  PrimalSolution_t &primalSolution) {
+                                  PrimalSolution_t& primalSolution) {
     RolloutTrajectoryPointer_t rolloutTrajectortPtr(
         primalSolution.timeTrajectory_.data(),
         primalSolution.stateTrajectory_.data(),
@@ -968,9 +969,9 @@ public:
    * @param [in] problemMetrics 各时刻代价与约束指标。
    * @return 整条轨迹的 PerformanceIndex（梯形积分汇总）。
    */
-  static PerformanceIndex_t
-  computeRolloutPerformanceIndex(const TimeTrajectory_t &timeTrajectory,
-                                 const ProblemMetrics_t &problemMetrics) {
+  static PerformanceIndex_t computeRolloutPerformanceIndex(
+      const TimeTrajectory_t& timeTrajectory,
+      const ProblemMetrics_t& problemMetrics) {
     // Final
     PerformanceIndex_t finalperformanceIndex =
         toPerformanceIndex(problemMetrics.final);
@@ -994,10 +995,9 @@ public:
    * @param [in] unoptimizedController 未优化控制器（含 deltaBiasArray）。
    * @param [out] controller 输出控制器。
    */
-  static void
-  incrementController(Scalar stepLength,
-                      const LinearController_t &unoptimizedController,
-                      LinearController_t &controller) {
+  static void incrementController(
+      Scalar stepLength, const LinearController_t& unoptimizedController,
+      LinearController_t& controller) {
     controller.timeStamp_ = unoptimizedController.timeStamp_;
     controller.gainArray_ = unoptimizedController.gainArray_;
     for (size_t k = 0; k < unoptimizedController.size(); k++) {
@@ -1014,10 +1014,9 @@ public:
    * @param [in] unoptimizedController 源控制器。
    * @param [out] controller 目标控制器（仅 biasArray_ 被写入）。
    */
-  static void
-  changeControllerStepLength(Scalar stepLength,
-                             const LinearController_t &unoptimizedController,
-                             LinearController_t &controller) {
+  static void changeControllerStepLength(
+      Scalar stepLength, const LinearController_t& unoptimizedController,
+      LinearController_t& controller) {
     for (size_t k = 0; k < unoptimizedController.size(); k++) {
       controller.biasArray_[k] =
           unoptimizedController.biasArray_[k] +
@@ -1031,8 +1030,8 @@ public:
    * @param [in] controller 控制器（含 deltaBiasArray）。
    * @return 控制器更新量的平方范数沿时间的积分（梯形积分）。
    */
-  static Scalar
-  computeControllerUpdateIS(const LinearController_t &controller) {
+  static Scalar computeControllerUpdateIS(
+      const LinearController_t& controller) {
     std::array<Scalar, LinearController_t::size()> biasArraySquaredNorm;
 
     for (size_t i = 0; i < controller.size(); ++i) {
@@ -1043,10 +1042,10 @@ public:
                                   0.0);
   }
 
-private:
+ private:
   DDPSettings<Scalar> ddpSettings_{};
 
-public:
+ public:
   OptimalControlProblem_t optimalControlProblem_;
 
   // roll out
@@ -1055,7 +1054,7 @@ public:
   // initializer
   InitializerRollout_t initializerRollout_;
 
-private:
+ private:
   // linear approximator
   inline static LinearQuadraticApproximator_t approximator_{};
 
@@ -1096,9 +1095,9 @@ private:
   // Discrete time riccati equation solver
   DiscreteTimeRiccatiEquations_t riccatiEquationsSolver_;
   std::array<KmMatrix_t, PredictLength + 1>
-      projectedKmTrajectoryStock_; // projected feedback
+      projectedKmTrajectoryStock_;  // projected feedback
   std::array<LvVector_t, PredictLength + 1>
-      projectedLvTrajectoryStock_; // projected feedforward
+      projectedLvTrajectoryStock_;  // projected feedforward
 
   // forward pass and backward pass average time step
   Scalar avgTimeStepFP_ = 0.0;

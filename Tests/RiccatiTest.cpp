@@ -2,13 +2,14 @@
  * @file RiccatiTest.cpp
  * @brief 离散时间 Riccati 方程测试：单步递推的具体数值与对称性。
  */
+#include <gtest/gtest.h>
+
 #include "DiscreteTimeRiccatiEquations.hpp"
 #include "LinearApproximation.hpp"
 #include "ModelData.hpp"
 #include "QuadraticApproximation.hpp"
 #include "RiccatiModification.hpp"
 #include "Types.hpp"
-#include <gtest/gtest.h>
 
 // 验证 reduced form 下单步 Riccati 递推与标量参考值一致。
 TEST(RiccatiTest, ReducedFormOneStepMatchesScalarReference) {
@@ -135,7 +136,7 @@ TEST(RiccatiTest, NonReducedFormOneStepMatchesScalarReference) {
   EXPECT_NEAR(s, 2769.71875, 1e-12);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

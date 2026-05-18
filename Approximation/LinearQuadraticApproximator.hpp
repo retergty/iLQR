@@ -96,10 +96,10 @@ struct LinearQuadraticApproximator {
    * @param [out] modelData: The output data model.
    */
   static void approximateIntermediateLQ(
-      const OptimalControlProblem_t &problem, const Scalar time,
-      const StateVector_t &state, const InputVector_t &input,
-      const IntermediateMultiplierCollection_t &multipliers,
-      ModelData_t &modelData) {
+      const OptimalControlProblem_t& problem, const Scalar time,
+      const StateVector_t& state, const InputVector_t& input,
+      const IntermediateMultiplierCollection_t& multipliers,
+      ModelData_t& modelData) {
     // Dynamics
     modelData.dynamics =
         problem.dynamicsPtr->linearApproximation(time, state, input);
@@ -147,9 +147,9 @@ struct LinearQuadraticApproximator {
    * @return The output data model.
    */
   static inline ModelData_t approximateIntermediateLQ(
-      const OptimalControlProblem_t &problem, const Scalar time,
-      const StateVector_t &state, const InputVector_t &input,
-      const IntermediateMultiplierCollection_t &multipliers) {
+      const OptimalControlProblem_t& problem, const Scalar time,
+      const StateVector_t& state, const InputVector_t& input,
+      const IntermediateMultiplierCollection_t& multipliers) {
     ModelData<Scalar, XDim, UDim> md;
     approximateIntermediateLQ(problem, time, state, input, multipliers, md);
     return md;
@@ -166,10 +166,10 @@ struct LinearQuadraticApproximator {
    * and inequality Lagrangians.
    * @param [out] modelData: The output data model.
    */
-  static void approximateFinalLQ(const OptimalControlProblem_t &problem,
-                                 const Scalar time, const StateVector_t &state,
-                                 const FinalMultiplierCollection_t &multipliers,
-                                 ModelData_t &modelData) {
+  static void approximateFinalLQ(const OptimalControlProblem_t& problem,
+                                 const Scalar time, const StateVector_t& state,
+                                 const FinalMultiplierCollection_t& multipliers,
+                                 ModelData_t& modelData) {
     modelData.time = time;
 
     VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> finalDynamics;
@@ -209,10 +209,10 @@ struct LinearQuadraticApproximator {
    * and inequality Lagrangians.
    * @return The output data model.
    */
-  static inline ModelData_t
-  approximateFinalLQ(const OptimalControlProblem_t &problem, const Scalar time,
-                     const StateVector_t &state,
-                     const FinalMultiplierCollection_t &multipliers) {
+  static inline ModelData_t approximateFinalLQ(
+      const OptimalControlProblem_t& problem, const Scalar time,
+      const StateVector_t& state,
+      const FinalMultiplierCollection_t& multipliers) {
     ModelData_t md;
     approximateFinalLQ(problem, time, state, multipliers, md);
     return md;
@@ -222,12 +222,12 @@ struct LinearQuadraticApproximator {
    * Compute the total intermediate cost (i.e. cost + softConstraints). It is
    * assumed that the precomputation request is already made.
    */
-  static Scalar computeCost(const OptimalControlProblem_t &problem,
-                            const Scalar time, const StateVector_t &state,
-                            const InputVector_t &input) {
-    const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
-    const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
-    const InputTrajectory_t &targetInputTrajectories = problem.inputTrajectory;
+  static Scalar computeCost(const OptimalControlProblem_t& problem,
+                            const Scalar time, const StateVector_t& state,
+                            const InputVector_t& input) {
+    const TimeTrajectory_t& targetTimeTrajectories = problem.timeTrajectory;
+    const StateTrajectory_t& targetStateTrajectories = problem.stateTrajectory;
+    const InputTrajectory_t& targetInputTrajectories = problem.inputTrajectory;
 
     // Compute and sum all costs
     Scalar cost =
@@ -245,11 +245,11 @@ struct LinearQuadraticApproximator {
    * already made.
    */
   static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  approximateCost(const OptimalControlProblem_t &problem, const Scalar time,
-                  const StateVector_t &state, const InputVector_t &input) {
-    const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
-    const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
-    const InputTrajectory_t &targetInputTrajectories = problem.inputTrajectory;
+  approximateCost(const OptimalControlProblem_t& problem, const Scalar time,
+                  const StateVector_t& state, const InputVector_t& input) {
+    const TimeTrajectory_t& targetTimeTrajectories = problem.timeTrajectory;
+    const StateTrajectory_t& targetStateTrajectories = problem.stateTrajectory;
+    const InputTrajectory_t& targetInputTrajectories = problem.inputTrajectory;
 
     // get the state-input cost approximations
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost =
@@ -268,11 +268,11 @@ struct LinearQuadraticApproximator {
    * Compute the total final cost (i.e. cost + softConstraints). It is assumed
    * that the precomputation request is already made.
    */
-  static Scalar computeFinalCost(const OptimalControlProblem_t &problem,
+  static Scalar computeFinalCost(const OptimalControlProblem_t& problem,
                                  const Scalar time,
-                                 const StateVector_t &state) {
-    const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
-    const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
+                                 const StateVector_t& state) {
+    const TimeTrajectory_t& targetTimeTrajectories = problem.timeTrajectory;
+    const StateTrajectory_t& targetStateTrajectories = problem.stateTrajectory;
 
     Scalar cost = problem.finalCost.getValue(
         time, state, targetTimeTrajectories, targetStateTrajectories);
@@ -286,10 +286,10 @@ struct LinearQuadraticApproximator {
    * made.
    */
   static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  approximateFinalCost(const OptimalControlProblem_t &problem,
-                       const Scalar time, const StateVector_t &state) {
-    const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
-    const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
+  approximateFinalCost(const OptimalControlProblem_t& problem,
+                       const Scalar time, const StateVector_t& state) {
+    const TimeTrajectory_t& targetTimeTrajectories = problem.timeTrajectory;
+    const StateTrajectory_t& targetStateTrajectories = problem.stateTrajectory;
 
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost =
         problem.finalCost.getQuadraticApproximation(
@@ -314,10 +314,9 @@ struct LinearQuadraticApproximator {
    * transcription method.
    * @return The output Metrics.
    */
-  static IntermediateMetrics_t
-  computeIntermediateMetrics(const OptimalControlProblem_t &problem,
-                             const Scalar time, const StateVector_t &state,
-                             const InputVector_t &input) {
+  static IntermediateMetrics_t computeIntermediateMetrics(
+      const OptimalControlProblem_t& problem, const Scalar time,
+      const StateVector_t& state, const InputVector_t& input) {
     IntermediateMetrics_t metrics;
 
     // Cost
@@ -345,9 +344,9 @@ struct LinearQuadraticApproximator {
    * @return The output Metrics.
    */
   static IntermediateMetrics_t computeIntermediateMetrics(
-      const OptimalControlProblem_t &problem, const Scalar time,
-      const StateVector_t &state, const InputVector_t &input,
-      const IntermediateMultiplierCollection_t &multipliers) {
+      const OptimalControlProblem_t& problem, const Scalar time,
+      const StateVector_t& state, const InputVector_t& input,
+      const IntermediateMultiplierCollection_t& multipliers) {
     // cost, dynamics violation, equlaity constraints, inequlaity constraints
     IntermediateMetrics_t metrics =
         computeIntermediateMetrics(problem, time, state, input);
@@ -390,10 +389,9 @@ struct LinearQuadraticApproximator {
    * @param [in] state: The current state.
    * @return The output Metrics.
    */
-  static FinalMetrics_t
-  computeFinalMetrics(const OptimalControlProblem_t &problem, const Scalar time,
-                      const StateVector_t &state) {
-
+  static FinalMetrics_t computeFinalMetrics(
+      const OptimalControlProblem_t& problem, const Scalar time,
+      const StateVector_t& state) {
     FinalMetrics_t metrics;
 
     // Cost
@@ -417,11 +415,10 @@ struct LinearQuadraticApproximator {
    * and inequality Lagrangians.
    * @return The output Metrics.
    */
-  static FinalMetrics_t
-  computeFinalMetrics(const OptimalControlProblem_t &problem, const Scalar time,
-                      const StateVector_t &state,
-                      const FinalMultiplierCollection_t &multipliers) {
-
+  static FinalMetrics_t computeFinalMetrics(
+      const OptimalControlProblem_t& problem, const Scalar time,
+      const StateVector_t& state,
+      const FinalMultiplierCollection_t& multipliers) {
     // cost, equlaity constraints, inequlaity constraints
     FinalMetrics_t metrics = computeFinalMetrics(problem, time, state);
 

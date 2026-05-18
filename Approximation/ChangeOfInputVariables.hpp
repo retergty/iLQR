@@ -45,10 +45,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @param [in] Pu 定义 δũ 范围的矩阵（m×p）。
  */
 template <typename Scalar, int XDim, int UDim>
-void changeOfInputVariables(
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-        &quadraticApproximation,
-    const Matrix<Scalar, UDim, UDim> &Pu) {
+void changeOfInputVariables(ScalarFunctionQuadraticApproximation<
+                                Scalar, XDim, UDim>& quadraticApproximation,
+                            const Matrix<Scalar, UDim, UDim>& Pu) {
   // P = Pu'*P
   quadraticApproximation.dfdux = Pu.transpose() * quadraticApproximation.dfdux;
 
@@ -63,10 +62,10 @@ void changeOfInputVariables(
 /** Applies the change of input variables to a linear system */
 template <typename Scalar, int FDimisions, int XDim, int UDim>
 void changeOfInputVariables(
-    VectorFunctionLinearApproximation<Scalar, FDimisions, XDim, UDim>
-        &linearApproximation,
-    const Matrix<Scalar, UDim, UDim> &Pu) {
+    VectorFunctionLinearApproximation<Scalar, FDimisions, XDim, UDim>&
+        linearApproximation,
+    const Matrix<Scalar, UDim, UDim>& Pu) {
   // B = B*Pu
   linearApproximation.dfdu =
-      linearApproximation.dfdu * Pu; // temporary matrix unavoidable
+      linearApproximation.dfdu * Pu;  // temporary matrix unavoidable
 }

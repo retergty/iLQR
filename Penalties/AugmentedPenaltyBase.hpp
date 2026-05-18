@@ -43,8 +43,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 惩罚函数接口：在代价中加入惩罚项以处理约束违反，假设惩罚为凸；一般为时间、乘子与约束值的函数。
  * @tparam Scalar 标量类型。
  */
-template <typename Scalar> class AugmentedPenaltyBase {
-public:
+template <typename Scalar>
+class AugmentedPenaltyBase {
+ public:
   /** @brief 默认构造。 */
   AugmentedPenaltyBase() = default;
 
@@ -102,5 +103,5 @@ public:
    */
   virtual Scalar initializeMultiplier() const = 0;
 
-  AugmentedPenaltyBase(const AugmentedPenaltyBase &other) = default;
+  AugmentedPenaltyBase(const AugmentedPenaltyBase& other) = default;
 };

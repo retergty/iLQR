@@ -2,11 +2,13 @@
  * @file LinearInterpolationTest.cpp
  * @brief 线性插值工具测试：findIndex、findInterval、timeSegment、interpolate。
  */
-#include "LinearInterpolation.hpp"
-#include "Types.hpp"
+#include <gtest/gtest.h>
+
 #include <array>
 #include <cmath>
-#include <gtest/gtest.h>
+
+#include "LinearInterpolation.hpp"
+#include "Types.hpp"
 
 using namespace LinearInterpolation;
 
@@ -44,7 +46,7 @@ TEST(LinearInterpolationTest, TimeSegment) {
   auto [idx0, alpha0] = timeSegment(0.5, times);
   EXPECT_EQ(idx0, 0);
   EXPECT_DOUBLE_EQ(alpha0,
-                   0.5); // alpha = (t1 - t) / (t1 - t0) = (1 - 0.5)/1 = 0.5
+                   0.5);  // alpha = (t1 - t) / (t1 - t0) = (1 - 0.5)/1 = 0.5
 
   auto [idx1, alpha1] = timeSegment(1.5, times);
   EXPECT_EQ(idx1, 1);
@@ -119,7 +121,7 @@ TEST(LinearInterpolationTest, InterpolateSingleElement) {
   EXPECT_TRUE(r.isApprox(data[0], 1e-10));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

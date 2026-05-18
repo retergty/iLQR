@@ -20,14 +20,15 @@ using Vector = Eigen::Matrix<Scalar, Rows, 1>;
  * @tparam Scalar 标量类型（如 double）。
  * @tparam Dimisions 维度（对角线长度）。
  */
-template <typename Scalar, int Dimisions> class DiagonalMatrix {
-public:
+template <typename Scalar, int Dimisions>
+class DiagonalMatrix {
+ public:
   /** @brief 默认构造，元素未初始化。 */
   DiagonalMatrix() = default;
   /** @brief 拷贝构造。 */
-  DiagonalMatrix(const DiagonalMatrix &rhs) : data_(rhs.data_) {};
+  DiagonalMatrix(const DiagonalMatrix& rhs) : data_(rhs.data_) {};
   /** @brief 移动构造。 */
-  DiagonalMatrix(DiagonalMatrix &&rhs) : data_(std::move(rhs.data_)) {};
+  DiagonalMatrix(DiagonalMatrix&& rhs) : data_(std::move(rhs.data_)) {};
 
   /**
    * @brief 转换为同尺寸稠密方阵，非对角元素为 0。
@@ -35,7 +36,7 @@ public:
    */
   operator Matrix<Scalar, Dimisions, Dimisions>() {
     Matrix<Scalar, Dimisions, Dimisions> res;
-    DiagonalMatrix<Scalar, Dimisions> &self = *this;
+    DiagonalMatrix<Scalar, Dimisions>& self = *this;
     res.setZero();
     for (int i = 0; i < Dimisions; ++i) {
       res(i, i) = self(i);
@@ -44,17 +45,17 @@ public:
   }
 
   /** @brief 对角矩阵加法，逐元素。 */
-  DiagonalMatrix operator+(const DiagonalMatrix &rhs) const {
+  DiagonalMatrix operator+(const DiagonalMatrix& rhs) const {
     DiagonalMatrix res;
-    const DiagonalMatrix &self = *this;
+    const DiagonalMatrix& self = *this;
     for (int i = 0; i < Dimisions; ++i) {
       res(i) = self(i) + rhs(i);
     }
     return res;
   }
   /** @brief 对角矩阵复合加法。 */
-  DiagonalMatrix &operator+=(const DiagonalMatrix &rhs) {
-    DiagonalMatrix &self = *this;
+  DiagonalMatrix& operator+=(const DiagonalMatrix& rhs) {
+    DiagonalMatrix& self = *this;
     for (int i = 0; i < Dimisions; ++i) {
       self(i) += rhs(i);
     }
@@ -63,31 +64,31 @@ public:
   /** @brief 对角矩阵取负。 */
   DiagonalMatrix operator-() const {
     DiagonalMatrix res;
-    const DiagonalMatrix &self = *this;
+    const DiagonalMatrix& self = *this;
     for (int i = 0; i < Dimisions; ++i) {
       res(i) = -self(i);
     }
     return res;
   }
   /** @brief 对角矩阵减法。 */
-  DiagonalMatrix operator-(const DiagonalMatrix &rhs) const {
+  DiagonalMatrix operator-(const DiagonalMatrix& rhs) const {
     DiagonalMatrix res;
-    const DiagonalMatrix &self = *this;
+    const DiagonalMatrix& self = *this;
     for (int i = 0; i < Dimisions; ++i) {
       res(i) = self(i) - rhs(i);
     }
     return res;
   }
   /** @brief 对角矩阵复合减法。 */
-  DiagonalMatrix &operator-=(const DiagonalMatrix &rhs) {
-    DiagonalMatrix &self = *this;
+  DiagonalMatrix& operator-=(const DiagonalMatrix& rhs) {
+    DiagonalMatrix& self = *this;
     for (int i = 0; i < Dimisions; ++i) {
       self(i) -= rhs(i);
     }
     return self;
   }
   /** @brief 拷贝赋值，含自赋值检查。 */
-  DiagonalMatrix &operator=(const DiagonalMatrix &rhs) {
+  DiagonalMatrix& operator=(const DiagonalMatrix& rhs) {
     // self assignment check
     if (this != &rhs) {
       data_ = rhs.data_;
@@ -95,7 +96,7 @@ public:
     return *this;
   }
   /** @brief 对角矩阵逐元素乘法。 */
-  DiagonalMatrix operator*(const DiagonalMatrix &rhs) const {
+  DiagonalMatrix operator*(const DiagonalMatrix& rhs) const {
     DiagonalMatrix res;
     for (int i = 0; i < Dimisions; ++i) {
       res.data_(i) = data_(i) * rhs.data_(i);
@@ -103,7 +104,7 @@ public:
     return res;
   }
   /** @brief 对角矩阵复合逐元素乘法。 */
-  DiagonalMatrix &operator*=(const DiagonalMatrix &rhs) {
+  DiagonalMatrix& operator*=(const DiagonalMatrix& rhs) {
     for (int i = 0; i < Dimisions; ++i) {
       data_(i) = data_(i) * rhs.data_(i);
     }
@@ -116,20 +117,20 @@ public:
     return data_(index);
   }
   /** @brief 可写访问第 index 个对角元。 */
-  Scalar &operator()(const int index) {
+  Scalar& operator()(const int index) {
     assert(index >= 0 && index < Dimisions);
     return data_(index);
   }
 
-private:
+ private:
   Vector<Scalar, Dimisions> data_;
 };
 
 /** @brief 对角矩阵左乘方阵：lhs * rhs，即 rhs 每行乘以 lhs 对应对角元。 */
 template <typename Scalar, int Dimisions>
-Matrix<Scalar, Dimisions, Dimisions>
-operator*(const DiagonalMatrix<Scalar, Dimisions> &lhs,
-          const Matrix<Scalar, Dimisions, Dimisions> &rhs) {
+Matrix<Scalar, Dimisions, Dimisions> operator*(
+    const DiagonalMatrix<Scalar, Dimisions>& lhs,
+    const Matrix<Scalar, Dimisions, Dimisions>& rhs) {
   Matrix<Scalar, Dimisions, Dimisions> res;
   for (int i = 0; i < Dimisions; ++i) {
     res.row(i) = rhs.row(i) * lhs(i);
@@ -139,9 +140,9 @@ operator*(const DiagonalMatrix<Scalar, Dimisions> &lhs,
 
 /** @brief 方阵右乘对角矩阵：lhs * rhs，即 lhs 每列乘以 rhs 对应对角元。 */
 template <typename Scalar, int Dimisions>
-Matrix<Scalar, Dimisions, Dimisions>
-operator*(const Matrix<Scalar, Dimisions, Dimisions> &lhs,
-          const DiagonalMatrix<Scalar, Dimisions> &rhs) {
+Matrix<Scalar, Dimisions, Dimisions> operator*(
+    const Matrix<Scalar, Dimisions, Dimisions>& lhs,
+    const DiagonalMatrix<Scalar, Dimisions>& rhs) {
   Matrix<Scalar, Dimisions, Dimisions> res;
   for (int i = 0; i < Dimisions; ++i) {
     res.col(i) = lhs.col(i) * rhs(i);
@@ -151,9 +152,9 @@ operator*(const Matrix<Scalar, Dimisions, Dimisions> &lhs,
 
 /** @brief 行向量左乘对角矩阵，逐元素乘。 */
 template <typename Scalar, int Dimisions>
-Vector<Scalar, Dimisions>
-operator*(const Matrix<Scalar, 1, Dimisions> &lhs,
-          const DiagonalMatrix<Scalar, Dimisions> &rhs) {
+Vector<Scalar, Dimisions> operator*(
+    const Matrix<Scalar, 1, Dimisions>& lhs,
+    const DiagonalMatrix<Scalar, Dimisions>& rhs) {
   Vector<Scalar, Dimisions> res;
   for (int i = 0; i < Dimisions; ++i) {
     res(i) = lhs(i) * rhs(i);
@@ -163,9 +164,9 @@ operator*(const Matrix<Scalar, 1, Dimisions> &lhs,
 
 /** @brief 对角矩阵加方阵：对角元加到方阵对角线上。 */
 template <typename Scalar, int Dimisions>
-Matrix<Scalar, Dimisions, Dimisions>
-operator+(const DiagonalMatrix<Scalar, Dimisions> &lhs,
-          const Matrix<Scalar, Dimisions, Dimisions> &rhs) {
+Matrix<Scalar, Dimisions, Dimisions> operator+(
+    const DiagonalMatrix<Scalar, Dimisions>& lhs,
+    const Matrix<Scalar, Dimisions, Dimisions>& rhs) {
   Matrix<Scalar, Dimisions, Dimisions> res = rhs;
   for (int i = 0; i < Dimisions; ++i) {
     res(i, i) += lhs(i);
@@ -174,17 +175,17 @@ operator+(const DiagonalMatrix<Scalar, Dimisions> &lhs,
 }
 /** @brief 方阵加对角矩阵，委托到 operator+(Diagonal, Matrix)。 */
 template <typename Scalar, int Dimisions>
-Matrix<Scalar, Dimisions, Dimisions>
-operator+(const Matrix<Scalar, Dimisions, Dimisions> &lhs,
-          const DiagonalMatrix<Scalar, Dimisions> &rhs) {
+Matrix<Scalar, Dimisions, Dimisions> operator+(
+    const Matrix<Scalar, Dimisions, Dimisions>& lhs,
+    const DiagonalMatrix<Scalar, Dimisions>& rhs) {
   return rhs + lhs;
 }
 
 /** @brief 方阵减对角矩阵：从对角线减去 rhs 对角元。 */
 template <typename Scalar, int Dimisions>
-Matrix<Scalar, Dimisions, Dimisions>
-operator-(const Matrix<Scalar, Dimisions, Dimisions> &lhs,
-          const DiagonalMatrix<Scalar, Dimisions> &rhs) {
+Matrix<Scalar, Dimisions, Dimisions> operator-(
+    const Matrix<Scalar, Dimisions, Dimisions>& lhs,
+    const DiagonalMatrix<Scalar, Dimisions>& rhs) {
   Matrix<Scalar, Dimisions, Dimisions> res = lhs;
   for (int i = 0; i < Dimisions; ++i) {
     res(i, i) -= rhs(i);
@@ -194,9 +195,9 @@ operator-(const Matrix<Scalar, Dimisions, Dimisions> &lhs,
 
 /** @brief 对角矩阵减方阵：结果为 -rhs 再在对角线上加 lhs。 */
 template <typename Scalar, int Dimisions>
-Matrix<Scalar, Dimisions, Dimisions>
-operator-(const DiagonalMatrix<Scalar, Dimisions> &lhs,
-          const Matrix<Scalar, Dimisions, Dimisions> &rhs) {
+Matrix<Scalar, Dimisions, Dimisions> operator-(
+    const DiagonalMatrix<Scalar, Dimisions>& lhs,
+    const Matrix<Scalar, Dimisions, Dimisions>& rhs) {
   Matrix<Scalar, Dimisions, Dimisions> res = -rhs;
   for (int i = 0; i < Dimisions; ++i) {
     res(i, i) += lhs(i);

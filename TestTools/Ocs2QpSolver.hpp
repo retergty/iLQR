@@ -69,19 +69,19 @@ solveLinearQuadraticOptimalControlProblem(
         StateIneqLagrangianConstrainNumbers,
         StateInputIneqLagrangianConstrainNumbers,
         FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers> &optimalControlProblem,
-    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
-        &nominalTrajectory,
-    const Vector<Scalar, XDim> &initialState,
+        FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
+    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>&
+        nominalTrajectory,
+    const Vector<Scalar, XDim>& initialState,
     const std::array<
         MultiplierCollection<Scalar, StateEqLagrangianConstrainNumbers,
                              StateIneqLagrangianConstrainNumbers,
                              StateInputEqLagrangianConstrainNumbers,
                              StateInputIneqLagrangianConstrainNumbers>,
-        PredictLength> &intermediateMultipliers,
+        PredictLength>& intermediateMultipliers,
     const MultiplierCollection<Scalar, FinalStateEqLagrangianConstrainNumbers,
                                FinalStateIneqFinalLagrangianConstrainNumbers, 0,
-                               0> &finalMultipliers) {
+                               0>& finalMultipliers) {
   // Approximate
   const auto lqApproximation = getLinearQuadraticApproximation(
       optimalControlProblem, nominalTrajectory, intermediateMultipliers,
@@ -94,8 +94,8 @@ solveLinearQuadraticOptimalControlProblem(
       initialState - nominalTrajectory.stateTrajectory.front();
   const auto deltaTrajectories =
       solveLinearQuadraticProblem(lqApproximation, dx0);
-  const auto &stateDeltaTrajectory = deltaTrajectories.first;
-  const auto &inputDeltaTrajectory = deltaTrajectories.second;
+  const auto& stateDeltaTrajectory = deltaTrajectories.first;
+  const auto& inputDeltaTrajectory = deltaTrajectories.second;
 
   for (size_t k = 0; k < PredictLength; ++k) {
     deltaSolution.stateTrajectory[k] = stateDeltaTrajectory[k];
@@ -126,10 +126,10 @@ solveLinearQuadraticOptimalControlProblem(
         StateIneqLagrangianConstrainNumbers,
         StateInputIneqLagrangianConstrainNumbers,
         FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers> &optimalControlProblem,
-    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
-        &nominalTrajectory,
-    const Vector<Scalar, XDim> &initialState) {
+        FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
+    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>&
+        nominalTrajectory,
+    const Vector<Scalar, XDim>& initialState) {
   std::array<MultiplierCollection<Scalar, StateEqLagrangianConstrainNumbers,
                                   StateIneqLagrangianConstrainNumbers,
                                   StateInputEqLagrangianConstrainNumbers,
@@ -144,4 +144,4 @@ solveLinearQuadraticOptimalControlProblem(
       intermediateMultipliers, finalMultipliers);
 }
 
-} // namespace qp_solver
+}  // namespace qp_solver

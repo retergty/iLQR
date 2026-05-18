@@ -3,8 +3,9 @@
  * @brief 原始问题解：时间/状态/输入轨迹及线性控制器。
  */
 #pragma once
-#include "LinearController.hpp"
 #include <array>
+
+#include "LinearController.hpp"
 
 /**
  * @brief 原始问题解：一条 rollout 的时间、状态、输入轨迹及对应的线性控制器。
@@ -22,14 +23,14 @@ struct PrimalSolution {
   ~PrimalSolution() = default;
 
   /** @brief 拷贝构造。 */
-  PrimalSolution(const PrimalSolution &other)
+  PrimalSolution(const PrimalSolution& other)
       : timeTrajectory_(other.timeTrajectory_),
         stateTrajectory_(other.stateTrajectory_),
         inputTrajectory_(other.inputTrajectory_),
         controller_(other.controller_) {}
 
   /** @brief 拷贝赋值。 */
-  PrimalSolution &operator=(const PrimalSolution &other) {
+  PrimalSolution& operator=(const PrimalSolution& other) {
     timeTrajectory_ = other.timeTrajectory_;
     stateTrajectory_ = other.stateTrajectory_;
     inputTrajectory_ = other.inputTrajectory_;
@@ -38,13 +39,13 @@ struct PrimalSolution {
   }
 
   /** @brief 移动构造。 */
-  PrimalSolution(PrimalSolution &&other) noexcept = default;
+  PrimalSolution(PrimalSolution&& other) noexcept = default;
 
   /** @brief 移动赋值。 */
-  PrimalSolution &operator=(PrimalSolution &&other) noexcept = default;
+  PrimalSolution& operator=(PrimalSolution&& other) noexcept = default;
 
   /** @brief 与另一 PrimalSolution 交换时间/状态/输入轨迹及控制器。 */
-  void swap(PrimalSolution &other) {
+  void swap(PrimalSolution& other) {
     timeTrajectory_.swap(other.timeTrajectory_);
     stateTrajectory_.swap(other.stateTrajectory_);
     inputTrajectory_.swap(other.inputTrajectory_);

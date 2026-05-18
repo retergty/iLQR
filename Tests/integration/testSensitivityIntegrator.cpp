@@ -2,9 +2,9 @@
  * @file testSensitivityIntegrator.cpp
  * @brief 动力学离散器测试：验证 Euler、RK2、RK4 的离散化与一阶敏感度实现。
  */
-#include <array>
-
 #include <gtest/gtest.h>
+
+#include <array>
 
 #include "LinearController.hpp"
 #include "LinearSystemDynamics.hpp"
@@ -35,14 +35,14 @@ System makeSystem() {
 }
 
 Controller makeConstantController(Scalar t0, Scalar t1,
-                                  const InputVector &input) {
+                                  const InputVector& input) {
   std::array<Scalar, ControllerLen> controllerTime = {t0, t1};
   std::array<InputVector, ControllerLen> controllerBias = {input, input};
   std::array<Matrix<Scalar, UDim, XDim>, ControllerLen> controllerGain = {
       Matrix<Scalar, UDim, XDim>::Zero(), Matrix<Scalar, UDim, XDim>::Zero()};
   return Controller(controllerTime, controllerBias, controllerGain);
 }
-} // namespace
+}  // namespace
 
 TEST(SensitivityIntegratorTest, EulerSensitivityMatchesManualConstruction) {
   System system = makeSystem();
@@ -186,7 +186,7 @@ TEST(SensitivityIntegratorTest,
   EXPECT_TRUE(stateTrajectory.back().isApprox(rk4ForwardDynamics, 1e-9));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

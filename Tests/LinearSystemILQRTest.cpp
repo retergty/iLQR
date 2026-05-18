@@ -1,5 +1,6 @@
-#include <array>
 #include <gtest/gtest.h>
+
+#include <array>
 
 #include "DefaultInitializer.hpp"
 #include "LinearSystemDynamics.hpp"
@@ -196,7 +197,7 @@ TEST(TimeTriggeredRolloutTest, CanSkipInputTrajectoryReconstruction) {
   std::array<double, 3> rolloutTimeTrajectory;
   std::array<Eigen::Matrix<double, 1, 1>, 3> rolloutStateTrajectory;
   std::array<Eigen::Matrix<double, 1, 1>, 3> rolloutInputTrajectory;
-  for (auto &input : rolloutInputTrajectory) {
+  for (auto& input : rolloutInputTrajectory) {
     input << -123.0;
   }
 
@@ -217,7 +218,7 @@ TEST(TimeTriggeredRolloutTest, CanSkipInputTrajectoryReconstruction) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -46,7 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 template <typename Scalar, int XDim, int UDim>
 class InitializerRollout : RolloutBase<Scalar, XDim, UDim> {
-public:
+ public:
   using Initializer_t = Initializer<Scalar, XDim, UDim>;
   using RolloutTrajectoryPointer_t =
       typename RolloutBase<Scalar, XDim, UDim>::RolloutTrajectoryPointer_t;
@@ -55,7 +55,7 @@ public:
    * @param [in] initializer 用于生成状态与输入的初始化器。
    * @param [in] timeStep 时间步长。
    */
-  explicit InitializerRollout(Initializer_t &initializer, const Scalar timeStep)
+  explicit InitializerRollout(Initializer_t& initializer, const Scalar timeStep)
       : initializer_(initializer) {
     this->rolloutSettings_.timeStep = timeStep;
   }
@@ -72,10 +72,10 @@ public:
    * @param [in,out] trajectory 输出轨迹。
    * @return 步数（写入点数减 1）。
    */
-  int run(const Scalar initTime, const Vector<Scalar, XDim> &initState,
+  int run(const Scalar initTime, const Vector<Scalar, XDim>& initState,
           const Scalar finalTime,
-          ControllerBase<Scalar, XDim, UDim> *controller,
-          RolloutTrajectoryPointer_t &trajectory) override {
+          ControllerBase<Scalar, XDim, UDim>* controller,
+          RolloutTrajectoryPointer_t& trajectory) override {
     assert(finalTime > initTime);
     (void)controller;
 
@@ -98,10 +98,10 @@ public:
       trajectory.stateTrajectory[i] = state;
       state = nextState;
       t += timeStep;
-    } // end of i loop
+    }  // end of i loop
     return numSteps;
   }
 
-private:
-  Initializer_t &initializer_;
+ private:
+  Initializer_t& initializer_;
 };

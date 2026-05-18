@@ -2,10 +2,10 @@
  * @file testRungeKuttaDormandPrince5.cpp
  * @brief Dormand-Prince 固定步长积分测试：单步精度、整段积分和反向积分。
  */
+#include <gtest/gtest.h>
+
 #include <array>
 #include <cmath>
-
-#include <gtest/gtest.h>
 
 #include "RungeKuttaDormandPrince5.hpp"
 
@@ -15,13 +15,13 @@ constexpr int XDim = 1;
 using StateVector = Vector<Scalar, XDim>;
 
 class ExponentialOde final : public OdeBase<Scalar, XDim> {
-public:
-  StateVector computeFlowMap(Scalar t, const StateVector &x) const override {
+ public:
+  StateVector computeFlowMap(Scalar t, const StateVector& x) const override {
     (void)t;
     return x;
   }
 };
-} // namespace
+}  // namespace
 
 TEST(RungeKuttaDormandPrince5Test, StepperMatchesExponentialGrowthForOneStep) {
   ExponentialOde system;
@@ -94,7 +94,7 @@ TEST(RungeKuttaDormandPrince5Test, IntegrateConstSupportsBackwardTime) {
   EXPECT_NEAR(backwardStates.back()(0), x0(0), 1e-8);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

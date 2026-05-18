@@ -12,8 +12,9 @@
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  */
-template <typename Scalar, int XDim> class Observer {
-public:
+template <typename Scalar, int XDim>
+class Observer {
+ public:
   /**
    * @brief 构造：绑定写入长度及状态/时间数组指针（可为空）。
    * @param [in] length 最大写入点数。
@@ -21,10 +22,11 @@ public:
    * @param [in] timeTrajectoryPtr 时间轨迹缓冲区指针。
    */
   explicit Observer(int length,
-                    Vector<Scalar, XDim> *stateTrajectoryPtr = nullptr,
-                    Scalar *timeTrajectoryPtr = nullptr)
+                    Vector<Scalar, XDim>* stateTrajectoryPtr = nullptr,
+                    Scalar* timeTrajectoryPtr = nullptr)
       : stateTrajectoryPtr_(stateTrajectoryPtr),
-        timeTrajectoryPtr_(timeTrajectoryPtr), length_(length) {};
+        timeTrajectoryPtr_(timeTrajectoryPtr),
+        length_(length) {};
 
   /** @brief 析构函数。 */
   ~Observer() = default;
@@ -34,13 +36,10 @@ public:
    * @param [in] state 当前状态。
    * @param [in] time 当前时间。
    */
-  void observe(const Vector<Scalar, XDim> &state, const Scalar time) {
-    if (now_ >= length_)
-      return;
-    if (timeTrajectoryPtr_ != nullptr)
-      timeTrajectoryPtr_[now_] = time;
-    if (stateTrajectoryPtr_ != nullptr)
-      stateTrajectoryPtr_[now_] = state;
+  void observe(const Vector<Scalar, XDim>& state, const Scalar time) {
+    if (now_ >= length_) return;
+    if (timeTrajectoryPtr_ != nullptr) timeTrajectoryPtr_[now_] = time;
+    if (stateTrajectoryPtr_ != nullptr) stateTrajectoryPtr_[now_] = state;
     now_++;
     return;
   }
@@ -51,9 +50,9 @@ public:
   /** @brief 返回已写入的点数。 */
   int getCount() const { return now_; }
 
-private:
-  Vector<Scalar, XDim> *stateTrajectoryPtr_;
-  Scalar *timeTrajectoryPtr_;
+ private:
+  Vector<Scalar, XDim>* stateTrajectoryPtr_;
+  Scalar* timeTrajectoryPtr_;
   int length_;
   int now_{0};
 };

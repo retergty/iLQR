@@ -37,10 +37,10 @@ struct OptimalControlProblem {
   ~OptimalControlProblem() = default;
 
   /** @brief 禁止拷贝构造。 */
-  OptimalControlProblem(const OptimalControlProblem &other) = delete;
+  OptimalControlProblem(const OptimalControlProblem& other) = delete;
 
   /** @brief 禁止拷贝赋值。 */
-  OptimalControlProblem &operator=(const OptimalControlProblem &rhs) = delete;
+  OptimalControlProblem& operator=(const OptimalControlProblem& rhs) = delete;
 
   // /** Move constructor */
   // OptimalControlProblem(OptimalControlProblem &&other) noexcept = default;
@@ -91,5 +91,5 @@ struct OptimalControlProblem {
       finalInequalityLagrangian;
 
   /** @brief 系统动力学指针。 */
-  SystemDynamicsBase<Scalar, XDim, UDim> *dynamicsPtr;
+  SystemDynamicsBase<Scalar, XDim, UDim>* dynamicsPtr;
 };

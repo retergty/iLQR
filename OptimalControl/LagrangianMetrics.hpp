@@ -9,7 +9,8 @@
  * @brief 单约束项的拉格朗日指标：惩罚值与约束值（标量）。
  * @tparam Scalar 标量类型。
  */
-template <typename Scalar> struct LagrangianMetrics {
+template <typename Scalar>
+struct LagrangianMetrics {
   /** @brief 默认构造，penalty 与 constraint 为 0。 */
   LagrangianMetrics() : LagrangianMetrics(0, 0) {}
   /** @brief 用给定惩罚与约束值构造。 */

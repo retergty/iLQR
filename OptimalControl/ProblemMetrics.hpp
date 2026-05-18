@@ -62,7 +62,7 @@ struct ProblemMetrics {
   std::array<IntermediateMetrics_t, PredictLength> intermediates;
 
   /** @brief 与另一 ProblemMetrics 交换内容。 */
-  void swap(ProblemMetrics &other) {
+  void swap(ProblemMetrics& other) {
     final.swap(other.final);
     intermediates.swap(other.intermediates);
   }
@@ -70,7 +70,6 @@ struct ProblemMetrics {
   /** @brief 清空/重置各 Metrics（用于重新初始化）。 */
   void clear() {
     final.clear();
-    for (size_t i = 0; i < intermediates.size(); ++i)
-      intermediates[i].clear();
+    for (size_t i = 0; i < intermediates.size(); ++i) intermediates[i].clear();
   }
 };

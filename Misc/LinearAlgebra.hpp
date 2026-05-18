@@ -4,9 +4,10 @@
  */
 #pragma once
 
-#include "Types.hpp"
 #include <Eigen/Cholesky>
 #include <Eigen/LU>
+
+#include "Types.hpp"
 
 namespace LinearAlgebra {
 /**
@@ -17,11 +18,11 @@ namespace LinearAlgebra {
  * inv(Am)。
  */
 template <typename Scalar, int Dimisions>
-void computeInverseMatrixUUT(const Matrix<Scalar, Dimisions, Dimisions> &Am,
-                             Matrix<Scalar, Dimisions, Dimisions> &AmInvUmUmT) {
+void computeInverseMatrixUUT(const Matrix<Scalar, Dimisions, Dimisions>& Am,
+                             Matrix<Scalar, Dimisions, Dimisions>& AmInvUmUmT) {
   // Am = Lm Lm^T --> inv(Am) = inv(Lm^T) inv(Lm) where Lm^T is upper triangular
   Eigen::LLT<Matrix<Scalar, Dimisions, Dimisions>> lltOfA(Am);
-  AmInvUmUmT.setIdentity(Am.rows(), Am.cols()); // for dynamic size matrices
+  AmInvUmUmT.setIdentity(Am.rows(), Am.cols());  // for dynamic size matrices
   lltOfA.matrixU().solveInPlace(AmInvUmUmT);
 }
-} // namespace LinearAlgebra
+}  // namespace LinearAlgebra

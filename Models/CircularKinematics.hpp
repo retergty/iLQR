@@ -17,21 +17,21 @@ static constexpr int INPUT_DIM = 2;
 template <typename Scalar>
 class CircularKinematicsSystem final
     : public SystemDynamicsBase<Scalar, STATE_DIM, INPUT_DIM> {
-public:
+ public:
   CircularKinematicsSystem() = default;
   ~CircularKinematicsSystem() override = default;
 
-  Vector<Scalar, STATE_DIM>
-  computeFlowMap(Scalar t, const Vector<Scalar, STATE_DIM> &x,
-                 const Vector<Scalar, INPUT_DIM> &u) const override {
+  Vector<Scalar, STATE_DIM> computeFlowMap(
+      Scalar t, const Vector<Scalar, STATE_DIM>& x,
+      const Vector<Scalar, INPUT_DIM>& u) const override {
     (void)t;
     (void)x;
     return u;
   }
 
   VectorFunctionLinearApproximation<Scalar, STATE_DIM, STATE_DIM, INPUT_DIM>
-  linearApproximation(Scalar t, const Vector<Scalar, STATE_DIM> &x,
-                      const Vector<Scalar, INPUT_DIM> &u) {
+  linearApproximation(Scalar t, const Vector<Scalar, STATE_DIM>& x,
+                      const Vector<Scalar, INPUT_DIM>& u) {
     VectorFunctionLinearApproximation<Scalar, STATE_DIM, STATE_DIM, INPUT_DIM>
         dynamics;
     dynamics.f = computeFlowMap(t, x, u);
@@ -52,17 +52,17 @@ public:
 template <typename Scalar, int ArrayLength>
 class CircularKinematicsCost
     : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
-public:
+ public:
   CircularKinematicsCost(int cost_number)
       : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number) {
         };
 
   Scalar getValue(
-      Scalar time, const Vector<Scalar, STATE_DIM> &state,
-      const Vector<Scalar, INPUT_DIM> &input,
-      const std::array<Scalar, ArrayLength> &timeTrajectory,
-      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength> &stateTrajectoy,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength> &inputTrajectory)
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
       const override {
     (void)time;
     (void)timeTrajectory;
@@ -74,11 +74,11 @@ public:
            Scalar(0.005) * input.dot(input);
   }
   Scalar getValue(
-      int time_index, const Vector<Scalar, STATE_DIM> &state,
-      const Vector<Scalar, INPUT_DIM> &input,
-      const std::array<Scalar, ArrayLength> &timeTrajectory,
-      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength> &stateTrajectoy,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength> &inputTrajectory)
+      int time_index, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
       const override {
     (void)time_index;
     (void)timeTrajectory;
@@ -91,11 +91,11 @@ public:
   }
   ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
   getQuadraticApproximation(
-      Scalar time, const Vector<Scalar, STATE_DIM> &state,
-      const Vector<Scalar, INPUT_DIM> &input,
-      const std::array<Scalar, ArrayLength> &timeTrajectory,
-      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength> &stateTrajectoy,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength> &inputTrajectory)
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
       const override {
     (void)time;
     (void)timeTrajectory;
@@ -153,22 +153,22 @@ public:
 template <typename Scalar>
 class CircularKinematicsConstraints final
     : public StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM> {
-public:
+ public:
   CircularKinematicsConstraints()
       : StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM>(
             ConstraintOrder::Linear) {}
   ~CircularKinematicsConstraints() override = default;
 
-  Scalar getValue(const Scalar time, const Vector<Scalar, STATE_DIM> &state,
-                  const Vector<Scalar, INPUT_DIM> &input) const override {
+  Scalar getValue(const Scalar time, const Vector<Scalar, STATE_DIM>& state,
+                  const Vector<Scalar, INPUT_DIM>& input) const override {
     (void)time;
     return state.dot(input);
   }
 
   ScalarFunctionLinearApproximation<Scalar, STATE_DIM, INPUT_DIM>
   getLinearApproximation(
-      const Scalar time, const Vector<Scalar, STATE_DIM> &state,
-      const Vector<Scalar, INPUT_DIM> &input) const override {
+      const Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input) const override {
     ScalarFunctionLinearApproximation<Scalar, STATE_DIM, INPUT_DIM> result;
     result.f = getValue(time, state, input);
     result.dfdx = input;
@@ -182,7 +182,7 @@ public:
 /******************************************************************************************************/
 template <typename Scalar, size_t PredictLength>
 inline OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM, PredictLength, 0, 1,
-                             0, 0, 0, 0> &
+                             0, 0, 0, 0>&
 createCircularKinematicsProblem() {
   using Problem_t = OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM,
                                           PredictLength, 0, 1, 0, 0, 0, 0>;
@@ -212,4 +212,4 @@ createCircularKinematicsProblem() {
   return problem;
 }
 
-}; // namespace circular_model
+};  // namespace circular_model

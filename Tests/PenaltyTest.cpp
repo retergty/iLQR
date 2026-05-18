@@ -1,5 +1,6 @@
-#include <cmath>
 #include <gtest/gtest.h>
+
+#include <cmath>
 
 #include "ModifiedRelaxedBarrierPenalty.hpp"
 #include "Penalty.hpp"
@@ -134,7 +135,7 @@ TEST(PenaltyTest, PenaltyWrapperLinearStateInputConstraintUsesChainRule) {
   EXPECT_TRUE(approximation.dfduu.isApprox(expectedDfduu, 1e-12));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

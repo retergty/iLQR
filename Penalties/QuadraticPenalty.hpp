@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 template <typename Scalar>
 class QuadraticPenalty final : public AugmentedPenaltyBase<Scalar> {
-public:
+ public:
   /**
    * Configuration object for the quadratic penalty.
    * scale: scaling factor, see class description
@@ -57,7 +57,7 @@ public:
   };
 
   /** Constructor */
-  explicit QuadraticPenalty(const Config &config) : config_(config) {}
+  explicit QuadraticPenalty(const Config& config) : config_(config) {}
 
   ~QuadraticPenalty() override = default;
 
@@ -86,8 +86,8 @@ public:
   }
   Scalar initializeMultiplier() const override { return 0.0; }
 
-private:
-  QuadraticPenalty(const QuadraticPenalty &other) = default;
+ private:
+  QuadraticPenalty(const QuadraticPenalty& other) = default;
 
   const Config config_;
 };

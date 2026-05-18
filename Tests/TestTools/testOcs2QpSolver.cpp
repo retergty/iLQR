@@ -9,7 +9,7 @@
 #include "testProblemsGeneration.hpp"
 
 class Ocs2QpSolverTest : public testing::Test {
-protected:
+ protected:
   using Scalar = double;
   static constexpr size_t N = 10;
   static constexpr int STATE_DIM = 2;
@@ -22,7 +22,7 @@ protected:
   using Trajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
 
-  void checkDynamics(const Trajectory_t &solution) const {
+  void checkDynamics(const Trajectory_t& solution) const {
     Vector<Scalar, STATE_DIM> state = x0;
     for (size_t k = 0; k < N; ++k) {
       const Scalar timeStep =
@@ -66,8 +66,8 @@ protected:
         problem, nominalTrajectory, x0);
   }
 
-  void setReferenceTrajectories(Problem_t &targetProblem,
-                                const Trajectory_t &trajectory) const {
+  void setReferenceTrajectories(Problem_t& targetProblem,
+                                const Trajectory_t& trajectory) const {
     targetProblem.timeTrajectory = trajectory.timeTrajectory;
     targetProblem.stateTrajectory = trajectory.stateTrajectory;
     for (size_t k = 0; k < N; ++k) {

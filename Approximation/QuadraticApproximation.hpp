@@ -3,8 +3,9 @@
  * @brief 二次近似：标量函数的二阶近似结构（Hessian、一阶项与常数项）。
  */
 #pragma once
-#include "Types.hpp"
 #include <array>
+
+#include "Types.hpp"
 
 /**
  * @brief 标量函数二次近似：f = 1/2 dx' dfdxx dx + du' dfdux dx + 1/2 du' dfduu
@@ -32,7 +33,7 @@ struct ScalarFunctionQuadraticApproximation {
   ScalarFunctionQuadraticApproximation() = default;
 
   ScalarFunctionQuadraticApproximation(
-      const ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> &rhs)
+      const ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& rhs)
       : dfdxx(rhs.dfdxx), dfdx(rhs.dfdx), f(rhs.f) {
     dfdux.setZero();
     dfduu.setZero();
@@ -40,8 +41,8 @@ struct ScalarFunctionQuadraticApproximation {
   }
 
   /** @brief 复合加法赋值。 */
-  ScalarFunctionQuadraticApproximation &
-  operator+=(const ScalarFunctionQuadraticApproximation &rhs) {
+  ScalarFunctionQuadraticApproximation& operator+=(
+      const ScalarFunctionQuadraticApproximation& rhs) {
     dfdxx += rhs.dfdxx;
     dfdux += rhs.dfdux;
     dfduu += rhs.dfduu;
@@ -53,7 +54,7 @@ struct ScalarFunctionQuadraticApproximation {
   }
 
   /** @brief 复合标量乘法赋值。 */
-  ScalarFunctionQuadraticApproximation &operator*=(Scalar s) {
+  ScalarFunctionQuadraticApproximation& operator*=(Scalar s) {
     dfdxx *= s;
     dfdux *= s;
     dfduu *= s;
@@ -65,7 +66,7 @@ struct ScalarFunctionQuadraticApproximation {
   }
 
   /** @brief 将各系数置零。 */
-  ScalarFunctionQuadraticApproximation &setZero() {
+  ScalarFunctionQuadraticApproximation& setZero() {
     dfdxx.setZero();
     dfduu.setZero();
     dfdux.setZero();
@@ -98,8 +99,8 @@ struct ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> {
   ScalarFunctionQuadraticApproximation() = default;
 
   /** @brief 复合加法赋值。 */
-  ScalarFunctionQuadraticApproximation &
-  operator+=(const ScalarFunctionQuadraticApproximation &rhs) {
+  ScalarFunctionQuadraticApproximation& operator+=(
+      const ScalarFunctionQuadraticApproximation& rhs) {
     dfdxx += rhs.dfdxx;
     dfdx += rhs.dfdx;
     f += rhs.f;
@@ -108,7 +109,7 @@ struct ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> {
   }
 
   /** @brief 复合标量乘法赋值。 */
-  ScalarFunctionQuadraticApproximation &operator*=(Scalar s) {
+  ScalarFunctionQuadraticApproximation& operator*=(Scalar s) {
     dfdxx *= s;
     dfdx *= s;
     f *= s;
@@ -117,7 +118,7 @@ struct ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> {
   }
 
   /** @brief 将各系数置零。 */
-  ScalarFunctionQuadraticApproximation &setZero() {
+  ScalarFunctionQuadraticApproximation& setZero() {
     dfdxx.setZero();
     dfdx.setZero();
     f = 0;
@@ -134,22 +135,22 @@ struct ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> {
 };
 
 template <typename Scalar, int XDim, int UDim>
-inline ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-operator*(ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> lhs,
-          Scalar scalar) {
+inline ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> operator*(
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> lhs,
+    Scalar scalar) {
   return lhs *= scalar;
 }
 template <typename Scalar, int XDim, int UDim>
-inline ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-operator*(Scalar scalar,
-          ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> rhs) {
+inline ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> operator*(
+    Scalar scalar,
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> rhs) {
   return rhs *= scalar;
 }
 
 template <typename Scalar, int XDim, int UDim>
-ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> &
-operator+=(ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> &lhs,
-           ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> &rhs) {
+ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& operator+=(
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& lhs,
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& rhs) {
   lhs.f += rhs.f;
   lhs.dfdx += rhs.dfdx;
   lhs.dfdxx += rhs.dfdxx;

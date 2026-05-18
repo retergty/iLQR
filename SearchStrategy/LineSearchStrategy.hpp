@@ -57,7 +57,7 @@ class LineSearchStrategy final
           Scalar, XDim, UDim, PredictLength, StateEqConstrains,
           StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains,
           FinalStateEqConstrains, FinalStateIneqConstrains> {
-public:
+ public:
   using iLQR_t = iLQR<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
                       StateIneqConstrains, StateInputEqConstrains,
                       StateInputIneqConstrains, FinalStateEqConstrains,
@@ -95,11 +95,11 @@ public:
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
 
   /** @brief 构造线搜索策略，绑定 iLQR 实例（用于 rollout、merit 等）。 */
-  LineSearchStrategy(iLQR_t &ilqr) : ilqr_(ilqr) {}
+  LineSearchStrategy(iLQR_t& ilqr) : ilqr_(ilqr) {}
 
   ~LineSearchStrategy() override = default;
-  LineSearchStrategy(const LineSearchStrategy &) = delete;
-  LineSearchStrategy &operator=(const LineSearchStrategy &) = delete;
+  LineSearchStrategy(const LineSearchStrategy&) = delete;
+  LineSearchStrategy& operator=(const LineSearchStrategy&) = delete;
 
   void reset() override {}
 
@@ -115,11 +115,11 @@ public:
    * 输出解引用（primal/dual/metrics/performanceIndex 被写入）。
    * @return 当前实现恒返回 true。
    */
-  bool run(const std::pair<Scalar, Scalar> &timePeriod,
-           const StateVector_t &initState, const Scalar expectedCost,
-           const LinearController_t &unoptimizedController,
-           const DualSolution_t &dualSolution,
-           SearchStrategySolutionRef_t &solutionRef) override {
+  bool run(const std::pair<Scalar, Scalar>& timePeriod,
+           const StateVector_t& initState, const Scalar expectedCost,
+           const LinearController_t& unoptimizedController,
+           const DualSolution_t& dualSolution,
+           SearchStrategySolutionRef_t& solutionRef) override {
     (void)expectedCost;
     // initialize lineSearchModule inputs
     lineSearchInputRef_.timePeriodPtr = &timePeriod;
@@ -158,8 +158,8 @@ public:
    */
   bool checkConvergence(
       bool unreliableControllerIncrement,
-      const PerformanceIndex_t &previousPerformanceIndex,
-      const PerformanceIndex_t &currentPerformanceIndex) const override {
+      const PerformanceIndex_t& previousPerformanceIndex,
+      const PerformanceIndex_t& currentPerformanceIndex) const override {
     (void)unreliableControllerIncrement;
     // loop break variables
     const Scalar currentTotalCost =
@@ -185,8 +185,8 @@ public:
    * @param [out] deltaQm 输出的 Riccati 修正矩阵（被设为 shift 后的零矩阵）。
    */
   void computeRiccatiModification(
-      const ModelData_t &projectedModelData,
-      Matrix<Scalar, XDim, XDim> &deltaQm) const override {
+      const ModelData_t& projectedModelData,
+      Matrix<Scalar, XDim, XDim>& deltaQm) const override {
     // const auto &QmProjected = projectedModelData.cost.dfdxx;
     // const auto &PmProjected = projectedModelData.cost.dfdux;
     (void)projectedModelData;
@@ -205,22 +205,22 @@ public:
 
   /** @brief 对哈密顿量 Hessian 的额外修正；当前实现直接返回 Hm，不做修改。 */
   Matrix<Scalar, UDim, UDim> augmentHamiltonianHessian(
-      const ModelData_t & /*modelData*/,
-      const Matrix<Scalar, UDim, UDim> &Hm) const override {
+      const ModelData_t& /*modelData*/,
+      const Matrix<Scalar, UDim, UDim>& Hm) const override {
     return Hm;
   }
 
-private:
+ private:
   struct LineSearchInputRef {
-    const std::pair<Scalar, Scalar> *timePeriodPtr;
-    const StateVector_t *initStatePtr;
-    const LinearController_t *unoptimizedControllerPtr;
-    const DualSolution_t *dualSolutionPtr;
+    const std::pair<Scalar, Scalar>* timePeriodPtr;
+    const StateVector_t* initStatePtr;
+    const LinearController_t* unoptimizedControllerPtr;
+    const DualSolution_t* dualSolutionPtr;
   };
 
   /** number of line search iterations (the if statements order is important) */
-  constexpr static size_t
-  maxNumOfSearches(const LineSearchSettings<Scalar> settings) {
+  constexpr static size_t maxNumOfSearches(
+      const LineSearchSettings<Scalar> settings) {
     size_t maxNumOfLineSearches = 0;
     if (numerics::almost_eq(settings.minStepLength, settings.maxStepLength)) {
       maxNumOfLineSearches = 1;
@@ -252,7 +252,7 @@ private:
    * @param [in] stepLength 线搜索步长。
    * @param [out] solution 输出的轨迹、dual、metrics、performanceIndex。
    */
-  void computeSolution(Scalar stepLength, SearchStrategySolution_t &solution) {
+  void computeSolution(Scalar stepLength, SearchStrategySolution_t& solution) {
     // compute primal solution
     iLQR_t::changeControllerStepLength(
         stepLength, *lineSearchInputRef_.unoptimizedControllerPtr,
@@ -306,7 +306,7 @@ private:
           workersSolution_.performanceIndex.merit <
           (baselineMerit_ - settings_.armijoCoefficient * stepLength *
                                 unoptimizedControllerUpdateIS_);
-      if (armijoCondition && stepLength > bestStepSize_) { // save solution
+      if (armijoCondition && stepLength > bestStepSize_) {  // save solution
         bestStepSize_ = stepLength;
         bestSolutionRef_->swap(workersSolution_);
         break;
@@ -318,7 +318,7 @@ private:
 
   constexpr static LineSearchSettings<Scalar> settings_{};
 
-  iLQR_t &ilqr_;
+  iLQR_t& ilqr_;
 
   DualSolution_t tempDualSolutions_;
   SearchStrategySolution_t workersSolution_;
@@ -327,11 +327,11 @@ private:
   LineSearchInputRef lineSearchInputRef_;
   // output
   std::atomic<Scalar> bestStepSize_{0.0};
-  SearchStrategySolutionRef_t *bestSolutionRef_;
+  SearchStrategySolutionRef_t* bestSolutionRef_;
 
   // convergence check
   Scalar baselineMerit_ =
-      0.0; // the merit of the rollout for zero learning rate
+      0.0;  // the merit of the rollout for zero learning rate
   Scalar unoptimizedControllerUpdateIS_ =
-      0.0; // integral of the squared (IS) norm of the controller update.
+      0.0;  // integral of the squared (IS) norm of the controller update.
 };

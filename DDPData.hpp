@@ -70,7 +70,7 @@ struct PrimalDataContainer {
   std::array<ModelData_t, PredictLength> modelDataTrajectory;
 
   /** @brief 与另一容器交换内容。 */
-  void swap(PrimalDataContainer &other) {
+  void swap(PrimalDataContainer& other) {
     primalSolution.swap(other.primalSolution);
     problemMetrics.swap(other.problemMetrics);
     std::swap(modelDataFinalTime, other.modelDataFinalTime);
@@ -119,7 +119,7 @@ struct DualDataContainer {
       valueFunctionTrajectory;
 
   /** @brief 与另一容器交换内容。 */
-  void swap(DualDataContainer &other) {
+  void swap(DualDataContainer& other) {
     dualSolution.swap(other.dualSolution);
     projectedModelDataTrajectory.swap(other.projectedModelDataTrajectory);
     riccatiModificationTrajectory.swap(other.riccatiModificationTrajectory);

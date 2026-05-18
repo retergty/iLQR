@@ -3,9 +3,10 @@
  * @brief 代价项集合：汇总多个仅状态或状态-输入代价项，提供总代价与总二次近似。
  */
 #pragma once
+#include <memory>
+
 #include "Cost.hpp"
 #include "IntrusiveList.hpp"
-#include <memory>
 
 /**
  * @brief 仅状态代价项集合：对多个 StateCost 求和得到总代价与总二次近似。
@@ -15,15 +16,15 @@
  */
 template <typename Scalar, int XDim, int ArrayLength>
 class StateCostCollection {
-public:
+ public:
   StateCostCollection() = default;
   virtual ~StateCostCollection() = default;
 
   /** @brief 获取仅状态总代价值。 */
-  Scalar getValue(Scalar time, const Vector<Scalar, XDim> &state,
-                  const std::array<Scalar, ArrayLength> &timeTrajectories,
-                  const std::array<Vector<Scalar, XDim>, ArrayLength>
-                      &stateTrajectoies) const {
+  Scalar getValue(Scalar time, const Vector<Scalar, XDim>& state,
+                  const std::array<Scalar, ArrayLength>& timeTrajectories,
+                  const std::array<Vector<Scalar, XDim>, ArrayLength>&
+                      stateTrajectoies) const {
     Scalar cost = 0;
     for (auto it = list_.begin(); it != list_.end(); ++it) {
       cost += it->getValue(time, state, timeTrajectories, stateTrajectoies);
@@ -34,9 +35,9 @@ public:
   /** @brief 获取仅状态总代价的二次近似。 */
   ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
   getQuadraticApproximation(
-      Scalar time, const Vector<Scalar, XDim> &state,
-      const std::array<Scalar, ArrayLength> &timeTrajectories,
-      const std::array<Vector<Scalar, XDim>, ArrayLength> &stateTrajectoies)
+      Scalar time, const Vector<Scalar, XDim>& state,
+      const std::array<Scalar, ArrayLength>& timeTrajectories,
+      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoies)
       const {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> cost_appro;
     cost_appro.setZero();
@@ -48,11 +49,11 @@ public:
   }
 
   /** @brief 在链表末尾添加代价项。 */
-  void add(StateCost<Scalar, XDim, ArrayLength> &cost) {
+  void add(StateCost<Scalar, XDim, ArrayLength>& cost) {
     list_.insert(list_.end(), cost);
   }
 
-private:
+ private:
   IntrusiveList<StateCost<Scalar, XDim, ArrayLength>> list_;
 };
 
@@ -66,17 +67,17 @@ private:
  */
 template <typename Scalar, int XDim, int UDim, int ArrayLength>
 class StateInputCostCollection {
-public:
+ public:
   StateInputCostCollection() = default;
   ~StateInputCostCollection() = default;
 
   /** Get state-input cost value */
-  Scalar
-  getValue(Scalar time, const Vector<Scalar, XDim> &state,
-           const Vector<Scalar, UDim> &input,
-           const std::array<Scalar, ArrayLength> &timeTrajectory,
-           const std::array<Vector<Scalar, XDim>, ArrayLength> &stateTrajectoy,
-           const std::array<Vector<Scalar, UDim>, ArrayLength> &inputTrajectory)
+  Scalar getValue(
+      Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory)
       const {
     Scalar cost = 0;
     for (auto it = list_.begin(); it != list_.end(); ++it) {
@@ -89,11 +90,11 @@ public:
   /** Get state-input cost quadratic approximation */
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   getQuadraticApproximation(
-      Scalar time, const Vector<Scalar, XDim> &state,
-      const Vector<Scalar, UDim> &input,
-      const std::array<Scalar, ArrayLength> &timeTrajectory,
-      const std::array<Vector<Scalar, XDim>, ArrayLength> &stateTrajectoy,
-      const std::array<Vector<Scalar, UDim>, ArrayLength> &inputTrajectory)
+      Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory)
       const {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost_appro;
     cost_appro.setZero();
@@ -105,10 +106,10 @@ public:
   }
 
   // add cost to list end
-  void add(StateInputCost<Scalar, XDim, UDim, ArrayLength> &cost) {
+  void add(StateInputCost<Scalar, XDim, UDim, ArrayLength>& cost) {
     list_.insert(list_.end(), cost);
   }
 
-private:
+ private:
   IntrusiveList<StateInputCost<Scalar, XDim, UDim, ArrayLength>> list_;
 };

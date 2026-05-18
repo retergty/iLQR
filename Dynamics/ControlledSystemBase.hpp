@@ -19,7 +19,7 @@
  */
 template <typename Scalar, int XDim, int UDim>
 class ControlledSystemBase : public OdeBase<Scalar, XDim> {
-public:
+ public:
   /** @brief 默认构造。 */
   ControlledSystemBase() = default;
 
@@ -32,8 +32,8 @@ public:
    * @param [in] x 当前状态。
    * @return 状态对时间的导数。
    */
-  Vector<Scalar, XDim>
-  computeFlowMap(Scalar t, const Vector<Scalar, XDim> &x) const override final {
+  Vector<Scalar, XDim> computeFlowMap(
+      Scalar t, const Vector<Scalar, XDim>& x) const override final {
     assert(controllerPtr_ != nullptr);
     const Vector<Scalar, UDim> u = controllerPtr_->computeInput(t, x);
     return computeFlowMap(t, x, u);
@@ -46,19 +46,19 @@ public:
    * @param [in] u 当前输入。
    * @return 状态对时间的导数。
    */
-  virtual Vector<Scalar, XDim>
-  computeFlowMap(Scalar t, const Vector<Scalar, XDim> &x,
-                 const Vector<Scalar, UDim> &u) const = 0;
+  virtual Vector<Scalar, XDim> computeFlowMap(
+      Scalar t, const Vector<Scalar, XDim>& x,
+      const Vector<Scalar, UDim>& u) const = 0;
 
   /** @brief 设置控制器指针，用于 rollout 时计算 u。 */
-  void setController(ControllerBase<Scalar, XDim, UDim> *controllerPtr) {
+  void setController(ControllerBase<Scalar, XDim, UDim>* controllerPtr) {
     controllerPtr_ = controllerPtr;
   }
   /** @brief 返回当前绑定的控制器指针。 */
-  const ControllerBase<Scalar, XDim, UDim> *controllerPtr() const {
+  const ControllerBase<Scalar, XDim, UDim>* controllerPtr() const {
     return controllerPtr_;
   }
 
-private:
-  ControllerBase<Scalar, XDim, UDim> *controllerPtr_ = nullptr;
+ private:
+  ControllerBase<Scalar, XDim, UDim>* controllerPtr_ = nullptr;
 };

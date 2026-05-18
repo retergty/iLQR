@@ -1,5 +1,6 @@
-#include <array>
 #include <gtest/gtest.h>
+
+#include <array>
 
 #include "DefaultInitializer.hpp"
 #include "HessianCorrection.hpp"
@@ -158,7 +159,7 @@ TEST(UtilityTest, DefaultInitializerKeepsStateAndZerosInput) {
   EXPECT_TRUE(nextState.isApprox(state, 1e-12));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

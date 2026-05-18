@@ -44,14 +44,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 template <typename Scalar, int XDim, int UDim>
 class OperatingPoints final : public Initializer<Scalar, XDim, UDim> {
-public:
+ public:
   /**
    * @brief 用状态工作点与输入工作点构造。
    * @param [in] stateOperatingPoint 状态工作点。
    * @param [in] inputOperatingPoint 输入工作点。
    */
-  OperatingPoints(const Vector<Scalar, XDim> &stateOperatingPoint,
-                  const Vector<Scalar, UDim> &inputOperatingPoint)
+  OperatingPoints(const Vector<Scalar, XDim>& stateOperatingPoint,
+                  const Vector<Scalar, UDim>& inputOperatingPoint)
       : stateTrajectory_(stateOperatingPoint),
         inputTrajectory_(inputOperatingPoint) {}
 
@@ -59,9 +59,9 @@ public:
   ~OperatingPoints() override = default;
 
   /** @brief 将 input 设为输入工作点，nextState 设为状态工作点。 */
-  void compute(const Scalar time, const Vector<Scalar, XDim> &state,
-               const Scalar nextTime, Vector<Scalar, UDim> &input,
-               Vector<Scalar, XDim> &nextState) override {
+  void compute(const Scalar time, const Vector<Scalar, XDim>& state,
+               const Scalar nextTime, Vector<Scalar, UDim>& input,
+               Vector<Scalar, XDim>& nextState) override {
     (void)time;
     (void)state;
     (void)nextTime;
@@ -69,9 +69,9 @@ public:
     nextState = stateTrajectory_;
   }
 
-private:
+ private:
   /** @brief 拷贝构造（保护）。 */
-  OperatingPoints(const OperatingPoints &other) = default;
+  OperatingPoints(const OperatingPoints& other) = default;
 
   /** @brief 状态工作点。 */
   const Vector<Scalar, XDim> stateTrajectory_;

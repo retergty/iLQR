@@ -11,7 +11,7 @@
 #include "testProblemsGeneration.hpp"
 
 class DiscreteTranscriptionTest : public testing::Test {
-protected:
+ protected:
   using Scalar = double;
   static constexpr size_t N = 10;
   static constexpr int STATE_DIM = 3;
@@ -58,8 +58,8 @@ protected:
         qp_solver::getLinearQuadraticApproximation(problem, linearization);
   }
 
-  void setReferenceTrajectories(Problem_t &targetProblem,
-                                const Trajectory_t &trajectory) const {
+  void setReferenceTrajectories(Problem_t& targetProblem,
+                                const Trajectory_t& trajectory) const {
     targetProblem.timeTrajectory = trajectory.timeTrajectory;
     targetProblem.stateTrajectory = trajectory.stateTrajectory;
     for (size_t k = 0; k < N; ++k) {
@@ -68,7 +68,7 @@ protected:
     targetProblem.inputTrajectory[N] = trajectory.inputTrajectory[N - 1];
   }
 
-  void checkSizes(const std::vector<LinearQuadraticStage_t> &lqr) const {
+  void checkSizes(const std::vector<LinearQuadraticStage_t>& lqr) const {
     ASSERT_EQ(lqr.size(), N + 1);
     for (size_t k = 0; k < N; ++k) {
       // Cost sizes

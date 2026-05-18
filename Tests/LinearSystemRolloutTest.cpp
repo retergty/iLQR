@@ -1,6 +1,7 @@
+#include <gtest/gtest.h>
+
 #include <array>
 #include <cmath>
-#include <gtest/gtest.h>
 
 #include "LinearController.hpp"
 #include "LinearSystemDynamics.hpp"
@@ -95,7 +96,7 @@ TEST(LinearSystemRolloutTest, FeedbackControllerMatchesClosedLoopSolution) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

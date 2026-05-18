@@ -10,12 +10,18 @@ namespace numeric_traits {
  * weakEpsilon。
  * @return limit epsilon 值（默认 1e-6）。
  */
-template <typename T> constexpr T limitEpsilon() { return T(1e-6); }
+template <typename T>
+constexpr T limitEpsilon() {
+  return T(1e-6);
+}
 
 /**
  * @brief 比较时使用的弱精度 epsilon。
  * @return weak epsilon 值（默认 1e-9）。
  */
-template <typename T> constexpr T weakEpsilon() { return T(1e-9); }
+template <typename T>
+constexpr T weakEpsilon() {
+  return T(1e-9);
+}
 
-} // namespace numeric_traits
+}  // namespace numeric_traits

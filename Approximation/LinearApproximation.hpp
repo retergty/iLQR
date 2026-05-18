@@ -4,8 +4,9 @@
  * f）。
  */
 #pragma once
-#include "Types.hpp"
 #include <array>
+
+#include "Types.hpp"
 
 /**
  * @brief 标量函数线性近似：f(x,u) = dfdx' dx + dfdu' du + f。
@@ -26,8 +27,8 @@ struct ScalarFunctionLinearApproximation {
   ScalarFunctionLinearApproximation() = default;
 
   /** @brief 复合加法赋值。 */
-  ScalarFunctionLinearApproximation &
-  operator+=(const ScalarFunctionLinearApproximation &rhs) {
+  ScalarFunctionLinearApproximation& operator+=(
+      const ScalarFunctionLinearApproximation& rhs) {
     dfdx += rhs.dfdx;
     dfdu += rhs.dfdu;
     f += rhs.f;
@@ -35,7 +36,7 @@ struct ScalarFunctionLinearApproximation {
   }
 
   /** @brief 复合标量乘法赋值。 */
-  ScalarFunctionLinearApproximation &operator*=(Scalar s) {
+  ScalarFunctionLinearApproximation& operator*=(Scalar s) {
     dfdx *= s;
     dfdu *= s;
     f *= s;
@@ -43,7 +44,7 @@ struct ScalarFunctionLinearApproximation {
   }
 
   /** @brief 将各系数置零。 */
-  ScalarFunctionLinearApproximation &setZero() {
+  ScalarFunctionLinearApproximation& setZero() {
     dfdx.setZero();
     dfdu.setZero();
     f = 0;
@@ -70,22 +71,22 @@ struct ScalarFunctionLinearApproximation<Scalar, XDim, 0> {
   ScalarFunctionLinearApproximation() = default;
 
   /** @brief 复合加法赋值。 */
-  ScalarFunctionLinearApproximation &
-  operator+=(const ScalarFunctionLinearApproximation &rhs) {
+  ScalarFunctionLinearApproximation& operator+=(
+      const ScalarFunctionLinearApproximation& rhs) {
     dfdx += rhs.dfdx;
     f += rhs.f;
     return *this;
   }
 
   /** @brief 复合标量乘法赋值。 */
-  ScalarFunctionLinearApproximation &operator*=(Scalar s) {
+  ScalarFunctionLinearApproximation& operator*=(Scalar s) {
     dfdx *= s;
     f *= s;
     return *this;
   }
 
   /** @brief 将各系数置零。 */
-  ScalarFunctionLinearApproximation &setZero() {
+  ScalarFunctionLinearApproximation& setZero() {
     dfdx.setZero();
     f = 0;
     return *this;
@@ -119,7 +120,7 @@ struct VectorFunctionLinearApproximation {
   VectorFunctionLinearApproximation() = default;
 
   /** @brief 将各系数置零。 */
-  VectorFunctionLinearApproximation &setZero() {
+  VectorFunctionLinearApproximation& setZero() {
     dfdx.setZero();
     dfdu.setZero();
     f.setZero();
@@ -146,7 +147,7 @@ struct VectorFunctionLinearApproximation<Scalar, FDimisions, XDim, 0> {
   VectorFunctionLinearApproximation() = default;
 
   /** @brief 将各系数置零。 */
-  VectorFunctionLinearApproximation &setZero() {
+  VectorFunctionLinearApproximation& setZero() {
     dfdx.setZero();
     f.setZero();
     return *this;
@@ -161,9 +162,9 @@ struct VectorFunctionLinearApproximation<Scalar, FDimisions, XDim, 0> {
 };
 
 template <typename Scalar, int XDim, int UDim>
-ScalarFunctionLinearApproximation<Scalar, XDim, UDim> &
-operator+=(ScalarFunctionLinearApproximation<Scalar, XDim, UDim> &lhs,
-           ScalarFunctionLinearApproximation<Scalar, XDim, 0> &rhs) {
+ScalarFunctionLinearApproximation<Scalar, XDim, UDim>& operator+=(
+    ScalarFunctionLinearApproximation<Scalar, XDim, UDim>& lhs,
+    ScalarFunctionLinearApproximation<Scalar, XDim, 0>& rhs) {
   lhs.f += rhs.f;
   lhs.dfdx += rhs.dfdx;
   return lhs;

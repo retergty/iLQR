@@ -34,9 +34,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #pragma once
 
+#include <array>
+
 #include "StateAugmentedLagrangian.hpp"
 #include "Types.hpp"
-#include <array>
 
 /**
  * @brief 仅状态增广拉格朗日惩罚项集合：对多个 StateAugmentedLagrangian 求和。
@@ -46,14 +47,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 template <typename Scalar, int XDim, int StateAugmentLagrangianNumbers>
 class StateAugmentedLagrangianCollection {
-public:
+ public:
   StateAugmentedLagrangianCollection() = default;
 
   /** @brief 获取各激活项的约束与惩罚值数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateAugmentLagrangianNumbers>
-  getValue(const Scalar time, const Vector<Scalar, XDim> &state,
-           const std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>
-               &termsMultiplier) const {
+  std::array<LagrangianMetrics<Scalar>, StateAugmentLagrangianNumbers> getValue(
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>&
+          termsMultiplier) const {
     std::array<LagrangianMetrics<Scalar>, StateAugmentLagrangianNumbers>
         termsConstraintPenalty;
 
@@ -66,9 +67,9 @@ public:
   /** Get the sum of state Lagrangian penalties quadratic approximation */
   ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
   getQuadraticApproximation(
-      const Scalar time, const Vector<Scalar, XDim> &state,
-      const std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>
-          &termsMultiplier) const {
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>&
+          termsMultiplier) const {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> penalty;
     penalty.setZero();
 
@@ -82,11 +83,11 @@ public:
   /** Update Lagrange/penalty multipliers, and the penalty value for each active
    * term. */
   void updateLagrangian(
-      Scalar time, const Vector<Scalar, XDim> &state,
-      std::array<LagrangianMetrics<Scalar>, StateAugmentLagrangianNumbers>
-          &termsMetrics,
-      std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>
-          &termsMultiplier) const {
+      Scalar time, const Vector<Scalar, XDim>& state,
+      std::array<LagrangianMetrics<Scalar>, StateAugmentLagrangianNumbers>&
+          termsMetrics,
+      std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>&
+          termsMultiplier) const {
     for (int i = 0; i < num_; ++i) {
       std::tie(termsMultiplier[i], termsMetrics[i].penalty) =
           lagrangian_[i]->updateLagrangian(
@@ -96,24 +97,25 @@ public:
 
   /** Initialize Lagrange/penalty multipliers for each active term. */
   void initializeLagrangian(
-      Scalar time, std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>
-                       &termsMultiplier) const {
+      Scalar time,
+      std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>&
+          termsMultiplier) const {
     for (int i = 0; i < num_; ++i) {
       termsMultiplier[i] = lagrangian_[i]->initializeLagrangian(time);
     }
   }
 
   // add cost to list end
-  void
-  add(const StateAugmentedLagrangian<Scalar, XDim> *state_augment_lagrangian) {
+  void add(
+      const StateAugmentedLagrangian<Scalar, XDim>* state_augment_lagrangian) {
     assert(num_ < StateAugmentLagrangianNumbers);
     lagrangian_[num_] = state_augment_lagrangian;
     num_++;
   }
 
-private:
+ private:
   int num_{0};
-  std::array<const StateAugmentedLagrangian<Scalar, XDim> *,
+  std::array<const StateAugmentedLagrangian<Scalar, XDim>*,
              StateAugmentLagrangianNumbers>
       lagrangian_;
 };

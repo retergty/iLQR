@@ -44,7 +44,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDim, int UDim> struct ModelData {
+template <typename Scalar, int XDim, int UDim>
+struct ModelData {
   Scalar time = 0.0;
 
   /** @brief 动力学线性近似：x_{k+1} ≈ dfdx*dx + dfdu*du + f。 */

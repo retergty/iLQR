@@ -12,7 +12,8 @@
  * 算法配置：最大迭代次数、代价收敛容差、约束容差、时间步长、搜索策略类型及线搜索参数等。
  * @tparam Scalar 标量类型。
  */
-template <typename Scalar> struct DDPSettings {
+template <typename Scalar>
+struct DDPSettings {
   /** @brief DDP 最大迭代次数。 */
   size_t maxNumIterations_ = 10;
   /** @brief 基于代价最小相对变化的终止条件阈值。 */
@@ -35,4 +36,4 @@ template <typename Scalar> struct DDPSettings {
   /** @brief 线搜索策略参数。 */
   LineSearchSettings<Scalar> lineSearch_{};
 
-}; // end of DDP_Settings
+};  // end of DDP_Settings

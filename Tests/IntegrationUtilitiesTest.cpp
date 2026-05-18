@@ -1,8 +1,10 @@
+#include <gtest/gtest.h>
+
+#include <array>
+
 #include "Observer.hpp"
 #include "TrapezoidalIntegration.hpp"
 #include "Types.hpp"
-#include <array>
-#include <gtest/gtest.h>
 
 // 验证非均匀时间网格上的标量梯形积分结果正确。
 TEST(IntegrationUtilitiesTest, TrapezoidalIntegrationScalarNonUniformGrid) {
@@ -63,7 +65,7 @@ TEST(IntegrationUtilitiesTest, ObserverStoresUpToCapacityAndCanClear) {
   EXPECT_TRUE(states[0].isApprox(x2, 1e-10));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

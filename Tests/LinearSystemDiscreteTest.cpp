@@ -1,9 +1,11 @@
+#include <gtest/gtest.h>
+
+#include <iostream>
+
 #include "LinearSystemDynamics.hpp"
 #include "OperatingPoints.hpp"
 #include "iLQR.hpp"
 #include "math.h"
-#include <gtest/gtest.h>
-#include <iostream>
 
 // 验证 EK2 离散化结果与显式 RK2 公式一致。
 TEST(LinearSystemTest, DiscreteEK2Test) {
@@ -185,7 +187,7 @@ TEST(LinearSystemTest, EK4SensitivityMatchesLinearSystemAnalyticResult) {
   EXPECT_TRUE(approx.f.isApprox(expectedF, 1e-12));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

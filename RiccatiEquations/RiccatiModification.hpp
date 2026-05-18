@@ -42,7 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDim, int UDim> struct RiccatiModification {
+template <typename Scalar, int XDim, int UDim>
+struct RiccatiModification {
   /** @brief 该节点时间。 */
   Scalar time_ = 0.0;
 

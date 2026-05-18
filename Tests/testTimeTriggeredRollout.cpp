@@ -2,9 +2,9 @@
  * @file testTimeTriggeredRollout.cpp
  * @brief TimeTriggeredRollout 兼容性测试：匹配当前项目中的 rollout API。
  */
-#include <array>
-
 #include <gtest/gtest.h>
+
+#include <array>
 
 #include "LinearController.hpp"
 #include "LinearSystemDynamics.hpp"
@@ -25,7 +25,7 @@ using InputMatrix = Matrix<Scalar, XDim, UDim>;
 using Controller = LinearController<Scalar, XDim, UDim, ControllerLen>;
 using System = LinearSystemDynamics<Scalar, XDim, UDim>;
 using Rollout = TimeTriggeredRollout<Scalar, XDim, UDim>;
-} // namespace
+}  // namespace
 
 TEST(TimeTriggeredRolloutCompatibilityTest,
      ProducesConsistentTrajectoryBuffers) {
@@ -71,7 +71,7 @@ TEST(TimeTriggeredRolloutCompatibilityTest,
   EXPECT_NEAR(stateTrajectory[count - 1](1), 1.0, 1e-3);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

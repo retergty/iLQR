@@ -50,27 +50,27 @@ template <typename Scalar, int XDim, int UDim>
 class StateInputAugmentedLagrangianInterface
     : IntrusiveListNode<
           StateInputAugmentedLagrangianInterface<Scalar, XDim, UDim>> {
-public:
+ public:
   StateInputAugmentedLagrangianInterface() = default;
   virtual ~StateInputAugmentedLagrangianInterface() = default;
 
   /** Get the constraint and its penalty value */
-  virtual LagrangianMetrics<Scalar>
-  getValue(Scalar time, const Vector<Scalar, XDim> &state,
-           const Vector<Scalar, UDim> &input,
-           const Multiplier<Scalar> &lagrangian) const = 0;
+  virtual LagrangianMetrics<Scalar> getValue(
+      Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input,
+      const Multiplier<Scalar>& lagrangian) const = 0;
 
   /** Get the constraint's penalty quadratic approximation */
   virtual ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  getQuadraticApproximation(Scalar time, const Vector<Scalar, XDim> &state,
-                            const Vector<Scalar, UDim> &input,
-                            const Multiplier<Scalar> &lagrangian) const = 0;
+  getQuadraticApproximation(Scalar time, const Vector<Scalar, XDim>& state,
+                            const Vector<Scalar, UDim>& input,
+                            const Multiplier<Scalar>& lagrangian) const = 0;
 
   /** Update Lagrange/penalty multipliers and the penalty function value. */
-  virtual std::pair<Multiplier<Scalar>, Scalar>
-  updateLagrangian(Scalar time, const Vector<Scalar, XDim> &state,
-                   const Vector<Scalar, UDim> &input, const Scalar constraint,
-                   const Multiplier<Scalar> &lagrangian) const = 0;
+  virtual std::pair<Multiplier<Scalar>, Scalar> updateLagrangian(
+      Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input, const Scalar constraint,
+      const Multiplier<Scalar>& lagrangian) const = 0;
 
   /** Initialize Lagrange/penalty multipliers. */
   virtual Multiplier<Scalar> initializeLagrangian(Scalar time) const = 0;

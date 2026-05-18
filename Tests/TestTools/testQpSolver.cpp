@@ -39,7 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "testProblemsGeneration.hpp"
 
 class QpSolverTest : public testing::Test {
-protected:
+ protected:
   using Scalar = double;
   static constexpr int N_ = 5;
   static constexpr int nx_ = 4;

@@ -1,5 +1,6 @@
-#include <array>
 #include <gtest/gtest.h>
+
+#include <array>
 
 #include "ChangeOfInputVariables.hpp"
 #include "LinearApproximation.hpp"
@@ -217,7 +218,7 @@ TEST(ApproximationTest, LinearQuadraticApproximatorComputesFinalCostAndLQ) {
   EXPECT_TRUE(modelData.cost.dfdxx.isApprox(QFinal, 1e-12));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

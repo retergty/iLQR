@@ -6,31 +6,34 @@
 #include <cassert>
 #include <iterator>
 
-template <typename T> class IntrusiveList;
+template <typename T>
+class IntrusiveList;
 
 /**
  * @brief 侵入式链表节点基类：子类 Derive 可被挂入 IntrusiveList<Derive>。
  * @tparam Derive 派生类类型（CRTP）。
  */
-template <typename Derive> class IntrusiveListNode {
-public:
+template <typename Derive>
+class IntrusiveListNode {
+ public:
   IntrusiveListNode() = default;
   virtual ~IntrusiveListNode() = default;
 
-private:
+ private:
   friend class IntrusiveList<Derive>;
 
-  IntrusiveListNode *prev_{nullptr};
-  IntrusiveListNode *next_{nullptr};
-  IntrusiveList<Derive> *owner_{nullptr};
+  IntrusiveListNode* prev_{nullptr};
+  IntrusiveListNode* next_{nullptr};
+  IntrusiveList<Derive>* owner_{nullptr};
 };
 
 /**
  * @brief 侵入式双向链表：不分配节点内存，元素类型需继承 IntrusiveListNode<T>。
  * @tparam T 元素类型（即节点类型）。
  */
-template <typename T> class IntrusiveList {
-public:
+template <typename T>
+class IntrusiveList {
+ public:
   /** @brief 构造空链表。 */
   IntrusiveList() {
     end_.owner_ = this;
@@ -39,17 +42,17 @@ public:
     head_ = &end_;
   }
   ~IntrusiveList() = default;
-  IntrusiveList(const IntrusiveList &) = delete;
-  IntrusiveList &operator=(const IntrusiveList &) = delete;
+  IntrusiveList(const IntrusiveList&) = delete;
+  IntrusiveList& operator=(const IntrusiveList&) = delete;
 
   class iterator {
-  public:
-    explicit iterator(IntrusiveListNode<T> *now = nullptr) : now_(now) {};
+   public:
+    explicit iterator(IntrusiveListNode<T>* now = nullptr) : now_(now) {};
     operator bool() const { return now_ != nullptr; }
-    T &operator*() const { return static_cast<T &>(*now_); }
-    T *operator->() const { return static_cast<T *>(now_); }
+    T& operator*() const { return static_cast<T&>(*now_); }
+    T* operator->() const { return static_cast<T*>(now_); }
 
-    iterator &operator++() {
+    iterator& operator++() {
       now_ = now_->next_;
       return *this;
     }
@@ -59,7 +62,7 @@ public:
       now_ = now_->next_;
       return tmp;
     }
-    iterator &operator--() {
+    iterator& operator--() {
       now_ = now_->prev_;
       return *this;
     }
@@ -68,14 +71,14 @@ public:
       now_ = now_->prev_;
       return tmp;
     }
-    bool operator==(const iterator &rhs) const { return now_ == rhs.now_; }
-    bool operator!=(const iterator &rhs) const { return now_ != rhs.now_; }
+    bool operator==(const iterator& rhs) const { return now_ == rhs.now_; }
+    bool operator!=(const iterator& rhs) const { return now_ != rhs.now_; }
     iterator operator+(int index) {
       iterator tmp = *this;
       tmp += index;
       return tmp;
     }
-    iterator &operator+=(int index) {
+    iterator& operator+=(int index) {
       for (int i = 0; i < index; ++i) {
         now_ = now_->next_;
       }
@@ -84,21 +87,21 @@ public:
 
     friend class IntrusiveList<T>;
 
-  private:
-    IntrusiveListNode<T> *now_;
+   private:
+    IntrusiveListNode<T>* now_;
   };
 
   class const_iterator {
-  public:
-    explicit const_iterator(const IntrusiveListNode<T> *now = nullptr)
+   public:
+    explicit const_iterator(const IntrusiveListNode<T>* now = nullptr)
         : now_(now) {};
-    const_iterator(const iterator &other) : now_(other.now_) {}
+    const_iterator(const iterator& other) : now_(other.now_) {}
 
     operator bool() const { return now_ != nullptr; }
-    const T &operator*() const { return static_cast<const T &>(*now_); }
-    const T *operator->() const { return static_cast<const T *>(now_); }
+    const T& operator*() const { return static_cast<const T&>(*now_); }
+    const T* operator->() const { return static_cast<const T*>(now_); }
 
-    const_iterator &operator++() {
+    const_iterator& operator++() {
       now_ = now_->next_;
       return *this;
     }
@@ -108,7 +111,7 @@ public:
       now_ = now_->next_;
       return tmp;
     }
-    const_iterator &operator--() {
+    const_iterator& operator--() {
       now_ = now_->prev_;
       return *this;
     }
@@ -117,10 +120,10 @@ public:
       now_ = now_->prev_;
       return tmp;
     }
-    bool operator==(const const_iterator &rhs) const {
+    bool operator==(const const_iterator& rhs) const {
       return now_ == rhs.now_;
     }
-    bool operator!=(const const_iterator &rhs) const {
+    bool operator!=(const const_iterator& rhs) const {
       return now_ != rhs.now_;
     }
     const_iterator operator+(int index) {
@@ -128,7 +131,7 @@ public:
       tmp += index;
       return tmp;
     }
-    const_iterator &operator+=(int index) {
+    const_iterator& operator+=(int index) {
       for (int i = 0; i < index; ++i) {
         now_ = now_->next_;
       }
@@ -137,8 +140,8 @@ public:
 
     friend class IntrusiveList<T>;
 
-  private:
-    const IntrusiveListNode<T> *now_;
+   private:
+    const IntrusiveListNode<T>* now_;
   };
 
   /**
@@ -146,17 +149,17 @@ public:
    * @param [in] Node: point to node
    * @return -1: error, 0 success
    */
-  int remove(IntrusiveListNode<T> *node_ptr) {
+  int remove(IntrusiveListNode<T>* node_ptr) {
     assert(node_ptr != nullptr);
 
-    IntrusiveList *owner = node_ptr->owner_;
+    IntrusiveList* owner = node_ptr->owner_;
     if (owner == nullptr) {
       return -1;
     }
     assert(node_ptr != &owner->end_);
 
-    IntrusiveListNode<T> *prev = node_ptr->prev_;
-    IntrusiveListNode<T> *next = node_ptr->next_;
+    IntrusiveListNode<T>* prev = node_ptr->prev_;
+    IntrusiveListNode<T>* next = node_ptr->next_;
 
     prev->next_ = next;
     next->prev_ = prev;
@@ -179,7 +182,7 @@ public:
    * @param [in] Node: node to be inserted
    * @return iterator point to inserted node
    */
-  iterator insert(iterator pos, IntrusiveListNode<T> &node) {
+  iterator insert(iterator pos, IntrusiveListNode<T>& node) {
     assert(pos.now_ != nullptr);
     assert(pos.now_->owner_ == this);
 
@@ -188,7 +191,7 @@ public:
       remove(&node);
     }
 
-    IntrusiveListNode<T> *insert_ptr = pos.now_;
+    IntrusiveListNode<T>* insert_ptr = pos.now_;
 
     node.next_ = insert_ptr;
     node.prev_ = insert_ptr->prev_;
@@ -215,10 +218,10 @@ public:
     assert(pos.now_ != nullptr);
     assert(pos.now_->owner_ == this);
     assert(pos.now_ != &end_);
-    IntrusiveListNode<T> *node_ptr = pos.now_;
+    IntrusiveListNode<T>* node_ptr = pos.now_;
 
-    IntrusiveListNode<T> *last = node_ptr->prev_;
-    IntrusiveListNode<T> *next = node_ptr->next_;
+    IntrusiveListNode<T>* last = node_ptr->prev_;
+    IntrusiveListNode<T>* next = node_ptr->next_;
 
     last->next_ = next;
     next->prev_ = last;
@@ -247,7 +250,7 @@ public:
 
   const_iterator cend() const { return end(); }
 
-private:
-  IntrusiveListNode<T> *head_;
+ private:
+  IntrusiveListNode<T>* head_;
   IntrusiveListNode<T> end_;
 };

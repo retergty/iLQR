@@ -42,7 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @brief 离散时间 Riccati 单步递推的中间缓存（Sm*Am, Sm*Bm, Gm, Gv, Hm*Km
  * 等）。
  */
-template <typename Scalar, int XDim, int UDim> struct DiscreteTimeRiccatiData {
+template <typename Scalar, int XDim, int UDim>
+struct DiscreteTimeRiccatiData {
   // Vector<Scalar, XDim> Sm_projectedHv_;
   Matrix<Scalar, XDim, XDim> Sm_projectedAm_;
   Matrix<Scalar, XDim, UDim> Sm_projectedBm_;
@@ -66,7 +67,7 @@ template <typename Scalar, int XDim, int UDim> struct DiscreteTimeRiccatiData {
  */
 template <typename Scalar, int XDim, int UDim>
 class DiscreteTimeRiccatiEquations {
-public:
+ public:
   using DiscreteTimeRiccatiData_t = DiscreteTimeRiccatiData<Scalar, XDim, UDim>;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
   using RiccatiModification_t = RiccatiModification<Scalar, XDim, UDim>;
@@ -95,20 +96,20 @@ public:
    * @param [out] Sv 当前 Riccati 向量。
    * @param [out] s 当前 Riccati 标量。
    */
-  void computeMap(const ModelData_t &projectedModelData,
-                  const RiccatiModification_t &riccatiModification,
-                  const Matrix<Scalar, XDim, XDim> &SmNext,
-                  const Vector<Scalar, XDim> &SvNext, const Scalar &sNext,
-                  Matrix<Scalar, UDim, XDim> &projectedKm,
-                  Vector<Scalar, UDim> &projectedLv,
-                  Matrix<Scalar, XDim, XDim> &Sm, Vector<Scalar, XDim> &Sv,
-                  Scalar &s) {
+  void computeMap(const ModelData_t& projectedModelData,
+                  const RiccatiModification_t& riccatiModification,
+                  const Matrix<Scalar, XDim, XDim>& SmNext,
+                  const Vector<Scalar, XDim>& SvNext, const Scalar& sNext,
+                  Matrix<Scalar, UDim, XDim>& projectedKm,
+                  Vector<Scalar, UDim>& projectedLv,
+                  Matrix<Scalar, XDim, XDim>& Sm, Vector<Scalar, XDim>& Sv,
+                  Scalar& s) {
     computeMapILQR(projectedModelData, riccatiModification, SmNext, SvNext,
                    sNext, discreteTimeRiccatiData_, projectedKm, projectedLv,
                    Sm, Sv, s);
   }
 
-private:
+ private:
   /**
    * @brief iLQR 形式的一步 Riccati 差分方程实现（由 computeMap 调用）。
    * @param [in] projectedModelData 投影后的模型数据。
@@ -123,20 +124,20 @@ private:
    * @param [out] Sv 当前 Riccati 向量。
    * @param [out] s 当前 Riccati 标量。
    */
-  void computeMapILQR(const ModelData_t &projectedModelData,
-                      const RiccatiModification_t &riccatiModification,
-                      const Matrix<Scalar, XDim, XDim> &SmNext,
-                      const Vector<Scalar, XDim> &SvNext, const Scalar &sNext,
-                      DiscreteTimeRiccatiData_t &dreCache,
-                      Matrix<Scalar, UDim, XDim> &projectedKm,
-                      Vector<Scalar, UDim> &projectedLv,
-                      Matrix<Scalar, XDim, XDim> &Sm, Vector<Scalar, XDim> &Sv,
-                      Scalar &s) const {
+  void computeMapILQR(const ModelData_t& projectedModelData,
+                      const RiccatiModification_t& riccatiModification,
+                      const Matrix<Scalar, XDim, XDim>& SmNext,
+                      const Vector<Scalar, XDim>& SvNext, const Scalar& sNext,
+                      DiscreteTimeRiccatiData_t& dreCache,
+                      Matrix<Scalar, UDim, XDim>& projectedKm,
+                      Vector<Scalar, UDim>& projectedLv,
+                      Matrix<Scalar, XDim, XDim>& Sm, Vector<Scalar, XDim>& Sv,
+                      Scalar& s) const {
     // precomputation (1)
     // dreCache.Sm_projectedHv_ = SmNext * projectedModelData.dynamicsBias;
     dreCache.Sm_projectedAm_ = SmNext * projectedModelData.dynamics.dfdx;
     dreCache.Sm_projectedBm_ = SmNext * projectedModelData.dynamics.dfdu;
-    dreCache.Sv_plus_Sm_projectedHv_ = SvNext; // + dreCache.Sm_projectedHv_;
+    dreCache.Sv_plus_Sm_projectedHv_ = SvNext;  // + dreCache.Sm_projectedHv_;
 
     // projectedGm = projectedPm + projectedBm^T * Sm * projectedAm
     dreCache.projectedGm_ = projectedModelData.cost.dfdux;
@@ -227,7 +228,7 @@ private:
     }
   }
 
-private:
+ private:
   bool reducedFormRiccati_;
 
   DiscreteTimeRiccatiData_t discreteTimeRiccatiData_;

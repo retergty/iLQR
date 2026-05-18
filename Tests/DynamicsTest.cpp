@@ -2,10 +2,11 @@
  * @file DynamicsTest.cpp
  * @brief 动力学模块测试：LinearSystemDynamics 的 flow map 与线性近似。
  */
+#include <gtest/gtest.h>
+
 #include "LinearController.hpp"
 #include "LinearSystemDynamics.hpp"
 #include "Types.hpp"
-#include <gtest/gtest.h>
 
 // 验证线性系统的流映射返回 Ax + Bu。
 TEST(DynamicsTest, LinearSystem_FlowMap) {
@@ -85,7 +86,7 @@ TEST(DynamicsTest, ControlledFlowMap_UsesInterpolatedControllerInput) {
   EXPECT_TRUE(dyn.computeFlowMap(0.5, x).isApprox(expected, 1e-10));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

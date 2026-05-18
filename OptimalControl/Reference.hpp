@@ -3,11 +3,12 @@
  * @brief 参考轨迹接口：用户定义的目标时间/状态/输入轨迹及插值查询。
  */
 #pragma once
+#include <algorithm>
+#include <array>
+
 #include "Integration.hpp"
 #include "LinearInterpolation.hpp"
 #include "Types.hpp"
-#include <algorithm>
-#include <array>
 
 /**
  * @brief
@@ -24,47 +25,47 @@ struct TargetTrajectories {
 
   /** @brief 用给定时间、状态、输入轨迹构造。 */
   TargetTrajectories(
-      const std::array<Scalar, ArrayLength> &desiredTimeTrajectory,
-      const std::array<Vector<Scalar, XDim>, ArrayLength>
-          &desiredStateTrajectory,
-      const std::array<Vector<Scalar, UDim>, ArrayLength>
-          &desiredInputTrajectory)
+      const std::array<Scalar, ArrayLength>& desiredTimeTrajectory,
+      const std::array<Vector<Scalar, XDim>, ArrayLength>&
+          desiredStateTrajectory,
+      const std::array<Vector<Scalar, UDim>, ArrayLength>&
+          desiredInputTrajectory)
       : timeTrajectory(desiredTimeTrajectory),
         stateTrajectory(desiredStateTrajectory),
         inputTrajectory(desiredInputTrajectory) {}
 
   /** @brief 用给定时间、状态轨迹构造，输入轨迹置零。 */
   TargetTrajectories(
-      const std::array<Scalar, ArrayLength> &desiredTimeTrajectory,
-      const std::array<Vector<Scalar, XDim>, ArrayLength>
-          &desiredStateTrajectory)
+      const std::array<Scalar, ArrayLength>& desiredTimeTrajectory,
+      const std::array<Vector<Scalar, XDim>, ArrayLength>&
+          desiredStateTrajectory)
       : timeTrajectory(desiredTimeTrajectory),
         stateTrajectory(desiredStateTrajectory) {
-    for (auto &vec : inputTrajectory) {
+    for (auto& vec : inputTrajectory) {
       vec.setZero();
     }
   }
 
   /** @brief 设置完整轨迹（时间、状态、输入）。 */
-  void
-  setTrajectory(const std::array<Scalar, ArrayLength> &desiredTimeTrajectory,
-                const std::array<Vector<Scalar, XDim>, ArrayLength>
-                    &desiredStateTrajectory,
-                const std::array<Vector<Scalar, UDim>, ArrayLength>
-                    &desiredInputTrajectory) {
+  void setTrajectory(
+      const std::array<Scalar, ArrayLength>& desiredTimeTrajectory,
+      const std::array<Vector<Scalar, XDim>, ArrayLength>&
+          desiredStateTrajectory,
+      const std::array<Vector<Scalar, UDim>, ArrayLength>&
+          desiredInputTrajectory) {
     timeTrajectory = desiredTimeTrajectory;
     stateTrajectory = desiredStateTrajectory;
     inputTrajectory = desiredInputTrajectory;
   }
 
   /** @brief 设置时间与状态轨迹，输入轨迹置零。 */
-  void
-  setTrajectory(const std::array<Scalar, ArrayLength> &desiredTimeTrajectory,
-                const std::array<Vector<Scalar, XDim>, ArrayLength>
-                    &desiredStateTrajectory) {
+  void setTrajectory(
+      const std::array<Scalar, ArrayLength>& desiredTimeTrajectory,
+      const std::array<Vector<Scalar, XDim>, ArrayLength>&
+          desiredStateTrajectory) {
     timeTrajectory = desiredTimeTrajectory;
     stateTrajectory = desiredStateTrajectory;
-    for (auto &vec : inputTrajectory) {
+    for (auto& vec : inputTrajectory) {
       vec.setZero();
     }
   }
@@ -75,7 +76,8 @@ struct TargetTrajectories {
     return stateTrajectory[index];
   }
   /** @brief 按编译期索引获取期望状态。 */
-  template <int Index> Vector<Scalar, XDim> getDesiredState() const {
+  template <int Index>
+  Vector<Scalar, XDim> getDesiredState() const {
     assert(Index >= 0 && Index < ArrayLength);
     return stateTrajectory[Index];
   }
@@ -92,7 +94,8 @@ struct TargetTrajectories {
   }
 
   /** @brief 按编译期索引获取期望输入。 */
-  template <int Index> Vector<Scalar, UDim> getDesiredInput() const {
+  template <int Index>
+  Vector<Scalar, UDim> getDesiredInput() const {
     assert(Index >= 0 && Index < ArrayLength);
     return inputTrajectory[Index];
   }

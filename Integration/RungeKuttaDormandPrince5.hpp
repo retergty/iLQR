@@ -10,8 +10,9 @@
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  */
-template <typename Scalar, int XDim> class RungeKuttaDormandPrince5Stepper {
-public:
+template <typename Scalar, int XDim>
+class RungeKuttaDormandPrince5Stepper {
+ public:
   RungeKuttaDormandPrince5Stepper() = default;
   /**
    * @brief 执行一步 Dormand-Prince 积分。
@@ -23,10 +24,10 @@ public:
    * @param [out] x_out 下一状态。
    * @param [out] dxdt_out 下一状态的导数。
    */
-  void doStep(const OdeBase<Scalar, XDim> &system,
-              const Vector<Scalar, XDim> &x0, const Vector<Scalar, XDim> &dxdt,
-              const Scalar t, const Scalar dt, Vector<Scalar, XDim> &x_out,
-              Vector<Scalar, XDim> &dxdt_out) {
+  void doStep(const OdeBase<Scalar, XDim>& system,
+              const Vector<Scalar, XDim>& x0, const Vector<Scalar, XDim>& dxdt,
+              const Scalar t, const Scalar dt, Vector<Scalar, XDim>& x_out,
+              Vector<Scalar, XDim>& dxdt_out) {
     /* Runge Kutta Dormand-Prince Butcher tableau constants.
      * https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method */
     constexpr Scalar a2 = 1.0 / 5;
@@ -61,7 +62,7 @@ public:
     constexpr Scalar c5 = -2187.0 / 6784;
     constexpr Scalar c6 = 11.0 / 84;
 
-    k1_ = dxdt; // k1 = system(x, t) from previous iteration
+    k1_ = dxdt;  // k1 = system(x, t) from previous iteration
     Vector<Scalar, XDim> x = x0 + dt * b21 * k1_;
     k2_ = system.computeFlowMap(t + dt * a2, x);
     x = x0 + dt * b31 * k1_ + dt * b32 * k2_;
@@ -77,7 +78,7 @@ public:
     dxdt_out = system.computeFlowMap(t + dt, x_out);
   }
 
-private:
+ private:
   /**
    * Estimate the maximal error value.
    *
@@ -89,9 +90,9 @@ private:
    * @param [in] relTol: The relative error tolerance.
    * @return maximal error value.
    */
-  static Scalar maxError(const Vector<Scalar, XDim> &x_old,
-                         const Vector<Scalar, XDim> &dxdt_old,
-                         const Vector<Scalar, XDim> &x_err, const Scalar dt,
+  static Scalar maxError(const Vector<Scalar, XDim>& x_old,
+                         const Vector<Scalar, XDim>& dxdt_old,
+                         const Vector<Scalar, XDim>& x_err, const Scalar dt,
                          const Scalar absTol, const Scalar relTol) {
     const Vector<Scalar, XDim> err =
         x_err.array() /
@@ -112,7 +113,7 @@ private:
  */
 template <typename Scalar, int XDim>
 class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDim> {
-public:
+ public:
   RungeKuttaDormandPrince5() {};
 
   ~RungeKuttaDormandPrince5() override = default;
@@ -129,9 +130,9 @@ public:
    * @param [in] finalTime: Final time.
    * @param [in] dt: Time step.
    */
-  void integrateConst(OdeBase<Scalar, XDim> &system,
-                      Observer<Scalar, XDim> &observer,
-                      const Vector<Scalar, XDim> &initialState,
+  void integrateConst(OdeBase<Scalar, XDim>& system,
+                      Observer<Scalar, XDim>& observer,
+                      const Vector<Scalar, XDim>& initialState,
                       const Scalar startTime, const Scalar finalTime,
                       const Scalar dt) override {
     // TODO(mspieler): This does one redundant system() evaluation at the end.
@@ -154,7 +155,7 @@ public:
     observer.observe(x, t);
   }
 
-private:
+ private:
   /** Helper less comparison for both positive and negative dt case. */
   bool lessWithSign(Scalar t1, Scalar t2, Scalar dt) {
     if (dt > 0) {
@@ -164,6 +165,6 @@ private:
     }
   }
 
-private:
+ private:
   RungeKuttaDormandPrince5Stepper<Scalar, XDim> stepper_;
 };

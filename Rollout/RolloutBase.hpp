@@ -15,7 +15,8 @@ enum class RootFinderType { ANDERSON_BJORCK, PEGASUS, ILLINOIS, REGULA_FALSI };
 /**
  * @brief 前向 rollout 的配置：积分步长、是否在积分后再算控制以构造输入轨迹。
  */
-template <typename Scalar> struct RolloutSettings {
+template <typename Scalar>
+struct RolloutSettings {
   /** @brief 固定步长积分时使用的时间步长。 */
   Scalar timeStep = 1e-2;
 
@@ -26,17 +27,20 @@ template <typename Scalar> struct RolloutSettings {
 /**
  * @brief 指向轨迹缓冲区的轻量句柄：时间/状态/输入指针及最大长度。
  */
-template <typename Scalar, int XDim, int UDim> struct RolloutTrajectoryPointer {
+template <typename Scalar, int XDim, int UDim>
+struct RolloutTrajectoryPointer {
   /** @brief 构造：绑定时间、状态、输入数组指针及最大写入长度。 */
-  RolloutTrajectoryPointer(Scalar *time_trajectory,
-                           Vector<Scalar, XDim> *state_trajectory,
-                           Vector<Scalar, UDim> *input_trajectory,
+  RolloutTrajectoryPointer(Scalar* time_trajectory,
+                           Vector<Scalar, XDim>* state_trajectory,
+                           Vector<Scalar, UDim>* input_trajectory,
                            int max_length)
-      : timeTrajectory(time_trajectory), stateTrajectory(state_trajectory),
-        inputTrajectory(input_trajectory), maxLength(max_length) {};
-  Scalar *timeTrajectory;
-  Vector<Scalar, XDim> *stateTrajectory;
-  Vector<Scalar, UDim> *inputTrajectory;
+      : timeTrajectory(time_trajectory),
+        stateTrajectory(state_trajectory),
+        inputTrajectory(input_trajectory),
+        maxLength(max_length) {};
+  Scalar* timeTrajectory;
+  Vector<Scalar, XDim>* stateTrajectory;
+  Vector<Scalar, UDim>* inputTrajectory;
   size_t maxLength;
 };
 
@@ -47,8 +51,9 @@ template <typename Scalar, int XDim, int UDim> struct RolloutTrajectoryPointer {
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDim, int UDim> class RolloutBase {
-public:
+template <typename Scalar, int XDim, int UDim>
+class RolloutBase {
+ public:
   using RolloutTrajectoryPointer_t =
       RolloutTrajectoryPointer<Scalar, XDim, UDim>;
   /** @brief 默认构造。 */
@@ -58,7 +63,7 @@ public:
   virtual ~RolloutBase() = default;
 
   /** @brief 返回 rollout 配置（步长、是否重建输入轨迹等）。 */
-  RolloutSettings<Scalar> &settings() { return rolloutSettings_; }
+  RolloutSettings<Scalar>& settings() { return rolloutSettings_; }
 
   /**
    * @brief 从 initTime 到 finalTime 用给定控制器前向积分动力学，结果写入
@@ -70,10 +75,10 @@ public:
    * @param [in,out] trajectory 轨迹输出（时间/状态/输入指针及最大长度）。
    * @return 写入的轨迹点数。
    */
-  virtual int run(const Scalar initTime, const Vector<Scalar, XDim> &initState,
+  virtual int run(const Scalar initTime, const Vector<Scalar, XDim>& initState,
                   const Scalar finalTime,
-                  ControllerBase<Scalar, XDim, UDim> *controller,
-                  RolloutTrajectoryPointer_t &trajectory) = 0;
+                  ControllerBase<Scalar, XDim, UDim>* controller,
+                  RolloutTrajectoryPointer_t& trajectory) = 0;
 
   // /**
   //  * Forward integrate the system dynamics with given controller. It uses the
@@ -95,6 +100,6 @@ public:
   //   XDim>, ArrayLen>& stateTrajectory, std::array<Vector<Scalar, UDim>,
   //   ArrayLen>& inputTrajectory) = 0;
 
-protected:
+ protected:
   RolloutSettings<Scalar> rolloutSettings_{};
 };

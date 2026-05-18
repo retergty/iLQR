@@ -36,26 +36,26 @@ using SystemDynamics = SystemDynamicsBase<Scalar, kStateDim, kInputDim>;
 using LinearSystem = LinearSystemDynamics<Scalar, kStateDim, kInputDim>;
 
 // 比较两个系统在线性化点处的 A、B 是否足够接近。
-bool derivativeChecker(SystemDynamics &sys1, SystemDynamics &sys2,
-                       Scalar tolerance, Scalar t, const StateVector &x,
-                       const InputVector &u);
+bool derivativeChecker(SystemDynamics& sys1, SystemDynamics& sys2,
+                       Scalar tolerance, Scalar t, const StateVector& x,
+                       const InputVector& u);
 
 // 简单摆系统，theta = 0 对应竖直向上平衡点。
 class PendulumSystem final : public SystemDynamics {
-public:
+ public:
   PendulumSystem() = default;
   ~PendulumSystem() override = default;
 
-  StateVector computeFlowMap(Scalar t, const StateVector &x,
-                             const InputVector &u) const override {
+  StateVector computeFlowMap(Scalar t, const StateVector& x,
+                             const InputVector& u) const override {
     (void)t;
     StateVector dfdt;
     dfdt << x(1), std::sin(x(0)) + 0.1 * u(0);
     return dfdt;
   }
 
-  LinearApproximation linearApproximation(Scalar t, const StateVector &x,
-                                          const InputVector &u) override {
+  LinearApproximation linearApproximation(Scalar t, const StateVector& x,
+                                          const InputVector& u) override {
     (void)t;
     LinearApproximation linearDynamics;
     linearDynamics.f = computeFlowMap(t, x, u);
@@ -131,16 +131,16 @@ TEST(testSystemDynamicsLinearizer, testPendulum) {
       &nonLinSys,
       /*doubleSidedDerivative=*/true,
       /*isSecondOrderSystem=*/false, kEpsilon);
-  for (const auto &state : testStates) {
+  for (const auto& state : testStates) {
     ASSERT_TRUE(derivativeChecker(nonLinSys, linearizedSys, kTolerance, t,
                                   state, input));
   }
 }
 
 // 仅比较对状态和输入的一阶 Jacobian；名义流值在这里不参与判定。
-bool derivativeChecker(SystemDynamics &sys1, SystemDynamics &sys2,
-                       Scalar tolerance, Scalar t, const StateVector &x,
-                       const InputVector &u) {
+bool derivativeChecker(SystemDynamics& sys1, SystemDynamics& sys2,
+                       Scalar tolerance, Scalar t, const StateVector& x,
+                       const InputVector& u) {
   const auto derivatives1 = sys1.linearApproximation(t, x, u);
   const auto derivatives2 = sys2.linearApproximation(t, x, u);
   const Scalar AError =
@@ -150,4 +150,4 @@ bool derivativeChecker(SystemDynamics &sys1, SystemDynamics &sys2,
   return tolerance > std::max(AError, BError);
 }
 
-} // namespace
+}  // namespace

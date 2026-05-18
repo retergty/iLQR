@@ -33,8 +33,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #pragma once
 
-#include "HessianCorrection.hpp"
 #include <limits>
+
+#include "HessianCorrection.hpp"
 
 /**
  * @brief DDP 子问题求解策略枚举：线搜索或 Levenberg-Marquardt。
@@ -45,7 +46,8 @@ enum class SearchStrategyType { LINE_SEARCH, LEVENBERG_MARQUARDT };
  * @brief 搜索策略基础设置：日志、调试输出与代价相对变化收敛阈值。
  * @tparam Scalar 标量类型。
  */
-template <typename Scalar> struct SearchStrategyBaseSettings {
+template <typename Scalar>
+struct SearchStrategyBaseSettings {
   /** @brief 是否输出 DDP 日志。 */
   bool displayInfo = false;
   /** @brief 是否打印 rollout 轨迹用于调试。 */
@@ -58,7 +60,8 @@ template <typename Scalar> struct SearchStrategyBaseSettings {
  * @brief 线搜索策略参数：步长范围、收缩率、Armijo 系数与 Hessian 修正。
  * @tparam Scalar 标量类型。
  */
-template <typename Scalar> struct LineSearchSettings {
+template <typename Scalar>
+struct LineSearchSettings {
   /** @brief 线搜索最小步长。 */
   Scalar minStepLength = 0.05;
   /** @brief 线搜索最大步长。 */
@@ -80,7 +83,8 @@ template <typename Scalar> struct LineSearchSettings {
  * 倍数递推与连续拒绝次数上限。
  * @tparam Scalar 标量类型。
  */
-template <typename Scalar> struct LevenbergMarquardtSettings {
+template <typename Scalar>
+struct LevenbergMarquardtSettings {
   /** @brief 接受迭代解的最小 rho（实际下降/预测下降），应在 [0, 0.25)。 */
   Scalar minAcceptedPho = 0.25;
   /** @brief Riccati 倍数几何递推的默认比例。 */

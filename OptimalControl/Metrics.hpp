@@ -4,10 +4,11 @@
  */
 #pragma once
 
+#include <cmath>
+
 #include "LagrangianMetrics.hpp"
 #include "Numerics.hpp"
 #include "Types.hpp"
-#include <cmath>
 
 /**
  * @brief
@@ -43,7 +44,7 @@ struct Metrics {
       stateInputIneqLagrangian;
 
   /** @brief 与另一 Metrics 交换各成员。 */
-  void swap(Metrics &other) {
+  void swap(Metrics& other) {
     std::swap(cost, other.cost);
     dynamicsViolation.swap(other.dynamicsViolation);
     stateEqLagrangian.swap(other.stateEqLagrangian);
@@ -67,7 +68,7 @@ struct Metrics {
  */
 template <typename Scalar, size_t ArrayLen>
 inline Scalar sumPenalties(
-    const std::array<LagrangianMetrics<Scalar>, ArrayLen> &metricsArray) {
+    const std::array<LagrangianMetrics<Scalar>, ArrayLen>& metricsArray) {
   Scalar s = 0.0;
   // std::for_each(metricsArray.begin(), metricsArray.end(), [&s](const
   // LagrangianMetrics<Scalar>& m) { s += m.penalty; });
@@ -84,7 +85,7 @@ inline Scalar sumPenalties(
  */
 template <typename Scalar, size_t ArrayLen>
 inline Scalar constraintsSquaredNorm(
-    const std::array<LagrangianMetrics<Scalar>, ArrayLen> &metricsArray) {
+    const std::array<LagrangianMetrics<Scalar>, ArrayLen>& metricsArray) {
   Scalar s = 0.0;
   // std::for_each(metricsArray.begin(), metricsArray.end(), [&s](const
   // LagrangianMetrics& m) { s += m.constraint.squaredNorm(); });
@@ -100,8 +101,8 @@ inline Scalar constraintsSquaredNorm(
  * @return eqConstraint.squaredNorm()，Dimisions==0 时为 0。
  */
 template <typename Scalar, int Dimisions>
-inline Scalar
-getEqConstraintsSSE(const Vector<Scalar, Dimisions> &eqConstraint) {
+inline Scalar getEqConstraintsSSE(
+    const Vector<Scalar, Dimisions>& eqConstraint) {
   static_assert(Dimisions >= 0);
 
   if constexpr (Dimisions == 0) {

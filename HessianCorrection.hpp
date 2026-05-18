@@ -53,13 +53,13 @@ enum class HessianCorrectionStrategy {
  */
 template <typename Scalar, int Dimisions>
 void shiftHessian(HessianCorrectionStrategy strategy,
-                  Matrix<Scalar, Dimisions, Dimisions> &matrix,
+                  Matrix<Scalar, Dimisions, Dimisions>& matrix,
                   Scalar minEigenvalue = 1e-6) {
   switch (strategy) {
-  case HessianCorrectionStrategy::DIAGONAL_SHIFT: {
-    matrix.diagonal().array() += minEigenvalue;
-    break;
-  }
+    case HessianCorrectionStrategy::DIAGONAL_SHIFT: {
+      matrix.diagonal().array() += minEigenvalue;
+      break;
+    }
   }
   // case HessianCorrectionStrategy::CHOLESKY_MODIFICATION: {
   //   LinearAlgebra::makePsdCholesky(matrix, minEigenvalue);

@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 template <typename Scalar>
 class SmoothAbsolutePenalty final : public AugmentedPenaltyBase {
-public:
+ public:
   /**
    * Configuration object for the smooth absolute penalty.
    * scale: scaling factor, see class description
@@ -54,7 +54,8 @@ public:
     Config() : Config(100.0, 1e-2, 0.0) {}
     Config(const Scalar scaleParam, const Scalar relaxationParam,
            const Scalar stepSizeParam)
-        : scale(scaleParam), relaxation(relaxationParam),
+        : scale(scaleParam),
+          relaxation(relaxationParam),
           stepSize(stepSizeParam) {}
     Scalar scale;
     Scalar relaxation;
@@ -62,7 +63,7 @@ public:
   };
 
   /** Constructor */
-  explicit SmoothAbsolutePenalty(const Config &config) : config_(config) {}
+  explicit SmoothAbsolutePenalty(const Config& config) : config_(config) {}
 
   ~SmoothAbsolutePenalty() override = default;
 
@@ -88,8 +89,8 @@ public:
   }
   Scalar initializeMultiplier() const override { return 0.0; }
 
-private:
-  SmoothAbsolutePenalty(const SmoothAbsolutePenalty &other) = default;
+ private:
+  SmoothAbsolutePenalty(const SmoothAbsolutePenalty& other) = default;
 
   const Config config_;
 };

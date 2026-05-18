@@ -29,7 +29,7 @@
 template <typename Scalar, int XDim, int UDim>
 class SystemDynamicsLinearizer final
     : public SystemDynamicsBase<Scalar, XDim, UDim> {
-public:
+ public:
   /** @brief 状态向量类型。 */
   using StateVector_t = Vector<Scalar, XDim>;
   /** @brief 输入向量类型。 */
@@ -46,19 +46,20 @@ public:
    * @param [in] eps 基础有限差分步长。
    */
   explicit SystemDynamicsLinearizer(
-      ControlledSystemBase<Scalar, XDim, UDim> *nonlinearSystemPtr,
+      ControlledSystemBase<Scalar, XDim, UDim>* nonlinearSystemPtr,
       bool doubleSidedDerivative = true, bool isSecondOrderSystem = false,
       Scalar eps = Eigen::NumTraits<Scalar>::epsilon())
       : SystemDynamicsBase<Scalar, XDim, UDim>(),
         controlledSystemPtr_(nonlinearSystemPtr),
         doubleSidedDerivative_(doubleSidedDerivative),
-        isSecondOrderSystem_(isSecondOrderSystem), eps_(eps) {}
+        isSecondOrderSystem_(isSecondOrderSystem),
+        eps_(eps) {}
 
   ~SystemDynamicsLinearizer() override = default;
 
   /** @brief 直接转发到底层非线性系统的流映射。 */
-  StateVector_t computeFlowMap(Scalar time, const StateVector_t &state,
-                               const InputVector_t &input) const override {
+  StateVector_t computeFlowMap(Scalar time, const StateVector_t& state,
+                               const InputVector_t& input) const override {
     return controlledSystemPtr_->computeFlowMap(time, state, input);
   }
 
@@ -69,9 +70,8 @@ public:
    * @param [in] u 线性化输入。
    * @return 线性近似 `(f, dfdx, dfdu)`。
    */
-  VectorFunctionLinearApproximation_t
-  linearApproximation(Scalar t, const StateVector_t &x,
-                      const InputVector_t &u) override {
+  VectorFunctionLinearApproximation_t linearApproximation(
+      Scalar t, const StateVector_t& x, const InputVector_t& u) override {
     VectorFunctionLinearApproximation_t linearDynamics;
     linearDynamics.f = controlledSystemPtr_->computeFlowMap(t, x, u);
     linearDynamics.dfdx = finiteDifferenceDerivativeState(
@@ -83,12 +83,12 @@ public:
     return linearDynamics;
   }
 
-private:
+ private:
   /** @brief 禁用拷贝，避免悬空系统指针被无意复制。 */
-  SystemDynamicsLinearizer(const SystemDynamicsLinearizer &other);
+  SystemDynamicsLinearizer(const SystemDynamicsLinearizer& other);
 
   /** @brief 被线性化的非线性系统指针，不拥有对象。 */
-  ControlledSystemBase<Scalar, XDim, UDim> *controlledSystemPtr_;
+  ControlledSystemBase<Scalar, XDim, UDim>* controlledSystemPtr_;
   /** @brief 为 true 时使用中心差分，否则使用前向差分。 */
   bool doubleSidedDerivative_;
   /** @brief 是否按二阶系统 `[q, q_dot]` 的结构修正 Jacobian。 */
