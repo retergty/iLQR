@@ -3,11 +3,11 @@
  * @brief 有限差分数值求导工具：用于计算向量函数对状态或输入的 Jacobian。
  */
 #pragma once
+#include "ControlledSystemBase.hpp"
 #include "Types.hpp"
+#include <algorithm>
 #include <functional>
 #include <math.h>
-#include "ControlledSystemBase.hpp"
-#include <algorithm>
 
 /**
  * @brief 用有限差分计算向量函数对变量的 Jacobian。
@@ -25,15 +25,18 @@
  * @param [in] doubleSidedDerivative 是否使用中心差分。
  * @return 在 `x0` 处计算得到的 Jacobian。
  */
-template<typename Scalar, int StateDimisions, int VarDimisions, typename Function>
-Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(const Function& f,
-  const Vector<Scalar, VarDimisions>& x0, Scalar eps,
-  bool doubleSidedDerivative) {
+template <typename Scalar, int StateDimisions, int VarDimisions,
+          typename Function>
+Matrix<Scalar, StateDimisions, VarDimisions>
+finiteDifferenceDerivative(const Function &f,
+                           const Vector<Scalar, VarDimisions> &x0, Scalar eps,
+                           bool doubleSidedDerivative) {
   const Vector<Scalar, StateDimisions> f0 = f(x0);
   Matrix<Scalar, StateDimisions, VarDimisions> jacobian;
 
   for (size_t i = 0; i < VarDimisions; i++) {
-    // inspired from: http://en.wikipedia.org/wiki/Numerical_differentiation#Practical_considerations_using_floating_point_arithmetic
+    // inspired from:
+    // http://en.wikipedia.org/wiki/Numerical_differentiation#Practical_considerations_using_floating_point_arithmetic
     Scalar h = eps * std::max(std::fabs(x0(i)), 1.0);
 
     Vector<Scalar, VarDimisions> xPlus = x0;
@@ -43,15 +46,13 @@ Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(const Fu
       Vector<Scalar, VarDimisions> xMinus = x0;
       xMinus(i) -= h;
       jacobian.col(i) = (f(xPlus) - f(xMinus)) / (2.0 * h);
-    }
-    else {
+    } else {
       jacobian.col(i) = (f(xPlus) - f0) / h;
     }
   }
 
   return jacobian;
 }
-
 
 /**
  * @brief 用有限差分计算动力学对状态的 Jacobian。
@@ -71,14 +72,17 @@ Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(const Fu
  * @param [in] isSecondOrderSystem 是否按二阶系统结构修正 Jacobian。
  * @return 状态 Jacobian `A = d f / d x`。
  */
-template<typename Scalar, int XDim, int UDim>
-Matrix<Scalar, XDim, XDim> finiteDifferenceDerivativeState(ControlledSystemBase<Scalar, XDim, UDim>& system,
-  Scalar t, const Vector<Scalar, XDim>& x, const  Vector<Scalar, UDim>& u, Scalar eps,
-  bool doubleSidedDerivative, bool isSecondOrderSystem) {
-  auto f = [&](const Vector<Scalar, XDim>& var) -> Vector<Scalar, XDim> { return system.computeFlowMap(t, var, u); };
+template <typename Scalar, int XDim, int UDim>
+Matrix<Scalar, XDim, XDim> finiteDifferenceDerivativeState(
+    ControlledSystemBase<Scalar, XDim, UDim> &system, Scalar t,
+    const Vector<Scalar, XDim> &x, const Vector<Scalar, UDim> &u, Scalar eps,
+    bool doubleSidedDerivative, bool isSecondOrderSystem) {
+  auto f = [&](const Vector<Scalar, XDim> &var) -> Vector<Scalar, XDim> {
+    return system.computeFlowMap(t, var, u);
+  };
 
-  Matrix<Scalar, XDim, XDim> A =
-      finiteDifferenceDerivative<Scalar, XDim, XDim>(f, x, eps, doubleSidedDerivative);
+  Matrix<Scalar, XDim, XDim> A = finiteDifferenceDerivative<Scalar, XDim, XDim>(
+      f, x, eps, doubleSidedDerivative);
 
   if (isSecondOrderSystem) {
     // Assumes state vector = [x, x_dot]
@@ -106,15 +110,17 @@ Matrix<Scalar, XDim, XDim> finiteDifferenceDerivativeState(ControlledSystemBase<
  * @param [in] isSecondOrderSystem 是否按二阶系统结构修正 Jacobian。
  * @return 输入 Jacobian `B = d f / d u`。
  */
-template<typename Scalar, int XDim, int UDim>
-Matrix<Scalar, XDim, UDim> finiteDifferenceDerivativeInput(ControlledSystemBase<Scalar, XDim, UDim>& system,
-  Scalar t, const Vector<Scalar, XDim>& x, const  Vector<Scalar, UDim>& u, Scalar eps,
-  bool doubleSidedDerivative, bool isSecondOrderSystem)
-{
-  auto f = [&](const Vector<Scalar, UDim>& var) -> Vector<Scalar, XDim> { return system.computeFlowMap(t, x, var); };
+template <typename Scalar, int XDim, int UDim>
+Matrix<Scalar, XDim, UDim> finiteDifferenceDerivativeInput(
+    ControlledSystemBase<Scalar, XDim, UDim> &system, Scalar t,
+    const Vector<Scalar, XDim> &x, const Vector<Scalar, UDim> &u, Scalar eps,
+    bool doubleSidedDerivative, bool isSecondOrderSystem) {
+  auto f = [&](const Vector<Scalar, UDim> &var) -> Vector<Scalar, XDim> {
+    return system.computeFlowMap(t, x, var);
+  };
 
-  Matrix<Scalar, XDim, UDim> B =
-      finiteDifferenceDerivative<Scalar, XDim, UDim>(f, u, eps, doubleSidedDerivative);
+  Matrix<Scalar, XDim, UDim> B = finiteDifferenceDerivative<Scalar, XDim, UDim>(
+      f, u, eps, doubleSidedDerivative);
 
   if (isSecondOrderSystem) {
     // Assumes state vector = [x, x_dot]

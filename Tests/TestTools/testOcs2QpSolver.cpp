@@ -17,14 +17,19 @@ protected:
   static constexpr Scalar precision = 1e-9;
   static constexpr Scalar dt = 1e-2;
 
-  using Problem_t = OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM, N, 0, 0, 0, 0, 0, 0>;
-  using Trajectory_t = qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
+  using Problem_t =
+      OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM, N, 0, 0, 0, 0, 0, 0>;
+  using Trajectory_t =
+      qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
 
-  void checkDynamics(const Trajectory_t& solution) const {
+  void checkDynamics(const Trajectory_t &solution) const {
     Vector<Scalar, STATE_DIM> state = x0;
     for (size_t k = 0; k < N; ++k) {
-      const Scalar timeStep = solution.timeTrajectory[k + 1] - solution.timeTrajectory[k];
-      state += timeStep * system->computeFlowMap(solution.timeTrajectory[k], state, solution.inputTrajectory[k]);
+      const Scalar timeStep =
+          solution.timeTrajectory[k + 1] - solution.timeTrajectory[k];
+      state +=
+          timeStep * system->computeFlowMap(solution.timeTrajectory[k], state,
+                                            solution.inputTrajectory[k]);
       ASSERT_TRUE(state.isApprox(solution.stateTrajectory[k + 1], precision));
     }
   }
@@ -32,7 +37,8 @@ protected:
   Ocs2QpSolverTest() {
     srand(0);
 
-    const auto dynamics = test_tools::getRandomDynamics<Scalar, STATE_DIM, INPUT_DIM>();
+    const auto dynamics =
+        test_tools::getRandomDynamics<Scalar, STATE_DIM, INPUT_DIM>();
     A = dynamics.dfdx;
     B = dynamics.dfdu;
     Q = test_tools::getRandomPositiveDefiniteMatrix<Scalar, STATE_DIM>();
@@ -40,23 +46,28 @@ protected:
     QFinal = test_tools::getRandomPositiveDefiniteMatrix<Scalar, STATE_DIM>();
 
     system = test_tools::getOcs2Dynamics(dynamics);
-    intermediateCost = std::make_unique<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>(Q, R);
-    finalCost = std::make_unique<QuadraticStateCost<Scalar, STATE_DIM, N + 1>>(QFinal);
+    intermediateCost = std::make_unique<
+        QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>(Q, R);
+    finalCost =
+        std::make_unique<QuadraticStateCost<Scalar, STATE_DIM, N + 1>>(QFinal);
 
     problem.dynamicsPtr = system.get();
     problem.cost.add(*intermediateCost);
     problem.finalCost.add(*finalCost);
 
-    nominalTrajectory = test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
-    referenceTrajectory = test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
+    nominalTrajectory =
+        test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
+    referenceTrajectory =
+        test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
     setReferenceTrajectories(problem, referenceTrajectory);
 
     x0 = Vector<Scalar, STATE_DIM>::Random();
-    solution = qp_solver::solveLinearQuadraticOptimalControlProblem(problem, nominalTrajectory, x0);
+    solution = qp_solver::solveLinearQuadraticOptimalControlProblem(
+        problem, nominalTrajectory, x0);
   }
 
-  void setReferenceTrajectories(Problem_t& targetProblem, const Trajectory_t& trajectory) const
-  {
+  void setReferenceTrajectories(Problem_t &targetProblem,
+                                const Trajectory_t &trajectory) const {
     targetProblem.timeTrajectory = trajectory.timeTrajectory;
     targetProblem.stateTrajectory = trajectory.stateTrajectory;
     for (size_t k = 0; k < N; ++k) {
@@ -65,8 +76,7 @@ protected:
     targetProblem.inputTrajectory[N] = trajectory.inputTrajectory[N - 1];
   }
 
-  static Trajectory_t getZeroTrajectory()
-  {
+  static Trajectory_t getZeroTrajectory() {
     Trajectory_t trajectory;
     for (size_t k = 0; k < N + 1; ++k) {
       trajectory.timeTrajectory[k] = static_cast<Scalar>(k) * dt;
@@ -85,7 +95,8 @@ protected:
   Matrix<Scalar, STATE_DIM, STATE_DIM> QFinal;
 
   std::unique_ptr<LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>> system;
-  std::unique_ptr<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>> intermediateCost;
+  std::unique_ptr<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>
+      intermediateCost;
   std::unique_ptr<QuadraticStateCost<Scalar, STATE_DIM, N + 1>> finalCost;
   Problem_t problem;
   Trajectory_t nominalTrajectory;
@@ -104,33 +115,37 @@ TEST_F(Ocs2QpSolverTest, initialCondition) {
   ASSERT_TRUE(x0.isApprox(solution.stateTrajectory.front(), precision));
 }
 
-TEST_F(Ocs2QpSolverTest, satisfiesDynamics) {
-  checkDynamics(solution);
-}
+TEST_F(Ocs2QpSolverTest, satisfiesDynamics) { checkDynamics(solution); }
 
 TEST_F(Ocs2QpSolverTest, invariantUnderLinearization) {
   // Different nominalTrajectory, with same time discretization
-  auto linearization2 = test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
+  auto linearization2 =
+      test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
   linearization2.timeTrajectory = nominalTrajectory.timeTrajectory;
 
   // Compare solutions
-  auto solution2 = qp_solver::solveLinearQuadraticOptimalControlProblem(problem, linearization2, x0);
+  auto solution2 = qp_solver::solveLinearQuadraticOptimalControlProblem(
+      problem, linearization2, x0);
   for (size_t k = 0; k < N + 1; ++k) {
-    ASSERT_TRUE(solution.stateTrajectory[k].isApprox(solution2.stateTrajectory[k], precision));
+    ASSERT_TRUE(solution.stateTrajectory[k].isApprox(
+        solution2.stateTrajectory[k], precision));
   }
   for (size_t k = 0; k < N; ++k) {
-    ASSERT_TRUE(solution.inputTrajectory[k].isApprox(solution2.inputTrajectory[k], precision));
+    ASSERT_TRUE(solution.inputTrajectory[k].isApprox(
+        solution2.inputTrajectory[k], precision));
   }
 }
 
 TEST_F(Ocs2QpSolverTest, knownSolutionAtOrigin) {
-  // If the cost's nominal trajectory is set to zero, and the initial state is zero, then the solution has only zeros.
+  // If the cost's nominal trajectory is set to zero, and the initial state is
+  // zero, then the solution has only zeros.
   const auto zeroReference = getZeroTrajectory();
   setReferenceTrajectories(problem, zeroReference);
   const Vector<Scalar, STATE_DIM> zeroX0 = Vector<Scalar, STATE_DIM>::Zero();
 
   // Obtain solution, with non-zero nominalTrajectory
-  auto zeroSolution = qp_solver::solveLinearQuadraticOptimalControlProblem(problem, nominalTrajectory, zeroX0);
+  auto zeroSolution = qp_solver::solveLinearQuadraticOptimalControlProblem(
+      problem, nominalTrajectory, zeroX0);
 
   for (size_t k = 0; k < N + 1; ++k) {
     ASSERT_TRUE(zeroSolution.stateTrajectory[k].isZero(precision));

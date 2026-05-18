@@ -33,11 +33,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #pragma once
 
-#include "Types.hpp"
 #include "Metrics.hpp"
+#include "Types.hpp"
 
 /**
- * @brief 整条 rollout 的问题指标容器：终端一点 Metrics + 中间 PredictLength 个点的 Metrics。
+ * @brief 整条 rollout 的问题指标容器：终端一点 Metrics + 中间 PredictLength
+ * 个点的 Metrics。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
@@ -45,11 +46,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @tparam StateEqConstrains 等 约束维度（中间/终端）。
  */
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-  int StateEqConstrains, int StateIneqConstrains , int StateInputEqConstrains, int StateInputIneqConstrains,
-  int FinalStateEqConstrains, int FinalStateIneqConstrains>
+          int StateEqConstrains, int StateIneqConstrains,
+          int StateInputEqConstrains, int StateInputIneqConstrains,
+          int FinalStateEqConstrains, int FinalStateIneqConstrains>
 struct ProblemMetrics {
-  using IntermediateMetrics_t = Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains>;
-  using FinalMetrics_t = Metrics<Scalar, XDim, UDim, FinalStateEqConstrains, FinalStateIneqConstrains, 0, 0>;
+  using IntermediateMetrics_t =
+      Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains,
+              StateInputEqConstrains, StateInputIneqConstrains>;
+  using FinalMetrics_t = Metrics<Scalar, XDim, UDim, FinalStateEqConstrains,
+                                 FinalStateIneqConstrains, 0, 0>;
 
   /** @brief 终端时刻的 Metrics。 */
   FinalMetrics_t final;
@@ -57,7 +62,7 @@ struct ProblemMetrics {
   std::array<IntermediateMetrics_t, PredictLength> intermediates;
 
   /** @brief 与另一 ProblemMetrics 交换内容。 */
-  void swap(ProblemMetrics& other) {
+  void swap(ProblemMetrics &other) {
     final.swap(other.final);
     intermediates.swap(other.intermediates);
   }

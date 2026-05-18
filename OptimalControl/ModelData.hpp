@@ -33,18 +33,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #pragma once
 
-#include "Types.hpp"
 #include "LinearApproximation.hpp"
 #include "QuadraticApproximation.hpp"
+#include "Types.hpp"
 
 /**
- * @brief 单节点 LQ 模型数据：时间、动力学线性近似（dfdx, dfdu, f）、代价二次近似（dfdxx, dfdux, dfduu, dfdx, dfdu, f）。
+ * @brief 单节点 LQ 模型数据：时间、动力学线性近似（dfdx, dfdu,
+ * f）、代价二次近似（dfdxx, dfdux, dfduu, dfdx, dfdu, f）。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
  */
-template<typename Scalar, int XDim, int UDim>
-struct ModelData {
+template <typename Scalar, int XDim, int UDim> struct ModelData {
   Scalar time = 0.0;
 
   /** @brief 动力学线性近似：x_{k+1} ≈ dfdx*dx + dfdu*du + f。 */

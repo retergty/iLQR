@@ -36,25 +36,26 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Types.hpp"
 
 /**
- * @brief 对 (timeTrajectory, valueTrajectory) 做梯形积分，从 initialValue 起累加。
+ * @brief 对 (timeTrajectory, valueTrajectory) 做梯形积分，从 initialValue
+ * 起累加。
  * @param [in] timeTrajectory 时间序列。
  * @param [in] valueTrajectory 值序列。
  * @param [in] initialValue 初始累加值。
  * @return 梯形积分结果。
  */
-template <typename Scalar, typename VALUE, size_t TimeArrayLen, size_t ValueArrayLen>
-VALUE trapezoidalIntegration(const std::array<Scalar, TimeArrayLen> &timeTrajectory, const std::array<VALUE, ValueArrayLen> &valueTrajectory,
-                             VALUE initialValue)
-{
+template <typename Scalar, typename VALUE, size_t TimeArrayLen,
+          size_t ValueArrayLen>
+VALUE trapezoidalIntegration(
+    const std::array<Scalar, TimeArrayLen> &timeTrajectory,
+    const std::array<VALUE, ValueArrayLen> &valueTrajectory,
+    VALUE initialValue) {
   constexpr size_t ArrayLen = std::min(TimeArrayLen, ValueArrayLen);
 
-  if constexpr (ArrayLen < 2)
-  {
+  if constexpr (ArrayLen < 2) {
     return initialValue;
   }
 
-  for (std::size_t k = 1; k < ArrayLen; k++)
-  {
+  for (std::size_t k = 1; k < ArrayLen; k++) {
     VALUE temp = valueTrajectory[k - 1] + valueTrajectory[k];
     temp *= (0.5 * (timeTrajectory[k] - timeTrajectory[k - 1]));
     initialValue += temp;

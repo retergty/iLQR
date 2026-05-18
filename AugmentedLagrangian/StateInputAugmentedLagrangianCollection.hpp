@@ -29,42 +29,52 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
  * @file StateInputAugmentedLagrangianCollection.hpp
- * @brief 状态-输入增广拉格朗日集合：汇总多个状态-输入约束的惩罚项，提供总取值与总二次近似。
+ * @brief
+ * 状态-输入增广拉格朗日集合：汇总多个状态-输入约束的惩罚项，提供总取值与总二次近似。
  */
 #pragma once
 
-#include "Types.hpp"
 #include "StateInputAugmentedLagrangian.hpp"
+#include "Types.hpp"
 #include <array>
 
- /**
-  * @brief 状态-输入增广拉格朗日惩罚项集合：对多个 StateInputAugmentedLagrangian 求和。
-  * @tparam Scalar 标量类型。
-  * @tparam XDim 状态维度。
-  * @tparam UDim 输入维度。
-  * @tparam StateInputAugmentLagrangianNumbers 项数。
-  */
-template<typename Scalar, int XDim, int UDim, int StateInputAugmentLagrangianNumbers>
-class StateInputAugmentedLagrangianCollection
-{
+/**
+ * @brief 状态-输入增广拉格朗日惩罚项集合：对多个 StateInputAugmentedLagrangian
+ * 求和。
+ * @tparam Scalar 标量类型。
+ * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
+ * @tparam StateInputAugmentLagrangianNumbers 项数。
+ */
+template <typename Scalar, int XDim, int UDim,
+          int StateInputAugmentLagrangianNumbers>
+class StateInputAugmentedLagrangianCollection {
 public:
   StateInputAugmentedLagrangianCollection() = default;
 
   /** @brief 获取各激活项的状态-输入约束与惩罚值数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers> getValue(const Scalar time, const Vector<Scalar, XDim>& state, const Vector<Scalar, UDim>& input, const std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>& termsMultiplier) const
-  {
-    std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers> termsConstraintPenalty;
-    for (int i = 0;i < num_;++i)
-    {
-      termsConstraintPenalty[i] = lagrangian_[i]->getValue(time, state, input, termsMultiplier[i]);
+  std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers>
+  getValue(
+      const Scalar time, const Vector<Scalar, XDim> &state,
+      const Vector<Scalar, UDim> &input,
+      const std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>
+          &termsMultiplier) const {
+    std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers>
+        termsConstraintPenalty;
+    for (int i = 0; i < num_; ++i) {
+      termsConstraintPenalty[i] =
+          lagrangian_[i]->getValue(time, state, input, termsMultiplier[i]);
     }
     return termsConstraintPenalty;
   }
 
   /** Get the sum of state-input Lagrangian penalties quadratic approximation */
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> getQuadraticApproximation(const Scalar time, const Vector<Scalar, XDim>& state, const Vector<Scalar, UDim>& input,
-    const std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>& termsMultiplier) const
-  {
+  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
+  getQuadraticApproximation(
+      const Scalar time, const Vector<Scalar, XDim> &state,
+      const Vector<Scalar, UDim> &input,
+      const std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>
+          &termsMultiplier) const {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> penalty;
     penalty.setZero();
 
@@ -74,30 +84,39 @@ public:
     // {
     //   assert(i < StateInputAugmentLagrangianNumbers);
 
-    //   penalty += it->getQuadraticApproximation(time, state, input, termsMultiplier[i]);
-    //   i++;
+    //   penalty += it->getQuadraticApproximation(time, state, input,
+    //   termsMultiplier[i]); i++;
     // }
 
-    for (int i = 0;i < num_;++i)
-    {
-      penalty += lagrangian_[i]->getQuadraticApproximation(time, state, input, termsMultiplier[i]);
+    for (int i = 0; i < num_; ++i) {
+      penalty += lagrangian_[i]->getQuadraticApproximation(time, state, input,
+                                                           termsMultiplier[i]);
     }
     return penalty;
   }
 
-  /** Update Lagrange/penalty multipliers and the penalty value for each active term. */
-  void updateLagrangian(const Scalar time, const Vector<Scalar, XDim>& state, const Vector<Scalar, UDim>& input, std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers>& termsMetrics,
-    std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>& termsMultiplier) const
-  {
-    for (int i = 0;i < num_;++i)
-    {
-      std::tie(termsMultiplier[i], termsMetrics[i].penalty) = lagrangian_[i]->updateLagrangian(time, state, input, termsMetrics[i].constraint, termsMultiplier[i]);
+  /** Update Lagrange/penalty multipliers and the penalty value for each active
+   * term. */
+  void updateLagrangian(
+      const Scalar time, const Vector<Scalar, XDim> &state,
+      const Vector<Scalar, UDim> &input,
+      std::array<LagrangianMetrics<Scalar>, StateInputAugmentLagrangianNumbers>
+          &termsMetrics,
+      std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>
+          &termsMultiplier) const {
+    for (int i = 0; i < num_; ++i) {
+      std::tie(termsMultiplier[i], termsMetrics[i].penalty) =
+          lagrangian_[i]->updateLagrangian(time, state, input,
+                                           termsMetrics[i].constraint,
+                                           termsMultiplier[i]);
     }
   }
 
   /** Initialize Lagrange/penalty multipliers for each active term. */
-  void initializeLagrangian(const Scalar time, std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>& termsMultiplier) const
-  {
+  void initializeLagrangian(
+      const Scalar time,
+      std::array<Multiplier<Scalar>, StateInputAugmentLagrangianNumbers>
+          &termsMultiplier) const {
     // int i = 0;
     // for (auto it = list_.begin();it != list_.end();++it)
     // {
@@ -107,15 +126,14 @@ public:
     //   i++;
     // }
 
-    for (int i = 0;i < num_; ++i)
-    {
+    for (int i = 0; i < num_; ++i) {
       termsMultiplier[i] = lagrangian_[i]->initializeLagrangian(time);
     }
   }
 
   // add cost to list end
-  void add(const StateInputAugmentedLagrangian<Scalar, XDim, UDim>* state_input_augment_lagrangian)
-  {
+  void add(const StateInputAugmentedLagrangian<Scalar, XDim, UDim>
+               *state_input_augment_lagrangian) {
     // list_.insert(list_.end(), state_input_augment_lagrangian);
     // num_++;
 
@@ -125,7 +143,9 @@ public:
   }
 
 private:
-  int num_{ 0 };
-  //IntrusiveList<StateInputAugmentedLagrangian<Scalar, XDim, UDim>> list_;
-  std::array<const StateInputAugmentedLagrangian<Scalar, XDim, UDim>*, StateInputAugmentLagrangianNumbers> lagrangian_;
+  int num_{0};
+  // IntrusiveList<StateInputAugmentedLagrangian<Scalar, XDim, UDim>> list_;
+  std::array<const StateInputAugmentedLagrangian<Scalar, XDim, UDim> *,
+             StateInputAugmentLagrangianNumbers>
+      lagrangian_;
 };

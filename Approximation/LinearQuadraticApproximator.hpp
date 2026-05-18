@@ -29,20 +29,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
  * @file LinearQuadraticApproximator.hpp
- * @brief 线性二次近似器：在名义轨迹上对最优控制问题做 LQ 近似，得到各节点 ModelData 与 Metrics。
+ * @brief 线性二次近似器：在名义轨迹上对最优控制问题做 LQ 近似，得到各节点
+ * ModelData 与 Metrics。
  */
 #pragma once
 
-#include "Types.hpp"
 #include "LinearApproximation.hpp"
-#include "QuadraticApproximation.hpp"
-#include "OptimalControlProblem.hpp"
-#include "Multiplier.hpp"
-#include "ModelData.hpp"
 #include "Metrics.hpp"
+#include "ModelData.hpp"
+#include "Multiplier.hpp"
+#include "OptimalControlProblem.hpp"
+#include "QuadraticApproximation.hpp"
+#include "Types.hpp"
 
 /**
- * @brief 在给定名义轨迹与对偶解下，对 OCP 做 LQ 近似，填充中间/终端 ModelData 与可选的 Metrics。
+ * @brief 在给定名义轨迹与对偶解下，对 OCP 做 LQ 近似，填充中间/终端 ModelData
+ * 与可选的 Metrics。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam UDim 输入维度。
@@ -50,99 +52,124 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @tparam StateEqLagrangianConstrains 等 各约束维度。
  */
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianConstrains, int StateIneqLagrangianConstrains, int StateInputEqLagrangianConstrains, int StateInputIneqLagrangianConstrains,
-          int FinalStateEqLagrangianConstrains, int FinalStateIneqFinalLagrangianConstrains>
-struct LinearQuadraticApproximator
-{
-  using OptimalControlProblem_t = OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrains, StateInputEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputIneqLagrangianConstrains, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains>;
+          int StateEqLagrangianConstrains, int StateIneqLagrangianConstrains,
+          int StateInputEqLagrangianConstrains,
+          int StateInputIneqLagrangianConstrains,
+          int FinalStateEqLagrangianConstrains,
+          int FinalStateIneqFinalLagrangianConstrains>
+struct LinearQuadraticApproximator {
+  using OptimalControlProblem_t = OptimalControlProblem<
+      Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrains,
+      StateInputEqLagrangianConstrains, StateIneqLagrangianConstrains,
+      StateInputIneqLagrangianConstrains, FinalStateEqLagrangianConstrains,
+      FinalStateIneqFinalLagrangianConstrains>;
   using StateVector_t = Vector<Scalar, XDim>;
   using InputVector_t = Vector<Scalar, UDim>;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
-  using IntermediateMultiplierCollection_t = MultiplierCollection<Scalar, StateEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains, StateInputIneqLagrangianConstrains>;
-  using FinalMultiplierCollection_t = MultiplierCollection<Scalar, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains, 0, 0>;
-  using IntermediateMetrics_t = Metrics<Scalar, XDim, UDim, StateEqLagrangianConstrains, StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains, StateInputIneqLagrangianConstrains>;
-  using FinalMetrics_t = Metrics<Scalar, XDim, UDim, FinalStateEqLagrangianConstrains, FinalStateIneqFinalLagrangianConstrains, 0, 0>;
+  using IntermediateMultiplierCollection_t = MultiplierCollection<
+      Scalar, StateEqLagrangianConstrains, StateIneqLagrangianConstrains,
+      StateInputEqLagrangianConstrains, StateInputIneqLagrangianConstrains>;
+  using FinalMultiplierCollection_t =
+      MultiplierCollection<Scalar, FinalStateEqLagrangianConstrains,
+                           FinalStateIneqFinalLagrangianConstrains, 0, 0>;
+  using IntermediateMetrics_t =
+      Metrics<Scalar, XDim, UDim, StateEqLagrangianConstrains,
+              StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains,
+              StateInputIneqLagrangianConstrains>;
+  using FinalMetrics_t =
+      Metrics<Scalar, XDim, UDim, FinalStateEqLagrangianConstrains,
+              FinalStateIneqFinalLagrangianConstrains, 0, 0>;
   using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
   using StateTrajectory_t = std::array<Vector<Scalar, XDim>, PredictLength + 1>;
   using InputTrajectory_t = std::array<Vector<Scalar, UDim>, PredictLength + 1>;
 
   /**
-   * Calculates an LQ approximate of the constrained optimal control problem at a given time, state, and input.
+   * Calculates an LQ approximate of the constrained optimal control problem at
+   * a given time, state, and input.
    *
    * @param [in] problem: The optimal control problem
    * @param [in] time: The current time.
    * @param [in] state: The current state.
    * @param [in] input: The current input.
-   * @param [in] multipliers: The current multipliers associated to the equality and inequality Lagrangians.
+   * @param [in] multipliers: The current multipliers associated to the equality
+   * and inequality Lagrangians.
    * @param [out] modelData: The output data model.
    */
-  static void approximateIntermediateLQ(const OptimalControlProblem_t &problem, const Scalar time, const StateVector_t &state, const InputVector_t &input,
-                                        const IntermediateMultiplierCollection_t &multipliers, ModelData_t &modelData)
-  {
+  static void approximateIntermediateLQ(
+      const OptimalControlProblem_t &problem, const Scalar time,
+      const StateVector_t &state, const InputVector_t &input,
+      const IntermediateMultiplierCollection_t &multipliers,
+      ModelData_t &modelData) {
     // Dynamics
-    modelData.dynamics = problem.dynamicsPtr->linearApproximation(time, state, input);
+    modelData.dynamics =
+        problem.dynamicsPtr->linearApproximation(time, state, input);
 
     // Cost
     modelData.cost = approximateCost(problem, time, state, input);
 
     // Lagrangians
-    if constexpr (StateEqLagrangianConstrains != 0)
-    {
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx = problem.stateEqualityLagrangian.getQuadraticApproximation(time, state, multipliers.stateEq);
+    if constexpr (StateEqLagrangianConstrains != 0) {
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx =
+          problem.stateEqualityLagrangian.getQuadraticApproximation(
+              time, state, multipliers.stateEq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
-    if constexpr (StateIneqLagrangianConstrains != 0)
-    {
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx = problem.stateInequalityLagrangian.getQuadraticApproximation(time, state, multipliers.stateIneq);
+    if constexpr (StateIneqLagrangianConstrains != 0) {
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx =
+          problem.stateInequalityLagrangian.getQuadraticApproximation(
+              time, state, multipliers.stateIneq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
-    if constexpr (StateInputEqLagrangianConstrains != 0)
-    {
-      modelData.cost +=
-          problem.equalityLagrangian.getQuadraticApproximation(time, state, input, multipliers.stateInputEq);
+    if constexpr (StateInputEqLagrangianConstrains != 0) {
+      modelData.cost += problem.equalityLagrangian.getQuadraticApproximation(
+          time, state, input, multipliers.stateInputEq);
     }
-    if constexpr (StateInputIneqLagrangianConstrains != 0)
-    {
-      modelData.cost +=
-          problem.inequalityLagrangian.getQuadraticApproximation(time, state, input, multipliers.stateInputIneq);
+    if constexpr (StateInputIneqLagrangianConstrains != 0) {
+      modelData.cost += problem.inequalityLagrangian.getQuadraticApproximation(
+          time, state, input, multipliers.stateInputIneq);
     }
   }
 
   /**
-   * Calculates an LQ approximate of the constrained optimal control problem at a given time, state, and input.
+   * Calculates an LQ approximate of the constrained optimal control problem at
+   * a given time, state, and input.
    *
    * @param [in] problem: The optimal control problem
    * @param [in] time: The current time.
    * @param [in] state: The current state.
    * @param [in] input: The current input.
-   * @param [in] multipliers: The current multipliers associated to the equality and inequality Lagrangians.
+   * @param [in] multipliers: The current multipliers associated to the equality
+   * and inequality Lagrangians.
    * @return The output data model.
    */
-  static inline ModelData_t approximateIntermediateLQ(const OptimalControlProblem_t &problem, const Scalar time, const StateVector_t &state, const InputVector_t &input,
-                                                      const IntermediateMultiplierCollection_t &multipliers)
-  {
+  static inline ModelData_t approximateIntermediateLQ(
+      const OptimalControlProblem_t &problem, const Scalar time,
+      const StateVector_t &state, const InputVector_t &input,
+      const IntermediateMultiplierCollection_t &multipliers) {
     ModelData<Scalar, XDim, UDim> md;
     approximateIntermediateLQ(problem, time, state, input, multipliers, md);
     return md;
   }
 
   /**
-   * Calculates an LQ approximate of the constrained optimal control problem at final time.
+   * Calculates an LQ approximate of the constrained optimal control problem at
+   * final time.
    *
    * @param [in] problem: The optimal control problem
    * @param [in] time: The current time.
    * @param [in] state: The current state.
-   * @param [in] multipliers: The current multipliers associated to the equality and inequality Lagrangians.
+   * @param [in] multipliers: The current multipliers associated to the equality
+   * and inequality Lagrangians.
    * @param [out] modelData: The output data model.
    */
   static void approximateFinalLQ(const OptimalControlProblem_t &problem,
                                  const Scalar time, const StateVector_t &state,
-                                 const FinalMultiplierCollection_t &multipliers, ModelData_t &modelData)
-  {
+                                 const FinalMultiplierCollection_t &multipliers,
+                                 ModelData_t &modelData) {
     modelData.time = time;
 
     VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> finalDynamics;
@@ -155,16 +182,16 @@ struct LinearQuadraticApproximator
     modelData.cost = approximateFinalCost(problem, time, state);
 
     // Lagrangians
-    if constexpr (FinalStateEqLagrangianConstrains != 0)
-    {
-      auto approx = problem.finalEqualityLagrangian.getQuadraticApproximation(time, state, multipliers.stateEq);
+    if constexpr (FinalStateEqLagrangianConstrains != 0) {
+      auto approx = problem.finalEqualityLagrangian.getQuadraticApproximation(
+          time, state, multipliers.stateEq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
-    if constexpr (FinalStateIneqFinalLagrangianConstrains != 0)
-    {
-      auto approx = problem.finalInequalityLagrangian.getQuadraticApproximation(time, state, multipliers.stateIneq);
+    if constexpr (FinalStateIneqFinalLagrangianConstrains != 0) {
+      auto approx = problem.finalInequalityLagrangian.getQuadraticApproximation(
+          time, state, multipliers.stateIneq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
@@ -172,107 +199,125 @@ struct LinearQuadraticApproximator
   }
 
   /**
-   * Calculates an LQ approximate of the constrained optimal control problem at final time.
+   * Calculates an LQ approximate of the constrained optimal control problem at
+   * final time.
    *
    * @param [in] problem: The optimal control problem
    * @param [in] time: The current time.
    * @param [in] state: The current state.
-   * @param [in] multipliers: The current multipliers associated to the equality and inequality Lagrangians.
+   * @param [in] multipliers: The current multipliers associated to the equality
+   * and inequality Lagrangians.
    * @return The output data model.
    */
-  static inline ModelData_t approximateFinalLQ(const OptimalControlProblem_t &problem,
-                                               const Scalar time, const StateVector_t &state,
-                                               const FinalMultiplierCollection_t &multipliers)
-  {
+  static inline ModelData_t
+  approximateFinalLQ(const OptimalControlProblem_t &problem, const Scalar time,
+                     const StateVector_t &state,
+                     const FinalMultiplierCollection_t &multipliers) {
     ModelData_t md;
     approximateFinalLQ(problem, time, state, multipliers, md);
     return md;
   }
 
   /**
-   * Compute the total intermediate cost (i.e. cost + softConstraints). It is assumed that the precomputation request is already made.
+   * Compute the total intermediate cost (i.e. cost + softConstraints). It is
+   * assumed that the precomputation request is already made.
    */
-  static Scalar computeCost(const OptimalControlProblem_t &problem, const Scalar time, const StateVector_t &state, const InputVector_t &input)
-  {
+  static Scalar computeCost(const OptimalControlProblem_t &problem,
+                            const Scalar time, const StateVector_t &state,
+                            const InputVector_t &input) {
     const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
     const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
     const InputTrajectory_t &targetInputTrajectories = problem.inputTrajectory;
 
     // Compute and sum all costs
-    Scalar cost = problem.cost.getValue(time, state, input, targetTimeTrajectories, targetStateTrajectories, targetInputTrajectories);
-    cost += problem.stateCost.getValue(time, state, targetTimeTrajectories, targetStateTrajectories);
+    Scalar cost =
+        problem.cost.getValue(time, state, input, targetTimeTrajectories,
+                              targetStateTrajectories, targetInputTrajectories);
+    cost += problem.stateCost.getValue(time, state, targetTimeTrajectories,
+                                       targetStateTrajectories);
 
     return cost;
   }
 
   /**
-   * Compute the quadratic approximation of the total intermediate cost (i.e. cost + softConstraints). It is assumed that the precomputation
-   * request is already made.
+   * Compute the quadratic approximation of the total intermediate cost (i.e.
+   * cost + softConstraints). It is assumed that the precomputation request is
+   * already made.
    */
   static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  approximateCost(const OptimalControlProblem_t &problem,
-                  const Scalar time, const StateVector_t &state, const InputVector_t &input)
-  {
+  approximateCost(const OptimalControlProblem_t &problem, const Scalar time,
+                  const StateVector_t &state, const InputVector_t &input) {
     const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
     const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
     const InputTrajectory_t &targetInputTrajectories = problem.inputTrajectory;
 
     // get the state-input cost approximations
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost = problem.cost.getQuadraticApproximation(time, state, input, targetTimeTrajectories, targetStateTrajectories, targetInputTrajectories);
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost =
+        problem.cost.getQuadraticApproximation(
+            time, state, input, targetTimeTrajectories, targetStateTrajectories,
+            targetInputTrajectories);
 
     // get the state only cost approximations
-    cost += problem.stateCost.getQuadraticApproximation(time, state, targetTimeTrajectories, targetStateTrajectories);
+    cost += problem.stateCost.getQuadraticApproximation(
+        time, state, targetTimeTrajectories, targetStateTrajectories);
 
     return cost;
   }
 
   /**
-   * Compute the total final cost (i.e. cost + softConstraints). It is assumed that the precomputation request is already made.
+   * Compute the total final cost (i.e. cost + softConstraints). It is assumed
+   * that the precomputation request is already made.
    */
   static Scalar computeFinalCost(const OptimalControlProblem_t &problem,
-                                 const Scalar time, const StateVector_t &state)
-  {
+                                 const Scalar time,
+                                 const StateVector_t &state) {
     const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
     const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
 
-    Scalar cost = problem.finalCost.getValue(time, state, targetTimeTrajectories, targetStateTrajectories);
+    Scalar cost = problem.finalCost.getValue(
+        time, state, targetTimeTrajectories, targetStateTrajectories);
 
     return cost;
   }
 
   /**
-   * Compute the quadratic approximation of the total final cost (i.e. cost + softConstraints). It is assumed that the precomputation
-   * request is already made.
+   * Compute the quadratic approximation of the total final cost (i.e. cost +
+   * softConstraints). It is assumed that the precomputation request is already
+   * made.
    */
   static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   approximateFinalCost(const OptimalControlProblem_t &problem,
-                       const Scalar time, const StateVector_t &state)
-  {
+                       const Scalar time, const StateVector_t &state) {
     const TimeTrajectory_t &targetTimeTrajectories = problem.timeTrajectory;
     const StateTrajectory_t &targetStateTrajectories = problem.stateTrajectory;
 
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost = problem.finalCost.getQuadraticApproximation(time, state, targetTimeTrajectories, targetStateTrajectories);
+    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost =
+        problem.finalCost.getQuadraticApproximation(
+            time, state, targetTimeTrajectories, targetStateTrajectories);
 
     return cost;
   }
 
   /**
-   * Compute the intermediate-time Metrics (i.e. cost, softConstraints, and constraints).
+   * Compute the intermediate-time Metrics (i.e. cost, softConstraints, and
+   * constraints).
    *
    * @note It is assumed that the precomputation request is already made.
-   * problem.preComputationPtr->request(Request::Cost + Request::Constraint + Request::SoftConstraint, t, x, u)
+   * problem.preComputationPtr->request(Request::Cost + Request::Constraint +
+   * Request::SoftConstraint, t, x, u)
    *
    * @param [in] problem: The optimal control probelm
    * @param [in] time: The current time.
    * @param [in] state: The current state.
    * @param [in] input: The current input.
-   * @param [in] dynamicsViolation: The violation of dynamics. It depends on the transcription method.
+   * @param [in] dynamicsViolation: The violation of dynamics. It depends on the
+   * transcription method.
    * @return The output Metrics.
    */
   static IntermediateMetrics_t
   computeIntermediateMetrics(const OptimalControlProblem_t &problem,
-                             const Scalar time, const StateVector_t &state, const InputVector_t &input)
-  {
+                             const Scalar time, const StateVector_t &state,
+                             const InputVector_t &input) {
     IntermediateMetrics_t metrics;
 
     // Cost
@@ -282,57 +327,63 @@ struct LinearQuadraticApproximator
   }
 
   /**
-   * Compute the intermediate-time Metrics (i.e. cost, softConstraints, and constraints).
+   * Compute the intermediate-time Metrics (i.e. cost, softConstraints, and
+   * constraints).
    *
    * @note It is assumed that the precomputation request is already made.
-   * problem.preComputationPtr->request(Request::Cost + Request::Constraint + Request::SoftConstraint, t, x, u)
+   * problem.preComputationPtr->request(Request::Cost + Request::Constraint +
+   * Request::SoftConstraint, t, x, u)
    *
    * @param [in] problem: The optimal control probelm
    * @param [in] time: The current time.
    * @param [in] state: The current state.
    * @param [in] input: The current input.
-   * @param [in] multipliers: The current multipliers associated to the equality and inequality Lagrangians.
-   * @param [in] dynamicsViolation: The violation of dynamics. It depends on the transcription method.
+   * @param [in] multipliers: The current multipliers associated to the equality
+   * and inequality Lagrangians.
+   * @param [in] dynamicsViolation: The violation of dynamics. It depends on the
+   * transcription method.
    * @return The output Metrics.
    */
-  static IntermediateMetrics_t
-  computeIntermediateMetrics(const OptimalControlProblem_t &problem,
-                             const Scalar time, const StateVector_t &state, const InputVector_t &input,
-                             const IntermediateMultiplierCollection_t &multipliers)
-  {
+  static IntermediateMetrics_t computeIntermediateMetrics(
+      const OptimalControlProblem_t &problem, const Scalar time,
+      const StateVector_t &state, const InputVector_t &input,
+      const IntermediateMultiplierCollection_t &multipliers) {
     // cost, dynamics violation, equlaity constraints, inequlaity constraints
-    IntermediateMetrics_t metrics = computeIntermediateMetrics(problem, time, state, input);
+    IntermediateMetrics_t metrics =
+        computeIntermediateMetrics(problem, time, state, input);
 
     // Equality Lagrangians
-    if constexpr (StateEqLagrangianConstrains != 0)
-    {
-      metrics.stateEqLagrangian = problem.stateEqualityLagrangian.getValue(time, state, multipliers.stateEq);
+    if constexpr (StateEqLagrangianConstrains != 0) {
+      metrics.stateEqLagrangian = problem.stateEqualityLagrangian.getValue(
+          time, state, multipliers.stateEq);
     }
 
-    if constexpr (StateInputEqLagrangianConstrains != 0)
-    {
-      metrics.stateInputEqLagrangian = problem.equalityLagrangian.getValue(time, state, input, multipliers.stateInputEq);
+    if constexpr (StateInputEqLagrangianConstrains != 0) {
+      metrics.stateInputEqLagrangian = problem.equalityLagrangian.getValue(
+          time, state, input, multipliers.stateInputEq);
     }
 
     // Inequality Lagrangians
-    if constexpr (StateIneqLagrangianConstrains != 0)
-    {
-      metrics.stateIneqLagrangian = problem.stateInequalityLagrangian.getValue(time, state, multipliers.stateIneq);
+    if constexpr (StateIneqLagrangianConstrains != 0) {
+      metrics.stateIneqLagrangian = problem.stateInequalityLagrangian.getValue(
+          time, state, multipliers.stateIneq);
     }
 
-    if constexpr (StateInputIneqLagrangianConstrains != 0)
-    {
-      metrics.stateInputIneqLagrangian = problem.inequalityLagrangian.getValue(time, state, input, multipliers.stateInputIneq);
+    if constexpr (StateInputIneqLagrangianConstrains != 0) {
+      metrics.stateInputIneqLagrangian = problem.inequalityLagrangian.getValue(
+          time, state, input, multipliers.stateInputIneq);
     }
 
     return metrics;
   }
 
   /**
-   * Compute the final-time Metrics (i.e. cost, softConstraints, and constraints).
+   * Compute the final-time Metrics (i.e. cost, softConstraints, and
+   * constraints).
    *
    * @note It is assumed that the precomputation request is already made.
-   * problem.preComputationPtr->requestFinal(Request::Cost + Request::Constraint + Request::SoftConstraint, t, x)
+   * problem.preComputationPtr->requestFinal(Request::Cost + Request::Constraint
+   * + Request::SoftConstraint, t, x)
    *
    * @param [in] problem: The optimal control probelm
    * @param [in] time: The current time.
@@ -340,9 +391,8 @@ struct LinearQuadraticApproximator
    * @return The output Metrics.
    */
   static FinalMetrics_t
-  computeFinalMetrics(const OptimalControlProblem_t &problem,
-                      const Scalar time, const StateVector_t &state)
-  {
+  computeFinalMetrics(const OptimalControlProblem_t &problem, const Scalar time,
+                      const StateVector_t &state) {
 
     FinalMetrics_t metrics;
 
@@ -353,35 +403,38 @@ struct LinearQuadraticApproximator
   }
 
   /**
-   * Compute the final-time Metrics (i.e. cost, softConstraints, and constraints).
+   * Compute the final-time Metrics (i.e. cost, softConstraints, and
+   * constraints).
    *
    * @note It is assumed that the precomputation request is already made.
-   * problem.preComputationPtr->requestFinal(Request::Cost + Request::Constraint + Request::SoftConstraint, t, x)
+   * problem.preComputationPtr->requestFinal(Request::Cost + Request::Constraint
+   * + Request::SoftConstraint, t, x)
    *
    * @param [in] problem: The optimal control probelm
    * @param [in] time: The current time.
    * @param [in] state: The current state.
-   * @param [in] multipliers: The current multipliers associated to the equality and inequality Lagrangians.
+   * @param [in] multipliers: The current multipliers associated to the equality
+   * and inequality Lagrangians.
    * @return The output Metrics.
    */
   static FinalMetrics_t
-  computeFinalMetrics(const OptimalControlProblem_t &problem,
-                      const Scalar time, const StateVector_t &state, const FinalMultiplierCollection_t &multipliers)
-  {
+  computeFinalMetrics(const OptimalControlProblem_t &problem, const Scalar time,
+                      const StateVector_t &state,
+                      const FinalMultiplierCollection_t &multipliers) {
 
     // cost, equlaity constraints, inequlaity constraints
     FinalMetrics_t metrics = computeFinalMetrics(problem, time, state);
 
-    if constexpr (FinalStateEqLagrangianConstrains != 0)
-    {
+    if constexpr (FinalStateEqLagrangianConstrains != 0) {
       // Equality Lagrangians
-      metrics.stateEqLagrangian = problem.finalEqualityLagrangian.getValue(time, state, multipliers.stateEq);
+      metrics.stateEqLagrangian = problem.finalEqualityLagrangian.getValue(
+          time, state, multipliers.stateEq);
     }
 
     // Inequality Lagrangians
-    if constexpr (FinalStateIneqFinalLagrangianConstrains != 0)
-    {
-      metrics.stateIneqLagrangian = problem.finalInequalityLagrangian.getValue(time, state, multipliers.stateIneq);
+    if constexpr (FinalStateIneqFinalLagrangianConstrains != 0) {
+      metrics.stateIneqLagrangian = problem.finalInequalityLagrangian.getValue(
+          time, state, multipliers.stateIneq);
     }
 
     return metrics;

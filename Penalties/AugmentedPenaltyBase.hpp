@@ -29,20 +29,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
  * @file AugmentedPenaltyBase.hpp
- * @brief 增广惩罚基类接口：约束违反的惩罚项，依赖时间、拉格朗日乘子与约束值，提供取值、一阶/二阶导数及乘子更新。
+ * @brief
+ * 增广惩罚基类接口：约束违反的惩罚项，依赖时间、拉格朗日乘子与约束值，提供取值、一阶/二阶导数及乘子更新。
  */
 #pragma once
 
-#include "Types.hpp"
 #include "LinearApproximation.hpp"
 #include "QuadraticApproximation.hpp"
+#include "Types.hpp"
 
 /**
- * @brief 惩罚函数接口：在代价中加入惩罚项以处理约束违反，假设惩罚为凸；一般为时间、乘子与约束值的函数。
+ * @brief
+ * 惩罚函数接口：在代价中加入惩罚项以处理约束违反，假设惩罚为凸；一般为时间、乘子与约束值的函数。
  * @tparam Scalar 标量类型。
  */
-template<typename Scalar>
-class AugmentedPenaltyBase {
+template <typename Scalar> class AugmentedPenaltyBase {
 public:
   /** @brief 默认构造。 */
   AugmentedPenaltyBase() = default;
@@ -58,8 +59,9 @@ public:
    * @param [in] h: Constraint value.
    * @return penalty cost.
    */
-  virtual Scalar getValue(const Scalar t, const Scalar l, const Scalar h) const = 0;
-  
+  virtual Scalar getValue(const Scalar t, const Scalar l,
+                          const Scalar h) const = 0;
+
   /**
    * Compute the penalty derivative at a certain constraint value.
    *
@@ -68,7 +70,8 @@ public:
    * @param [in] h: Constraint value.
    * @return penalty derivative with respect to constraint value.
    */
-  virtual Scalar getDerivative(const Scalar t, const Scalar l, const Scalar h) const = 0;
+  virtual Scalar getDerivative(const Scalar t, const Scalar l,
+                               const Scalar h) const = 0;
 
   /**
    * Compute the penalty second derivative at a certain constraint value.
@@ -78,7 +81,8 @@ public:
    * @param [in] h: Constraint value.
    * @return penalty second derivative with respect to constraint value.
    */
-  virtual Scalar getSecondDerivative(const Scalar t, const Scalar l, const Scalar h) const = 0;
+  virtual Scalar getSecondDerivative(const Scalar t, const Scalar l,
+                                     const Scalar h) const = 0;
 
   /**
    * Updates the Lagrange multiplier.
@@ -88,7 +92,8 @@ public:
    * @param [in] h: Constraint values.
    * @return updated Lagrange multiplier.
    */
-  virtual Scalar updateMultiplier(const Scalar t, const Scalar l, const Scalar h) const = 0;
+  virtual Scalar updateMultiplier(const Scalar t, const Scalar l,
+                                  const Scalar h) const = 0;
 
   /**
    * Initializes the Lagrange multiplier.
@@ -97,5 +102,5 @@ public:
    */
   virtual Scalar initializeMultiplier() const = 0;
 
-  AugmentedPenaltyBase(const AugmentedPenaltyBase& other) = default;
+  AugmentedPenaltyBase(const AugmentedPenaltyBase &other) = default;
 };

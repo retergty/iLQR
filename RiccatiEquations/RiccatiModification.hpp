@@ -36,14 +36,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Types.hpp"
 
 /**
- * @brief 单节点 Riccati 修正：时间、状态代价修正 deltaQm、哈密顿量 Hessian Hm、约束零空间投影。
+ * @brief 单节点 Riccati 修正：时间、状态代价修正 deltaQm、哈密顿量 Hessian
+ * Hm、约束零空间投影。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
  */
-template <typename Scalar, int XDim, int UDim>
-struct RiccatiModification
-{
+template <typename Scalar, int XDim, int UDim> struct RiccatiModification {
   /** @brief 该节点时间。 */
   Scalar time_ = 0.0;
 

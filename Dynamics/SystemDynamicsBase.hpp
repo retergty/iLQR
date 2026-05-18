@@ -15,8 +15,7 @@
  * @tparam UDim 控制维度。
  */
 template <typename Scalar, int XDim, int UDim>
-class SystemDynamicsBase : public ControlledSystemBase<Scalar, XDim, UDim>
-{
+class SystemDynamicsBase : public ControlledSystemBase<Scalar, XDim, UDim> {
 public:
   /** @brief 默认构造。 */
   SystemDynamicsBase() = default;
@@ -32,5 +31,6 @@ public:
    * @return 状态对时间导数的线性近似（f, dfdx, dfdu）。
    */
   virtual VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>
-  linearApproximation(Scalar t, const Vector<Scalar, XDim> &x, const Vector<Scalar, UDim> &u) = 0;
+  linearApproximation(Scalar t, const Vector<Scalar, XDim> &x,
+                      const Vector<Scalar, UDim> &u) = 0;
 };

@@ -29,36 +29,36 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include "Types.hpp"
-#include "QuadraticApproximation.hpp"
 #include "LinearApproximation.hpp"
+#include "QuadraticApproximation.hpp"
+#include "Types.hpp"
 
 namespace qp_solver {
 
-  /** Defines the quadratic cost and  linear dynamics at a give stage */
-  template <typename Scalar, int XDim, int UDim>
-  struct LinearQuadraticStage {
-    using CostApproximation_t = ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
-    using DynamicsApproximation_t = VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>;
-    using ConstraintApproximation_t = VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic, XDim, UDim>;
-    /** Quadratic approximation of the cost */
-    CostApproximation_t cost;
-    /** Linear approximation of the dynamics */
-    DynamicsApproximation_t dynamics;
-    /** Linear approximation of the constraints */
-    ConstraintApproximation_t constraints;
+/** Defines the quadratic cost and  linear dynamics at a give stage */
+template <typename Scalar, int XDim, int UDim> struct LinearQuadraticStage {
+  using CostApproximation_t =
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
+  using DynamicsApproximation_t =
+      VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>;
+  using ConstraintApproximation_t =
+      VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic, XDim, UDim>;
+  /** Quadratic approximation of the cost */
+  CostApproximation_t cost;
+  /** Linear approximation of the dynamics */
+  DynamicsApproximation_t dynamics;
+  /** Linear approximation of the constraints */
+  ConstraintApproximation_t constraints;
 
-    LinearQuadraticStage()
-    {
-      constraints.f.resize(0);
-      constraints.dfdx.resize(0, XDim);
-      constraints.dfdu.resize(0, UDim);
-    }
+  LinearQuadraticStage() {
+    constraints.f.resize(0);
+    constraints.dfdx.resize(0, XDim);
+    constraints.dfdu.resize(0, UDim);
+  }
 
-    LinearQuadraticStage(CostApproximation_t c, DynamicsApproximation_t d, ConstraintApproximation_t g)
-      : cost(std::move(c)), dynamics(std::move(d)), constraints(std::move(g)) {
-    }
-  };
+  LinearQuadraticStage(CostApproximation_t c, DynamicsApproximation_t d,
+                       ConstraintApproximation_t g)
+      : cost(std::move(c)), dynamics(std::move(d)), constraints(std::move(g)) {}
+};
 
-}  // namespace qp_solver
-
+} // namespace qp_solver

@@ -29,17 +29,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
  * @file SmoothAbsolutePenalty.hpp
- * @brief 光滑绝对值惩罚：用于等式约束 h=0，p(h)=μ√(h²+δ²)，乘子更新 λ_{k+1}=λ_k-α*h。
+ * @brief 光滑绝对值惩罚：用于等式约束 h=0，p(h)=μ√(h²+δ²)，乘子更新
+ * λ_{k+1}=λ_k-α*h。
  */
 #pragma once
 
 #include "AugmentedPenaltyBase.hpp"
 
 /**
- * @brief 单等式约束的光滑绝对值惩罚实现：p(h)=μ√(h²+δ²)，μ 为尺度、δ 为松弛参数。
+ * @brief 单等式约束的光滑绝对值惩罚实现：p(h)=μ√(h²+δ²)，μ 为尺度、δ
+ * 为松弛参数。
  * @tparam Scalar 标量类型。
  */
-template<typename Scalar>
+template <typename Scalar>
 class SmoothAbsolutePenalty final : public AugmentedPenaltyBase {
 public:
   /**
@@ -50,9 +52,10 @@ public:
    */
   struct Config {
     Config() : Config(100.0, 1e-2, 0.0) {}
-    Config(const Scalar scaleParam, const Scalar relaxationParam, const Scalar stepSizeParam)
-      : scale(scaleParam), relaxation(relaxationParam), stepSize(stepSizeParam) {
-    }
+    Config(const Scalar scaleParam, const Scalar relaxationParam,
+           const Scalar stepSizeParam)
+        : scale(scaleParam), relaxation(relaxationParam),
+          stepSize(stepSizeParam) {}
     Scalar scale;
     Scalar relaxation;
     Scalar stepSize;
@@ -63,22 +66,30 @@ public:
 
   ~SmoothAbsolutePenalty() override = default;
 
-  Scalar getValue(const Scalar t, const Scalar l, const Scalar h) const override {
-    return -l * h + config_.scale * sqrt(h * h + config_.relaxation * config_.relaxation);
+  Scalar getValue(const Scalar t, const Scalar l,
+                  const Scalar h) const override {
+    return -l * h + config_.scale *
+                        sqrt(h * h + config_.relaxation * config_.relaxation);
   }
-  Scalar getDerivative(const Scalar t, const Scalar l, const Scalar h) const override {
-    return -l + config_.scale * h / sqrt(h * h + config_.relaxation * config_.relaxation);
+  Scalar getDerivative(const Scalar t, const Scalar l,
+                       const Scalar h) const override {
+    return -l + config_.scale * h /
+                    sqrt(h * h + config_.relaxation * config_.relaxation);
   }
-  Scalar getSecondDerivative(const Scalar t, const Scalar l, const Scalar h) const override {
+  Scalar getSecondDerivative(const Scalar t, const Scalar l,
+                             const Scalar h) const override {
     const const Scalar deltaSquare = config_.relaxation * config_.relaxation;
     return config_.scale * deltaSquare / pow(h * h + deltaSquare, 1.5);
   }
 
-  Scalar updateMultiplier(const Scalar t, const Scalar l, const Scalar h) const override { return l - config_.stepSize * config_.scale * h; }
+  Scalar updateMultiplier(const Scalar t, const Scalar l,
+                          const Scalar h) const override {
+    return l - config_.stepSize * config_.scale * h;
+  }
   Scalar initializeMultiplier() const override { return 0.0; }
 
 private:
-  SmoothAbsolutePenalty(const SmoothAbsolutePenalty& other) = default;
+  SmoothAbsolutePenalty(const SmoothAbsolutePenalty &other) = default;
 
   const Config config_;
 };

@@ -38,8 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @brief Hessian 矩阵修正策略枚举（当前支持对角平移 DIAGONAL_SHIFT）。
  */
-enum class HessianCorrectionStrategy
-{
+enum class HessianCorrectionStrategy {
   DIAGONAL_SHIFT
   // CHOLESKY_MODIFICATION,
   // EIGENVALUE_MODIFICATION,
@@ -53,12 +52,11 @@ enum class HessianCorrectionStrategy
  * @param [in] minEigenvalue 修正后期望的最小特征值，默认 1e-6。
  */
 template <typename Scalar, int Dimisions>
-void shiftHessian(HessianCorrectionStrategy strategy, Matrix<Scalar, Dimisions, Dimisions> &matrix, Scalar minEigenvalue = 1e-6)
-{
-  switch (strategy)
-  {
-  case HessianCorrectionStrategy::DIAGONAL_SHIFT:
-  {
+void shiftHessian(HessianCorrectionStrategy strategy,
+                  Matrix<Scalar, Dimisions, Dimisions> &matrix,
+                  Scalar minEigenvalue = 1e-6) {
+  switch (strategy) {
+  case HessianCorrectionStrategy::DIAGONAL_SHIFT: {
     matrix.diagonal().array() += minEigenvalue;
     break;
   }

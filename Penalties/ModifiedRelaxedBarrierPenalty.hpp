@@ -29,20 +29,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
  * @file ModifiedRelaxedBarrierPenalty.hpp
- * @brief 修正松弛对数障碍惩罚：不等式 h≥0，p=(λ²/ρ)ψ(ρh/λ)，ψ 为平移二次松弛 log barrier，定义域 x>-1。
+ * @brief 修正松弛对数障碍惩罚：不等式 h≥0，p=(λ²/ρ)ψ(ρh/λ)，ψ 为平移二次松弛
+ * log barrier，定义域 x>-1。
  */
 #pragma once
 
 #include "AugmentedPenaltyBase.hpp"
 #include <math.h>
 
- /**
-  * @brief 单不等式约束的修正松弛障碍惩罚实现：乘子更新 λ_{k+1}=-α*λ_k*ψ'(ρh/λ_k)。
-  * @tparam Scalar 标量类型。
-  */
+/**
+ * @brief 单不等式约束的修正松弛障碍惩罚实现：乘子更新
+ * λ_{k+1}=-α*λ_k*ψ'(ρh/λ_k)。
+ * @tparam Scalar 标量类型。
+ */
 template <typename Scalar>
-class ModifiedRelaxedBarrierPenalty final : public AugmentedPenaltyBase<Scalar>
-{
+class ModifiedRelaxedBarrierPenalty final
+    : public AugmentedPenaltyBase<Scalar> {
 public:
   /**
    * Configuration object for the modified relaxed barrier penalty.
@@ -50,95 +52,92 @@ public:
    * relaxation: relaxation parameter, see class description
    * stepLenght: step-length parameter, see class description
    */
-  struct Config
-  {
+  struct Config {
     Config() : Config(10.0, 0.0, 1.0) {}
-    Config(const Scalar scaleParam, const Scalar relaxationParam, const Scalar stepSizeParam)
-      : scale(scaleParam), relaxation(relaxationParam), stepSize(stepSizeParam)
-    {
-    }
+    Config(const Scalar scaleParam, const Scalar relaxationParam,
+           const Scalar stepSizeParam)
+        : scale(scaleParam), relaxation(relaxationParam),
+          stepSize(stepSizeParam) {}
     Scalar scale;
     Scalar relaxation;
     Scalar stepSize;
   };
 
   /** Constructor */
-  explicit ModifiedRelaxedBarrierPenalty(const Config& config) : config_(config), quadCoeff_(config) {}
+  explicit ModifiedRelaxedBarrierPenalty(const Config &config)
+      : config_(config), quadCoeff_(config) {}
 
   ~ModifiedRelaxedBarrierPenalty() override = default;
 
-  Scalar getValue(const Scalar t, const Scalar l, const Scalar h) const override
-  {
+  Scalar getValue(const Scalar t, const Scalar l,
+                  const Scalar h) const override {
     (void)t;
     const Scalar v = vFunc(l, h);
-    if (v > config_.relaxation)
-    {
+    if (v > config_.relaxation) {
       return -wFunc(l) * log(1 + v);
-    }
-    else
-    {
+    } else {
       const Scalar vDelta = v - config_.relaxation;
-      return wFunc(l) * (static_cast<Scalar>(0.5) * quadCoeff_.c2 * vDelta * vDelta + quadCoeff_.c1 * vDelta + quadCoeff_.c0);
+      return wFunc(l) *
+             (static_cast<Scalar>(0.5) * quadCoeff_.c2 * vDelta * vDelta +
+              quadCoeff_.c1 * vDelta + quadCoeff_.c0);
     }
   }
 
-  Scalar getDerivative(const Scalar t, const Scalar l, const Scalar h) const override
-  {
+  Scalar getDerivative(const Scalar t, const Scalar l,
+                       const Scalar h) const override {
     (void)t;
     const Scalar v = vFunc(l, h);
-    if (v > config_.relaxation)
-    {
+    if (v > config_.relaxation) {
       return -wFunc(l) / (1.0 + v) * dvdhFunc(l);
-    }
-    else
-    {
-      return wFunc(l) * (quadCoeff_.c2 * (v - config_.relaxation) + quadCoeff_.c1) * dvdhFunc(l);
+    } else {
+      return wFunc(l) *
+             (quadCoeff_.c2 * (v - config_.relaxation) + quadCoeff_.c1) *
+             dvdhFunc(l);
     }
   }
 
-  Scalar getSecondDerivative(const Scalar t, const Scalar l, const Scalar h) const override
-  {
+  Scalar getSecondDerivative(const Scalar t, const Scalar l,
+                             const Scalar h) const override {
     (void)t;
     const Scalar v = vFunc(l, h);
     const Scalar dvdh = dvdhFunc(l);
-    if (v > config_.relaxation)
-    {
+    if (v > config_.relaxation) {
       return wFunc(l) / ((1 + v) * (1 + v)) * dvdh * dvdh;
-    }
-    else
-    {
+    } else {
       return wFunc(l) * quadCoeff_.c2 * dvdh * dvdh;
     }
   }
 
-  Scalar updateMultiplier(const Scalar t, const Scalar l, const Scalar h) const override
-  {
+  Scalar updateMultiplier(const Scalar t, const Scalar l,
+                          const Scalar h) const override {
     (void)t;
     const Scalar v = vFunc(l, h);
     constexpr Scalar lambdaMin = 1e-4;
-    if (v > config_.relaxation)
-    {
+    if (v > config_.relaxation) {
       return std::max(lambdaMin, wFunc(l) * dvdhFunc(l) / (1 + v));
-    }
-    else
-    {
-      return std::max(lambdaMin, config_.stepSize * wFunc(l) * (-quadCoeff_.c2 * (v - config_.relaxation) - quadCoeff_.c1) * dvdhFunc(l));
+    } else {
+      return std::max(
+          lambdaMin,
+          config_.stepSize * wFunc(l) *
+              (-quadCoeff_.c2 * (v - config_.relaxation) - quadCoeff_.c1) *
+              dvdhFunc(l));
     }
   }
 
   Scalar initializeMultiplier() const override { return 1.0; }
 
 private:
-  ModifiedRelaxedBarrierPenalty(const ModifiedRelaxedBarrierPenalty& other) = default;
+  ModifiedRelaxedBarrierPenalty(const ModifiedRelaxedBarrierPenalty &other) =
+      default;
 
   Scalar wFunc(const Scalar l) const { return l * l / config_.scale; }
   Scalar dvdhFunc(const Scalar l) const { return config_.scale / l; }
-  Scalar vFunc(const Scalar l, const Scalar h) const { return config_.scale * h / l; }
+  Scalar vFunc(const Scalar l, const Scalar h) const {
+    return config_.scale * h / l;
+  }
 
-  struct QuadCoeff
-  {
-    QuadCoeff(const Config& config)
-    {
+  struct QuadCoeff {
+    QuadCoeff(const Config &config) {
       c2 = 1.0 / std::pow(1.0 + config.relaxation, 2);
       c1 = -1.0 / (1.0 + config.relaxation);
       c0 = -log(1.0 + config.relaxation);

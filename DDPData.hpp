@@ -29,28 +29,35 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
  * @file DDPData.hpp
- * @brief DDP 求解器用的原始/对偶数据容器：PrimalDataContainer 与 DualDataContainer。
+ * @brief DDP 求解器用的原始/对偶数据容器：PrimalDataContainer 与
+ * DualDataContainer。
  */
 #pragma once
 
-#include "Types.hpp"
+#include "DualSolution.hpp"
 #include "ModelData.hpp"
 #include "PrimalSolution.hpp"
-#include "DualSolution.hpp"
 #include "ProblemMetrics.hpp"
 #include "RiccatiModification.hpp"
+#include "Types.hpp"
 
 /**
- * @brief 原始数据容器：存放一次 rollout 的轨迹、控制器、中间/终端模型数据与 problem metrics。
- * @note 各轨迹与 modelData 应来自同一控制器的 rollout；用外部控制器初始化时需随后调用 run 以补齐数据。
+ * @brief 原始数据容器：存放一次 rollout 的轨迹、控制器、中间/终端模型数据与
+ * problem metrics。
+ * @note 各轨迹与 modelData 应来自同一控制器的
+ * rollout；用外部控制器初始化时需随后调用 run 以补齐数据。
  */
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
+          int StateEqConstrains, int StateIneqConstrains,
+          int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
-struct PrimalDataContainer
-{
+struct PrimalDataContainer {
   using PrimalSolution_t = PrimalSolution<Scalar, XDim, UDim, PredictLength>;
-  using ProblemMetrics_t = ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using ProblemMetrics_t =
+      ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
+                     StateIneqConstrains, StateInputEqConstrains,
+                     StateInputIneqConstrains, FinalStateEqConstrains,
+                     FinalStateIneqConstrains>;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
 
   // Primal solution
@@ -63,48 +70,56 @@ struct PrimalDataContainer
   std::array<ModelData_t, PredictLength> modelDataTrajectory;
 
   /** @brief 与另一容器交换内容。 */
-  void swap(PrimalDataContainer &other)
-  {
+  void swap(PrimalDataContainer &other) {
     primalSolution.swap(other.primalSolution);
     problemMetrics.swap(other.problemMetrics);
     std::swap(modelDataFinalTime, other.modelDataFinalTime);
     modelDataTrajectory.swap(other.modelDataTrajectory);
   }
 
-  /** @brief 清空 primal 解与 problem metrics；modelDataTrajectory 在下次近似时被覆盖。 */
-  void clear()
-  {
+  /** @brief 清空 primal 解与 problem metrics；modelDataTrajectory
+   * 在下次近似时被覆盖。 */
+  void clear() {
     primalSolution.clear();
     problemMetrics.clear();
-    // std::array has no clear(); modelDataTrajectory is overwritten on next approximateOptimalControlProblem()
+    // std::array has no clear(); modelDataTrajectory is overwritten on next
+    // approximateOptimalControlProblem()
   }
 };
 
 /**
- * @brief 对偶数据容器：存放对偶解、投影模型轨迹、Riccati 修正轨迹与 value function 轨迹。
- * @note valueFunctionTrajectory 由 (projectedModelData, riccatiModification) 经 Riccati 递推得到。
+ * @brief 对偶数据容器：存放对偶解、投影模型轨迹、Riccati 修正轨迹与 value
+ * function 轨迹。
+ * @note valueFunctionTrajectory 由 (projectedModelData, riccatiModification) 经
+ * Riccati 递推得到。
  */
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains, int StateInputEqConstrains, int StateInputIneqConstrains,
+          int StateEqConstrains, int StateIneqConstrains,
+          int StateInputEqConstrains, int StateInputIneqConstrains,
           int FinalStateEqConstrains, int FinalStateIneqConstrains>
-struct DualDataContainer
-{
-  using DualSolution_t = DualSolution<Scalar, StateEqConstrains, StateIneqConstrains, StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains, FinalStateIneqConstrains, PredictLength>;
+struct DualDataContainer {
+  using DualSolution_t =
+      DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
+                   StateInputEqConstrains, StateInputIneqConstrains,
+                   FinalStateEqConstrains, FinalStateIneqConstrains,
+                   PredictLength>;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
   using RiccatiModification_t = RiccatiModification<Scalar, XDim, UDim>;
-  using ValueFunctionQuadraticApproximation_t = ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
+  using ValueFunctionQuadraticApproximation_t =
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
   // Dual solution
   DualSolution_t dualSolution;
   // projected model data trajectory
   std::array<ModelData_t, PredictLength + 1> projectedModelDataTrajectory;
   // Riccati modification
-  std::array<RiccatiModification_t, PredictLength + 1> riccatiModificationTrajectory;
+  std::array<RiccatiModification_t, PredictLength + 1>
+      riccatiModificationTrajectory;
   // Riccati solution coefficients
-  std::array<ValueFunctionQuadraticApproximation_t, PredictLength + 1> valueFunctionTrajectory;
+  std::array<ValueFunctionQuadraticApproximation_t, PredictLength + 1>
+      valueFunctionTrajectory;
 
   /** @brief 与另一容器交换内容。 */
-  void swap(DualDataContainer &other)
-  {
+  void swap(DualDataContainer &other) {
     dualSolution.swap(other.dualSolution);
     projectedModelDataTrajectory.swap(other.projectedModelDataTrajectory);
     riccatiModificationTrajectory.swap(other.riccatiModificationTrajectory);

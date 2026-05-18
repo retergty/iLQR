@@ -11,57 +11,55 @@
 #include "testProblemsGeneration.hpp"
 
 class DiscreteTranscriptionTest : public testing::Test {
- protected:
+protected:
   using Scalar = double;
   static constexpr size_t N = 10;
   static constexpr int STATE_DIM = 3;
   static constexpr int INPUT_DIM = 2;
   static constexpr Scalar dt = 1e-2;
 
-  using Problem_t = OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM, N, 0, 0, 0, 0, 0, 0>;
-  using Trajectory_t = qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
-  using LinearQuadraticStage_t = qp_solver::LinearQuadraticStage<Scalar, STATE_DIM, INPUT_DIM>;
+  using Problem_t =
+      OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM, N, 0, 0, 0, 0, 0, 0>;
+  using Trajectory_t =
+      qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
+  using LinearQuadraticStage_t =
+      qp_solver::LinearQuadraticStage<Scalar, STATE_DIM, INPUT_DIM>;
 
-  DiscreteTranscriptionTest()
-  {
+  DiscreteTranscriptionTest() {
     srand(0);
 
-    A << 1.0, 0.1, -0.2,
-        0.0, -0.5, 0.3,
-        0.4, 0.0, 0.2;
-    B << 1.0, 0.0,
-        0.0, 1.0,
-        0.5, -0.5;
-    Q << 2.0, 0.0, 0.0,
-        0.0, 3.0, 0.0,
-        0.0, 0.0, 4.0;
-    QState << 0.5, 0.0, 0.0,
-        0.0, 0.25, 0.0,
-        0.0, 0.0, 0.75;
-    R << 5.0, 0.0,
-        0.0, 6.0;
-    QFinal << 7.0, 0.0, 0.0,
-        0.0, 8.0, 0.0,
-        0.0, 0.0, 9.0;
+    A << 1.0, 0.1, -0.2, 0.0, -0.5, 0.3, 0.4, 0.0, 0.2;
+    B << 1.0, 0.0, 0.0, 1.0, 0.5, -0.5;
+    Q << 2.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 4.0;
+    QState << 0.5, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.75;
+    R << 5.0, 0.0, 0.0, 6.0;
+    QFinal << 7.0, 0.0, 0.0, 0.0, 8.0, 0.0, 0.0, 0.0, 9.0;
 
-    system = std::make_unique<LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>>(A, B);
-    intermediateCost = std::make_unique<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>(Q, R);
-    stateCost = std::make_unique<QuadraticStateCost<Scalar, STATE_DIM, N + 1>>(QState);
-    finalCost = std::make_unique<QuadraticStateCost<Scalar, STATE_DIM, N + 1>>(QFinal);
+    system =
+        std::make_unique<LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>>(A,
+                                                                             B);
+    intermediateCost = std::make_unique<
+        QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>(Q, R);
+    stateCost =
+        std::make_unique<QuadraticStateCost<Scalar, STATE_DIM, N + 1>>(QState);
+    finalCost =
+        std::make_unique<QuadraticStateCost<Scalar, STATE_DIM, N + 1>>(QFinal);
 
     problem.dynamicsPtr = system.get();
     problem.cost.add(*intermediateCost);
     problem.stateCost.add(*stateCost);
     problem.finalCost.add(*finalCost);
 
-    linearization = test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
+    linearization =
+        test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
     setReferenceTrajectories(problem, linearization);
 
-    unconstrainedLqr = qp_solver::getLinearQuadraticApproximation(problem, linearization);
+    unconstrainedLqr =
+        qp_solver::getLinearQuadraticApproximation(problem, linearization);
   }
 
-  void setReferenceTrajectories(Problem_t& targetProblem, const Trajectory_t& trajectory) const
-  {
+  void setReferenceTrajectories(Problem_t &targetProblem,
+                                const Trajectory_t &trajectory) const {
     targetProblem.timeTrajectory = trajectory.timeTrajectory;
     targetProblem.stateTrajectory = trajectory.stateTrajectory;
     for (size_t k = 0; k < N; ++k) {
@@ -70,7 +68,7 @@ class DiscreteTranscriptionTest : public testing::Test {
     targetProblem.inputTrajectory[N] = trajectory.inputTrajectory[N - 1];
   }
 
-  void checkSizes(const std::vector<LinearQuadraticStage_t>& lqr) const {
+  void checkSizes(const std::vector<LinearQuadraticStage_t> &lqr) const {
     ASSERT_EQ(lqr.size(), N + 1);
     for (size_t k = 0; k < N; ++k) {
       // Cost sizes
@@ -113,7 +111,8 @@ class DiscreteTranscriptionTest : public testing::Test {
   Matrix<Scalar, STATE_DIM, STATE_DIM> QFinal;
 
   std::unique_ptr<LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>> system;
-  std::unique_ptr<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>> intermediateCost;
+  std::unique_ptr<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>
+      intermediateCost;
   std::unique_ptr<QuadraticStateCost<Scalar, STATE_DIM, N + 1>> stateCost;
   std::unique_ptr<QuadraticStateCost<Scalar, STATE_DIM, N + 1>> finalCost;
   Problem_t problem;
@@ -131,12 +130,16 @@ TEST_F(DiscreteTranscriptionTest, unconstrainedLqrHasCorrectSizes) {
 }
 
 TEST_F(DiscreteTranscriptionTest, forwardEulerDynamicsMatchesLinearSystem) {
-  const auto expectedA = Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity() + A * dt;
+  const auto expectedA =
+      Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity() + A * dt;
   const auto expectedB = B * dt;
 
   for (size_t k = 0; k < N; ++k) {
-    const auto expectedF = (A * linearization.stateTrajectory[k] + B * linearization.inputTrajectory[k]) * dt +
-      linearization.stateTrajectory[k] - linearization.stateTrajectory[k + 1];
+    const auto expectedF = (A * linearization.stateTrajectory[k] +
+                            B * linearization.inputTrajectory[k]) *
+                               dt +
+                           linearization.stateTrajectory[k] -
+                           linearization.stateTrajectory[k + 1];
 
     ASSERT_TRUE(unconstrainedLqr[k].dynamics.dfdx.isApprox(expectedA));
     ASSERT_TRUE(unconstrainedLqr[k].dynamics.dfdu.isApprox(expectedB));
@@ -158,13 +161,16 @@ TEST_F(DiscreteTranscriptionTest, costHessiansHaveExpectedScaling) {
 }
 
 TEST_F(DiscreteTranscriptionTest, linearizationInvariance) {
-  auto linearization2 = test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
+  auto linearization2 =
+      test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
   linearization2.timeTrajectory = linearization.timeTrajectory;
 
   setReferenceTrajectories(problem, linearization2);
-  const auto lqp2 = qp_solver::getLinearQuadraticApproximation(problem, linearization2);
+  const auto lqp2 =
+      qp_solver::getLinearQuadraticApproximation(problem, linearization2);
 
-  // All Hessians and Jacobians stay the same. The linear and constant parts change with the nominal trajectory.
+  // All Hessians and Jacobians stay the same. The linear and constant parts
+  // change with the nominal trajectory.
   for (size_t k = 0; k < N; ++k) {
     // Cost
     ASSERT_TRUE(unconstrainedLqr[k].cost.dfdxx.isApprox(lqp2[k].cost.dfdxx));
@@ -172,17 +178,22 @@ TEST_F(DiscreteTranscriptionTest, linearizationInvariance) {
     ASSERT_TRUE(unconstrainedLqr[k].cost.dfduu.isApprox(lqp2[k].cost.dfduu));
 
     // Dynamics
-    ASSERT_TRUE(unconstrainedLqr[k].dynamics.dfdx.isApprox(lqp2[k].dynamics.dfdx));
-    ASSERT_TRUE(unconstrainedLqr[k].dynamics.dfdu.isApprox(lqp2[k].dynamics.dfdu));
+    ASSERT_TRUE(
+        unconstrainedLqr[k].dynamics.dfdx.isApprox(lqp2[k].dynamics.dfdx));
+    ASSERT_TRUE(
+        unconstrainedLqr[k].dynamics.dfdu.isApprox(lqp2[k].dynamics.dfdu));
 
     // Constraints
-    ASSERT_TRUE(unconstrainedLqr[k].constraints.dfdx.isApprox(lqp2[k].constraints.dfdx));
-    ASSERT_TRUE(unconstrainedLqr[k].constraints.dfdu.isApprox(lqp2[k].constraints.dfdu));
+    ASSERT_TRUE(unconstrainedLqr[k].constraints.dfdx.isApprox(
+        lqp2[k].constraints.dfdx));
+    ASSERT_TRUE(unconstrainedLqr[k].constraints.dfdu.isApprox(
+        lqp2[k].constraints.dfdu));
   }
 
   // Terminal Cost
   ASSERT_TRUE(unconstrainedLqr[N].cost.dfdxx.isApprox(lqp2[N].cost.dfdxx));
 
   // Terminal Constraints
-  ASSERT_TRUE(unconstrainedLqr[N].constraints.dfdx.isApprox(lqp2[N].constraints.dfdx));
+  ASSERT_TRUE(
+      unconstrainedLqr[N].constraints.dfdx.isApprox(lqp2[N].constraints.dfdx));
 }

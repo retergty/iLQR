@@ -33,58 +33,61 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace qp_solver {
 
-  /** A time, state, input trajectory. The last timepoint has only a state, no input */
-  template <typename Scalar, int XDim, int UDim, size_t PredictLength>
-  struct ContinuousTrajectory {
-    using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
-    using StateTrajectory_t = std::array<Vector<Scalar, XDim>, PredictLength + 1>;
-    using InputTrajectory_t = std::array<Vector<Scalar, UDim>, PredictLength>;
-    /** time trajectory, size N+1 */
-    TimeTrajectory_t timeTrajectory;
-    /** trajectory of state vectors, size N+1 */
-    StateTrajectory_t stateTrajectory;
-    /** trajectory of input vectors, size N */
-    InputTrajectory_t inputTrajectory;
-  };
+/** A time, state, input trajectory. The last timepoint has only a state, no
+ * input */
+template <typename Scalar, int XDim, int UDim, size_t PredictLength>
+struct ContinuousTrajectory {
+  using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
+  using StateTrajectory_t = std::array<Vector<Scalar, XDim>, PredictLength + 1>;
+  using InputTrajectory_t = std::array<Vector<Scalar, UDim>, PredictLength>;
+  /** time trajectory, size N+1 */
+  TimeTrajectory_t timeTrajectory;
+  /** trajectory of state vectors, size N+1 */
+  StateTrajectory_t stateTrajectory;
+  /** trajectory of input vectors, size N */
+  InputTrajectory_t inputTrajectory;
+};
 
-  /** Adds state and inputs of two trajectories, time is not added. */
-  template <typename Scalar, int XDim, int UDim, size_t PredictLength>
-  ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> operator+(const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>& lhs, const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>& rhs) {
-    // Copy lhs into sum
-    ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> sum(lhs);
+/** Adds state and inputs of two trajectories, time is not added. */
+template <typename Scalar, int XDim, int UDim, size_t PredictLength>
+ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
+operator+(const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> &lhs,
+          const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> &rhs) {
+  // Copy lhs into sum
+  ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> sum(lhs);
 
-    for (size_t k = 0; k < sum.inputTrajectory.size(); ++k) {
-      sum.inputTrajectory[k] += rhs.inputTrajectory[k];
-    }
-
-    // Sum states
-    for (size_t k = 0; k < sum.stateTrajectory.size(); ++k) {
-      sum.stateTrajectory[k] += rhs.stateTrajectory[k];
-    }
-    return sum;
+  for (size_t k = 0; k < sum.inputTrajectory.size(); ++k) {
+    sum.inputTrajectory[k] += rhs.inputTrajectory[k];
   }
 
-  /** Reference to a point along a trajectory. Does not own the state-input data. */
-  template <typename Scalar, int XDim, int UDim>
-  struct TrajectoryRef {
-    using StateVector_t = Vector<Scalar, XDim>;
-    using InputVector_t = Vector<Scalar, UDim>;
-    /** time */
-    Scalar t;
-    /** state */
-    const StateVector_t& x;
-    /** input */
-    const InputVector_t& u;
-  };
+  // Sum states
+  for (size_t k = 0; k < sum.stateTrajectory.size(); ++k) {
+    sum.stateTrajectory[k] += rhs.stateTrajectory[k];
+  }
+  return sum;
+}
 
-  /** Reference to the state at a point along a trajectory. Does not own the state data. */
-  template <typename Scalar, int XDim>
-  struct StateTrajectoryRef {
-    using StateVector_t = Vector<Scalar, XDim>;
-    /** time */
-    Scalar t;
-    /** state */
-    const StateVector_t& x;
-  };
+/** Reference to a point along a trajectory. Does not own the state-input data.
+ */
+template <typename Scalar, int XDim, int UDim> struct TrajectoryRef {
+  using StateVector_t = Vector<Scalar, XDim>;
+  using InputVector_t = Vector<Scalar, UDim>;
+  /** time */
+  Scalar t;
+  /** state */
+  const StateVector_t &x;
+  /** input */
+  const InputVector_t &u;
+};
 
-}  // namespace qp_solver
+/** Reference to the state at a point along a trajectory. Does not own the state
+ * data. */
+template <typename Scalar, int XDim> struct StateTrajectoryRef {
+  using StateVector_t = Vector<Scalar, XDim>;
+  /** time */
+  Scalar t;
+  /** state */
+  const StateVector_t &x;
+};
+
+} // namespace qp_solver

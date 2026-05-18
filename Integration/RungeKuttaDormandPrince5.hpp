@@ -5,13 +5,12 @@
 #include "Integration.hpp"
 
 /**
- * @brief Dormand-Prince 5 阶单步器：给定 (t, x, dxdt) 与步长 dt，计算下一状态与导数。
+ * @brief Dormand-Prince 5 阶单步器：给定 (t, x, dxdt) 与步长
+ * dt，计算下一状态与导数。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  */
-template <typename Scalar, int XDim>
-class RungeKuttaDormandPrince5Stepper
-{
+template <typename Scalar, int XDim> class RungeKuttaDormandPrince5Stepper {
 public:
   RungeKuttaDormandPrince5Stepper() = default;
   /**
@@ -24,9 +23,10 @@ public:
    * @param [out] x_out 下一状态。
    * @param [out] dxdt_out 下一状态的导数。
    */
-  void doStep(const OdeBase<Scalar, XDim> &system, const Vector<Scalar, XDim> &x0, const Vector<Scalar, XDim> &dxdt,
-              const Scalar t, const Scalar dt, Vector<Scalar, XDim> &x_out, Vector<Scalar, XDim> &dxdt_out)
-  {
+  void doStep(const OdeBase<Scalar, XDim> &system,
+              const Vector<Scalar, XDim> &x0, const Vector<Scalar, XDim> &dxdt,
+              const Scalar t, const Scalar dt, Vector<Scalar, XDim> &x_out,
+              Vector<Scalar, XDim> &dxdt_out) {
     /* Runge Kutta Dormand-Prince Butcher tableau constants.
      * https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method */
     constexpr Scalar a2 = 1.0 / 5;
@@ -89,10 +89,14 @@ private:
    * @param [in] relTol: The relative error tolerance.
    * @return maximal error value.
    */
-  static Scalar maxError(const Vector<Scalar, XDim> &x_old, const Vector<Scalar, XDim> &dxdt_old, const Vector<Scalar, XDim> &x_err,
-                         const Scalar dt, const Scalar absTol, const Scalar relTol)
-  {
-    const Vector<Scalar, XDim> err = x_err.array() / (absTol + relTol * (x_old.array().abs() + std::abs(dt) * dxdt_old.array().abs()));
+  static Scalar maxError(const Vector<Scalar, XDim> &x_old,
+                         const Vector<Scalar, XDim> &dxdt_old,
+                         const Vector<Scalar, XDim> &x_err, const Scalar dt,
+                         const Scalar absTol, const Scalar relTol) {
+    const Vector<Scalar, XDim> err =
+        x_err.array() /
+        (absTol + relTol * (x_old.array().abs() +
+                            std::abs(dt) * dxdt_old.array().abs()));
     return err.template lpNorm<Eigen::Infinity>();
   }
 
@@ -103,12 +107,11 @@ private:
 /*
  * 5th order Runge Kutta Dormand-Prince (ode45) Integrator class
  *
- * The implementation is based on the boost odeint integrator with the controlled
- * boost::numeric::odeint::runge_kutta_dopri5 stepper.
+ * The implementation is based on the boost odeint integrator with the
+ * controlled boost::numeric::odeint::runge_kutta_dopri5 stepper.
  */
 template <typename Scalar, int XDim>
-class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDim>
-{
+class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDim> {
 public:
   RungeKuttaDormandPrince5() {};
 
@@ -116,7 +119,8 @@ public:
 
   static constexpr size_t maxNumStepsRetries_ = 100;
   /**
-   * Equidistant integration based on initial and final time as well as step length.
+   * Equidistant integration based on initial and final time as well as step
+   * length.
    *
    * @param [in] system: System function
    * @param [in] observer: Observer callback
@@ -125,12 +129,15 @@ public:
    * @param [in] finalTime: Final time.
    * @param [in] dt: Time step.
    */
-  void integrateConst(OdeBase<Scalar, XDim> &system, Observer<Scalar, XDim> &observer,
-                      const Vector<Scalar, XDim> &initialState, const Scalar startTime, const Scalar finalTime, const Scalar dt) override
-  {
+  void integrateConst(OdeBase<Scalar, XDim> &system,
+                      Observer<Scalar, XDim> &observer,
+                      const Vector<Scalar, XDim> &initialState,
+                      const Scalar startTime, const Scalar finalTime,
+                      const Scalar dt) override {
     // TODO(mspieler): This does one redundant system() evaluation at the end.
 
-    // Ensure that finalTime is included by adding a fraction of dt such that: N * dt <= finalTime < (N + 1) * dt.
+    // Ensure that finalTime is included by adding a fraction of dt such that: N
+    // * dt <= finalTime < (N + 1) * dt.
     Scalar finalTimeLocal = finalTime + 0.1 * dt;
 
     Scalar t = startTime;
@@ -138,8 +145,7 @@ public:
     Vector<Scalar, XDim> dxdt;
     dxdt = system.computeFlowMap(t, x);
     int step = 0;
-    while (lessWithSign(t + dt, finalTimeLocal, dt))
-    {
+    while (lessWithSign(t + dt, finalTimeLocal, dt)) {
       observer.observe(x, t);
       stepper_.doStep(system, x, dxdt, t, dt, x, dxdt);
       step++;
@@ -147,16 +153,13 @@ public:
     }
     observer.observe(x, t);
   }
+
 private:
   /** Helper less comparison for both positive and negative dt case. */
-  bool lessWithSign(Scalar t1, Scalar t2, Scalar dt)
-  {
-    if (dt > 0)
-    {
+  bool lessWithSign(Scalar t1, Scalar t2, Scalar dt) {
+    if (dt > 0) {
       return t2 - t1 > std::numeric_limits<Scalar>::epsilon();
-    }
-    else
-    {
+    } else {
       return t1 - t2 > std::numeric_limits<Scalar>::epsilon();
     }
   }

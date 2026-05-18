@@ -86,5 +86,8 @@
         "/home/hitman/ros2_ws/install/legcom/local/lib/python3.10/dist-packages",
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "clangd.arguments": [
+            "--compile-commands-dir=${config:cmake.buildDirectory}" // 替换为你的编译目录
     ]
 }

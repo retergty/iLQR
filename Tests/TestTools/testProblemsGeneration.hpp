@@ -27,9 +27,9 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
- //
- // Created by rgrandia on 26.02.20.
- //
+//
+// Created by rgrandia on 26.02.20.
+//
 
 #pragma once
 
@@ -37,76 +37,75 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdlib>
 #include <memory>
 
-#include "LinearSystemDynamics.hpp"
 #include "LinearApproximation.hpp"
+#include "LinearSystemDynamics.hpp"
 #include "QpTrajectories.hpp"
 #include "QuadraticApproximation.hpp"
 #include "Types.hpp"
 
 namespace test_tools {
 
-  template <typename Scalar, int Dim>
-  Matrix<Scalar, Dim, Dim> getRandomPositiveDefiniteMatrix()
-  {
-    Matrix<Scalar, Dim, Dim> matrix = Matrix<Scalar, Dim, Dim>::Random();
-    return matrix.transpose() * matrix + Matrix<Scalar, Dim, Dim>::Identity();
+template <typename Scalar, int Dim>
+Matrix<Scalar, Dim, Dim> getRandomPositiveDefiniteMatrix() {
+  Matrix<Scalar, Dim, Dim> matrix = Matrix<Scalar, Dim, Dim>::Random();
+  return matrix.transpose() * matrix + Matrix<Scalar, Dim, Dim>::Identity();
+}
+
+template <typename Scalar, int XDim, int UDim>
+ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> getRandomCost() {
+  Matrix<Scalar, XDim + UDim, XDim + UDim> hessian =
+      Matrix<Scalar, XDim + UDim, XDim + UDim>::Random();
+  hessian = hessian.transpose() * hessian;
+
+  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost;
+  cost.dfdxx = hessian.template topLeftCorner<XDim, XDim>();
+  cost.dfdux = hessian.template bottomLeftCorner<UDim, XDim>();
+  cost.dfduu = hessian.template bottomRightCorner<UDim, UDim>();
+  cost.dfdx = Vector<Scalar, XDim>::Random();
+  cost.dfdu = Vector<Scalar, UDim>::Random();
+  cost.f = std::rand() / static_cast<Scalar>(RAND_MAX);
+  return cost;
+}
+
+template <typename Scalar, int XDim>
+ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> getRandomStateCost() {
+  ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> cost;
+  cost.dfdxx = getRandomPositiveDefiniteMatrix<Scalar, XDim>();
+  cost.dfdx = Vector<Scalar, XDim>::Random();
+  cost.f = std::rand() / static_cast<Scalar>(RAND_MAX);
+  return cost;
+}
+
+template <typename Scalar, int XDim, int UDim>
+VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>
+getRandomDynamics() {
+  VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> dynamics;
+  dynamics.dfdx = Matrix<Scalar, XDim, XDim>::Random();
+  dynamics.dfdu = Matrix<Scalar, XDim, UDim>::Random();
+  dynamics.f = Vector<Scalar, XDim>::Random();
+  return dynamics;
+}
+
+template <typename Scalar, int XDim, int UDim>
+std::unique_ptr<LinearSystemDynamics<Scalar, XDim, UDim>>
+getOcs2Dynamics(const VectorFunctionLinearApproximation<Scalar, XDim, XDim,
+                                                        UDim> &dynamics) {
+  return std::make_unique<LinearSystemDynamics<Scalar, XDim, UDim>>(
+      dynamics.dfdx, dynamics.dfdu);
+}
+
+template <typename Scalar, int XDim, int UDim, size_t PredictLength>
+qp_solver::ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
+getRandomTrajectory(Scalar dt) {
+  qp_solver::ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> trajectory;
+  for (size_t k = 0; k < PredictLength + 1; ++k) {
+    trajectory.timeTrajectory[k] = static_cast<Scalar>(k) * dt;
+    trajectory.stateTrajectory[k] = Vector<Scalar, XDim>::Random();
   }
-
-  template <typename Scalar, int XDim, int UDim>
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> getRandomCost()
-  {
-    Matrix<Scalar, XDim + UDim, XDim + UDim> hessian = Matrix<Scalar, XDim + UDim, XDim + UDim>::Random();
-    hessian = hessian.transpose() * hessian;
-
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost;
-    cost.dfdxx = hessian.template topLeftCorner<XDim, XDim>();
-    cost.dfdux = hessian.template bottomLeftCorner<UDim, XDim>();
-    cost.dfduu = hessian.template bottomRightCorner<UDim, UDim>();
-    cost.dfdx = Vector<Scalar, XDim>::Random();
-    cost.dfdu = Vector<Scalar, UDim>::Random();
-    cost.f = std::rand() / static_cast<Scalar>(RAND_MAX);
-    return cost;
+  for (size_t k = 0; k < PredictLength; ++k) {
+    trajectory.inputTrajectory[k] = Vector<Scalar, UDim>::Random();
   }
+  return trajectory;
+}
 
-  template <typename Scalar, int XDim>
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> getRandomStateCost()
-  {
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> cost;
-    cost.dfdxx = getRandomPositiveDefiniteMatrix<Scalar, XDim>();
-    cost.dfdx = Vector<Scalar, XDim>::Random();
-    cost.f = std::rand() / static_cast<Scalar>(RAND_MAX);
-    return cost;
-  }
-
-  template <typename Scalar, int XDim, int UDim>
-  VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> getRandomDynamics()
-  {
-    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> dynamics;
-    dynamics.dfdx = Matrix<Scalar, XDim, XDim>::Random();
-    dynamics.dfdu = Matrix<Scalar, XDim, UDim>::Random();
-    dynamics.f = Vector<Scalar, XDim>::Random();
-    return dynamics;
-  }
-
-  template <typename Scalar, int XDim, int UDim>
-  std::unique_ptr<LinearSystemDynamics<Scalar, XDim, UDim>> getOcs2Dynamics(
-    const VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>& dynamics) {
-    return std::make_unique<LinearSystemDynamics<Scalar, XDim, UDim>>(dynamics.dfdx, dynamics.dfdu);
-  }
-
-
-  template <typename Scalar, int XDim, int UDim, size_t PredictLength>
-  qp_solver::ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> getRandomTrajectory(Scalar dt)
-  {
-    qp_solver::ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> trajectory;
-    for (size_t k = 0; k < PredictLength + 1; ++k) {
-      trajectory.timeTrajectory[k] = static_cast<Scalar>(k) * dt;
-      trajectory.stateTrajectory[k] = Vector<Scalar, XDim>::Random();
-    }
-    for (size_t k = 0; k < PredictLength; ++k) {
-      trajectory.inputTrajectory[k] = Vector<Scalar, UDim>::Random();
-    }
-    return trajectory;
-  }
-
-}  // namespace test_tools
+} // namespace test_tools

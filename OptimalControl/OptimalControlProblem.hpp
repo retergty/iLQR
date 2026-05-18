@@ -4,17 +4,18 @@
  */
 #pragma once
 
+#include "ControlledSystemBase.hpp"
+#include "Controller.hpp"
 #include "Cost.hpp"
 #include "CostCollection.hpp"
-#include "ControlledSystemBase.hpp"
-#include "SystemDynamicsBase.hpp"
-#include "Controller.hpp"
 #include "Multiplier.hpp"
 #include "StateAugmentedLagrangianCollection.hpp"
 #include "StateInputAugmentedLagrangianCollection.hpp"
+#include "SystemDynamicsBase.hpp"
 
 /**
- * @brief 最优控制问题：中间/终端代价、等式/不等式增广拉格朗日、参考轨迹与系统动力学。
+ * @brief
+ * 最优控制问题：中间/终端代价、等式/不等式增广拉格朗日、参考轨迹与系统动力学。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
@@ -22,10 +23,13 @@
  * @tparam StateEqLagrangianContrainNumbers 等 各约束维度。
  */
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-  int StateEqLagrangianContrainNumbers, int StateInputEqLagrangianContrainNumbers, int StateIneqLagrangianContrainNumbers, int StateInputIneqLagrangianContrainNumbers,
-  int FinalStateEqLagrangianContrainNumbers, int FinalStateIneqFinalLagrangianContrainNumbers >
-struct OptimalControlProblem
-{
+          int StateEqLagrangianContrainNumbers,
+          int StateInputEqLagrangianContrainNumbers,
+          int StateIneqLagrangianContrainNumbers,
+          int StateInputIneqLagrangianContrainNumbers,
+          int FinalStateEqLagrangianContrainNumbers,
+          int FinalStateIneqFinalLagrangianContrainNumbers>
+struct OptimalControlProblem {
   /** @brief 默认构造。 */
   OptimalControlProblem() = default;
 
@@ -33,16 +37,17 @@ struct OptimalControlProblem
   ~OptimalControlProblem() = default;
 
   /** @brief 禁止拷贝构造。 */
-  OptimalControlProblem(const OptimalControlProblem& other) = delete;
+  OptimalControlProblem(const OptimalControlProblem &other) = delete;
 
   /** @brief 禁止拷贝赋值。 */
-  OptimalControlProblem& operator=(const OptimalControlProblem& rhs) = delete;
+  OptimalControlProblem &operator=(const OptimalControlProblem &rhs) = delete;
 
   // /** Move constructor */
   // OptimalControlProblem(OptimalControlProblem &&other) noexcept = default;
 
   // /** Move assignment */
-  // OptimalControlProblem &operator=(OptimalControlProblem &&rhs) noexcept = default;
+  // OptimalControlProblem &operator=(OptimalControlProblem &&rhs) noexcept =
+  // default;
 
   /** @brief 中间代价（状态-输入）。 */
   StateInputCostCollection<Scalar, XDim, UDim, PredictLength + 1> cost;
@@ -60,19 +65,31 @@ struct OptimalControlProblem
   std::array<Vector<Scalar, UDim>, PredictLength + 1> inputTrajectory;
 
   /** @brief 状态-输入等式约束增广拉格朗日。 */
-  StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim, StateInputEqLagrangianContrainNumbers> equalityLagrangian;
+  StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
+                                          StateInputEqLagrangianContrainNumbers>
+      equalityLagrangian;
   /** @brief 仅状态等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim, StateEqLagrangianContrainNumbers> stateEqualityLagrangian;
+  StateAugmentedLagrangianCollection<Scalar, XDim,
+                                     StateEqLagrangianContrainNumbers>
+      stateEqualityLagrangian;
   /** @brief 状态-输入不等式约束增广拉格朗日。 */
-  StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim, StateInputIneqLagrangianContrainNumbers> inequalityLagrangian;
+  StateInputAugmentedLagrangianCollection<
+      Scalar, XDim, UDim, StateInputIneqLagrangianContrainNumbers>
+      inequalityLagrangian;
   /** @brief 仅状态不等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim, StateIneqLagrangianContrainNumbers> stateInequalityLagrangian;
+  StateAugmentedLagrangianCollection<Scalar, XDim,
+                                     StateIneqLagrangianContrainNumbers>
+      stateInequalityLagrangian;
 
   /** @brief 终端等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim, FinalStateEqLagrangianContrainNumbers> finalEqualityLagrangian;
+  StateAugmentedLagrangianCollection<Scalar, XDim,
+                                     FinalStateEqLagrangianContrainNumbers>
+      finalEqualityLagrangian;
   /** @brief 终端不等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim, FinalStateIneqFinalLagrangianContrainNumbers> finalInequalityLagrangian;
+  StateAugmentedLagrangianCollection<
+      Scalar, XDim, FinalStateIneqFinalLagrangianContrainNumbers>
+      finalInequalityLagrangian;
 
   /** @brief 系统动力学指针。 */
-  SystemDynamicsBase<Scalar, XDim, UDim>* dynamicsPtr;
+  SystemDynamicsBase<Scalar, XDim, UDim> *dynamicsPtr;
 };
