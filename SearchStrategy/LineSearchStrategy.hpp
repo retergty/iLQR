@@ -33,6 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 回溯，选取最大可接受步长并更新优化解。
  */
 #pragma once
+#include <utility>
 
 #include "OptimalControlProblem.hpp"
 #include "RolloutBase.hpp"
@@ -104,15 +105,15 @@ class LineSearchStrategy final
   void reset() override {}
 
   /**
-   * @brief 执行线搜索：从最大步长起尝试，选满足 Armijo 的最大步长，将最优轨迹与
-   * dual 写回 solutionRef。
+   * @brief 执行线搜索：从最大步长起尝试，选满足 Armijo
+   * 的最大步长，将最优候选解写回 solutionRef。
    * @param [in] timePeriod 积分时间区间 (initTime, finalTime)。
    * @param [in] initState 初始状态。
    * @param [in] expectedCost 期望代价（当前未使用）。
    * @param [in] unoptimizedController 未优化控制器（含 deltaBias）。
    * @param [in] dualSolution 对偶解。
-   * @param [in,out] solutionRef
-   * 输出解引用（primal/dual/metrics/performanceIndex 被写入）。
+   * @param [in,out] solutionRef 输出解引用；primal/metrics/performanceIndex
+   * 来自最佳候选解，dualSolution 复制自输入 dualSolution。
    * @return 当前实现恒返回 true。
    */
   bool run(const std::pair<Scalar, Scalar>& timePeriod,
@@ -131,19 +132,29 @@ class LineSearchStrategy final
     // perform a rollout with steplength zero.
     Scalar stepLength = 0.0;
 
-    iLQR_t::incrementController(stepLength,
-                                *lineSearchInputRef_.unoptimizedControllerPtr,
-                                workersSolution_.primalSolution.controller_);
+    iLQR_t::incrementController(
+        stepLength, *lineSearchInputRef_.unoptimizedControllerPtr,
+        workerSolutionCache_[0].primalSolution.controller_);
+    iLQR_t::incrementController(
+        stepLength, *lineSearchInputRef_.unoptimizedControllerPtr,
+        workerSolutionCache_[1].primalSolution.controller_);
 
-    computeSolution(stepLength, workersSolution_);
-    baselineMerit_ = workersSolution_.performanceIndex.merit;
+    computeSolution(stepLength, workerSolutionCache_[0]);
+    baselineMerit_ = workerSolutionCache_[0].performanceIndex.merit;
     unoptimizedControllerUpdateIS_ =
         iLQR_t::computeControllerUpdateIS(unoptimizedController);
 
     // record solution
     bestStepSize_ = stepLength;
+    bestSolutionPtr_ = &workerSolutionCache_[0];
+    workSolutionPtr_ = &workerSolutionCache_[1];
+
     lineSearchTask();
-    bestSolutionRef_->swap(workersSolution_);
+    bestSolutionRef_->primalSolution = bestSolutionPtr_->primalSolution;
+    bestSolutionRef_->dualSolution = dualSolution;
+    bestSolutionRef_->avgTimeStep = bestSolutionPtr_->avgTimeStep;
+    bestSolutionRef_->performanceIndex = bestSolutionPtr_->performanceIndex;
+    bestSolutionRef_->problemMetrics = bestSolutionPtr_->problemMetrics;
     return true;
   }
 
@@ -246,10 +257,11 @@ class LineSearchStrategy final
   }
 
   /**
-   * @brief 对给定步长计算解：更新控制器 bias、执行 rollout、计算 metrics 与
+   * @brief 对给定步长计算候选解：更新控制器 bias、执行 rollout、计算 metrics 与
    * performance index。
    * @param [in] stepLength 线搜索步长。
-   * @param [out] solution 输出的轨迹、dual、metrics、performanceIndex。
+   * @param [out] solution 输出的候选轨迹、metrics、performanceIndex。
+   * dualSolution 只作为 metrics 计算输入，不存入候选解。
    */
   void computeSolution(Scalar stepLength, SearchStrategySolution_t& solution) {
     // compute primal solution
@@ -261,16 +273,10 @@ class LineSearchStrategy final
         *lineSearchInputRef_.initStatePtr,
         lineSearchInputRef_.timePeriodPtr->second, solution.primalSolution);
 
-    // initialize dual solution
-    // initializeDualSolution(ilqr_.optimalControlProblem_,
-    // solution.primalSolution, *adjustedDualSolutionPtr,
-    // solution.dualSolution);
-    solution.dualSolution = *lineSearchInputRef_.dualSolutionPtr;
-
     // compute problem metrics
     iLQR_t::computeRolloutMetrics(
         ilqr_.optimalControlProblem_, solution.primalSolution,
-        solution.dualSolution, solution.problemMetrics);
+        *lineSearchInputRef_.dualSolutionPtr, solution.problemMetrics);
 
     // compute performanceIndex
     solution.performanceIndex = iLQR_t::computeRolloutPerformanceIndex(
@@ -279,10 +285,7 @@ class LineSearchStrategy final
         ilqr_.calculateRolloutMerit(solution.performanceIndex);
   }
 
-  /**
-   * @brief 从最大步长开始按收缩率递减尝试，选取满足 Armijo 条件的最大步长并更新
-   * bestSolutionRef_。
-   */
+  /** @brief 从最大步长开始按收缩率递减尝试，更新最佳候选解指针。 */
   void lineSearchTask() {
     Scalar stepLength = settings_.maxStepLength;
     const size_t MaxSearch = maxNumOfSearches(settings_);
@@ -293,7 +296,7 @@ class LineSearchStrategy final
        * are already processed or they are under process in other threads.
        */
 
-      computeSolution(stepLength, workersSolution_);
+      computeSolution(stepLength, *workSolutionPtr_);
 
       /*
        * based on the "Armijo backtracking" step length selection policy:
@@ -302,12 +305,12 @@ class LineSearchStrategy final
        * search.
        */
       const bool armijoCondition =
-          workersSolution_.performanceIndex.merit <
+          workSolutionPtr_->performanceIndex.merit <
           (baselineMerit_ - settings_.armijoCoefficient * stepLength *
                                 unoptimizedControllerUpdateIS_);
       if (armijoCondition && stepLength > bestStepSize_) {  // save solution
         bestStepSize_ = stepLength;
-        bestSolutionRef_->swap(workersSolution_);
+        std::swap(workSolutionPtr_, bestSolutionPtr_);
         break;
       }
 
@@ -319,9 +322,9 @@ class LineSearchStrategy final
 
   iLQR_t& ilqr_;
 
-  DualSolution_t tempDualSolutions_;
-  SearchStrategySolution_t workersSolution_;
-  std::array<SearchStrategySolution_t,2> workerSolutionCache_;
+  std::array<SearchStrategySolution_t, 2> workerSolutionCache_;
+  SearchStrategySolution_t* bestSolutionPtr_;
+  SearchStrategySolution_t* workSolutionPtr_;
 
   // input
   LineSearchInputRef lineSearchInputRef_;

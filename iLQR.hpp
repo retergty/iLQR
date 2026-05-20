@@ -927,7 +927,7 @@ class iLQR {
    */
   static void computeRolloutMetrics(OptimalControlProblem_t& problem,
                                     const PrimalSolution_t& primalSolution,
-                                    DualSolution_t& dualSolution,
+                                    const DualSolution_t& dualSolution,
                                     ProblemMetrics_t& problemMetrics) {
     const TimeTrajectory_t& tTrajectory = primalSolution.timeTrajectory_;
     const StateTrajectory_t& xTrajectory = primalSolution.stateTrajectory_;

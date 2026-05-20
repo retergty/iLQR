@@ -14,7 +14,8 @@
 #include "Types.hpp"
 
 /**
- * @brief 搜索策略输出：平均步长、对偶解、原始解、问题指标与性能指标。
+ * @brief 搜索策略候选输出：平均步长、原始解、问题指标与性能指标。
+ * @note 候选解不缓存对偶解；对偶解由 SearchStrategySolutionRef 在外部保存。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
@@ -41,8 +42,6 @@ struct SearchStrategySolution {
 
   /** @brief 平均时间步长。 */
   Scalar avgTimeStep;
-  /** @brief 对偶解。 */
-  DualSolution_t dualSolution;
   /** @brief 原始解。 */
   PrimalSolution_t primalSolution;
   /** @brief 问题指标。 */
@@ -51,9 +50,7 @@ struct SearchStrategySolution {
   PerformanceIndex_t performanceIndex;
 };
 
-/**
- * @brief 搜索策略解的引用视图：绑定解的各成员引用，用于原地写回。
- */
+/** @brief 搜索策略写回视图：绑定外部 avg/dual/primal/metrics/performance。 */
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqConstrains, int StateIneqConstrains,
           int StateInputEqConstrains, int StateInputIneqConstrains,
@@ -77,14 +74,6 @@ struct SearchStrategySolutionRef {
                              StateInputEqConstrains, StateInputIneqConstrains,
                              FinalStateEqConstrains, FinalStateIneqConstrains>;
 
-  /** @brief 由 SearchStrategySolution 构造，绑定其各成员引用。 */
-  SearchStrategySolutionRef(SearchStrategySolution_t& s)
-      : avgTimeStep(s.avgTimeStep),
-        dualSolution(s.dualSolution),
-        primalSolution(s.primalSolution),
-        problemMetrics(s.problemMetrics),
-        performanceIndex(s.performanceIndex) {}
-
   /** @brief 直接绑定各成员引用。 */
   SearchStrategySolutionRef(Scalar& avgTimeStepArg,
                             DualSolution_t& dualSolutionArg,
@@ -96,15 +85,6 @@ struct SearchStrategySolutionRef {
         primalSolution(primalSolutionArg),
         problemMetrics(problemMetricsArg),
         performanceIndex(performanceIndexArg) {}
-
-  /** @brief 与另一 SearchStrategySolution 交换内容。 */
-  void swap(SearchStrategySolution_t& rhs) {
-    std::swap(avgTimeStep, rhs.avgTimeStep);
-    dualSolution.swap(rhs.dualSolution);
-    primalSolution.swap(rhs.primalSolution);
-    problemMetrics.swap(rhs.problemMetrics);
-    std::swap(performanceIndex, rhs.performanceIndex);
-  }
 
   /** @brief 平均时间步长引用。 */
   Scalar& avgTimeStep;
