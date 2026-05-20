@@ -34,11 +34,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "LinearQuadraticApproximator.hpp"
-#include "ModelData.hpp"
 #include "Multiplier.hpp"
 #include "OptimalControlProblem.hpp"
 #include "QpSolverTypes.hpp"
 #include "QpTrajectories.hpp"
+#include "SensitivityIntegrator.hpp"
 
 namespace qp_solver {
 
@@ -64,20 +64,13 @@ makeZeroDynamics() {
 
 template <typename Scalar, int XDim, int UDim>
 typename LinearQuadraticStage<Scalar, XDim, UDim>::DynamicsApproximation_t
-approximateDynamics(const ModelData<Scalar, XDim, UDim>& modelData,
+approximateDynamics(SystemDynamicsBase<Scalar, XDim, UDim>& system,
                     TrajectoryRef<Scalar, XDim, UDim> start, Scalar dt) {
-  // Forward Euler discretization
-  // x[k+1] = x[k] + dt * dxdt[k]
-  // x[k+1] = (x0[k] + dx[k]) + dt * dxdt[k]
-  // x[k+1] = (x0[k] + dx[k]) + dt * (A_c dx[k] + B_c du[k] + b_c)
-  // x[k+1] = (I + A_c * dt) dx[k] + (B_c * dt) du[k] + (b_c * dt + x0[k])
-  const auto& continuousDynamics = modelData.dynamics;
-  typename LinearQuadraticStage<Scalar, XDim, UDim>::DynamicsApproximation_t
-      discreteDynamics;
-  discreteDynamics.dfdx = continuousDynamics.dfdx * dt;
-  discreteDynamics.dfdx.diagonal().array() += 1.0;
-  discreteDynamics.dfdu = continuousDynamics.dfdu * dt;
-  discreteDynamics.f = continuousDynamics.f * dt + start.x;
+  EK2DynamicsDiscretizer<Scalar, XDim, UDim> discretizer;
+  auto discreteDynamics =
+      discretizer.sensitivityDiscretize(system, start.t, start.x, start.u, dt);
+  // Use deviation dynamics without an affine defect term.
+  discreteDynamics.f.setZero();
   return discreteDynamics;
 }
 
@@ -121,12 +114,10 @@ LinearQuadraticStage<Scalar, XDim, UDim> approximateStage(
   lqStage.cost = modelData.cost;
   lqStage.cost *= dt;
 
-  // Linearized Dynamics after discretization: x0[k+1] + dx[k+1] = A dx[k] + B
-  // du[k] + F(x0[k], u0[k])
-  lqStage.dynamics = approximateDynamics(modelData, start, dt);
-  // Adapt the offset to account for discretization and the nominal trajectory:
-  // dx[k+1] = A dx[k] + B du[k] + F(x0[k], u0[k]) - x0[k+1]
-  lqStage.dynamics.f -= end.x;
+  // Discrete LQ deviation dynamics: dx[k+1] = A dx[k] + B du[k].
+  // Nominal trajectory defects are not included in this transcription.
+  lqStage.dynamics =
+      approximateDynamics(*optimalControlProblem.dynamicsPtr, start, dt);
 
   // In this project constraint penalties are folded into the approximated cost
   // through AugmentedLagrangian.

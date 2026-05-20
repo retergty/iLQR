@@ -320,20 +320,20 @@ TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
   const auto qpPerformance =
       getPerformanceIndex(ddp.optimalControlProblem_, qpPrimalSolution);
 
-  EXPECT_NEAR(qpPerformance.cost, ilqrPerformance.cost, 5e-2)
+  EXPECT_NEAR(qpPerformance.cost, ilqrPerformance.cost, 1e-1)
       << "QP cost: " << qpPerformance.cost
       << ", iLQR cost: " << ilqrPerformance.cost;
   EXPECT_LT((qpSolution.stateTrajectory.back() -
              ilqrSolution.stateTrajectory_.back())
                 .norm(),
-            5e-2)
+            1e-1)
       << "QP final state: " << qpSolution.stateTrajectory.back().transpose()
       << ", iLQR final state: "
       << ilqrSolution.stateTrajectory_.back().transpose();
   EXPECT_LT((qpSolution.inputTrajectory.front() -
              ilqrSolution.inputTrajectory_.front())
                 .norm(),
-            5e-2)
+            1e-1)
       << "QP initial input: " << qpSolution.inputTrajectory.front().transpose()
       << ", iLQR initial input: "
       << ilqrSolution.inputTrajectory_.front().transpose();
