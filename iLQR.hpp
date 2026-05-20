@@ -31,6 +31,8 @@
 #include "TimeTriggeredRollout.hpp"
 #include "TrapezoidalIntegration.hpp"
 #include "Types.hpp"
+#include "iLQRDescriptor.hpp"
+#include "iLQRTypes.hpp"
 
 /**
  * @brief 迭代线性二次调节器（iLQR）：基于名义轨迹的 LQ 近似与离散时间 Riccati
@@ -46,123 +48,85 @@
  * @tparam FinalStateEqConstrains 终端状态等式约束数。
  * @tparam FinalStateIneqConstrains 终端状态不等式约束数。
  */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqConstrains = 0, int StateIneqConstrains = 0,
-          int StateInputEqConstrains = 0, int StateInputIneqConstrains = 0,
-          int FinalStateEqConstrains = 0, int FinalStateIneqConstrains = 0>
+template <typename Descriptor>
 class iLQR {
  public:
-  using OptimalControlProblem_t =
-      OptimalControlProblem<Scalar, XDim, UDim, PredictLength,
-                            StateEqConstrains, StateIneqConstrains,
-                            StateInputEqConstrains, StateInputIneqConstrains,
-                            FinalStateEqConstrains, FinalStateIneqConstrains>;
-  using ControlledSystemBase_t = ControlledSystemBase<Scalar, XDim, UDim>;
-  using SystemDynamicsBase_t = SystemDynamicsBase<Scalar, XDim, UDim>;
+  using Types = iLQRTypes<Descriptor>;
+  using Scalar = typename Types::Scalar;
 
-  using StateVector_t = Vector<Scalar, XDim>;
-  using InputVector_t = Vector<Scalar, UDim>;
-  using LvVector_t = Vector<Scalar, UDim>;
-  using KmMatrix_t = Matrix<Scalar, UDim, XDim>;
-  using SmMatrix_t = Matrix<Scalar, XDim, XDim>;
-  using SvVector_t = Vector<Scalar, XDim>;
-  using GmMatrix_t = Matrix<Scalar, UDim, XDim>;
-  using HmMatrix_t = Matrix<Scalar, UDim, UDim>;
-  using GvVector_t = Vector<Scalar, UDim>;
+  static constexpr int XDim = Types::XDim;
+  static constexpr int UDim = Types::UDim;
+  static constexpr std::size_t PredictLength = Types::PredictLength;
+  static constexpr int StateEqConstrains = Types::StateEq;
+  static constexpr int StateIneqConstrains = Types::StateIneq;
+  static constexpr int StateInputEqConstrains = Types::StateInputEq;
+  static constexpr int StateInputIneqConstrains = Types::StateInputIneq;
+  static constexpr int FinalStateEqConstrains = Types::FinalStateEq;
+  static constexpr int FinalStateIneqConstrains = Types::FinalStateIneq;
 
-  using ModelData_t = ModelData<Scalar, XDim, UDim>;
+  using OptimalControlProblem_t = typename Types::OptimalControlProblem_t;
+  using ControlledSystemBase_t = typename Types::ControlledSystemBase_t;
+  using SystemDynamicsBase_t = typename Types::SystemDynamicsBase_t;
+
+  using StateVector_t = typename Types::StateVector_t;
+  using InputVector_t = typename Types::InputVector_t;
+  using LvVector_t = typename Types::LvVector_t;
+  using KmMatrix_t = typename Types::KmMatrix_t;
+  using SmMatrix_t = typename Types::SmMatrix_t;
+  using SvVector_t = typename Types::SvVector_t;
+  using GmMatrix_t = typename Types::GmMatrix_t;
+  using HmMatrix_t = typename Types::HmMatrix_t;
+  using GvVector_t = typename Types::GvVector_t;
+
+  using ModelData_t = typename Types::ModelData_t;
   using IntermediateMultiplierCollection_t =
-      MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                           StateInputEqConstrains, StateInputIneqConstrains>;
+      typename Types::IntermediateMultiplierCollection_t;
   using FinalMultiplierCollection_t =
-      MultiplierCollection<Scalar, FinalStateEqConstrains,
-                           FinalStateIneqConstrains, 0, 0>;
-  using IntermediateMetrics_t =
-      Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains,
-              StateInputEqConstrains, StateInputIneqConstrains>;
-  using FinalMetrics_t = Metrics<Scalar, XDim, UDim, FinalStateEqConstrains,
-                                 FinalStateIneqConstrains, 0, 0>;
-  using RolloutBase_t = RolloutBase<Scalar, XDim, UDim>;
-  using InitializerRollout_t = InitializerRollout<Scalar, XDim, UDim>;
-  using Initializer_t = Initializer<Scalar, XDim, UDim>;
+      typename Types::FinalMultiplierCollection_t;
+  using IntermediateMetrics_t = typename Types::IntermediateMetrics_t;
+  using FinalMetrics_t = typename Types::FinalMetrics_t;
+  using RolloutBase_t = typename Types::RolloutBase_t;
+  using InitializerRollout_t = typename Types::InitializerRollout_t;
+  using Initializer_t = typename Types::Initializer_t;
 
-  using TimeTriggeredRollout_t = TimeTriggeredRollout<Scalar, XDim, UDim>;
-  using RolloutTrajectoryPointer_t =
-      RolloutTrajectoryPointer<Scalar, XDim, UDim>;
+  using TimeTriggeredRollout_t = typename Types::TimeTriggeredRollout_t;
+  using RolloutTrajectoryPointer_t = typename Types::RolloutTrajectoryPointer_t;
 
-  using SearchStrategySolution_t =
-      SearchStrategySolution<Scalar, XDim, UDim, PredictLength,
-                             StateEqConstrains, StateIneqConstrains,
-                             StateInputEqConstrains, StateInputIneqConstrains,
-                             FinalStateEqConstrains, FinalStateIneqConstrains>;
-  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<
-      Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains,
-      StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains,
-      FinalStateIneqConstrains>;
+  using SearchStrategySolution_t = typename Types::SearchStrategySolution_t;
+  using SearchStrategySolutionRef_t =
+      typename Types::SearchStrategySolutionRef_t;
 
-  using LinearController_t =
-      LinearController<Scalar, XDim, UDim, PredictLength + 1>;
-  using SearchStrategyBase_t =
-      SearchStrategyBase<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
-                         StateIneqConstrains, StateInputEqConstrains,
-                         StateInputIneqConstrains, FinalStateEqConstrains,
-                         FinalStateIneqConstrains>;
-  using LineSearchStrategy_t =
-      LineSearchStrategy<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
-                         StateIneqConstrains, StateInputEqConstrains,
-                         StateInputIneqConstrains, FinalStateEqConstrains,
-                         FinalStateIneqConstrains>;
-  using RiccatiModification_t = RiccatiModification<Scalar, XDim, UDim>;
+  using LinearController_t = typename Types::LinearController_t;
+  using SearchStrategyBase_t = typename Types::SearchStrategyBase_t;
+  using LineSearchStrategy_t = LineSearchStrategy<Descriptor>;
+  using RiccatiModification_t = typename Types::RiccatiModification_t;
 
-  using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
-  using StateTrajectory_t = std::array<Vector<Scalar, XDim>, PredictLength + 1>;
-  using InputTrajectory_t = std::array<Vector<Scalar, UDim>, PredictLength + 1>;
+  using TimeTrajectory_t = typename Types::TimeTrajectory_t;
+  using StateTrajectory_t = typename Types::StateTrajectory_t;
+  using InputTrajectory_t = typename Types::InputTrajectory_t;
   using IntermediateMultiplierTrajectory_t =
-      std::array<IntermediateMultiplierCollection_t, PredictLength>;
-  using ModelDataTrajectory_t = std::array<ModelData_t, PredictLength>;
+      typename Types::IntermediateMultiplierTrajectory_t;
+  using ModelDataTrajectory_t = typename Types::ModelDataTrajectory_t;
 
-  using PrimalSolution_t = PrimalSolution<Scalar, XDim, UDim, PredictLength>;
-  using DualSolution_t =
-      DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
-                   StateInputEqConstrains, StateInputIneqConstrains,
-                   FinalStateEqConstrains, FinalStateIneqConstrains,
-                   PredictLength>;
-  using DualSolutionRef_t =
-      DualSolutionRef<Scalar, StateEqConstrains, StateIneqConstrains,
-                      StateInputEqConstrains, StateInputIneqConstrains,
-                      FinalStateEqConstrains, FinalStateIneqConstrains,
-                      PredictLength>;
-  using LinearQuadraticApproximator_t = LinearQuadraticApproximator<
-      Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains,
-      StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains,
-      FinalStateIneqConstrains>;
-  using PrimalDataContainer_t =
-      PrimalDataContainer<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
-                          StateIneqConstrains, StateInputEqConstrains,
-                          StateInputIneqConstrains, FinalStateEqConstrains,
-                          FinalStateIneqConstrains>;
-  using DualDataContainer_t =
-      DualDataContainer<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
-                        StateIneqConstrains, StateInputEqConstrains,
-                        StateInputIneqConstrains, FinalStateEqConstrains,
-                        FinalStateIneqConstrains>;
-  using ProblemMetrics_t =
-      ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
-                     StateIneqConstrains, StateInputEqConstrains,
-                     StateInputIneqConstrains, FinalStateEqConstrains,
-                     FinalStateIneqConstrains>;
-  using PerformanceIndex_t = PerformanceIndex<Scalar>;
+  using PrimalSolution_t = typename Types::PrimalSolution_t;
+  using DualSolution_t = typename Types::DualSolution_t;
+  using DualSolutionRef_t = typename Types::DualSolutionRef_t;
+  using LinearQuadraticApproximator_t =
+      typename Types::LinearQuadraticApproximator_t;
+  using PrimalDataContainer_t = typename Types::PrimalDataContainer_t;
+  using DualDataContainer_t = typename Types::DualDataContainer_t;
+  using ProblemMetrics_t = typename Types::ProblemMetrics_t;
+  using PerformanceIndex_t = typename Types::PerformanceIndex_t;
   using IntermediatePerformanceIndexTrajectory_t =
-      std::array<PerformanceIndex_t, PredictLength>;
+      typename Types::IntermediatePerformanceIndexTrajectory_t;
 
-  using EK2DynamicsDiscretizer_t = EK2DynamicsDiscretizer<Scalar, XDim, UDim>;
+  using EK2DynamicsDiscretizer_t = typename Types::EK2DynamicsDiscretizer_t;
 
   using ValueFunctionQuadraticApproximation_t =
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
-  using ValueFunctionTrajectory_t =
-      std::array<ValueFunctionQuadraticApproximation_t, PredictLength + 1>;
+      typename Types::ValueFunctionQuadraticApproximation_t;
+  using ValueFunctionTrajectory_t = typename Types::ValueFunctionTrajectory_t;
   using DiscreteTimeRiccatiEquations_t =
-      DiscreteTimeRiccatiEquations<Scalar, XDim, UDim>;
+      typename Types::DiscreteTimeRiccatiEquations_t;
 
   /**
    * @brief 构造 iLQR 求解器，绑定动力学与初始化器。

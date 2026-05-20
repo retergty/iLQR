@@ -204,3 +204,6 @@ Matrix<Scalar, Dimisions, Dimisions> operator-(
   }
   return res;
 }
+
+template <typename Descriptor>
+struct iLQRTypes;

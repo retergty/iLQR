@@ -12,7 +12,10 @@
 #include "ProblemMetrics.hpp"
 #include "SearchStrategySettings.hpp"
 #include "Types.hpp"
+#include "iLQRDescriptor.hpp"
 
+template <typename Descriptor>
+struct iLQRTypes;
 /**
  * @brief 搜索策略候选输出：平均步长、原始解、问题指标与性能指标。
  * @note 候选解不缓存对偶解；对偶解由 SearchStrategySolutionRef 在外部保存。
@@ -22,23 +25,14 @@
  * @tparam PredictLength 预测步数。
  * @tparam StateEqConstrains 等 约束维度。
  */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains>
+template <typename Descriptor>
 struct SearchStrategySolution {
-  using PrimalSolution_t = PrimalSolution<Scalar, XDim, UDim, PredictLength>;
-  using DualSolution_t =
-      DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
-                   StateInputEqConstrains, StateInputIneqConstrains,
-                   FinalStateEqConstrains, FinalStateIneqConstrains,
-                   PredictLength>;
-  using ProblemMetrics_t =
-      ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
-                     StateIneqConstrains, StateInputEqConstrains,
-                     StateInputIneqConstrains, FinalStateEqConstrains,
-                     FinalStateIneqConstrains>;
-  using PerformanceIndex_t = PerformanceIndex<Scalar>;
+  using Types = iLQRTypes<Descriptor>;
+  using Scalar = typename Types::Scalar;
+  using PrimalSolution_t = typename Types::PrimalSolution_t;
+  using DualSolution_t = typename Types::DualSolution_t;
+  using ProblemMetrics_t = typename Types::ProblemMetrics_t;
+  using PerformanceIndex_t = typename Types::PerformanceIndex_t;
 
   /** @brief 平均时间步长。 */
   Scalar avgTimeStep;
@@ -51,28 +45,16 @@ struct SearchStrategySolution {
 };
 
 /** @brief 搜索策略写回视图：绑定外部 avg/dual/primal/metrics/performance。 */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains>
+template <typename Descriptor>
 struct SearchStrategySolutionRef {
-  using PrimalSolution_t = PrimalSolution<Scalar, XDim, UDim, PredictLength>;
-  using DualSolution_t =
-      DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
-                   StateInputEqConstrains, StateInputIneqConstrains,
-                   FinalStateEqConstrains, FinalStateIneqConstrains,
-                   PredictLength>;
-  using ProblemMetrics_t =
-      ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
-                     StateIneqConstrains, StateInputEqConstrains,
-                     StateInputIneqConstrains, FinalStateEqConstrains,
-                     FinalStateIneqConstrains>;
-  using PerformanceIndex_t = PerformanceIndex<Scalar>;
-  using SearchStrategySolution_t =
-      SearchStrategySolution<Scalar, XDim, UDim, PredictLength,
-                             StateEqConstrains, StateIneqConstrains,
-                             StateInputEqConstrains, StateInputIneqConstrains,
-                             FinalStateEqConstrains, FinalStateIneqConstrains>;
+  using Types = iLQRTypes<Descriptor>;
+  using Scalar = typename Types::Scalar;
+  using PrimalSolution_t = typename Types::PrimalSolution_t;
+  using DualSolution_t = typename Types::DualSolution_t;
+  using ProblemMetrics_t = typename Types::ProblemMetrics_t;
+  using PerformanceIndex_t = typename Types::PerformanceIndex_t;
+
+  using SearchStrategySolution_t = SearchStrategySolution<Descriptor>;
 
   /** @brief 直接绑定各成员引用。 */
   SearchStrategySolutionRef(Scalar& avgTimeStepArg,
@@ -106,31 +88,20 @@ struct SearchStrategySolutionRef {
  * @tparam PredictLength 预测步数。
  * @tparam StateEqConstrains 等 约束维度。
  */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains>
+template <typename Descriptor>
 class SearchStrategyBase {
  public:
-  using DualSolution_t =
-      DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
-                   StateInputEqConstrains, StateInputIneqConstrains,
-                   FinalStateEqConstrains, FinalStateIneqConstrains,
-                   PredictLength>;
-  using LinearController_t =
-      LinearController<Scalar, XDim, UDim, PredictLength + 1>;
-  using StateVector_t = Vector<Scalar, XDim>;
-  using PerformanceIndex_t = PerformanceIndex<Scalar>;
-  using ModelData_t = ModelData<Scalar, XDim, UDim>;
-  using SearchStrategySolution_t =
-      SearchStrategySolution<Scalar, XDim, UDim, PredictLength,
-                             StateEqConstrains, StateIneqConstrains,
-                             StateInputEqConstrains, StateInputIneqConstrains,
-                             FinalStateEqConstrains, FinalStateIneqConstrains>;
-  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<
-      Scalar, XDim, UDim, PredictLength, StateEqConstrains, StateIneqConstrains,
-      StateInputEqConstrains, StateInputIneqConstrains, FinalStateEqConstrains,
-      FinalStateIneqConstrains>;
+  using Types = iLQRTypes<Descriptor>;
+  using Scalar = typename Types::Scalar;
+  using LinearController_t = typename Types::LinearController_t;
+  using StateVector_t = typename Types::StateVector_t;
+  using PerformanceIndex_t = typename Types::PerformanceIndex_t;
+  using ModelData_t = typename Types::ModelData_t;
+  using DualSolution_t = typename Types::DualSolution_t;
+  using SearchStrategySolution_t = SearchStrategySolution<Descriptor>;
+  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Descriptor>;
+  using HmMatrix_t = typename Types::HmMatrix_t;
+  using SmMatrix_t = typename Types::SmMatrix_t;
 
   /** @brief 默认构造。 */
   explicit SearchStrategyBase() {}
@@ -179,9 +150,8 @@ class SearchStrategyBase {
    * @param [in] projectedModelData 投影后的模型数据。
    * @param [out] deltaQm 代价对状态二阶导的 Riccati 修正。
    */
-  virtual void computeRiccatiModification(
-      const ModelData_t& projectedModelData,
-      Matrix<Scalar, XDim, XDim>& deltaQm) const = 0;
+  virtual void computeRiccatiModification(const ModelData_t& projectedModelData,
+                                          SmMatrix_t& deltaQm) const = 0;
 
   /**
    * @brief 根据策略对哈密顿量 Hessian 进行增广（如数值稳定性修正）。
@@ -189,7 +159,6 @@ class SearchStrategyBase {
    * @param [in] Hm 待增广的哈密顿量 Hessian。
    * @return 增广后的哈密顿量 Hessian。
    */
-  virtual Matrix<Scalar, UDim, UDim> augmentHamiltonianHessian(
-      const ModelData_t& modelData,
-      const Matrix<Scalar, UDim, UDim>& Hm) const = 0;
+  virtual HmMatrix_t augmentHamiltonianHessian(const ModelData_t& modelData,
+                                               const HmMatrix_t& Hm) const = 0;
 };

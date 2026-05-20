@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include <type_traits>
 
 #include "ControlledSystemBase.hpp"
 #include "DDPData.hpp"
@@ -22,6 +21,7 @@
 #include "SearchStrategyBase.hpp"
 #include "SensitivityIntegrator.hpp"
 #include "TimeTriggeredRollout.hpp"
+#include "LineSearchStrategy.hpp"
 #include "Types.hpp"
 
 template <typename Descriptor>
@@ -110,18 +110,9 @@ struct iLQRTypes {
   using IntermediateMultiplierTrajectory_t =
       std::array<IntermediateMultiplierCollection_t, PredictLength>;
   using ModelDataTrajectory_t = std::array<ModelData_t, PredictLength>;
-  using SearchStrategySolution_t =
-      SearchStrategySolution<Scalar, XDim, UDim, PredictLength, StateEq,
-                             StateIneq, StateInputEq, StateInputIneq,
-                             FinalStateEq, FinalStateIneq>;
-  using SearchStrategySolutionRef_t =
-      SearchStrategySolutionRef<Scalar, XDim, UDim, PredictLength, StateEq,
-                                StateIneq, StateInputEq, StateInputIneq,
-                                FinalStateEq, FinalStateIneq>;
-  using SearchStrategyBase_t =
-      SearchStrategyBase<Scalar, XDim, UDim, PredictLength, StateEq, StateIneq,
-                         StateInputEq, StateInputIneq, FinalStateEq,
-                         FinalStateIneq>;
+  using SearchStrategySolution_t = SearchStrategySolution<Descriptor>;
+  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Descriptor>;
+  using SearchStrategyBase_t = SearchStrategyBase<Descriptor>;
   using EK2DynamicsDiscretizer_t = EK2DynamicsDiscretizer<Scalar, XDim, UDim>;
   using ValueFunctionQuadraticApproximation_t =
       ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
