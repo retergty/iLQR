@@ -99,6 +99,7 @@ set(ILQR_HEADERS
   Models/CircularKinematics.hpp
   Models/DoubleIntegratorReachingTask.hpp
   Models/EXP0.hpp
+  iLQRDescriptor.hpp
 )
 
 add_library(iLQR_Include INTERFACE)
