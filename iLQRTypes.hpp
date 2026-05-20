@@ -21,7 +21,6 @@
 #include "SearchStrategyBase.hpp"
 #include "SensitivityIntegrator.hpp"
 #include "TimeTriggeredRollout.hpp"
-#include "LineSearchStrategy.hpp"
 #include "Types.hpp"
 
 template <typename Descriptor>
@@ -67,7 +66,7 @@ struct iLQRTypes {
 
   using OptimalControlProblem_t =
       OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEq,
-                            StateInputEq, StateIneq, StateInputIneq,
+                            StateIneq, StateInputEq, StateInputIneq,
                             FinalStateEq, FinalStateIneq>;
   using LinearController_t =
       LinearController<Scalar, XDim, UDim, PredictLength + 1>;

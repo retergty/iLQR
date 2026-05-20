@@ -4,34 +4,20 @@
  * Riccati，支持线搜索与约束投影。
  */
 #pragma once
+#include <array>
+#include <cassert>
+
 #include "ChangeOfInputVariables.hpp"
-#include "ControlledSystemBase.hpp"
-#include "Controller.hpp"
-#include "Cost.hpp"
-#include "DDPData.hpp"
 #include "DDPSetting.hpp"
-#include "DefaultInitializer.hpp"
-#include "DiscreteTimeRiccatiEquations.hpp"
-#include "DualSolution.hpp"
 #include "HessianCorrection.hpp"
-#include "Initializer.hpp"
-#include "InitializerRollout.hpp"
 #include "LineSearchStrategy.hpp"
 #include "LinearAlgebra.hpp"
-#include "LinearController.hpp"
-#include "LinearQuadraticApproximator.hpp"
-#include "OptimalControlProblem.hpp"
 #include "OptimalControlProblemHelperFunction.hpp"
 #include "PerformanceIndex.hpp"
-#include "PrimalSolution.hpp"
-#include "ProblemMetrics.hpp"
-#include "RolloutBase.hpp"
 #include "SearchStrategyBase.hpp"
 #include "SensitivityIntegrator.hpp"
-#include "TimeTriggeredRollout.hpp"
 #include "TrapezoidalIntegration.hpp"
 #include "Types.hpp"
-#include "iLQRDescriptor.hpp"
 #include "iLQRTypes.hpp"
 
 /**

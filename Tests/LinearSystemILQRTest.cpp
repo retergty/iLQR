@@ -2,13 +2,13 @@
 
 #include <array>
 
-#include "DefaultInitializer.hpp"
 #include "LinearSystemDynamics.hpp"
 #include "iLQR.hpp"
 
 // 验证 incrementController 保留时间戳和增益，只更新前馈偏置。
 TEST(LinearSystemILQRTest, IncrementControllerUpdatesOnlyFeedforwardBias) {
-  using Solver = iLQR<double, 2, 1, 2>;
+  using Descriptor = iLQRDescriptor<double, Dimensions<2, 1, 2>>;
+  using Solver = iLQR<Descriptor>;
   Solver::LinearController_t unoptimizedController;
   Solver::LinearController_t controller;
 
@@ -42,7 +42,8 @@ TEST(LinearSystemILQRTest, IncrementControllerUpdatesOnlyFeedforwardBias) {
 
 // 验证控制器更新量的积分按梯形积分计算。
 TEST(LinearSystemILQRTest, ControllerUpdateIntegralUsesTrapezoidalRule) {
-  using Solver = iLQR<double, 2, 1, 2>;
+  using Descriptor = iLQRDescriptor<double, Dimensions<2, 1, 2>>;
+  using Solver = iLQR<Descriptor>;
   Solver::LinearController_t controller;
 
   controller.timeStamp_[0] = 0.0;
@@ -58,7 +59,8 @@ TEST(LinearSystemILQRTest, ControllerUpdateIntegralUsesTrapezoidalRule) {
 
 // 验证 rolloutTrajectory 会把时间、状态和输入写回 primal solution。
 TEST(LinearSystemILQRTest, RolloutTrajectoryWritesPrimalSolution) {
-  using Solver = iLQR<double, 2, 2, 4>;
+  using Descriptor = iLQRDescriptor<double, Dimensions<2, 2, 4>>;
+  using Solver = iLQR<Descriptor>;
 
   Eigen::Matrix2d A = Eigen::Matrix2d::Zero();
   Eigen::Matrix2d B = Eigen::Matrix2d::Identity();

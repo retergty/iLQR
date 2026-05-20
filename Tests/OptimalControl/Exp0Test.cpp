@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdlib>
 #include <ctime>
-#include <iostream>
 #include <memory>
 #include <string>
 
@@ -49,7 +48,9 @@ class Exp0 : public testing::Test {
   static constexpr Scalar minRelCost = 1e-3;
   static constexpr size_t PredictLength = 200;
 
-  using Solver_t = iLQR<Scalar, STATE_DIM, INPUT_DIM, PredictLength>;
+  using Descriptor_t =
+      iLQRDescriptor<Scalar, Dimensions<STATE_DIM, INPUT_DIM, PredictLength>>;
+  using Solver_t = iLQR<Descriptor_t>;
   using Problem_t = typename Solver_t::OptimalControlProblem_t;
   using PrimalSolution_t = typename Solver_t::PrimalSolution_t;
   using DualSolution_t = typename Solver_t::DualSolution_t;
