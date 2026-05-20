@@ -2,6 +2,8 @@
  * @file RungeKuttaDormandPrince5.hpp
  * @brief Runge-Kutta Dormand-Prince 5(4) 单步积分器与固定步长积分封装。
  */
+#pragma once
+
 #include "Integration.hpp"
 
 /**

@@ -40,8 +40,8 @@ class EXP0_Cost final : public QuadraticStateInputCost<Scalar, STATE_DIM,
  public:
   EXP0_Cost()
       : QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(
-            (Matrix<Scalar, STATE_DIM, STATE_DIM>() << Scalar(0.0), Scalar(0.0),
-             Scalar(0.0), Scalar(1.0))
+            (Matrix<Scalar, STATE_DIM, STATE_DIM>() << Scalar(2.0), Scalar(0.0),
+             Scalar(0.0), Scalar(2.0))
                 .finished(),
             Matrix<Scalar, INPUT_DIM, INPUT_DIM>::Identity()) {}
   ~EXP0_Cost() override = default;
@@ -59,7 +59,7 @@ class EXP0_FinalCost final
  public:
   EXP0_FinalCost()
       : QuadraticStateCost<Scalar, STATE_DIM, ArrayLength>(
-            Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity()) {}
+            2 * Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity()) {}
   ~EXP0_FinalCost() override = default;
 
  private:
