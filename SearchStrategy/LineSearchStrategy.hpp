@@ -96,7 +96,8 @@ class LineSearchStrategy final
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
 
   /** @brief 构造线搜索策略，绑定 iLQR 实例（用于 rollout、merit 等）。 */
-  LineSearchStrategy(iLQR_t& ilqr) : ilqr_(ilqr) {}
+  LineSearchStrategy(const LineSearchSettings<Scalar>& setting, iLQR_t& ilqr)
+      : settings_(setting), ilqr_(ilqr) {}
 
   ~LineSearchStrategy() override = default;
   LineSearchStrategy(const LineSearchStrategy&) = delete;
@@ -181,8 +182,7 @@ class LineSearchStrategy final
         previousPerformanceIndex.equalityLagrangian +
         previousPerformanceIndex.inequalityLagrangian;
     const Scalar relCost = std::abs(currentTotalCost - previousTotalCost);
-    const bool isCostFunctionConverged =
-        relCost <= this->baseSettings_.minRelCost;
+    const bool isCostFunctionConverged = relCost <= settings_.minRelCost;
     const bool isOptimizationConverged = isCostFunctionConverged;
 
     return isOptimizationConverged;
@@ -318,7 +318,7 @@ class LineSearchStrategy final
     }
   }
 
-  constexpr static LineSearchSettings<Scalar> settings_{};
+  LineSearchSettings<Scalar> settings_{};
 
   iLQR_t& ilqr_;
 

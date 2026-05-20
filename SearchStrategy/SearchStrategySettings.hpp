@@ -61,7 +61,7 @@ struct SearchStrategyBaseSettings {
  * @tparam Scalar 标量类型。
  */
 template <typename Scalar>
-struct LineSearchSettings {
+struct LineSearchSettings : public SearchStrategyBaseSettings<Scalar> {
   /** @brief 线搜索最小步长。 */
   Scalar minStepLength = 0.05;
   /** @brief 线搜索最大步长。 */
@@ -84,7 +84,7 @@ struct LineSearchSettings {
  * @tparam Scalar 标量类型。
  */
 template <typename Scalar>
-struct LevenbergMarquardtSettings {
+struct LevenbergMarquardtSettings : public SearchStrategyBaseSettings<Scalar> {
   /** @brief 接受迭代解的最小 rho（实际下降/预测下降），应在 [0, 0.25)。 */
   Scalar minAcceptedPho = 0.25;
   /** @brief Riccati 倍数几何递推的默认比例。 */

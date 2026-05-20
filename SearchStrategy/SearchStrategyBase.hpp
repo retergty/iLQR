@@ -192,7 +192,4 @@ class SearchStrategyBase {
   virtual Matrix<Scalar, UDim, UDim> augmentHamiltonianHessian(
       const ModelData_t& modelData,
       const Matrix<Scalar, UDim, UDim>& Hm) const = 0;
-
- protected:
-  constexpr static SearchStrategyBaseSettings<Scalar> baseSettings_{};
 };

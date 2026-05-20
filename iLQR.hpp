@@ -175,7 +175,7 @@ class iLQR {
       : ddpSettings_(ddp_setting),
         rollout_(systemPtr, ddpSettings_.timeStep_),
         initializerRollout_(*initializer, ddpSettings_.timeStep_),
-        lineSearchStrategy_(*this) {
+        lineSearchStrategy_(makeLineSearchSettings(ddp_setting), *this) {
     optimalControlProblem_.dynamicsPtr = systemPtr;
     // set zero solution
     optimizedPrimalSolution_.clear();
@@ -276,6 +276,13 @@ class iLQR {
   }
 
  private:
+  static LineSearchSettings<Scalar> makeLineSearchSettings(
+      const DDPSettings<Scalar>& ddpSettings) {
+    LineSearchSettings<Scalar> settings = ddpSettings.lineSearch_;
+    settings.minRelCost = ddpSettings.minRelCost_;
+    return settings;
+  }
+
   /** Initializes the nominal primal based on the optimized ones.
    * @return True if the rollout is not purely from the Initializer.
    */
