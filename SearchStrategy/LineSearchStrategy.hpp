@@ -142,9 +142,8 @@ class LineSearchStrategy final
 
     // record solution
     bestStepSize_ = stepLength;
-    bestSolutionRef_->swap(workersSolution_);
     lineSearchTask();
-
+    bestSolutionRef_->swap(workersSolution_);
     return true;
   }
 
@@ -322,6 +321,7 @@ class LineSearchStrategy final
 
   DualSolution_t tempDualSolutions_;
   SearchStrategySolution_t workersSolution_;
+  std::array<SearchStrategySolution_t,2> workerSolutionCache_;
 
   // input
   LineSearchInputRef lineSearchInputRef_;

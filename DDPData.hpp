@@ -39,7 +39,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "PrimalSolution.hpp"
 #include "ProblemMetrics.hpp"
 #include "RiccatiModification.hpp"
-#include "Types.hpp"
 
 /**
  * @brief 原始数据容器：存放一次 rollout 的轨迹、控制器、中间/终端模型数据与

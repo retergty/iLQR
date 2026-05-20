@@ -29,6 +29,31 @@
       }
     },
     {
+      "name": "gcc-debug",
+      "displayName": "GCC Debug",
+      "description": "Single-config Debug build using Ninja and the GCC toolchain.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_CXX_FLAGS_DEBUG": "-g -O0",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "gcc-release",
+      "displayName": "GCC Release",
+      "description": "Single-config Release build using Ninja and the GCC toolchain.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
       "name": "clang-debug",
       "displayName": "Clang Debug",
       "description": "Single-config Debug build using Ninja and the clang/clang++ toolchain.",
@@ -36,7 +61,6 @@
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
@@ -49,48 +73,21 @@
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-      }
-    },
-    {
-      "name": "clang-cl-debug",
-      "displayName": "clang-cl Debug",
-      "description": "Single-config Debug build using Ninja and the MSVC-compatible clang-cl compiler.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "clang-cl",
-        "CMAKE_CXX_COMPILER": "clang-cl",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-      }
-    },
-    {
-      "name": "clang-cl-release",
-      "displayName": "clang-cl Release",
-      "description": "Single-config Release build using Ninja and the MSVC-compatible clang-cl compiler.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "clang-cl",
-        "CMAKE_CXX_COMPILER": "clang-cl",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "ninja-debug",
-      "displayName": "Ninja Debug (Visual Studio)",
-      "configurePreset": "ninja-debug"
+      "name": "gcc-debug",
+      "displayName": "GCC Debug",
+      "configurePreset": "gcc-debug"
     },
     {
-      "name": "ninja-release",
-      "displayName": "Ninja Release (Visual Studio)",
-      "configurePreset": "ninja-release"
+      "name": "gcc-release",
+      "displayName": "GCC Release",
+      "configurePreset": "gcc-release"
     },
     {
       "name": "clang-debug",
@@ -101,31 +98,21 @@
       "name": "clang-release",
       "displayName": "Clang Release",
       "configurePreset": "clang-release"
-    },
-    {
-      "name": "clang-cl-debug",
-      "displayName": "clang-cl Debug",
-      "configurePreset": "clang-cl-debug"
-    },
-    {
-      "name": "clang-cl-release",
-      "displayName": "clang-cl Release",
-      "configurePreset": "clang-cl-release"
     }
   ],
   "testPresets": [
     {
-      "name": "ninja-debug",
-      "displayName": "Ninja Debug Tests (Visual Studio)",
-      "configurePreset": "ninja-debug",
+      "name": "gcc-debug",
+      "displayName": "GCC Debug Tests",
+      "configurePreset": "gcc-debug",
       "output": {
         "outputOnFailure": true
       }
     },
     {
-      "name": "ninja-release",
-      "displayName": "Ninja Release Tests (Visual Studio)",
-      "configurePreset": "ninja-release",
+      "name": "gcc-release",
+      "displayName": "GCC Release Tests",
+      "configurePreset": "gcc-release",
       "output": {
         "outputOnFailure": true
       }
@@ -142,22 +129,6 @@
       "name": "clang-release",
       "displayName": "Clang Release Tests",
       "configurePreset": "clang-release",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "clang-cl-debug",
-      "displayName": "clang-cl Debug Tests",
-      "configurePreset": "clang-cl-debug",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "clang-cl-release",
-      "displayName": "clang-cl Release Tests",
-      "configurePreset": "clang-cl-release",
       "output": {
         "outputOnFailure": true
       }

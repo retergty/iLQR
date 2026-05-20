@@ -37,6 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "DefaultInitializer.hpp"
 #include "EXP0.hpp"
+#include "Ocs2QpSolver.hpp"
 #include "iLQR.hpp"
 
 class Exp0 : public testing::Test {
@@ -46,11 +47,16 @@ class Exp0 : public testing::Test {
   static constexpr int INPUT_DIM = exp0::INPUT_DIM;
   static constexpr Scalar timeStep = 1e-2;
   static constexpr Scalar minRelCost = 1e-3;
-  static constexpr Scalar expectedCost = 9.766;
   static constexpr size_t PredictLength = 200;
 
   using Solver_t = iLQR<Scalar, STATE_DIM, INPUT_DIM, PredictLength>;
   using Problem_t = typename Solver_t::OptimalControlProblem_t;
+  using PrimalSolution_t = typename Solver_t::PrimalSolution_t;
+  using DualSolution_t = typename Solver_t::DualSolution_t;
+  using ProblemMetrics_t = typename Solver_t::ProblemMetrics_t;
+  using QpTrajectory_t =
+      qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM,
+                                      PredictLength>;
   using Initializer_t = DefaultInitializer<Scalar, STATE_DIM, INPUT_DIM>;
   using StateVector_t = Vector<Scalar, STATE_DIM>;
   using InputVector_t = Vector<Scalar, INPUT_DIM>;
@@ -91,18 +97,6 @@ class Exp0 : public testing::Test {
     return testName;
   }
 
-  void performanceIndexTest(
-      const DDPSettings_t& ddpSettings,
-      const PerformanceIndex<Scalar>& performanceIndex) const {
-    const auto testName = getTestName(ddpSettings);
-    EXPECT_NEAR(performanceIndex.cost, expectedCost, 10.0 * minRelCost)
-        << "MESSAGE: " << testName << ": failed in the total cost test!";
-    EXPECT_NEAR(performanceIndex.equalityLagrangian, 0.0,
-                10.0 * ddpSettings.constraintTolerance_)
-        << "MESSAGE: " << testName
-        << ": failed in state-input equality constraint ISE test!";
-  }
-
   void setConstantReferenceTrajectory() {
     const StateVector_t targetState = exp0::getExp0TargetState<Scalar>();
     const InputVector_t targetInput = exp0::getExp0TargetInput<Scalar>();
@@ -112,6 +106,42 @@ class Exp0 : public testing::Test {
       problem.stateTrajectory[k] = targetState;
       problem.inputTrajectory[k] = targetInput;
     }
+  }
+
+  QpTrajectory_t toQpTrajectory(const PrimalSolution_t& solution) const {
+    QpTrajectory_t trajectory;
+    for (size_t k = 0; k < PredictLength + 1; ++k) {
+      trajectory.timeTrajectory[k] = solution.timeTrajectory_[k];
+      trajectory.stateTrajectory[k] = solution.stateTrajectory_[k];
+    }
+    for (size_t k = 0; k < PredictLength; ++k) {
+      trajectory.inputTrajectory[k] = solution.inputTrajectory_[k];
+    }
+    return trajectory;
+  }
+
+  PrimalSolution_t toPrimalSolution(const QpTrajectory_t& trajectory) const {
+    PrimalSolution_t solution;
+    for (size_t k = 0; k < PredictLength + 1; ++k) {
+      solution.timeTrajectory_[k] = trajectory.timeTrajectory[k];
+      solution.stateTrajectory_[k] = trajectory.stateTrajectory[k];
+    }
+    for (size_t k = 0; k < PredictLength; ++k) {
+      solution.inputTrajectory_[k] = trajectory.inputTrajectory[k];
+    }
+    solution.inputTrajectory_[PredictLength] =
+        trajectory.inputTrajectory[PredictLength - 1];
+    return solution;
+  }
+
+  typename Solver_t::PerformanceIndex_t getPerformanceIndex(
+      Problem_t& targetProblem, const PrimalSolution_t& solution) const {
+    DualSolution_t dualSolution;
+    ProblemMetrics_t problemMetrics;
+    Solver_t::computeRolloutMetrics(targetProblem, solution, dualSolution,
+                                    problemMetrics);
+    return Solver_t::computeRolloutPerformanceIndex(solution.timeTrajectory_,
+                                                    problemMetrics);
   }
 
   static std::string searchStrategyToString(SearchStrategyType strategy) {
@@ -137,7 +167,6 @@ constexpr int Exp0::STATE_DIM;
 constexpr int Exp0::INPUT_DIM;
 constexpr Exp0::Scalar Exp0::timeStep;
 constexpr Exp0::Scalar Exp0::minRelCost;
-constexpr Exp0::Scalar Exp0::expectedCost;
 constexpr size_t Exp0::PredictLength;
 
 /******************************************************************************************************/
@@ -261,6 +290,53 @@ TEST_F(Exp0, ddp_moving_horizon) {
   EXPECT_NO_THROW(ddp.run(movingStartTime, initState));
   expectSolutionEndsAt(movingStartTime +
                        static_cast<Scalar>(PredictLength) * timeStep);
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
+  auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, true);
+  ddpSettings.maxNumIterations_ = 50;
+  ddpSettings.minRelCost_ = 1e-9;
+
+  exp0::EXP0_Sys1<Scalar> systemDynamics;
+
+  Solver_t ddp(ddpSettings, &systemDynamics, initializerPtr.get());
+  exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
+  exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
+  ddp.optimalControlProblem_.cost.add(cost);
+  ddp.optimalControlProblem_.finalCost.add(finalCost);
+  ddp.setDesireTrajectory(problem.timeTrajectory, problem.stateTrajectory,
+                          problem.inputTrajectory);
+
+  ASSERT_NO_THROW(ddp.run(startTime, initState));
+  const auto& ilqrSolution = ddp.primalSolution();
+  const auto ilqrPerformance = ddp.performanceIndex();
+
+  const auto qpSolution = qp_solver::solveLinearQuadraticOptimalControlProblem(
+      ddp.optimalControlProblem_, toQpTrajectory(ilqrSolution), initState);
+  const auto qpPrimalSolution = toPrimalSolution(qpSolution);
+  const auto qpPerformance =
+      getPerformanceIndex(ddp.optimalControlProblem_, qpPrimalSolution);
+
+  EXPECT_NEAR(qpPerformance.cost, ilqrPerformance.cost, 5e-2)
+      << "QP cost: " << qpPerformance.cost
+      << ", iLQR cost: " << ilqrPerformance.cost;
+  EXPECT_LT((qpSolution.stateTrajectory.back() -
+             ilqrSolution.stateTrajectory_.back())
+                .norm(),
+            5e-2)
+      << "QP final state: " << qpSolution.stateTrajectory.back().transpose()
+      << ", iLQR final state: "
+      << ilqrSolution.stateTrajectory_.back().transpose();
+  EXPECT_LT((qpSolution.inputTrajectory.front() -
+             ilqrSolution.inputTrajectory_.front())
+                .norm(),
+            5e-2)
+      << "QP initial input: " << qpSolution.inputTrajectory.front().transpose()
+      << ", iLQR initial input: "
+      << ilqrSolution.inputTrajectory_.front().transpose();
 }
 
 /******************************************************************************************************/

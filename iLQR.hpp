@@ -271,6 +271,9 @@ class iLQR {
   const PrimalSolution_t& primalSolution() const {
     return optimizedPrimalSolution_;
   }
+  const PerformanceIndex_t performanceIndex() const {
+    return performanceIndex_;
+  }
 
  private:
   /** Initializes the nominal primal based on the optimized ones.
@@ -330,11 +333,17 @@ class iLQR {
         primalSolution.stateTrajectory_.data() + numSteps,
         primalSolution.inputTrajectory_.data() + numSteps,
         PredictLength - numSteps + 1);
-    const Scalar initTime = lastFinalTime_;
-    const StateVector_t& initState = primalSolution.stateTrajectory_[numSteps];
+    if (numSteps == 0) {
+      initializerRollout_.run(initTime_, initState_, finalTime_, nullptr,
+                              rolloutTrajectoryPtr);
+    } else {
+      const Scalar initTime = primalSolution.timeTrajectory_[numSteps];
+      const StateVector_t& initState =
+          primalSolution.stateTrajectory_[numSteps];
 
-    initializerRollout_.run(initTime, initState, finalTime_, nullptr,
-                            rolloutTrajectoryPtr);
+      initializerRollout_.run(initTime, initState, finalTime_, nullptr,
+                              rolloutTrajectoryPtr);
+    }
   }
 
   /**
@@ -681,6 +690,8 @@ class iLQR {
   void calculateController() {
     unoptimizedController_.timeStamp_ =
         nominalPrimalData_.primalSolution.timeTrajectory_;
+    optimizedPrimalSolution_.controller_.timeStamp_ =
+        unoptimizedController_.timeStamp_;
 
     for (size_t timeIndex = 0; timeIndex < PredictLength; ++timeIndex) {
       calculateControllerWorker(timeIndex, nominalPrimalData_, nominalDualData_,
