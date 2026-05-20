@@ -181,11 +181,11 @@ class CircularKinematicsConstraints final
 /******************************************************************************************************/
 /******************************************************************************************************/
 template <typename Scalar, size_t PredictLength>
-inline OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM, PredictLength, 0, 1,
-                             0, 0, 0, 0>&
+inline OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM, PredictLength, 0, 0,
+                             1, 0, 0, 0>&
 createCircularKinematicsProblem() {
   using Problem_t = OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM,
-                                          PredictLength, 0, 1, 0, 0, 0, 0>;
+                                          PredictLength, 0, 0, 1, 0, 0, 0>;
   using Cost_t =
       CircularKinematicsCost<Scalar, static_cast<int>(PredictLength + 1)>;
   using Constraint_t = CircularKinematicsConstraints<Scalar>;

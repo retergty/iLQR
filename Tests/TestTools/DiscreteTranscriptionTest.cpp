@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "LinearSystemDynamics.hpp"
-#include "Ocs2QpSolver.hpp"
+#include "QpDiscreteTranscription.hpp"
 #include "QuadraticStateCost.hpp"
 #include "testProblemsGeneration.hpp"
 
@@ -129,21 +129,15 @@ TEST_F(DiscreteTranscriptionTest, unconstrainedLqrHasCorrectSizes) {
   checkSizes(unconstrainedLqr);
 }
 
-TEST_F(DiscreteTranscriptionTest, forwardEulerDynamicsMatchesLinearSystem) {
-  const auto expectedA =
-      Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity() + A * dt;
-  const auto expectedB = B * dt;
+TEST_F(DiscreteTranscriptionTest, ek2DeviationDynamicsMatchesLinearSystem) {
+  const auto expectedA = Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity() +
+                         A * dt + Scalar(0.5) * A * A * dt * dt;
+  const auto expectedB = B * dt + Scalar(0.5) * A * B * dt * dt;
 
   for (size_t k = 0; k < N; ++k) {
-    const auto expectedF = (A * linearization.stateTrajectory[k] +
-                            B * linearization.inputTrajectory[k]) *
-                               dt +
-                           linearization.stateTrajectory[k] -
-                           linearization.stateTrajectory[k + 1];
-
     ASSERT_TRUE(unconstrainedLqr[k].dynamics.dfdx.isApprox(expectedA));
     ASSERT_TRUE(unconstrainedLqr[k].dynamics.dfdu.isApprox(expectedB));
-    ASSERT_TRUE(unconstrainedLqr[k].dynamics.f.isApprox(expectedF));
+    ASSERT_TRUE(unconstrainedLqr[k].dynamics.f.isZero());
   }
 }
 

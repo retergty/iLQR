@@ -60,7 +60,7 @@ template <typename Scalar, int XDim, int UDim, size_t PredictLength,
 struct LinearQuadraticApproximator {
   using OptimalControlProblem_t = OptimalControlProblem<
       Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrains,
-      StateInputEqLagrangianConstrains, StateIneqLagrangianConstrains,
+      StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains,
       StateInputIneqLagrangianConstrains, FinalStateEqLagrangianConstrains,
       FinalStateIneqFinalLagrangianConstrains>;
   using StateVector_t = Vector<Scalar, XDim>;

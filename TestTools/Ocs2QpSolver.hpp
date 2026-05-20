@@ -56,8 +56,8 @@ namespace qp_solver {
  */
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
           int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
           int StateInputIneqLagrangianConstrainNumbers,
           int FinalStateEqLagrangianConstrainNumbers,
           int FinalStateIneqFinalLagrangianConstrainNumbers>
@@ -65,8 +65,8 @@ ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
 solveLinearQuadraticOptimalControlProblem(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
         StateIneqLagrangianConstrainNumbers,
+        StateInputEqLagrangianConstrainNumbers,
         StateInputIneqLagrangianConstrainNumbers,
         FinalStateEqLagrangianConstrainNumbers,
         FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
@@ -113,8 +113,8 @@ solveLinearQuadraticOptimalControlProblem(
  */
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
           int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
           int StateInputIneqLagrangianConstrainNumbers,
           int FinalStateEqLagrangianConstrainNumbers,
           int FinalStateIneqFinalLagrangianConstrainNumbers>
@@ -122,8 +122,8 @@ ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
 solveLinearQuadraticOptimalControlProblem(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
         StateIneqLagrangianConstrainNumbers,
+        StateInputEqLagrangianConstrainNumbers,
         StateInputIneqLagrangianConstrainNumbers,
         FinalStateEqLagrangianConstrainNumbers,
         FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,

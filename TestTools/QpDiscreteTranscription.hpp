@@ -76,16 +76,16 @@ approximateDynamics(SystemDynamicsBase<Scalar, XDim, UDim>& system,
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
           int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
           int StateInputIneqLagrangianConstrainNumbers,
           int FinalStateEqLagrangianConstrainNumbers,
           int FinalStateIneqFinalLagrangianConstrainNumbers>
 LinearQuadraticStage<Scalar, XDim, UDim> approximateStage(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
         StateIneqLagrangianConstrainNumbers,
+        StateInputEqLagrangianConstrainNumbers,
         StateInputIneqLagrangianConstrainNumbers,
         FinalStateEqLagrangianConstrainNumbers,
         FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
@@ -128,8 +128,8 @@ LinearQuadraticStage<Scalar, XDim, UDim> approximateStage(
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
           int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
           int StateInputIneqLagrangianConstrainNumbers,
           int FinalStateEqLagrangianConstrainNumbers,
           int FinalStateIneqFinalLagrangianConstrainNumbers>
@@ -137,8 +137,8 @@ std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>
 getLinearQuadraticApproximation(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
         StateIneqLagrangianConstrainNumbers,
+        StateInputEqLagrangianConstrainNumbers,
         StateInputIneqLagrangianConstrainNumbers,
         FinalStateEqLagrangianConstrainNumbers,
         FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
@@ -193,8 +193,8 @@ getLinearQuadraticApproximation(
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
           int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
           int StateInputIneqLagrangianConstrainNumbers,
           int FinalStateEqLagrangianConstrainNumbers,
           int FinalStateIneqFinalLagrangianConstrainNumbers>
@@ -202,8 +202,8 @@ std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>
 getLinearQuadraticApproximation(
     const OptimalControlProblem<
         Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
         StateIneqLagrangianConstrainNumbers,
+        StateInputEqLagrangianConstrainNumbers,
         StateInputIneqLagrangianConstrainNumbers,
         FinalStateEqLagrangianConstrainNumbers,
         FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,

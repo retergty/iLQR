@@ -100,6 +100,7 @@ set(ILQR_HEADERS
   Models/DoubleIntegratorReachingTask.hpp
   Models/EXP0.hpp
   iLQRDescriptor.hpp
+  iLQRTypes.hpp
 )
 
 add_library(iLQR_Include INTERFACE)

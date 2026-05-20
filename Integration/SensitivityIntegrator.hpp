@@ -4,9 +4,11 @@
  * x_{k+1}=A*dx+B*du+b，支持欧拉/RK2/RK4。
  */
 #pragma once
-#include "ControlledSystemBase.hpp"
 #include "LinearApproximation.hpp"
 #include "Types.hpp"
+
+template <typename Scalar, int XDim, int UDim>
+class SystemDynamicsBase;
 
 /** @brief 灵敏度积分器类型：欧拉、RK2、RK4。 */
 enum class SensitivityIntegratorType { EULER, RK2, RK4 };

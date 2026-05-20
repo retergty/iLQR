@@ -6,6 +6,7 @@
 #include "LinearSystemDynamics.hpp"
 #include "Ocs2QpSolver.hpp"
 #include "QuadraticStateCost.hpp"
+#include "SensitivityIntegrator.hpp"
 #include "testProblemsGeneration.hpp"
 
 class Ocs2QpSolverTest : public testing::Test {
@@ -22,16 +23,43 @@ class Ocs2QpSolverTest : public testing::Test {
   using Trajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
 
-  void checkDynamics(const Trajectory_t& solution) const {
-    Vector<Scalar, STATE_DIM> state = x0;
+  void checkDeviationDynamics(const Trajectory_t& solution,
+                              const Trajectory_t& nominal) const {
+    const auto lqp =
+        qp_solver::getLinearQuadraticApproximation(problem, nominal);
+
+    ASSERT_TRUE((solution.stateTrajectory.front() -
+                 nominal.stateTrajectory.front())
+                    .isApprox(x0 - nominal.stateTrajectory.front(),
+                              precision));
+
     for (size_t k = 0; k < N; ++k) {
-      const Scalar timeStep =
-          solution.timeTrajectory[k + 1] - solution.timeTrajectory[k];
-      state +=
-          timeStep * system->computeFlowMap(solution.timeTrajectory[k], state,
-                                            solution.inputTrajectory[k]);
-      ASSERT_TRUE(state.isApprox(solution.stateTrajectory[k + 1], precision));
+      const auto dx = solution.stateTrajectory[k] - nominal.stateTrajectory[k];
+      const auto du = solution.inputTrajectory[k] - nominal.inputTrajectory[k];
+      const auto expectedNextDx =
+          lqp[k].dynamics.dfdx * dx + lqp[k].dynamics.dfdu * du +
+          lqp[k].dynamics.f;
+      const auto nextDx =
+          solution.stateTrajectory[k + 1] - nominal.stateTrajectory[k + 1];
+      ASSERT_TRUE(expectedNextDx.isApprox(nextDx, precision));
     }
+  }
+
+  Trajectory_t getDynamicallyConsistentTrajectory() const {
+    EK2DynamicsDiscretizer<Scalar, STATE_DIM, INPUT_DIM> discretizer;
+    Trajectory_t trajectory;
+
+    trajectory.stateTrajectory[0] = Vector<Scalar, STATE_DIM>::Random();
+    for (size_t k = 0; k < N; ++k) {
+      trajectory.timeTrajectory[k] = static_cast<Scalar>(k) * dt;
+      trajectory.inputTrajectory[k] = Vector<Scalar, INPUT_DIM>::Random();
+      trajectory.stateTrajectory[k + 1] = discretizer.discretize(
+          *system, trajectory.timeTrajectory[k], trajectory.stateTrajectory[k],
+          trajectory.inputTrajectory[k], dt);
+    }
+    trajectory.timeTrajectory[N] = static_cast<Scalar>(N) * dt;
+
+    return trajectory;
   }
 
   Ocs2QpSolverTest() {
@@ -115,23 +143,27 @@ TEST_F(Ocs2QpSolverTest, initialCondition) {
   ASSERT_TRUE(x0.isApprox(solution.stateTrajectory.front(), precision));
 }
 
-TEST_F(Ocs2QpSolverTest, satisfiesDynamics) { checkDynamics(solution); }
+TEST_F(Ocs2QpSolverTest, satisfiesDeviationDynamics) {
+  checkDeviationDynamics(solution, nominalTrajectory);
+}
 
 TEST_F(Ocs2QpSolverTest, invariantUnderLinearization) {
-  // Different nominalTrajectory, with same time discretization
-  auto linearization2 =
-      test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
-  linearization2.timeTrajectory = nominalTrajectory.timeTrajectory;
+  // For a linear system with quadratic costs, absolute solutions are invariant
+  // to dynamically consistent nominal trajectories.
+  const auto linearization1 = getDynamicallyConsistentTrajectory();
+  const auto linearization2 = getDynamicallyConsistentTrajectory();
 
   // Compare solutions
-  auto solution2 = qp_solver::solveLinearQuadraticOptimalControlProblem(
+  const auto solution1 = qp_solver::solveLinearQuadraticOptimalControlProblem(
+      problem, linearization1, x0);
+  const auto solution2 = qp_solver::solveLinearQuadraticOptimalControlProblem(
       problem, linearization2, x0);
   for (size_t k = 0; k < N + 1; ++k) {
-    ASSERT_TRUE(solution.stateTrajectory[k].isApprox(
+    ASSERT_TRUE(solution1.stateTrajectory[k].isApprox(
         solution2.stateTrajectory[k], precision));
   }
   for (size_t k = 0; k < N; ++k) {
-    ASSERT_TRUE(solution.inputTrajectory[k].isApprox(
+    ASSERT_TRUE(solution1.inputTrajectory[k].isApprox(
         solution2.inputTrajectory[k], precision));
   }
 }
@@ -143,9 +175,9 @@ TEST_F(Ocs2QpSolverTest, knownSolutionAtOrigin) {
   setReferenceTrajectories(problem, zeroReference);
   const Vector<Scalar, STATE_DIM> zeroX0 = Vector<Scalar, STATE_DIM>::Zero();
 
-  // Obtain solution, with non-zero nominalTrajectory
+  // Obtain solution with a zero nominal trajectory.
   auto zeroSolution = qp_solver::solveLinearQuadraticOptimalControlProblem(
-      problem, nominalTrajectory, zeroX0);
+      problem, zeroReference, zeroX0);
 
   for (size_t k = 0; k < N + 1; ++k) {
     ASSERT_TRUE(zeroSolution.stateTrajectory[k].isZero(precision));

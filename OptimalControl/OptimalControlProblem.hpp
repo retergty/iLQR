@@ -20,12 +20,17 @@
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
  * @tparam PredictLength 预测步数。
- * @tparam StateEqLagrangianContrainNumbers 等 各约束维度。
+ * @tparam StateEqLagrangianContrainNumbers 状态等式约束维度。
+ * @tparam StateIneqLagrangianContrainNumbers 状态不等式约束维度。
+ * @tparam StateInputEqLagrangianContrainNumbers 状态-输入等式约束维度。
+ * @tparam StateInputIneqLagrangianContrainNumbers 状态-输入不等式约束维度。
+ * @tparam FinalStateEqLagrangianContrainNumbers 终端状态等式约束维度。
+ * @tparam FinalStateIneqFinalLagrangianContrainNumbers 终端状态不等式约束维度。
  */
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqLagrangianContrainNumbers,
-          int StateInputEqLagrangianContrainNumbers,
           int StateIneqLagrangianContrainNumbers,
+          int StateInputEqLagrangianContrainNumbers,
           int StateInputIneqLagrangianContrainNumbers,
           int FinalStateEqLagrangianContrainNumbers,
           int FinalStateIneqFinalLagrangianContrainNumbers>
