@@ -4,11 +4,9 @@
 #include <iostream>
 #include <memory>
 
+#include "Cost.hpp"
 #include "DefaultInitializer.hpp"
 #include "LinearSystemDynamics.hpp"
-#include "OptimalControlProblem.hpp"
-#include "PrimalSolution.hpp"
-#include "QuadraticPenalty.hpp"
 #include "QuadraticStateCost.hpp"
 #include "SmoothAbsolutePenalty.hpp"
 
@@ -27,7 +25,8 @@ class DoubleIntegratorReachingTask {
   using InputMatrix_t = Matrix<Scalar, INPUT_DIM, INPUT_DIM>;
   using StateInputMatrix_t = Matrix<Scalar, STATE_DIM, INPUT_DIM>;
   using DefaultInitializer_t = DefaultInitializer<Scalar, STATE_DIM, INPUT_DIM>;
-  using StateInputCost_t = StateInputCost<Scalar, STATE_DIM, INPUT_DIM>;
+  using StateInputCost_t =
+      StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>;
   using QuadraticStateInputCost_t =
       QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>;
   using LinearSystemDynamics_t =

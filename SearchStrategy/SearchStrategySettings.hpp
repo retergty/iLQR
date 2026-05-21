@@ -32,9 +32,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @brief 搜索策略参数：DDP 策略类型、线搜索与 Levenberg-Marquardt 设置。
  */
 #pragma once
-
-#include <limits>
-
 #include "HessianCorrection.hpp"
 
 /**

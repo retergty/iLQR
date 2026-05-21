@@ -6,7 +6,6 @@
 #pragma once
 
 #include "Controller.hpp"
-#include "Integration.hpp"
 #include "Types.hpp"
 
 /** @brief 求根算法类型枚举（当前未使用）。 */

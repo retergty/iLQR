@@ -35,9 +35,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 #include <utility>
 
-#include "OptimalControlProblem.hpp"
-#include "RolloutBase.hpp"
 #include "SearchStrategyBase.hpp"
+#include "SearchStrategySettings.hpp"
+#include "Numerics.hpp"
 
 template <typename Descriptor>
 class iLQR;

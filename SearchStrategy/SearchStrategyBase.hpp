@@ -3,16 +3,7 @@
  * @brief 搜索策略基类：线搜索/置信域等子问题求解接口及搜索解容器。
  */
 #pragma once
-#include "Controller.hpp"
-#include "DualSolution.hpp"
-#include "LinearController.hpp"
-#include "ModelData.hpp"
-#include "PerformanceIndex.hpp"
-#include "PrimalSolution.hpp"
-#include "ProblemMetrics.hpp"
-#include "SearchStrategySettings.hpp"
 #include "Types.hpp"
-#include "iLQRDescriptor.hpp"
 
 template <typename Descriptor>
 struct iLQRTypes;

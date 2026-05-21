@@ -4,7 +4,6 @@
  */
 #pragma once
 #include <cassert>
-#include <iterator>
 
 template <typename T>
 class IntrusiveList;

@@ -4,8 +4,6 @@
  * f）。
  */
 #pragma once
-#include <array>
-
 #include "Types.hpp"
 
 /**

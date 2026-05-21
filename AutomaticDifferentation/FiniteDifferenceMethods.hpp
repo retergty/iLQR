@@ -6,7 +6,6 @@
 #include <math.h>
 
 #include <algorithm>
-#include <functional>
 
 #include "ControlledSystemBase.hpp"
 #include "Types.hpp"

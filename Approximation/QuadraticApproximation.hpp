@@ -3,8 +3,6 @@
  * @brief 二次近似：标量函数的二阶近似结构（Hessian、一阶项与常数项）。
  */
 #pragma once
-#include <array>
-
 #include "Types.hpp"
 
 /**
