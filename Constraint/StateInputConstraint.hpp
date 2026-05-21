@@ -18,7 +18,7 @@
  * @tparam XDim 状态维度。
  * @tparam UDim 输入维度。
  */
-template <typename Scalar, int XDim, int UDim>
+template <typename Scalar, int XDim, int UDim, int CDim>
 class StateInputConstraint {
  public:
   /** @brief 构造，指定约束阶数（线性或二次）。 */
@@ -28,12 +28,13 @@ class StateInputConstraint {
   /** @brief 获取约束阶数（Linear 或 Quadratic）。 */
   constexpr ConstraintOrder getOrder() const { return order_; };
 
-  /** @brief 获取约束值（标量）。 */
-  virtual Scalar getValue(const Scalar time, const Vector<Scalar, XDim>& state,
-                          const Vector<Scalar, UDim>& input) const = 0;
+  /** @brief 获取约束值（向量）。 */
+  virtual Vector<Scalar, CDim> getValue(
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input) const = 0;
 
   /** @brief 获取约束的线性近似（默认无效，子类可重写）。 */
-  virtual ScalarFunctionLinearApproximation<Scalar, XDim, UDim>
+  virtual VectorFunctionLinearApproximation<Scalar, CDim, XDim, UDim>
   getLinearApproximation(const Scalar time, const Vector<Scalar, XDim>& state,
                          const Vector<Scalar, UDim>& input) const {
     (void)time;
@@ -41,11 +42,11 @@ class StateInputConstraint {
     (void)input;
     assert(false &&
            "Linear approximation is not implemented for this constraint.");
-    return ScalarFunctionLinearApproximation<Scalar, XDim, 0>::Zero();
+    std::abort();
   }
 
   /** @brief 获取约束的二次近似（默认无效，子类可重写）。 */
-  virtual ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
+  virtual VectorFunctionQuadraticApproximation<Scalar, CDim, XDim, UDim>
   getQuadraticApproximation(const Scalar time,
                             const Vector<Scalar, XDim>& state,
                             const Vector<Scalar, UDim>& input) const {
@@ -54,7 +55,7 @@ class StateInputConstraint {
     (void)input;
     assert(false &&
            "Quadratic approximation is not implemented for this constraint.");
-    return ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>::Zero();
+    std::abort();
   }
 
  private:

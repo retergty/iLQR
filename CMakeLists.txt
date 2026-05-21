@@ -44,6 +44,8 @@ set(ILQR_HEADERS
   Constraint/ConstraintOrder.hpp
   Constraint/StateConstraint.hpp
   Constraint/StateInputConstraint.hpp
+  Constraint/LinearStateInputConstraint.hpp
+  Constraint/LinearStateConstraint.hpp
   Controller/Controller.hpp
   Controller/LinearController.hpp
   Cost/Cost.hpp

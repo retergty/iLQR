@@ -1,8 +1,10 @@
 /**
  * @file QuadraticApproximation.hpp
- * @brief 二次近似：标量函数的二阶近似结构（Hessian、一阶项与常数项）。
+ * @brief 二次近似：标量/向量函数的二阶近似结构（Hessian、Jacobian/梯度与常数项）。
  */
 #pragma once
+#include <array>
+
 #include "Types.hpp"
 
 /**
@@ -148,9 +150,89 @@ inline ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> operator*(
 template <typename Scalar, int XDim, int UDim>
 ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& operator+=(
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& lhs,
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& rhs) {
+    const ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& rhs) {
   lhs.f += rhs.f;
   lhs.dfdx += rhs.dfdx;
   lhs.dfdxx += rhs.dfdxx;
   return lhs;
 }
+
+/**
+ * @brief 向量函数的二次近似。
+ *
+ * 对每个输出分量 i：
+ * f_i(x,u) = 1/2 dx' dfdxx[i] dx
+ *          + du' dfdux[i] dx
+ *          + 1/2 du' dfduu[i] du
+ *          + dfdx[i,:] dx
+ *          + dfdu[i,:] du
+ *          + f[i]
+ */
+template <typename Scalar, int FDim, int XDim, int UDim>
+struct VectorFunctionQuadraticApproximation {
+  /** @brief 每个输出分量对状态的 Hessian。 */
+  std::array<Matrix<Scalar, XDim, XDim>, FDim> dfdxx;
+  /** @brief 每个输出分量对输入-状态的混合二阶导数，尺寸为 UDim x XDim。 */
+  std::array<Matrix<Scalar, UDim, XDim>, FDim> dfdux;
+  /** @brief 每个输出分量对输入的 Hessian。 */
+  std::array<Matrix<Scalar, UDim, UDim>, FDim> dfduu;
+  /** @brief 对状态的 Jacobian。 */
+  Matrix<Scalar, FDim, XDim> dfdx;
+  /** @brief 对输入的 Jacobian。 */
+  Matrix<Scalar, FDim, UDim> dfdu;
+  /** @brief 常数项向量。 */
+  Vector<Scalar, FDim> f;
+
+  /** @brief 默认构造。 */
+  VectorFunctionQuadraticApproximation() = default;
+
+  /** @brief 将各系数置零。 */
+  VectorFunctionQuadraticApproximation& setZero() {
+    for (int i = 0; i < FDim; ++i) {
+      dfdxx[i].setZero();
+      dfdux[i].setZero();
+      dfduu[i].setZero();
+    }
+    dfdx.setZero();
+    dfdu.setZero();
+    f.setZero();
+    return *this;
+  }
+
+  /** @brief 返回零初始化的近似对象。 */
+  static VectorFunctionQuadraticApproximation Zero() {
+    VectorFunctionQuadraticApproximation approximation;
+    approximation.setZero();
+    return approximation;
+  }
+};
+
+template <typename Scalar, int FDim, int XDim>
+struct VectorFunctionQuadraticApproximation<Scalar, FDim, XDim, 0> {
+  /** @brief 每个输出分量对状态的 Hessian。 */
+  std::array<Matrix<Scalar, XDim, XDim>, FDim> dfdxx;
+  /** @brief 对状态的 Jacobian。 */
+  Matrix<Scalar, FDim, XDim> dfdx;
+  /** @brief 常数项向量。 */
+  Vector<Scalar, FDim> f;
+
+  /** @brief 默认构造。 */
+  VectorFunctionQuadraticApproximation() = default;
+
+  /** @brief 将各系数置零。 */
+  VectorFunctionQuadraticApproximation& setZero() {
+    for (int i = 0; i < FDim; ++i) {
+      dfdxx[i].setZero();
+    }
+    dfdx.setZero();
+    f.setZero();
+    return *this;
+  }
+
+  /** @brief 返回零初始化的近似对象。 */
+  static VectorFunctionQuadraticApproximation Zero() {
+    VectorFunctionQuadraticApproximation approximation;
+    approximation.setZero();
+    return approximation;
+  }
+};
