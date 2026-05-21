@@ -3,10 +3,8 @@
  * @brief 参考轨迹接口：用户定义的目标时间/状态/输入轨迹及插值查询。
  */
 #pragma once
-#include <algorithm>
 #include <array>
 
-#include "Integration.hpp"
 #include "LinearInterpolation.hpp"
 #include "Types.hpp"
 
@@ -14,12 +12,14 @@
  * @brief
  * 目标轨迹容器：时间、期望状态与期望输入的离散序列，支持按索引或时间插值查询。
  * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam UDim 控制维度。
+ * @tparam Dims 维度配置，提供 XDim/UDim。
  * @tparam ArrayLength 轨迹长度。
  */
-template <typename Scalar, int XDim, int UDim, int ArrayLength>
+template <typename Scalar, typename Dims, int ArrayLength>
 struct TargetTrajectories {
+  static constexpr int XDim = Dims::XDim;
+  static constexpr int UDim = Dims::UDim;
+
   /** @brief 默认构造。 */
   TargetTrajectories() = default;
 

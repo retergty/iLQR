@@ -49,7 +49,9 @@ class Exp0 : public testing::Test {
   static constexpr size_t PredictLength = 200;
 
   using Descriptor_t =
-      iLQRDescriptor<Scalar, Dimensions<STATE_DIM, INPUT_DIM, PredictLength>>;
+      iLQRDescriptor<Scalar,
+                     TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
+                                         Horizon<PredictLength>>>;
   using Solver_t = iLQR<Descriptor_t>;
   using Problem_t = typename Solver_t::OptimalControlProblem_t;
   using PrimalSolution_t = typename Solver_t::PrimalSolution_t;

@@ -8,6 +8,7 @@
 #include "LinearController.hpp"
 #include "Multiplier.hpp"
 #include "Types.hpp"
+#include "iLQRDescriptor.hpp"
 
 // 验证对角 Hessian 修正只会平移对角项。
 TEST(UtilityTest, ShiftHessianAddsOnlyDiagonalShift) {
@@ -108,8 +109,7 @@ TEST(UtilityTest, MultiplierInterpolationInterpolatesAllFields) {
   };
 
   const auto interpolated =
-      LinearInterpolation::interpolate<double, 0, 0, 0, 0, 3>({0, 0.25},
-                                                              multipliers);
+      LinearInterpolation::interpolate<double, 3>({0, 0.25}, multipliers);
 
   EXPECT_DOUBLE_EQ(interpolated.penalty, 2.5);
   EXPECT_DOUBLE_EQ(interpolated.lagrangian, 25.0);
@@ -117,7 +117,8 @@ TEST(UtilityTest, MultiplierInterpolationInterpolatesAllFields) {
 
 // 验证乘子集合插值会分别处理各类约束乘子。
 TEST(UtilityTest, MultiplierCollectionInterpolationInterpolatesEachCategory) {
-  using Collection = MultiplierCollection<double, 1, 1, 1, 1>;
+  using Collection =
+      MultiplierCollection<double, StageConstraintLayout<1, 1, 1, 1>>;
   std::array<Collection, 2> trajectory;
 
   trajectory[0].stateEq[0] = {1.0, 10.0};
@@ -130,8 +131,9 @@ TEST(UtilityTest, MultiplierCollectionInterpolationInterpolatesEachCategory) {
   trajectory[1].stateInputIneq[0] = {14.0, 140.0};
 
   const Collection interpolated =
-      LinearInterpolation::interpolate<double, 1, 1, 1, 1, 2>({0, 0.25},
-                                                              trajectory);
+      LinearInterpolation::
+          interpolate<double, StageConstraintLayout<1, 1, 1, 1>, 2>(
+              {0, 0.25}, trajectory);
 
   EXPECT_DOUBLE_EQ(interpolated.stateEq[0].penalty, 8.5);
   EXPECT_DOUBLE_EQ(interpolated.stateEq[0].lagrangian, 85.0);

@@ -4,11 +4,8 @@
  */
 #pragma once
 #include <array>
-#include <type_traits>
 
-#include "IntrusiveList.hpp"
 #include "LinearInterpolation.hpp"
-#include "Types.hpp"
 
 /**
  * @brief 单约束的乘子：惩罚项与拉格朗日项。
@@ -31,22 +28,24 @@ struct Multiplier {
 /**
  * @brief 某时刻所有约束的乘子集合：状态等式/不等式、状态-输入等式/不等式。
  * @tparam Scalar 标量类型。
- * @tparam StateEqConstrains 状态等式约束数。
- * @tparam StateIneqConstrains 状态不等式约束数。
- * @tparam StateInputEqConstrains 状态-输入等式约束数。
- * @tparam StateInputIneqConstrains 状态-输入不等式约束数。
+ * @tparam Layout 乘子布局，需提供 StateEq/StateIneq/StateInputEq/
+ * StateInputIneq。
  */
-template <typename Scalar, int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains>
+template <typename Scalar, typename Layout>
 struct MultiplierCollection {
+  static constexpr int StateEq = Layout::StateEq;
+  static constexpr int StateIneq = Layout::StateIneq;
+  static constexpr int StateInputEq = Layout::StateInputEq;
+  static constexpr int StateInputIneq = Layout::StateInputIneq;
+
   /** @brief 状态等式约束乘子数组。 */
-  std::array<Multiplier<Scalar>, StateEqConstrains> stateEq;
+  std::array<Multiplier<Scalar>, StateEq> stateEq;
   /** @brief 状态不等式约束乘子数组。 */
-  std::array<Multiplier<Scalar>, StateIneqConstrains> stateIneq;
+  std::array<Multiplier<Scalar>, StateIneq> stateIneq;
   /** @brief 状态-输入等式约束乘子数组。 */
-  std::array<Multiplier<Scalar>, StateInputEqConstrains> stateInputEq;
+  std::array<Multiplier<Scalar>, StateInputEq> stateInputEq;
   /** @brief 状态-输入不等式约束乘子数组。 */
-  std::array<Multiplier<Scalar>, StateInputIneqConstrains> stateInputIneq;
+  std::array<Multiplier<Scalar>, StateInputIneq> stateInputIneq;
 
   /** @brief 与另一 MultiplierCollection 交换内容。 */
   void swap(MultiplierCollection& other) {
@@ -65,9 +64,7 @@ namespace LinearInterpolation {
  * @param [in] dataArray 乘子轨迹。
  * @return 插值得到的乘子。
  */
-template <typename Scalar, int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains,
-          size_t ArrayLen>
+template <typename Scalar, size_t ArrayLen>
 Multiplier<Scalar> interpolate(
     const std::pair<int, Scalar>& indexAlpha,
     const std::array<Multiplier<Scalar>, ArrayLen>& dataArray) {
@@ -90,117 +87,79 @@ Multiplier<Scalar> interpolate(
  * @param [in] dataArray 乘子集合轨迹。
  * @return 插值得到的乘子集合。
  */
-template <typename Scalar, int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains,
-          size_t ArrayLen>
-MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                     StateInputEqConstrains, StateInputIneqConstrains>
-interpolate(
+template <typename Scalar, typename Layout, size_t ArrayLen>
+MultiplierCollection<Scalar, Layout> interpolate(
     const std::pair<int, Scalar>& indexAlpha,
-    const std::array<
-        MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                             StateInputEqConstrains, StateInputIneqConstrains>,
-        ArrayLen>& dataArray) {
+    const std::array<MultiplierCollection<Scalar, Layout>, ArrayLen>&
+        dataArray) {
+  using Collection_t = MultiplierCollection<Scalar, Layout>;
+
   // number of terms
-  MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                       StateInputEqConstrains, StateInputIneqConstrains>
-      out;
+  Collection_t out;
 
   // state equality
-  for (size_t i = 0; i < StateEqConstrains; i++) {
+  for (size_t i = 0; i < Collection_t::StateEq; i++) {
     Scalar penalty = interpolate(
         indexAlpha, dataArray,
-        [i](const std::array<
-                MultiplierCollection<
-                    Scalar, StateEqConstrains, StateIneqConstrains,
-                    StateInputEqConstrains, StateInputIneqConstrains>,
-                ArrayLen>& array,
+        [i](const std::array<Collection_t, ArrayLen>& array,
             size_t t) -> const Scalar& { return array[t].stateEq[i].penalty; });
-    Scalar lagrangian = interpolate(
-        indexAlpha, dataArray,
-        [i](const std::array<
-                MultiplierCollection<
-                    Scalar, StateEqConstrains, StateIneqConstrains,
-                    StateInputEqConstrains, StateInputIneqConstrains>,
-                ArrayLen>& array,
-            size_t t) -> const Scalar& {
-          return array[t].stateEq[i].lagrangian;
-        });
+    Scalar lagrangian =
+        interpolate(indexAlpha, dataArray,
+                    [i](const std::array<Collection_t, ArrayLen>& array,
+                        size_t t) -> const Scalar& {
+                      return array[t].stateEq[i].lagrangian;
+                    });
     out.stateEq[i] = {penalty, lagrangian};
   }  // end of i loop
 
   // state inequality
-  for (size_t i = 0; i < StateIneqConstrains; i++) {
-    Scalar penalty = interpolate(
-        indexAlpha, dataArray,
-        [i](const std::array<
-                MultiplierCollection<
-                    Scalar, StateEqConstrains, StateIneqConstrains,
-                    StateInputEqConstrains, StateInputIneqConstrains>,
-                ArrayLen>& array,
-            size_t t) -> const Scalar& {
-          return array[t].stateIneq[i].penalty;
-        });
-    Scalar lagrangian = interpolate(
-        indexAlpha, dataArray,
-        [i](const std::array<
-                MultiplierCollection<
-                    Scalar, StateEqConstrains, StateIneqConstrains,
-                    StateInputEqConstrains, StateInputIneqConstrains>,
-                ArrayLen>& array,
-            size_t t) -> const Scalar& {
-          return array[t].stateIneq[i].lagrangian;
-        });
+  for (size_t i = 0; i < Collection_t::StateIneq; i++) {
+    Scalar penalty =
+        interpolate(indexAlpha, dataArray,
+                    [i](const std::array<Collection_t, ArrayLen>& array,
+                        size_t t) -> const Scalar& {
+                      return array[t].stateIneq[i].penalty;
+                    });
+    Scalar lagrangian =
+        interpolate(indexAlpha, dataArray,
+                    [i](const std::array<Collection_t, ArrayLen>& array,
+                        size_t t) -> const Scalar& {
+                      return array[t].stateIneq[i].lagrangian;
+                    });
     out.stateIneq[i] = {penalty, lagrangian};
   }  // end of i loop
 
   // state-input equality
-  for (size_t i = 0; i < StateInputEqConstrains; i++) {
-    Scalar penalty = interpolate(
-        indexAlpha, dataArray,
-        [i](const std::array<
-                MultiplierCollection<
-                    Scalar, StateEqConstrains, StateIneqConstrains,
-                    StateInputEqConstrains, StateInputIneqConstrains>,
-                ArrayLen>& array,
-            size_t t) -> const Scalar& {
-          return array[t].stateInputEq[i].penalty;
-        });
-    Scalar lagrangian = interpolate(
-        indexAlpha, dataArray,
-        [i](const std::array<
-                MultiplierCollection<
-                    Scalar, StateEqConstrains, StateIneqConstrains,
-                    StateInputEqConstrains, StateInputIneqConstrains>,
-                ArrayLen>& array,
-            size_t t) -> const Scalar& {
-          return array[t].stateInputEq[i].lagrangian;
-        });
+  for (size_t i = 0; i < Collection_t::StateInputEq; i++) {
+    Scalar penalty =
+        interpolate(indexAlpha, dataArray,
+                    [i](const std::array<Collection_t, ArrayLen>& array,
+                        size_t t) -> const Scalar& {
+                      return array[t].stateInputEq[i].penalty;
+                    });
+    Scalar lagrangian =
+        interpolate(indexAlpha, dataArray,
+                    [i](const std::array<Collection_t, ArrayLen>& array,
+                        size_t t) -> const Scalar& {
+                      return array[t].stateInputEq[i].lagrangian;
+                    });
     out.stateInputEq[i] = {penalty, lagrangian};
   }  // end of i loop
 
   // state-input inequality
-  for (size_t i = 0; i < StateInputIneqConstrains; i++) {
-    Scalar penalty = interpolate(
-        indexAlpha, dataArray,
-        [i](const std::array<
-                MultiplierCollection<
-                    Scalar, StateEqConstrains, StateIneqConstrains,
-                    StateInputEqConstrains, StateInputIneqConstrains>,
-                ArrayLen>& array,
-            size_t t) -> const Scalar {
-          return array[t].stateInputIneq[i].penalty;
-        });
-    Scalar lagrangian = interpolate(
-        indexAlpha, dataArray,
-        [i](const std::array<
-                MultiplierCollection<
-                    Scalar, StateEqConstrains, StateIneqConstrains,
-                    StateInputEqConstrains, StateInputIneqConstrains>,
-                ArrayLen>& array,
-            size_t t) -> const Scalar& {
-          return array[t].stateInputIneq[i].lagrangian;
-        });
+  for (size_t i = 0; i < Collection_t::StateInputIneq; i++) {
+    Scalar penalty =
+        interpolate(indexAlpha, dataArray,
+                    [i](const std::array<Collection_t, ArrayLen>& array,
+                        size_t t) -> const Scalar {
+                      return array[t].stateInputIneq[i].penalty;
+                    });
+    Scalar lagrangian =
+        interpolate(indexAlpha, dataArray,
+                    [i](const std::array<Collection_t, ArrayLen>& array,
+                        size_t t) -> const Scalar& {
+                      return array[t].stateInputIneq[i].lagrangian;
+                    });
     out.stateInputIneq[i] = {penalty, lagrangian};
   }  // end of i loop
 

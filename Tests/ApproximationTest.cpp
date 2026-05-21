@@ -8,6 +8,7 @@
 #include "LinearSystemDynamics.hpp"
 #include "QuadraticApproximation.hpp"
 #include "QuadraticStateCost.hpp"
+#include "iLQRDescriptor.hpp"
 
 // 验证输入变量变换只影响二次近似里与输入相关的项。
 TEST(ApproximationTest,
@@ -108,8 +109,10 @@ TEST(ApproximationTest, LinearAndQuadraticApproximationUtilities) {
 // 验证 LQ 近似器对中间时刻代价和动力学线性化的计算结果。
 TEST(ApproximationTest,
      LinearQuadraticApproximatorComputesIntermediateCostAndLQ) {
-  using Approximator =
-      LinearQuadraticApproximator<double, 2, 2, 2, 0, 0, 0, 0, 0, 0>;
+  using Descriptor =
+      iLQRDescriptor<double,
+                     TranscriptionConfig<Dimensions<2, 2>, Horizon<2>>>;
+  using Approximator = LinearQuadraticApproximator<Descriptor>;
 
   Eigen::Matrix2d A;
   A << 1.0, 2.0, 3.0, 4.0;
@@ -178,8 +181,10 @@ TEST(ApproximationTest,
 
 // 验证 LQ 近似器对终端代价近似和终端模型数据的计算结果。
 TEST(ApproximationTest, LinearQuadraticApproximatorComputesFinalCostAndLQ) {
-  using Approximator =
-      LinearQuadraticApproximator<double, 2, 2, 2, 0, 0, 0, 0, 0, 0>;
+  using Descriptor =
+      iLQRDescriptor<double,
+                     TranscriptionConfig<Dimensions<2, 2>, Horizon<2>>>;
+  using Approximator = LinearQuadraticApproximator<Descriptor>;
 
   Approximator::OptimalControlProblem_t problem;
   Eigen::Matrix2d QFinal;

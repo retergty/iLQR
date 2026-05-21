@@ -7,7 +7,6 @@
 #include <cstdlib>
 
 #include "ConstraintOrder.hpp"
-#include "IntrusiveList.hpp"
 #include "LinearApproximation.hpp"
 #include "QuadraticApproximation.hpp"
 #include "Types.hpp"

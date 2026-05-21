@@ -10,12 +10,14 @@
 /**
  * @brief 原始问题解：一条 rollout 的时间、状态、输入轨迹及对应的线性控制器。
  * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam UDim 控制维度。
- * @tparam PredictLength 预测步数（轨迹点数为 PredictLength+1）。
+ * @tparam Transcription 轨迹配置，提供 XDim/UDim/PredictLength。
  */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength>
+template <typename Scalar, typename Transcription>
 struct PrimalSolution {
+  static constexpr int XDim = Transcription::XDim;
+  static constexpr int UDim = Transcription::UDim;
+  static constexpr std::size_t PredictLength = Transcription::PredictLength;
+
   /** @brief 默认构造。 */
   PrimalSolution() = default;
 

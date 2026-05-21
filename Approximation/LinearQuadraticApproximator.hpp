@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "OptimalControlProblem.hpp"
 #include "QuadraticApproximation.hpp"
 #include "Types.hpp"
+#include "iLQRDescriptorTraits.hpp"
 
 /**
  * @brief 在给定名义轨迹与对偶解下，对 OCP 做 LQ 近似，填充中间/终端 ModelData
@@ -51,34 +52,44 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @tparam PredictLength 预测步数。
  * @tparam StateEqLagrangianConstrains 等 各约束维度。
  */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianConstrains, int StateIneqLagrangianConstrains,
-          int StateInputEqLagrangianConstrains,
-          int StateInputIneqLagrangianConstrains,
-          int FinalStateEqLagrangianConstrains,
-          int FinalStateIneqFinalLagrangianConstrains>
+template <typename Descriptor>
 struct LinearQuadraticApproximator {
-  using OptimalControlProblem_t = OptimalControlProblem<
-      Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrains,
-      StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains,
-      StateInputIneqLagrangianConstrains, FinalStateEqLagrangianConstrains,
-      FinalStateIneqFinalLagrangianConstrains>;
+  using Traits = iLQRDescriptorTraits<Descriptor>;
+  using Scalar = typename Traits::Scalar;
+  using TranscriptionConfig = typename Traits::TranscriptionConfig;
+  using Dims = typename Traits::Dims;
+  using ConstraintConfig = typename Traits::ConstraintConfig;
+
+  static constexpr int XDim = Traits::XDim;
+  static constexpr int UDim = Traits::UDim;
+  static constexpr std::size_t PredictLength = Traits::PredictLength;
+  static constexpr int StateEqLagrangianConstrains = Traits::StateEq;
+  static constexpr int StateIneqLagrangianConstrains = Traits::StateIneq;
+  static constexpr int StateInputEqLagrangianConstrains =
+      Traits::StateInputEq;
+  static constexpr int StateInputIneqLagrangianConstrains =
+      Traits::StateInputIneq;
+  static constexpr int FinalStateEqLagrangianConstrains =
+      Traits::FinalStateEq;
+  static constexpr int FinalStateIneqFinalLagrangianConstrains =
+      Traits::FinalStateIneq;
+
+  using OptimalControlProblem_t =
+      OptimalControlProblem<Scalar, TranscriptionConfig, ConstraintConfig>;
   using StateVector_t = Vector<Scalar, XDim>;
   using InputVector_t = Vector<Scalar, UDim>;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
-  using IntermediateMultiplierCollection_t = MultiplierCollection<
-      Scalar, StateEqLagrangianConstrains, StateIneqLagrangianConstrains,
-      StateInputEqLagrangianConstrains, StateInputIneqLagrangianConstrains>;
+
+  using IntermediateMultiplierCollection_t =
+      MultiplierCollection<Scalar,
+                           typename Traits::IntermediateStageConstraintLayout_t>;
   using FinalMultiplierCollection_t =
-      MultiplierCollection<Scalar, FinalStateEqLagrangianConstrains,
-                           FinalStateIneqFinalLagrangianConstrains, 0, 0>;
+      MultiplierCollection<Scalar,
+                           typename Traits::FinalStageConstraintLayout_t>;
   using IntermediateMetrics_t =
-      Metrics<Scalar, XDim, UDim, StateEqLagrangianConstrains,
-              StateIneqLagrangianConstrains, StateInputEqLagrangianConstrains,
-              StateInputIneqLagrangianConstrains>;
+      Metrics<Scalar, Dims, typename Traits::IntermediateStageConstraintLayout_t>;
   using FinalMetrics_t =
-      Metrics<Scalar, XDim, UDim, FinalStateEqLagrangianConstrains,
-              FinalStateIneqFinalLagrangianConstrains, 0, 0>;
+      Metrics<Scalar, Dims, typename Traits::FinalStageConstraintLayout_t>;
   using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
   using StateTrajectory_t = std::array<Vector<Scalar, XDim>, PredictLength + 1>;
   using InputTrajectory_t = std::array<Vector<Scalar, UDim>, PredictLength + 1>;

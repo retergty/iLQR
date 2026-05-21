@@ -22,24 +22,28 @@
 #include "SensitivityIntegrator.hpp"
 #include "TimeTriggeredRollout.hpp"
 #include "Types.hpp"
+#include "iLQRDescriptorTraits.hpp"
 
 template <typename Descriptor>
 struct iLQRTypes {
-  using Descriptor_t = Descriptor;
-  using Scalar = typename Descriptor::Scalar;
-  using Dims = typename Descriptor::Dims;
-  using Constraints = typename Descriptor::Constraints;
+  using Traits = iLQRDescriptorTraits<Descriptor>;
+  using Descriptor_t = typename Traits::Descriptor_t;
+  using Scalar = typename Traits::Scalar;
+  using TranscriptionConfig = typename Traits::TranscriptionConfig;
+  using Dims = typename Traits::Dims;
+  using Horizon = typename Traits::Horizon;
+  using ConstraintConfig = typename Traits::ConstraintConfig;
 
-  static constexpr int XDim = Dims::XDim;
-  static constexpr int UDim = Dims::UDim;
-  static constexpr std::size_t PredictLength = Dims::PredictLength;
+  static constexpr int XDim = Traits::XDim;
+  static constexpr int UDim = Traits::UDim;
+  static constexpr std::size_t PredictLength = Traits::PredictLength;
 
-  static constexpr int StateEq = Constraints::StateEq;
-  static constexpr int StateIneq = Constraints::StateIneq;
-  static constexpr int StateInputEq = Constraints::StateInputEq;
-  static constexpr int StateInputIneq = Constraints::StateInputIneq;
-  static constexpr int FinalStateEq = Constraints::FinalStateEq;
-  static constexpr int FinalStateIneq = Constraints::FinalStateIneq;
+  static constexpr int StateEq = Traits::StateEq;
+  static constexpr int StateIneq = Traits::StateIneq;
+  static constexpr int StateInputEq = Traits::StateInputEq;
+  static constexpr int StateInputIneq = Traits::StateInputIneq;
+  static constexpr int FinalStateEq = Traits::FinalStateEq;
+  static constexpr int FinalStateIneq = Traits::FinalStateIneq;
 
   using StateVector_t = Vector<Scalar, XDim>;
   using InputVector_t = Vector<Scalar, UDim>;
@@ -65,44 +69,30 @@ struct iLQRTypes {
       RolloutTrajectoryPointer<Scalar, XDim, UDim>;
 
   using OptimalControlProblem_t =
-      OptimalControlProblem<Scalar, XDim, UDim, PredictLength, StateEq,
-                            StateIneq, StateInputEq, StateInputIneq,
-                            FinalStateEq, FinalStateIneq>;
+      OptimalControlProblem<Scalar, TranscriptionConfig, ConstraintConfig>;
   using LinearController_t =
       LinearController<Scalar, XDim, UDim, PredictLength + 1>;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
   using IntermediateMultiplierCollection_t =
-      MultiplierCollection<Scalar, StateEq, StateIneq, StateInputEq,
-                           StateInputIneq>;
+      MultiplierCollection<Scalar,
+                           typename Traits::IntermediateStageConstraintLayout_t>;
   using FinalMultiplierCollection_t =
-      MultiplierCollection<Scalar, FinalStateEq, FinalStateIneq, 0, 0>;
-  using IntermediateMetrics_t = Metrics<Scalar, XDim, UDim, StateEq, StateIneq,
-                                        StateInputEq, StateInputIneq>;
+      MultiplierCollection<Scalar,
+                           typename Traits::FinalStageConstraintLayout_t>;
+  using IntermediateMetrics_t =
+      Metrics<Scalar, Dims, typename Traits::IntermediateStageConstraintLayout_t>;
   using FinalMetrics_t =
-      Metrics<Scalar, XDim, UDim, FinalStateEq, FinalStateIneq, 0, 0>;
-  using PrimalSolution_t = PrimalSolution<Scalar, XDim, UDim, PredictLength>;
-  using DualSolution_t =
-      DualSolution<Scalar, StateEq, StateIneq, StateInputEq, StateInputIneq,
-                   FinalStateEq, FinalStateIneq, PredictLength>;
-  using DualSolutionRef_t =
-      DualSolutionRef<Scalar, StateEq, StateIneq, StateInputEq, StateInputIneq,
-                      FinalStateEq, FinalStateIneq, PredictLength>;
-  using LinearQuadraticApproximator_t =
-      LinearQuadraticApproximator<Scalar, XDim, UDim, PredictLength, StateEq,
-                                  StateIneq, StateInputEq, StateInputIneq,
-                                  FinalStateEq, FinalStateIneq>;
+      Metrics<Scalar, Dims, typename Traits::FinalStageConstraintLayout_t>;
+  using PrimalSolution_t = PrimalSolution<Scalar, TranscriptionConfig>;
+  using DualSolution_t = DualSolution<Scalar, Horizon, ConstraintConfig>;
+  using DualSolutionRef_t = DualSolutionRef<Scalar, Horizon, ConstraintConfig>;
+  using LinearQuadraticApproximator_t = LinearQuadraticApproximator<Descriptor>;
   using PrimalDataContainer_t =
-      PrimalDataContainer<Scalar, XDim, UDim, PredictLength, StateEq, StateIneq,
-                          StateInputEq, StateInputIneq, FinalStateEq,
-                          FinalStateIneq>;
+      PrimalDataContainer<Scalar, TranscriptionConfig, ConstraintConfig>;
   using DualDataContainer_t =
-      DualDataContainer<Scalar, XDim, UDim, PredictLength, StateEq, StateIneq,
-                        StateInputEq, StateInputIneq, FinalStateEq,
-                        FinalStateIneq>;
+      DualDataContainer<Scalar, TranscriptionConfig, ConstraintConfig>;
   using ProblemMetrics_t =
-      ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEq, StateIneq,
-                     StateInputEq, StateInputIneq, FinalStateEq,
-                     FinalStateIneq>;
+      ProblemMetrics<Scalar, TranscriptionConfig, ConstraintConfig>;
   using PerformanceIndex_t = PerformanceIndex<Scalar>;
   using IntermediatePerformanceIndexTrajectory_t =
       std::array<PerformanceIndex_t, PredictLength>;

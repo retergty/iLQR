@@ -36,7 +36,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Metrics.hpp"
 #include "Numerics.hpp"
-#include "Types.hpp"
 
 /**
  * @brief 单次 rollout 的性能指标汇总，用于收敛判断与 merit 计算。
@@ -147,12 +146,9 @@ void swap(PerformanceIndex<Scalar>& lhs, PerformanceIndex<Scalar>& rhs) {
  * cost、dynamicsViolationSSE、equalityLagrangian、inequalityLagrangian 等的
  * PerformanceIndex。
  */
-template <typename Scalar, int XDim, int UDim, int StateEqConstrains,
-          int StateIneqConstrains, int StateInputEqConstrains,
-          int StateInputIneqConstrains>
+template <typename Scalar, typename Dims, typename Layout>
 PerformanceIndex<Scalar> toPerformanceIndex(
-    const Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains,
-                  StateInputEqConstrains, StateInputIneqConstrains>& m) {
+    const Metrics<Scalar, Dims, Layout>& m) {
   PerformanceIndex<Scalar> performanceIndex;
   performanceIndex.merit = 0.0;  // left for the solver to fill
   performanceIndex.cost = m.cost;
@@ -175,13 +171,9 @@ PerformanceIndex<Scalar> toPerformanceIndex(
  * @return 乘以 dt 后的 PerformanceIndex（cost 已在 computeIntermediateMetrics
  * 中考虑）。
  */
-template <typename Scalar, int XDim, int UDim, int StateEqConstrains,
-          int StateIneqConstrains, int StateInputEqConstrains,
-          int StateInputIneqConstrains>
+template <typename Scalar, typename Dims, typename Layout>
 PerformanceIndex<Scalar> toPerformanceIndex(
-    const Metrics<Scalar, XDim, UDim, StateEqConstrains, StateIneqConstrains,
-                  StateInputEqConstrains, StateInputIneqConstrains>& m,
-    const Scalar dt) {
+    const Metrics<Scalar, Dims, Layout>& m, const Scalar dt) {
   auto performanceIndex = toPerformanceIndex(m);
   performanceIndex.dualFeasibilitiesSSE *= dt;
   performanceIndex.dynamicsViolationSSE *= dt;

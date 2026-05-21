@@ -3,38 +3,40 @@
  * @brief 最优控制问题定义：代价、拉格朗日、参考轨迹与动力学指针。
  */
 #pragma once
+#include <array>
 
-#include "ControlledSystemBase.hpp"
-#include "Controller.hpp"
-#include "Cost.hpp"
 #include "CostCollection.hpp"
-#include "Multiplier.hpp"
 #include "StateAugmentedLagrangianCollection.hpp"
 #include "StateInputAugmentedLagrangianCollection.hpp"
 #include "SystemDynamicsBase.hpp"
+#include "Types.hpp"
 
 /**
  * @brief
  * 最优控制问题：中间/终端代价、等式/不等式增广拉格朗日、参考轨迹与系统动力学。
  * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam UDim 控制维度。
- * @tparam PredictLength 预测步数。
- * @tparam StateEqLagrangianContrainNumbers 状态等式约束维度。
- * @tparam StateIneqLagrangianContrainNumbers 状态不等式约束维度。
- * @tparam StateInputEqLagrangianContrainNumbers 状态-输入等式约束维度。
- * @tparam StateInputIneqLagrangianContrainNumbers 状态-输入不等式约束维度。
- * @tparam FinalStateEqLagrangianContrainNumbers 终端状态等式约束维度。
- * @tparam FinalStateIneqFinalLagrangianContrainNumbers 终端状态不等式约束维度。
+ * @tparam Transcription 轨迹配置，提供 XDim/UDim/PredictLength。
+ * @tparam ConstraintConfig 约束配置，提供各类约束维度。
  */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianContrainNumbers,
-          int StateIneqLagrangianContrainNumbers,
-          int StateInputEqLagrangianContrainNumbers,
-          int StateInputIneqLagrangianContrainNumbers,
-          int FinalStateEqLagrangianContrainNumbers,
-          int FinalStateIneqFinalLagrangianContrainNumbers>
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
 struct OptimalControlProblem {
+  static constexpr int XDim = Transcription::XDim;
+  static constexpr int UDim = Transcription::UDim;
+  static constexpr std::size_t PredictLength = Transcription::PredictLength;
+
+  static constexpr int StateEqLagrangianContrainNumbers =
+      ConstraintConfig::StateEq;
+  static constexpr int StateIneqLagrangianContrainNumbers =
+      ConstraintConfig::StateIneq;
+  static constexpr int StateInputEqLagrangianContrainNumbers =
+      ConstraintConfig::StateInputEq;
+  static constexpr int StateInputIneqLagrangianContrainNumbers =
+      ConstraintConfig::StateInputIneq;
+  static constexpr int FinalStateEqLagrangianContrainNumbers =
+      ConstraintConfig::FinalStateEq;
+  static constexpr int FinalStateIneqFinalLagrangianContrainNumbers =
+      ConstraintConfig::FinalStateIneq;
+
   /** @brief 默认构造。 */
   OptimalControlProblem() = default;
 

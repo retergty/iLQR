@@ -7,24 +7,24 @@
 #include <cmath>
 
 #include "LagrangianMetrics.hpp"
-#include "Numerics.hpp"
 #include "Types.hpp"
 
 /**
  * @brief
  * 单时刻的代价、动力学违反与各类约束的拉格朗日指标（等式/不等式、状态/状态-输入）。
  * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam UDim 控制维度。
- * @tparam StateEqConstrains 状态等式约束数。
- * @tparam StateIneqConstrains 状态不等式约束数。
- * @tparam StateInputEqConstrains 状态-输入等式约束数。
- * @tparam StateInputIneqConstrains 状态-输入不等式约束数。
+ * @tparam Dims 状态/输入维度配置。
+ * @tparam Layout 单时刻约束布局。
  */
-template <typename Scalar, int XDim, int UDim, int StateEqConstrains,
-          int StateIneqConstrains, int StateInputEqConstrains,
-          int StateInputIneqConstrains>
+template <typename Scalar, typename Dims, typename Layout>
 struct Metrics {
+  static constexpr int XDim = Dims::XDim;
+  static constexpr int UDim = Dims::UDim;
+  static constexpr int StateEq = Layout::StateEq;
+  static constexpr int StateIneq = Layout::StateIneq;
+  static constexpr int StateInputEq = Layout::StateInputEq;
+  static constexpr int StateInputIneq = Layout::StateInputIneq;
+
   /** @brief 该时刻总代价。 */
   Scalar cost;
 
@@ -32,15 +32,14 @@ struct Metrics {
   Vector<Scalar, XDim> dynamicsViolation;
 
   /** @brief 状态等式约束的拉格朗日项数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateEqConstrains> stateEqLagrangian;
+  std::array<LagrangianMetrics<Scalar>, StateEq> stateEqLagrangian;
   /** @brief 状态不等式约束的拉格朗日项数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateIneqConstrains>
-      stateIneqLagrangian;
+  std::array<LagrangianMetrics<Scalar>, StateIneq> stateIneqLagrangian;
   /** @brief 状态-输入等式约束的拉格朗日项数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateInputEqConstrains>
+  std::array<LagrangianMetrics<Scalar>, StateInputEq>
       stateInputEqLagrangian;
   /** @brief 状态-输入不等式约束的拉格朗日项数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateInputIneqConstrains>
+  std::array<LagrangianMetrics<Scalar>, StateInputIneq>
       stateInputIneqLagrangian;
 
   /** @brief 与另一 Metrics 交换各成员。 */

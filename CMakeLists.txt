@@ -100,6 +100,7 @@ set(ILQR_HEADERS
   Models/DoubleIntegratorReachingTask.hpp
   Models/EXP0.hpp
   iLQRDescriptor.hpp
+  iLQRDescriptorTraits.hpp
   iLQRTypes.hpp
 )
 

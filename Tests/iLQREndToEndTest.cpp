@@ -17,7 +17,9 @@ TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost) {
   LinearSystemDynamics<double, 2, 2> dynamics(A, B);
   DefaultInitializer<double, 2, 2> initializer;
   DDPSettings<double> ddp_setting;
-  using Descriptor = iLQRDescriptor<double, Dimensions<2, 2, 5>>;
+  using Descriptor =
+      iLQRDescriptor<double,
+                     TranscriptionConfig<Dimensions<2, 2>, Horizon<5>>>;
   iLQR<Descriptor> solver(ddp_setting, &dynamics, &initializer);
   QuadraticStateInputCost<double, 2, 2, 6> runningCost(
       Eigen::Matrix2d::Identity(), Eigen::Matrix2d::Identity());
@@ -42,7 +44,9 @@ TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost) {
 
 // 验证 rollout 统计出的中间代价和终端代价与二次跟踪代价一致。
 TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts) {
-  using Descriptor = iLQRDescriptor<double, Dimensions<2, 2, 2>>;
+  using Descriptor =
+      iLQRDescriptor<double,
+                     TranscriptionConfig<Dimensions<2, 2>, Horizon<2>>>;
   using Solver = iLQR<Descriptor>;
 
   Eigen::Matrix2d A = Eigen::Matrix2d::Zero();

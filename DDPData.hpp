@@ -46,17 +46,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @note 各轨迹与 modelData 应来自同一控制器的
  * rollout；用外部控制器初始化时需随后调用 run 以补齐数据。
  */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains>
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
 struct PrimalDataContainer {
-  using PrimalSolution_t = PrimalSolution<Scalar, XDim, UDim, PredictLength>;
+  static constexpr int XDim = Transcription::XDim;
+  static constexpr int UDim = Transcription::UDim;
+  static constexpr std::size_t PredictLength = Transcription::PredictLength;
+
+  using PrimalSolution_t = PrimalSolution<Scalar, Transcription>;
   using ProblemMetrics_t =
-      ProblemMetrics<Scalar, XDim, UDim, PredictLength, StateEqConstrains,
-                     StateIneqConstrains, StateInputEqConstrains,
-                     StateInputIneqConstrains, FinalStateEqConstrains,
-                     FinalStateIneqConstrains>;
+      ProblemMetrics<Scalar, Transcription, ConstraintConfig>;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
 
   // Primal solution
@@ -92,16 +90,14 @@ struct PrimalDataContainer {
  * @note valueFunctionTrajectory 由 (projectedModelData, riccatiModification) 经
  * Riccati 递推得到。
  */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains>
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
 struct DualDataContainer {
+  static constexpr int XDim = Transcription::XDim;
+  static constexpr int UDim = Transcription::UDim;
+  static constexpr std::size_t PredictLength = Transcription::PredictLength;
+
   using DualSolution_t =
-      DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
-                   StateInputEqConstrains, StateInputIneqConstrains,
-                   FinalStateEqConstrains, FinalStateIneqConstrains,
-                   PredictLength>;
+      DualSolution<Scalar, typename Transcription::Horizon, ConstraintConfig>;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
   using RiccatiModification_t = RiccatiModification<Scalar, XDim, UDim>;
   using ValueFunctionQuadraticApproximation_t =

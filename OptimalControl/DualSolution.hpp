@@ -8,24 +8,23 @@
 #include "LinearInterpolation.hpp"
 #include "Multiplier.hpp"
 #include "Numerics.hpp"
+#include "iLQRDescriptor.hpp"
 
 /**
  * @brief 对偶解：时间序列、终端乘子与各中间时刻乘子集合。
  * @tparam Scalar 标量类型。
- * @tparam StateEqConstrains 等 各约束维度。
- * @tparam PredictLength 预测步数。
+ * @tparam Horizon 预测时域配置，提供 PredictLength。
+ * @tparam ConstraintConfig 约束配置。
  */
-template <typename Scalar, int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains,
-          size_t PredictLength>
+template <typename Scalar, typename Horizon, typename ConstraintConfig>
 struct DualSolution {
+  static constexpr std::size_t PredictLength = Horizon::PredictLength;
+
   using IntermediateMultiplierCollection_t =
-      MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                           StateInputEqConstrains, StateInputIneqConstrains>;
+      MultiplierCollection<Scalar,
+                           IntermediateStageConstraintLayout<ConstraintConfig>>;
   using FinalMultiplierCollection_t =
-      MultiplierCollection<Scalar, FinalStateEqConstrains,
-                           FinalStateIneqConstrains, 0, 0>;
+      MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>;
 
   /** @brief 时间序列，与轨迹对齐。 */
   std::array<Scalar, PredictLength + 1> timeTrajectory;
@@ -66,22 +65,16 @@ struct DualSolution {
  * @brief 对偶解的引用视图：仅引用 terminal 与
  * intermediates，不包含时间戳，表示不可修改时间戳。
  */
-template <typename Scalar, int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains,
-          size_t PredictLength>
+template <typename Scalar, typename Horizon, typename ConstraintConfig>
 struct DualSolutionRef {
+  static constexpr std::size_t PredictLength = Horizon::PredictLength;
+
   using DualSolution_t =
-      DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
-                   StateInputEqConstrains, StateInputIneqConstrains,
-                   FinalStateEqConstrains, FinalStateIneqConstrains,
-                   PredictLength>;
+      DualSolution<Scalar, Horizon, ConstraintConfig>;
   using IntermediateMultiplierCollection_t =
-      MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                           StateInputEqConstrains, StateInputIneqConstrains>;
+      typename DualSolution_t::IntermediateMultiplierCollection_t;
   using FinalMultiplierCollection_t =
-      MultiplierCollection<Scalar, FinalStateEqConstrains,
-                           FinalStateIneqConstrains, 0, 0>;
+      typename DualSolution_t::FinalMultiplierCollection_t;
 
   /** @brief 由 DualSolution 构造，引用其 final 与 intermediates。 */
   DualSolutionRef(DualSolution_t& dualSolution)
@@ -105,17 +98,11 @@ struct DualSolutionRef {
  * @param [in] time 查询时间。
  * @return 该时刻对应的状态/状态-输入、等式/不等式拉格朗日乘子集合（插值结果）。
  */
-template <typename Scalar, int StateEqConstrains, int StateIneqConstrains,
-          int StateInputEqConstrains, int StateInputIneqConstrains,
-          int FinalStateEqConstrains, int FinalStateIneqConstrains,
-          size_t PredictLength>
-inline MultiplierCollection<Scalar, StateEqConstrains, StateIneqConstrains,
-                            StateInputEqConstrains, StateInputIneqConstrains>
+template <typename Scalar, typename Horizon, typename ConstraintConfig>
+inline typename DualSolution<Scalar, Horizon,
+                             ConstraintConfig>::IntermediateMultiplierCollection_t
 getIntermediateDualSolutionAtTime(
-    const DualSolution<Scalar, StateEqConstrains, StateIneqConstrains,
-                       StateInputEqConstrains, StateInputIneqConstrains,
-                       FinalStateEqConstrains, FinalStateIneqConstrains,
-                       PredictLength>& dualSolution,
+    const DualSolution<Scalar, Horizon, ConstraintConfig>& dualSolution,
     Scalar time) {
   const std::pair<int, Scalar> indexAlpha =
       LinearInterpolation::timeSegment(time, dualSolution.timeTrajectory);
