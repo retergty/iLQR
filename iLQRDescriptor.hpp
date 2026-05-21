@@ -1,5 +1,6 @@
 #pragma once
 #include <cstddef>
+#include <tuple>
 
 template <int X_, int U_>
 struct Dimensions {
@@ -23,10 +24,29 @@ struct TranscriptionConfig {
 
 struct DefaultConstraintPolicy {};
 
-template <int Eq_, int Ineq_>
+template <int CDim_>
+struct ConstraintTerm {
+  static constexpr int CDim = CDim_;
+};
+
+template <typename... Terms_>
+struct ConstraintGroupLayout {
+  using Terms = std::tuple<Terms_...>;
+  static constexpr int NumTerms = sizeof...(Terms_);
+  static constexpr int TotalDim = (Terms_::CDim + ... + 0);
+  template <std::size_t I>
+  using Term = std::tuple_element_t<I, Terms>;
+};
+
+template <typename Eq_ = ConstraintGroupLayout<>,
+          typename Ineq_ = ConstraintGroupLayout<>>
 struct ConstraintLayout {
-  static constexpr int Eq = Eq_;
-  static constexpr int Ineq = Ineq_;
+  using Eq = Eq_;
+  using Ineq = Ineq_;
+  static constexpr int EqNumTerms = Eq::NumTerms;
+  static constexpr int IneqNumTerms = Ineq::NumTerms;
+  static constexpr int EqTotalDim = Eq::TotalDim;
+  static constexpr int IneqTotalDim = Ineq::TotalDim;
 };
 
 template <typename Layout_, typename Policy_ = DefaultConstraintPolicy>
@@ -47,41 +67,62 @@ struct FinalStateConstraintConfig {
   using Policy = Policy_;
 };
 
-template <
-    typename State_ = StateConstraintConfig<ConstraintLayout<0, 0>>,
-    typename StateInput_ = StateInputConstraintConfig<ConstraintLayout<0, 0>>,
-    typename FinalState_ = FinalStateConstraintConfig<ConstraintLayout<0, 0>>>
+template <typename State_ = StateConstraintConfig<ConstraintLayout<>>,
+          typename StateInput_ = StateInputConstraintConfig<ConstraintLayout<>>,
+          typename FinalState_ = FinalStateConstraintConfig<ConstraintLayout<>>>
 struct ConstraintConfig {
   using State = State_;
   using StateInput = StateInput_;
   using FinalState = FinalState_;
 
-  static constexpr int StateEq = State::Layout::Eq;
-  static constexpr int StateIneq = State::Layout::Ineq;
-  static constexpr int StateInputEq = StateInput::Layout::Eq;
-  static constexpr int StateInputIneq = StateInput::Layout::Ineq;
-  static constexpr int FinalStateEq = FinalState::Layout::Eq;
-  static constexpr int FinalStateIneq = FinalState::Layout::Ineq;
+  using StateEqLayout = typename State::Layout::Eq;
+  using StateIneqLayout = typename State::Layout::Ineq;
+  using StateInputEqLayout = typename StateInput::Layout::Eq;
+  using StateInputIneqLayout = typename StateInput::Layout::Ineq;
+  using FinalStateEqLayout = typename FinalState::Layout::Eq;
+  using FinalStateIneqLayout = typename FinalState::Layout::Ineq;
+
+  static constexpr int StateEq = State::Layout::EqTotalDim;
+  static constexpr int StateIneq = State::Layout::IneqTotalDim;
+  static constexpr int StateInputEq = StateInput::Layout::EqTotalDim;
+  static constexpr int StateInputIneq = StateInput::Layout::IneqTotalDim;
+  static constexpr int FinalStateEq = FinalState::Layout::EqTotalDim;
+  static constexpr int FinalStateIneq = FinalState::Layout::IneqTotalDim;
 };
 
-template <int StateEq_ = 0, int StateIneq_ = 0, int StateInputEq_ = 0,
-          int StateInputIneq_ = 0>
+template <typename StateEq_ = ConstraintGroupLayout<>,
+          typename StateIneq_ = ConstraintGroupLayout<>,
+          typename StateInputEq_ = ConstraintGroupLayout<>,
+          typename StateInputIneq_ = ConstraintGroupLayout<>>
 struct StageConstraintLayout {
-  static constexpr int StateEq = StateEq_;
-  static constexpr int StateIneq = StateIneq_;
-  static constexpr int StateInputEq = StateInputEq_;
-  static constexpr int StateInputIneq = StateInputIneq_;
+  using StateEqLayout = StateEq_;
+  using StateIneqLayout = StateIneq_;
+  using StateInputEqLayout = StateInputEq_;
+  using StateInputIneqLayout = StateInputIneq_;
+
+  static constexpr int StateEq = StateEqLayout::TotalDim;
+  static constexpr int StateIneq = StateIneqLayout::TotalDim;
+  static constexpr int StateInputEq = StateInputEqLayout::TotalDim;
+  static constexpr int StateInputIneq = StateInputIneqLayout::TotalDim;
+
+  static constexpr int StateEqNumTerms = StateEqLayout::NumTerms;
+  static constexpr int StateIneqNumTerms = StateIneqLayout::NumTerms;
+  static constexpr int StateInputEqNumTerms = StateInputEqLayout::NumTerms;
+  static constexpr int StateInputIneqNumTerms = StateInputIneqLayout::NumTerms;
 };
 
 template <typename ConstraintConfig_>
 using IntermediateStageConstraintLayout = StageConstraintLayout<
-    ConstraintConfig_::StateEq, ConstraintConfig_::StateIneq,
-    ConstraintConfig_::StateInputEq, ConstraintConfig_::StateInputIneq>;
+    typename ConstraintConfig_::StateEqLayout,
+    typename ConstraintConfig_::StateIneqLayout,
+    typename ConstraintConfig_::StateInputEqLayout,
+    typename ConstraintConfig_::StateInputIneqLayout>;
 
 template <typename ConstraintConfig_>
-using FinalStageConstraintLayout =
-    StageConstraintLayout<ConstraintConfig_::FinalStateEq,
-                          ConstraintConfig_::FinalStateIneq, 0, 0>;
+using FinalStageConstraintLayout = StageConstraintLayout<
+    typename ConstraintConfig_::FinalStateEqLayout,
+    typename ConstraintConfig_::FinalStateIneqLayout, ConstraintGroupLayout<>,
+    ConstraintGroupLayout<>>;
 
 template <typename Scalar_, typename TranscriptionConfig_,
           typename ConstraintConfig_ = ConstraintConfig<>>
