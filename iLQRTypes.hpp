@@ -21,7 +21,6 @@
 #include "SearchStrategyBase.hpp"
 #include "SensitivityIntegrator.hpp"
 #include "TimeTriggeredRollout.hpp"
-#include "Types.hpp"
 #include "iLQRDescriptorTraits.hpp"
 
 template <typename Descriptor>
@@ -45,19 +44,19 @@ struct iLQRTypes {
   static constexpr int FinalStateEq = Traits::FinalStateEq;
   static constexpr int FinalStateIneq = Traits::FinalStateIneq;
 
-  using StateVector_t = Vector<Scalar, XDim>;
-  using InputVector_t = Vector<Scalar, UDim>;
-  using LvVector_t = Vector<Scalar, UDim>;
-  using KmMatrix_t = Matrix<Scalar, UDim, XDim>;
-  using SmMatrix_t = Matrix<Scalar, XDim, XDim>;
-  using SvVector_t = Vector<Scalar, XDim>;
-  using GmMatrix_t = Matrix<Scalar, UDim, XDim>;
-  using HmMatrix_t = Matrix<Scalar, UDim, UDim>;
-  using GvVector_t = Vector<Scalar, UDim>;
+  using StateVector_t = typename Traits::StateVector_t;
+  using InputVector_t = typename Traits::InputVector_t;
+  using LvVector_t = typename Traits::LvVector_t;
+  using KmMatrix_t = typename Traits::KmMatrix_t;
+  using SmMatrix_t = typename Traits::SmMatrix_t;
+  using SvVector_t = typename Traits::SvVector_t;
+  using GmMatrix_t = typename Traits::GmMatrix_t;
+  using HmMatrix_t = typename Traits::HmMatrix_t;
+  using GvVector_t = typename Traits::GvVector_t;
 
-  using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
-  using StateTrajectory_t = std::array<StateVector_t, PredictLength + 1>;
-  using InputTrajectory_t = std::array<InputVector_t, PredictLength + 1>;
+  using TimeTrajectory_t = typename Traits::TimeTrajectory_t;
+  using StateTrajectory_t = typename Traits::StateTrajectory_t;
+  using InputTrajectory_t = typename Traits::InputTrajectory_t;
 
   using ControlledSystemBase_t = ControlledSystemBase<Scalar, XDim, UDim>;
   using SystemDynamicsBase_t = SystemDynamicsBase<Scalar, XDim, UDim>;

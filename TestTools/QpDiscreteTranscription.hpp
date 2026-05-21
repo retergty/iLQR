@@ -39,8 +39,94 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "QpSolverTypes.hpp"
 #include "QpTrajectories.hpp"
 #include "SensitivityIntegrator.hpp"
+#include "iLQRDescriptor.hpp"
 
 namespace qp_solver {
+
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
+          int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers,
+          int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
+using QpTranscriptionConfig_t =
+    TranscriptionConfig<Dimensions<XDim, UDim>, Horizon<PredictLength>>;
+
+template <int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers,
+          int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
+using QpConstraintConfig_t = ConstraintConfig<
+    StateConstraintConfig<ConstraintLayout<StateEqLagrangianConstrainNumbers,
+                                           StateIneqLagrangianConstrainNumbers>>,
+    StateInputConstraintConfig<
+        ConstraintLayout<StateInputEqLagrangianConstrainNumbers,
+                         StateInputIneqLagrangianConstrainNumbers>>,
+    FinalStateConstraintConfig<
+        ConstraintLayout<FinalStateEqLagrangianConstrainNumbers,
+                         FinalStateIneqFinalLagrangianConstrainNumbers>>>;
+
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
+          int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers,
+          int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
+using QpDescriptor_t = iLQRDescriptor<
+    Scalar,
+    QpTranscriptionConfig_t<
+        Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
+        StateIneqLagrangianConstrainNumbers,
+        StateInputEqLagrangianConstrainNumbers,
+        StateInputIneqLagrangianConstrainNumbers,
+        FinalStateEqLagrangianConstrainNumbers,
+        FinalStateIneqFinalLagrangianConstrainNumbers>,
+    QpConstraintConfig_t<StateEqLagrangianConstrainNumbers,
+                         StateIneqLagrangianConstrainNumbers,
+                         StateInputEqLagrangianConstrainNumbers,
+                         StateInputIneqLagrangianConstrainNumbers,
+                         FinalStateEqLagrangianConstrainNumbers,
+                         FinalStateIneqFinalLagrangianConstrainNumbers>>;
+
+template <typename Scalar, int XDim, int UDim, size_t PredictLength,
+          int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers,
+          int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
+using QpOptimalControlProblem_t =
+    typename LinearQuadraticApproximator<
+        QpDescriptor_t<Scalar, XDim, UDim, PredictLength,
+                       StateEqLagrangianConstrainNumbers,
+                       StateIneqLagrangianConstrainNumbers,
+                       StateInputEqLagrangianConstrainNumbers,
+                       StateInputIneqLagrangianConstrainNumbers,
+                       FinalStateEqLagrangianConstrainNumbers,
+                       FinalStateIneqFinalLagrangianConstrainNumbers>>::
+        OptimalControlProblem_t;
+
+template <typename Scalar, int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers>
+using QpIntermediateMultiplierCollection_t = MultiplierCollection<
+    Scalar,
+    StageConstraintLayout<StateEqLagrangianConstrainNumbers,
+                          StateIneqLagrangianConstrainNumbers,
+                          StateInputEqLagrangianConstrainNumbers,
+                          StateInputIneqLagrangianConstrainNumbers>>;
+
+template <typename Scalar, int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
+using QpFinalMultiplierCollection_t = MultiplierCollection<
+    Scalar, StageConstraintLayout<FinalStateEqLagrangianConstrainNumbers,
+                                  FinalStateIneqFinalLagrangianConstrainNumbers,
+                                  0, 0>>;
 
 template <typename Scalar, int XDim, int UDim>
 typename LinearQuadraticStage<Scalar, XDim, UDim>::ConstraintApproximation_t
@@ -74,35 +160,21 @@ approximateDynamics(SystemDynamicsBase<Scalar, XDim, UDim>& system,
   return discreteDynamics;
 }
 
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-LinearQuadraticStage<Scalar, XDim, UDim> approximateStage(
-    const OptimalControlProblem<
-        Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateIneqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
-        StateInputIneqLagrangianConstrainNumbers,
-        FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
-    TrajectoryRef<Scalar, XDim, UDim> start,
-    StateTrajectoryRef<Scalar, XDim> end,
-    const MultiplierCollection<Scalar, StateEqLagrangianConstrainNumbers,
-                               StateIneqLagrangianConstrainNumbers,
-                               StateInputEqLagrangianConstrainNumbers,
-                               StateInputIneqLagrangianConstrainNumbers>&
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
+LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>
+approximateStage(
+    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+        optimalControlProblem,
+    TrajectoryRef<Scalar, Transcription::XDim, Transcription::UDim> start,
+    StateTrajectoryRef<Scalar, Transcription::XDim> end,
+    const MultiplierCollection<
+        Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>&
         multipliers) {
-  using Approximator_t = LinearQuadraticApproximator<
-      Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-      StateIneqLagrangianConstrainNumbers,
-      StateInputEqLagrangianConstrainNumbers,
-      StateInputIneqLagrangianConstrainNumbers,
-      FinalStateEqLagrangianConstrainNumbers,
-      FinalStateIneqFinalLagrangianConstrainNumbers>;
+  constexpr int XDim = Transcription::XDim;
+  constexpr int UDim = Transcription::UDim;
+
+  using Descriptor_t = iLQRDescriptor<Scalar, Transcription, ConstraintConfig>;
+  using Approximator_t = LinearQuadraticApproximator<Descriptor_t>;
   using LqStage_t = LinearQuadraticStage<Scalar, XDim, UDim>;
 
   const auto modelData = Approximator_t::approximateIntermediateLQ(
@@ -126,46 +198,33 @@ LinearQuadraticStage<Scalar, XDim, UDim> approximateStage(
   return lqStage;
 }
 
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
+std::vector<LinearQuadraticStage<Scalar, Transcription::XDim,
+                                 Transcription::UDim>>
 getLinearQuadraticApproximation(
-    const OptimalControlProblem<
-        Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateIneqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
-        StateInputIneqLagrangianConstrainNumbers,
-        FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
-    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>&
-        nominalTrajectory,
+    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+        optimalControlProblem,
+    const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                               Transcription::PredictLength>& nominalTrajectory,
     const std::array<
-        MultiplierCollection<Scalar, StateEqLagrangianConstrainNumbers,
-                             StateIneqLagrangianConstrainNumbers,
-                             StateInputEqLagrangianConstrainNumbers,
-                             StateInputIneqLagrangianConstrainNumbers>,
-        PredictLength>& intermediateMultipliers,
-    const MultiplierCollection<Scalar, FinalStateEqLagrangianConstrainNumbers,
-                               FinalStateIneqFinalLagrangianConstrainNumbers, 0,
-                               0>& finalMultipliers) {
+        MultiplierCollection<
+            Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
+        Transcription::PredictLength>& intermediateMultipliers,
+    const MultiplierCollection<
+        Scalar, FinalStageConstraintLayout<ConstraintConfig>>&
+        finalMultipliers) {
+  constexpr int XDim = Transcription::XDim;
+  constexpr int UDim = Transcription::UDim;
+  constexpr size_t PredictLength = Transcription::PredictLength;
+
   if (optimalControlProblem.dynamicsPtr == nullptr) {
     throw std::runtime_error(
         "[qp_solver::getLinearQuadraticApproximation] "
         "dynamicsPtr should not be null.");
   }
 
-  using Approximator_t = LinearQuadraticApproximator<
-      Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-      StateIneqLagrangianConstrainNumbers,
-      StateInputEqLagrangianConstrainNumbers,
-      StateInputIneqLagrangianConstrainNumbers,
-      FinalStateEqLagrangianConstrainNumbers,
-      FinalStateIneqFinalLagrangianConstrainNumbers>;
+  using Descriptor_t = iLQRDescriptor<Scalar, Transcription, ConstraintConfig>;
+  using Approximator_t = LinearQuadraticApproximator<Descriptor_t>;
 
   const auto& t = nominalTrajectory.timeTrajectory;
   const auto& x = nominalTrajectory.stateTrajectory;
@@ -191,32 +250,21 @@ getLinearQuadraticApproximation(
   return lqp;
 }
 
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
+std::vector<LinearQuadraticStage<Scalar, Transcription::XDim,
+                                 Transcription::UDim>>
 getLinearQuadraticApproximation(
-    const OptimalControlProblem<
-        Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateIneqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
-        StateInputIneqLagrangianConstrainNumbers,
-        FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
-    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>&
+    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+        optimalControlProblem,
+    const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                               Transcription::PredictLength>&
         nominalTrajectory) {
-  std::array<MultiplierCollection<Scalar, StateEqLagrangianConstrainNumbers,
-                                  StateIneqLagrangianConstrainNumbers,
-                                  StateInputEqLagrangianConstrainNumbers,
-                                  StateInputIneqLagrangianConstrainNumbers>,
-             PredictLength>
+  std::array<
+      MultiplierCollection<Scalar,
+                           IntermediateStageConstraintLayout<ConstraintConfig>>,
+      Transcription::PredictLength>
       intermediateMultipliers{};
-  MultiplierCollection<Scalar, FinalStateEqLagrangianConstrainNumbers,
-                       FinalStateIneqFinalLagrangianConstrainNumbers, 0, 0>
+  MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>
       finalMultipliers{};
   return getLinearQuadraticApproximation(
       optimalControlProblem, nominalTrajectory, intermediateMultipliers,

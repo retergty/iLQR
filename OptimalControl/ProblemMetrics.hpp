@@ -45,25 +45,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 template <typename Scalar, typename Transcription, typename ConstraintConfig>
 struct ProblemMetrics {
-  static constexpr int XDim = Transcription::XDim;
-  static constexpr int UDim = Transcription::UDim;
   static constexpr std::size_t PredictLength = Transcription::PredictLength;
-
-  static constexpr int StateEqConstrains = ConstraintConfig::StateEq;
-  static constexpr int StateIneqConstrains = ConstraintConfig::StateIneq;
-  static constexpr int StateInputEqConstrains = ConstraintConfig::StateInputEq;
-  static constexpr int StateInputIneqConstrains =
-      ConstraintConfig::StateInputIneq;
-  static constexpr int FinalStateEqConstrains = ConstraintConfig::FinalStateEq;
-  static constexpr int FinalStateIneqConstrains =
-      ConstraintConfig::FinalStateIneq;
 
   using IntermediateMetrics_t =
       Metrics<Scalar, typename Transcription::Dims,
               IntermediateStageConstraintLayout<ConstraintConfig>>;
-  using FinalMetrics_t =
-      Metrics<Scalar, typename Transcription::Dims,
-              FinalStageConstraintLayout<ConstraintConfig>>;
+  using FinalMetrics_t = Metrics<Scalar, typename Transcription::Dims,
+                                 FinalStageConstraintLayout<ConstraintConfig>>;
 
   /** @brief 终端时刻的 Metrics。 */
   FinalMetrics_t final;

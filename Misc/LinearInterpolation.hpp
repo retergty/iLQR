@@ -6,10 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <limits>
 #include <type_traits>
-
-#include "Types.hpp"
 
 namespace LinearInterpolation {
 /**

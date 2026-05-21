@@ -3,6 +3,7 @@
 #include "OptimalControlProblem.hpp"
 #include "QuadraticPenalty.hpp"
 #include "SystemDynamicsBase.hpp"
+#include "iLQRDescriptor.hpp"
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
@@ -181,11 +182,22 @@ class CircularKinematicsConstraints final
 /******************************************************************************************************/
 /******************************************************************************************************/
 template <typename Scalar, size_t PredictLength>
-inline OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM, PredictLength, 0, 0,
-                             1, 0, 0, 0>&
+inline OptimalControlProblem<
+    Scalar, TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
+                                Horizon<PredictLength>>,
+    ConstraintConfig<StateConstraintConfig<ConstraintLayout<0, 0>>,
+                     StateInputConstraintConfig<ConstraintLayout<1, 0>>,
+                     FinalStateConstraintConfig<ConstraintLayout<0, 0>>>>&
 createCircularKinematicsProblem() {
-  using Problem_t = OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM,
-                                          PredictLength, 0, 0, 1, 0, 0, 0>;
+  using Transcription_t =
+      TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
+                          Horizon<PredictLength>>;
+  using ConstraintConfig_t =
+      ConstraintConfig<StateConstraintConfig<ConstraintLayout<0, 0>>,
+                       StateInputConstraintConfig<ConstraintLayout<1, 0>>,
+                       FinalStateConstraintConfig<ConstraintLayout<0, 0>>>;
+  using Problem_t =
+      OptimalControlProblem<Scalar, Transcription_t, ConstraintConfig_t>;
   using Cost_t =
       CircularKinematicsCost<Scalar, static_cast<int>(PredictLength + 1)>;
   using Constraint_t = CircularKinematicsConstraints<Scalar>;

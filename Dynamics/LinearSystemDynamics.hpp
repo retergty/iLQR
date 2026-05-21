@@ -1,5 +1,4 @@
 #pragma once
-#include "ControlledSystemBase.hpp"
 #include "SystemDynamicsBase.hpp"
 /**
  * @file LinearSystemDynamics.hpp

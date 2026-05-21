@@ -6,8 +6,6 @@
 #pragma once
 #include "Controller.hpp"
 #include "Integration.hpp"
-#include "LinearApproximation.hpp"
-#include "QuadraticApproximation.hpp"
 #include "Types.hpp"
 
 /**

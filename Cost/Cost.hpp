@@ -4,10 +4,7 @@
  */
 #pragma once
 #include "IntrusiveList.hpp"
-#include "LinearApproximation.hpp"
-#include "LinearInterpolation.hpp"
 #include "QuadraticApproximation.hpp"
-#include "Reference.hpp"
 #include "Types.hpp"
 
 /**

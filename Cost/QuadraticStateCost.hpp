@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Cost.hpp"
+#include "LinearInterpolation.hpp"
 
 /**
  * @brief 二次仅状态代价项：l = 0.5 (x - x_ref)' Q (x - x_ref)，x_ref

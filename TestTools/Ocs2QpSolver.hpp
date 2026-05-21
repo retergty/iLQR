@@ -30,7 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <array>
-#include <utility>
 
 #include "Multiplier.hpp"
 #include "OptimalControlProblem.hpp"
@@ -54,34 +53,26 @@ namespace qp_solver {
  * @param finalMultipliers : multipliers for final augmented Lagrangians.
  * @return time, state, and input solution.
  */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
+ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                     Transcription::PredictLength>
 solveLinearQuadraticOptimalControlProblem(
-    const OptimalControlProblem<
-        Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateIneqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
-        StateInputIneqLagrangianConstrainNumbers,
-        FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
-    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>&
-        nominalTrajectory,
-    const Vector<Scalar, XDim>& initialState,
+    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+        optimalControlProblem,
+    const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                               Transcription::PredictLength>& nominalTrajectory,
+    const Vector<Scalar, Transcription::XDim>& initialState,
     const std::array<
-        MultiplierCollection<Scalar, StateEqLagrangianConstrainNumbers,
-                             StateIneqLagrangianConstrainNumbers,
-                             StateInputEqLagrangianConstrainNumbers,
-                             StateInputIneqLagrangianConstrainNumbers>,
-        PredictLength>& intermediateMultipliers,
-    const MultiplierCollection<Scalar, FinalStateEqLagrangianConstrainNumbers,
-                               FinalStateIneqFinalLagrangianConstrainNumbers, 0,
-                               0>& finalMultipliers) {
+        MultiplierCollection<
+            Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
+        Transcription::PredictLength>& intermediateMultipliers,
+    const MultiplierCollection<
+        Scalar, FinalStageConstraintLayout<ConstraintConfig>>&
+        finalMultipliers) {
+  constexpr int XDim = Transcription::XDim;
+  constexpr int UDim = Transcription::UDim;
+  constexpr size_t PredictLength = Transcription::PredictLength;
+
   // Approximate
   const auto lqApproximation = getLinearQuadraticApproximation(
       optimalControlProblem, nominalTrajectory, intermediateMultipliers,
@@ -111,33 +102,21 @@ solveLinearQuadraticOptimalControlProblem(
 /**
  * Overload for problems without an externally provided multiplier trajectory.
  */
-template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
+ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                     Transcription::PredictLength>
 solveLinearQuadraticOptimalControlProblem(
-    const OptimalControlProblem<
-        Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateIneqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
-        StateInputIneqLagrangianConstrainNumbers,
-        FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers>& optimalControlProblem,
-    const ContinuousTrajectory<Scalar, XDim, UDim, PredictLength>&
-        nominalTrajectory,
-    const Vector<Scalar, XDim>& initialState) {
-  std::array<MultiplierCollection<Scalar, StateEqLagrangianConstrainNumbers,
-                                  StateIneqLagrangianConstrainNumbers,
-                                  StateInputEqLagrangianConstrainNumbers,
-                                  StateInputIneqLagrangianConstrainNumbers>,
-             PredictLength>
+    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+        optimalControlProblem,
+    const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                               Transcription::PredictLength>& nominalTrajectory,
+    const Vector<Scalar, Transcription::XDim>& initialState) {
+  std::array<
+      MultiplierCollection<Scalar,
+                           IntermediateStageConstraintLayout<ConstraintConfig>>,
+      Transcription::PredictLength>
       intermediateMultipliers{};
-  MultiplierCollection<Scalar, FinalStateEqLagrangianConstrainNumbers,
-                       FinalStateIneqFinalLagrangianConstrainNumbers, 0, 0>
+  MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>
       finalMultipliers{};
   return solveLinearQuadraticOptimalControlProblem(
       optimalControlProblem, nominalTrajectory, initialState,

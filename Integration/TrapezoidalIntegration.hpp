@@ -32,8 +32,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @brief 梯形积分：对时间-值轨迹做梯形法则积分，需 VALUE 支持加法与标量乘法。
  */
 #pragma once
+#include <stdint.h>
 
-#include "Types.hpp"
+#include <array>
+
 
 /**
  * @brief 对 (timeTrajectory, valueTrajectory) 做梯形积分，从 initialValue
@@ -43,13 +45,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @param [in] initialValue 初始累加值。
  * @return 梯形积分结果。
  */
-template <typename Scalar, typename VALUE, size_t TimeArrayLen,
-          size_t ValueArrayLen>
+template <typename Scalar, typename VALUE, std::size_t TimeArrayLen,
+          std::size_t ValueArrayLen>
 VALUE trapezoidalIntegration(
     const std::array<Scalar, TimeArrayLen>& timeTrajectory,
     const std::array<VALUE, ValueArrayLen>& valueTrajectory,
     VALUE initialValue) {
-  constexpr size_t ArrayLen = std::min(TimeArrayLen, ValueArrayLen);
+  constexpr std::size_t ArrayLen = std::min(TimeArrayLen, ValueArrayLen);
 
   if constexpr (ArrayLen < 2) {
     return initialValue;

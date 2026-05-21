@@ -19,7 +19,8 @@ class Ocs2QpSolverTest : public testing::Test {
   static constexpr Scalar dt = 1e-2;
 
   using Problem_t =
-      OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM, N, 0, 0, 0, 0, 0, 0>;
+      qp_solver::QpOptimalControlProblem_t<Scalar, STATE_DIM, INPUT_DIM, N, 0,
+                                           0, 0, 0, 0, 0>;
   using Trajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
 

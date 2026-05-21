@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+
+#include "Types.hpp"
 #include "iLQRDescriptor.hpp"
 
 /**
@@ -32,6 +35,24 @@ struct iLQRDescriptorTraits {
   static constexpr int StateInputIneq = ConstraintConfig::StateInputIneq;
   static constexpr int FinalStateEq = ConstraintConfig::FinalStateEq;
   static constexpr int FinalStateIneq = ConstraintConfig::FinalStateIneq;
+
+  using StateVector_t = Vector<Scalar, XDim>;
+  using InputVector_t = Vector<Scalar, UDim>;
+  using StateMatrix_t = Matrix<Scalar, XDim, XDim>;
+  using InputMatrix_t = Matrix<Scalar, UDim, UDim>;
+  using InputStateMatrix_t = Matrix<Scalar, UDim, XDim>;
+  using StateInputMatrix_t = Matrix<Scalar, XDim, UDim>;
+  using LvVector_t = Vector<Scalar, UDim>;
+  using KmMatrix_t = Matrix<Scalar, UDim, XDim>;
+  using SmMatrix_t = Matrix<Scalar, XDim, XDim>;
+  using SvVector_t = Vector<Scalar, XDim>;
+  using GmMatrix_t = Matrix<Scalar, UDim, XDim>;
+  using HmMatrix_t = Matrix<Scalar, UDim, UDim>;
+  using GvVector_t = Vector<Scalar, UDim>;
+
+  using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
+  using StateTrajectory_t = std::array<StateVector_t, PredictLength + 1>;
+  using InputTrajectory_t = std::array<InputVector_t, PredictLength + 1>;
 
   using IntermediateStageConstraintLayout_t =
       IntermediateStageConstraintLayout<ConstraintConfig>;

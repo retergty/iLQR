@@ -12,13 +12,13 @@
  * @brief
  * 目标轨迹容器：时间、期望状态与期望输入的离散序列，支持按索引或时间插值查询。
  * @tparam Scalar 标量类型。
- * @tparam Dims 维度配置，提供 XDim/UDim。
- * @tparam ArrayLength 轨迹长度。
+ * @tparam Transcription 轨迹配置，提供 XDim/UDim/PredictLength。
  */
-template <typename Scalar, typename Dims, int ArrayLength>
+template <typename Scalar, typename Transcription>
 struct TargetTrajectories {
-  static constexpr int XDim = Dims::XDim;
-  static constexpr int UDim = Dims::UDim;
+  static constexpr int XDim = Transcription::XDim;
+  static constexpr int UDim = Transcription::UDim;
+  static constexpr std::size_t ArrayLength = Transcription::PredictLength + 1;
 
   /** @brief 默认构造。 */
   TargetTrajectories() = default;

@@ -7,6 +7,7 @@
  */
 #pragma once
 #include "ControlledSystemBase.hpp"
+#include "LinearApproximation.hpp"
 
 /**
  * @brief 系统动力学与线性化基类：子类需实现 linearApproximation。

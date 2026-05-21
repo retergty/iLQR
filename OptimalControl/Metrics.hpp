@@ -19,7 +19,6 @@
 template <typename Scalar, typename Dims, typename Layout>
 struct Metrics {
   static constexpr int XDim = Dims::XDim;
-  static constexpr int UDim = Dims::UDim;
   static constexpr int StateEq = Layout::StateEq;
   static constexpr int StateIneq = Layout::StateIneq;
   static constexpr int StateInputEq = Layout::StateInputEq;

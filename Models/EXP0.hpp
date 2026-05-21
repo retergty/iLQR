@@ -5,6 +5,7 @@
 #include "LinearSystemDynamics.hpp"
 #include "OptimalControlProblem.hpp"
 #include "QuadraticStateCost.hpp"
+#include "iLQRDescriptor.hpp"
 
 namespace exp0 {
 
@@ -83,11 +84,16 @@ Vector<Scalar, INPUT_DIM> getExp0TargetInput() {
 /******************************************************************************************************/
 /******************************************************************************************************/
 template <typename Scalar, size_t PredictLength>
-inline OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM, PredictLength, 0, 0,
-                             0, 0, 0, 0>&
+inline OptimalControlProblem<
+    Scalar, TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
+                                Horizon<PredictLength>>,
+    ConstraintConfig<>>&
 createExp0Problem() {
-  using Problem_t = OptimalControlProblem<Scalar, STATE_DIM, INPUT_DIM,
-                                          PredictLength, 0, 0, 0, 0, 0, 0>;
+  using Transcription_t =
+      TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
+                          Horizon<PredictLength>>;
+  using Problem_t = OptimalControlProblem<Scalar, Transcription_t,
+                                          ConstraintConfig<>>;
   using Cost_t = EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)>;
   using FinalCost_t =
       EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)>;

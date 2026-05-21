@@ -40,7 +40,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Multiplier.hpp"
 #include "OptimalControlProblem.hpp"
 #include "QuadraticApproximation.hpp"
-#include "Types.hpp"
 #include "iLQRDescriptorTraits.hpp"
 
 /**
@@ -76,8 +75,8 @@ struct LinearQuadraticApproximator {
 
   using OptimalControlProblem_t =
       OptimalControlProblem<Scalar, TranscriptionConfig, ConstraintConfig>;
-  using StateVector_t = Vector<Scalar, XDim>;
-  using InputVector_t = Vector<Scalar, UDim>;
+  using StateVector_t = typename Traits::StateVector_t;
+  using InputVector_t = typename Traits::InputVector_t;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
 
   using IntermediateMultiplierCollection_t =
@@ -90,9 +89,9 @@ struct LinearQuadraticApproximator {
       Metrics<Scalar, Dims, typename Traits::IntermediateStageConstraintLayout_t>;
   using FinalMetrics_t =
       Metrics<Scalar, Dims, typename Traits::FinalStageConstraintLayout_t>;
-  using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
-  using StateTrajectory_t = std::array<Vector<Scalar, XDim>, PredictLength + 1>;
-  using InputTrajectory_t = std::array<Vector<Scalar, UDim>, PredictLength + 1>;
+  using TimeTrajectory_t = typename Traits::TimeTrajectory_t;
+  using StateTrajectory_t = typename Traits::StateTrajectory_t;
+  using InputTrajectory_t = typename Traits::InputTrajectory_t;
 
   /**
    * Calculates an LQ approximate of the constrained optimal control problem at

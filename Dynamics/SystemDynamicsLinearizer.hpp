@@ -4,8 +4,6 @@
  */
 #pragma once
 
-#include <memory>
-
 #include "ControlledSystemBase.hpp"
 #include "FiniteDifferenceMethods.hpp"
 #include "SystemDynamicsBase.hpp"

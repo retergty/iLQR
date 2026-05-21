@@ -3,7 +3,6 @@
  * @brief 代价项集合：汇总多个仅状态或状态-输入代价项，提供总代价与总二次近似。
  */
 #pragma once
-#include <memory>
 
 #include "Cost.hpp"
 #include "IntrusiveList.hpp"
