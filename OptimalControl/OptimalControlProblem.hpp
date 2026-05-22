@@ -16,7 +16,7 @@
  * 最优控制问题：中间/终端代价、等式/不等式增广拉格朗日、参考轨迹与系统动力学。
  * @tparam Scalar 标量类型。
  * @tparam Transcription 轨迹配置，提供 XDim/UDim/PredictLength。
- * @tparam ConstraintConfig 约束配置，提供各类约束维度。
+ * @tparam ConstraintConfig 约束配置，提供各类约束的 term 分组布局与总维度。
  */
 template <typename Scalar, typename Transcription, typename ConstraintConfig>
 struct OptimalControlProblem {
@@ -24,18 +24,25 @@ struct OptimalControlProblem {
   static constexpr int UDim = Transcription::UDim;
   static constexpr std::size_t PredictLength = Transcription::PredictLength;
 
+  using StateEqLayout = typename ConstraintConfig::StateEqLayout;
+  using StateIneqLayout = typename ConstraintConfig::StateIneqLayout;
+  using StateInputEqLayout = typename ConstraintConfig::StateInputEqLayout;
+  using StateInputIneqLayout = typename ConstraintConfig::StateInputIneqLayout;
+  using FinalStateEqLayout = typename ConstraintConfig::FinalStateEqLayout;
+  using FinalStateIneqLayout = typename ConstraintConfig::FinalStateIneqLayout;
+
   static constexpr int StateEqLagrangianContrainNumbers =
-      ConstraintConfig::StateEq;
+      StateEqLayout::TotalDim;
   static constexpr int StateIneqLagrangianContrainNumbers =
-      ConstraintConfig::StateIneq;
+      StateIneqLayout::TotalDim;
   static constexpr int StateInputEqLagrangianContrainNumbers =
-      ConstraintConfig::StateInputEq;
+      StateInputEqLayout::TotalDim;
   static constexpr int StateInputIneqLagrangianContrainNumbers =
-      ConstraintConfig::StateInputIneq;
+      StateInputIneqLayout::TotalDim;
   static constexpr int FinalStateEqLagrangianContrainNumbers =
-      ConstraintConfig::FinalStateEq;
+      FinalStateEqLayout::TotalDim;
   static constexpr int FinalStateIneqFinalLagrangianContrainNumbers =
-      ConstraintConfig::FinalStateIneq;
+      FinalStateIneqLayout::TotalDim;
 
   /** @brief 默认构造。 */
   OptimalControlProblem() = default;
@@ -73,28 +80,24 @@ struct OptimalControlProblem {
 
   /** @brief 状态-输入等式约束增广拉格朗日。 */
   StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
-                                          StateInputEqLagrangianContrainNumbers>
+                                          StateInputEqLayout>
       equalityLagrangian;
   /** @brief 仅状态等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim,
-                                     StateEqLagrangianContrainNumbers>
+  StateAugmentedLagrangianCollection<Scalar, XDim, StateEqLayout>
       stateEqualityLagrangian;
   /** @brief 状态-输入不等式约束增广拉格朗日。 */
-  StateInputAugmentedLagrangianCollection<
-      Scalar, XDim, UDim, StateInputIneqLagrangianContrainNumbers>
+  StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
+                                          StateInputIneqLayout>
       inequalityLagrangian;
   /** @brief 仅状态不等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim,
-                                     StateIneqLagrangianContrainNumbers>
+  StateAugmentedLagrangianCollection<Scalar, XDim, StateIneqLayout>
       stateInequalityLagrangian;
 
   /** @brief 终端等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim,
-                                     FinalStateEqLagrangianContrainNumbers>
+  StateAugmentedLagrangianCollection<Scalar, XDim, FinalStateEqLayout>
       finalEqualityLagrangian;
   /** @brief 终端不等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<
-      Scalar, XDim, FinalStateIneqFinalLagrangianContrainNumbers>
+  StateAugmentedLagrangianCollection<Scalar, XDim, FinalStateIneqLayout>
       finalInequalityLagrangian;
 
   /** @brief 系统动力学指针。 */

@@ -1,6 +1,7 @@
 /**
  * @file QuadraticApproximation.hpp
- * @brief 二次近似：标量/向量函数的二阶近似结构（Hessian、Jacobian/梯度与常数项）。
+ * @brief
+ * 二次近似：标量/向量函数的二阶近似结构（Hessian、Jacobian/梯度与常数项）。
  */
 #pragma once
 #include <array>

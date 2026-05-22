@@ -76,12 +76,7 @@ void initializeDualSolution(
   if (!cachedDualSolution.empty()) {
     // final
     dualSolution.final = cachedDualSolution.final;
-  } else {
-    initializeFinalMultiplierCollection(
-        ocp, primalSolution.timeTrajectory_.back(), dualSolution.final);
-  }
 
-  if (!cachedDualSolution.empty()) {
     // intermediates
     for (size_t i = 0; i < PredictLength; i++) {
       const Scalar& time = primalSolution.timeTrajectory_[i];
@@ -90,6 +85,10 @@ void initializeDualSolution(
       multipliers = getIntermediateDualSolutionAtTime(cachedDualSolution, time);
     }
   } else {
+    // final
+    initializeFinalMultiplierCollection(
+        ocp, primalSolution.timeTrajectory_.back(), dualSolution.final);
+
     // intermediates
     for (size_t i = 0; i < PredictLength; i++) {
       const Scalar& time = primalSolution.timeTrajectory_[i];
@@ -119,14 +118,14 @@ void updateDualSolution(
   constexpr int UDim = Transcription::UDim;
   constexpr std::size_t PredictLength = Transcription::PredictLength;
 
-  using FinalMetrics_t =
-      Metrics<Scalar, typename Transcription::Dims,
-              FinalStageConstraintLayout<ConstraintConfig>>;
+  using FinalMetrics_t = Metrics<Scalar, typename Transcription::Dims,
+                                 FinalStageConstraintLayout<ConstraintConfig>>;
   using IntermediateMetrics_t =
       Metrics<Scalar, typename Transcription::Dims,
               IntermediateStageConstraintLayout<ConstraintConfig>>;
   using FinalMultiplierCollection_t =
-      MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>;
+      MultiplierCollection<Scalar,
+                           FinalStageConstraintLayout<ConstraintConfig>>;
   using IntermediateMultiplierCollection_t =
       MultiplierCollection<Scalar,
                            IntermediateStageConstraintLayout<ConstraintConfig>>;
@@ -197,8 +196,8 @@ void updateIntermediateMultiplierCollection(
     const Vector<Scalar, Transcription::UDim>& input,
     Metrics<Scalar, typename Transcription::Dims,
             IntermediateStageConstraintLayout<ConstraintConfig>>& metrics,
-    MultiplierCollection<
-        Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>&
+    MultiplierCollection<Scalar,
+                         IntermediateStageConstraintLayout<ConstraintConfig>>&
         multipliers) {
   ocp.stateEqualityLagrangian.updateLagrangian(
       time, state, metrics.stateEqLagrangian, multipliers.stateEq);

@@ -24,17 +24,23 @@ struct iLQRDescriptorTraits {
   using StateConstraintConfig = typename ConstraintConfig::State;
   using StateInputConstraintConfig = typename ConstraintConfig::StateInput;
   using FinalStateConstraintConfig = typename ConstraintConfig::FinalState;
+  using StateEqLayout = typename ConstraintConfig::StateEqLayout;
+  using StateIneqLayout = typename ConstraintConfig::StateIneqLayout;
+  using StateInputEqLayout = typename ConstraintConfig::StateInputEqLayout;
+  using StateInputIneqLayout = typename ConstraintConfig::StateInputIneqLayout;
+  using FinalStateEqLayout = typename ConstraintConfig::FinalStateEqLayout;
+  using FinalStateIneqLayout = typename ConstraintConfig::FinalStateIneqLayout;
 
   static constexpr int XDim = Dims::XDim;
   static constexpr int UDim = Dims::UDim;
   static constexpr std::size_t PredictLength = Horizon::PredictLength;
 
-  static constexpr int StateEq = ConstraintConfig::StateEq;
-  static constexpr int StateIneq = ConstraintConfig::StateIneq;
-  static constexpr int StateInputEq = ConstraintConfig::StateInputEq;
-  static constexpr int StateInputIneq = ConstraintConfig::StateInputIneq;
-  static constexpr int FinalStateEq = ConstraintConfig::FinalStateEq;
-  static constexpr int FinalStateIneq = ConstraintConfig::FinalStateIneq;
+  static constexpr int StateEqDim = StateEqLayout::TotalDim;
+  static constexpr int StateIneqDim = StateIneqLayout::TotalDim;
+  static constexpr int StateInputEqDim = StateInputEqLayout::TotalDim;
+  static constexpr int StateInputIneqDim = StateInputIneqLayout::TotalDim;
+  static constexpr int FinalStateEqDim = FinalStateEqLayout::TotalDim;
+  static constexpr int FinalStateIneqDim = FinalStateIneqLayout::TotalDim;
 
   using StateVector_t = Vector<Scalar, XDim>;
   using InputVector_t = Vector<Scalar, UDim>;

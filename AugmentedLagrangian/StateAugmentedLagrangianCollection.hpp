@@ -1,32 +1,3 @@
-/******************************************************************************
-Copyright (c) 2020, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
 /**
  * @file StateAugmentedLagrangianCollection.hpp
  * @brief
@@ -34,49 +5,66 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #pragma once
 
-#include <array>
+#include <cassert>
+#include <tuple>
+#include <utility>
 
-#include "StateAugmentedLagrangian.hpp"
+#include "Metrics.hpp"
+#include "StateAugmentedLagrangianInterface.hpp"
 #include "Types.hpp"
 
 /**
- * @brief 仅状态增广拉格朗日惩罚项集合：对多个 StateAugmentedLagrangian 求和。
+ * @brief 仅状态增广拉格朗日惩罚项集合：对多个不同维度的
+ * StateAugmentedLagrangian term 求和。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
- * @tparam StateAugmentLagrangianNumbers 项数。
+ * @tparam GroupLayout 约束 term 分组布局。
  */
-template <typename Scalar, int XDim, int StateAugmentLagrangianNumbers>
-class StateAugmentedLagrangianCollection {
+template <typename Scalar, int XDim, typename GroupLayout>
+class StateAugmentedLagrangianCollection;
+
+template <typename Scalar, int XDim, typename... Terms>
+class StateAugmentedLagrangianCollection<
+    Scalar, XDim, ConstraintGroupLayout<Terms...>> {
  public:
+  using Layout = ConstraintGroupLayout<Terms...>;
+
   StateAugmentedLagrangianCollection() = default;
 
-  /** @brief 获取各激活项的约束与惩罚值数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateAugmentLagrangianNumbers> getValue(
-      const Scalar time, const Vector<Scalar, XDim>& state,
-      const std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>&
-          termsMultiplier) const {
-    std::array<LagrangianMetrics<Scalar>, StateAugmentLagrangianNumbers>
-        termsConstraintPenalty;
+  template <std::size_t I>
+  using TermLayout = typename Layout::template Term<I>;
 
-    for (int i = 0; i < num_; ++i) {
-      termsConstraintPenalty[i] =
-          lagrangian_[i]->getValue(time, state, termsMultiplier[i]);
-    }
-    return termsConstraintPenalty;
+  template <std::size_t I>
+  using TermPtr =
+      const StateAugmentedLagrangianInterface<
+          Scalar, XDim, TermLayout<I>::CDim>*;
+
+  /** @brief 设置第 I 个增广拉格朗日项。 */
+  template <std::size_t I>
+  void set(TermPtr<I> term) {
+    assert(term != nullptr);
+    std::get<I>(terms_) = term;
   }
-  /** Get the sum of state Lagrangian penalties quadratic approximation */
+
+  /** @brief 获取各 term 的约束与惩罚值。 */
+  LagrangianMetricsGroup<Scalar, Layout> getValue(
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
+    return getValueImpl(time, state, termsMultiplier,
+                        std::make_index_sequence<Layout::NumTerms>{});
+  }
+
+  /** @brief 获取所有 state Lagrangian 惩罚项的二次近似之和。 */
   ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
   getQuadraticApproximation(
       const Scalar time, const Vector<Scalar, XDim>& state,
-      const std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>&
-          termsMultiplier) const {
+      const MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> penalty;
     penalty.setZero();
 
-    for (int i = 0; i < num_; ++i) {
-      penalty += lagrangian_[i]->getQuadraticApproximation(time, state,
-                                                           termsMultiplier[i]);
-    }
+    getQuadraticApproximationImpl(
+        penalty, time, state, termsMultiplier,
+        std::make_index_sequence<Layout::NumTerms>{});
     return penalty;
   }
 
@@ -84,38 +72,71 @@ class StateAugmentedLagrangianCollection {
    * term. */
   void updateLagrangian(
       Scalar time, const Vector<Scalar, XDim>& state,
-      std::array<LagrangianMetrics<Scalar>, StateAugmentLagrangianNumbers>&
-          termsMetrics,
-      std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>&
-          termsMultiplier) const {
-    for (int i = 0; i < num_; ++i) {
-      std::tie(termsMultiplier[i], termsMetrics[i].penalty) =
-          lagrangian_[i]->updateLagrangian(
-              time, state, termsMetrics[i].constraint, termsMultiplier[i]);
-    }
+      LagrangianMetricsGroup<Scalar, Layout>& termsMetrics,
+      MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
+    updateLagrangianImpl(time, state, termsMetrics, termsMultiplier,
+                         std::make_index_sequence<Layout::NumTerms>{});
   }
 
   /** Initialize Lagrange/penalty multipliers for each active term. */
   void initializeLagrangian(
-      Scalar time,
-      std::array<Multiplier<Scalar>, StateAugmentLagrangianNumbers>&
-          termsMultiplier) const {
-    for (int i = 0; i < num_; ++i) {
-      termsMultiplier[i] = lagrangian_[i]->initializeLagrangian(time);
-    }
-  }
-
-  // add cost to list end
-  void add(
-      const StateAugmentedLagrangian<Scalar, XDim>* state_augment_lagrangian) {
-    assert(num_ < StateAugmentLagrangianNumbers);
-    lagrangian_[num_] = state_augment_lagrangian;
-    num_++;
+      Scalar time, MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
+    initializeLagrangianImpl(time, termsMultiplier,
+                             std::make_index_sequence<Layout::NumTerms>{});
   }
 
  private:
-  int num_{0};
-  std::array<const StateAugmentedLagrangian<Scalar, XDim>*,
-             StateAugmentLagrangianNumbers>
-      lagrangian_;
+  template <std::size_t I>
+  TermPtr<I> getTerm() const {
+    const auto* term = std::get<I>(terms_);
+    assert(term != nullptr);
+    return term;
+  }
+
+  template <std::size_t... Is>
+  LagrangianMetricsGroup<Scalar, Layout> getValueImpl(
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const MultiplierGroup<Scalar, Layout>& termsMultiplier,
+      std::index_sequence<Is...>) const {
+    LagrangianMetricsGroup<Scalar, Layout> result;
+    result.terms = std::make_tuple(
+        getTerm<Is>()->getValue(time, state,
+                                std::get<Is>(termsMultiplier.terms))...);
+    return result;
+  }
+
+  template <std::size_t... Is>
+  void getQuadraticApproximationImpl(
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& penalty,
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const MultiplierGroup<Scalar, Layout>& termsMultiplier,
+      std::index_sequence<Is...>) const {
+    ((penalty += getTerm<Is>()->getQuadraticApproximation(
+          time, state, std::get<Is>(termsMultiplier.terms))), ...);
+  }
+
+  template <std::size_t... Is>
+  void updateLagrangianImpl(
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      LagrangianMetricsGroup<Scalar, Layout>& termsMetrics,
+      MultiplierGroup<Scalar, Layout>& termsMultiplier,
+      std::index_sequence<Is...>) const {
+    ((std::tie(std::get<Is>(termsMultiplier.terms),
+               std::get<Is>(termsMetrics.terms).penalty) =
+          getTerm<Is>()->updateLagrangian(
+              time, state, std::get<Is>(termsMetrics.terms).constraint,
+              std::get<Is>(termsMultiplier.terms))), ...);
+  }
+
+  template <std::size_t... Is>
+  void initializeLagrangianImpl(
+      const Scalar time, MultiplierGroup<Scalar, Layout>& termsMultiplier,
+      std::index_sequence<Is...>) const {
+    ((std::get<Is>(termsMultiplier.terms) =
+          getTerm<Is>()->initializeLagrangian(time)), ...);
+  }
+
+  std::tuple<
+      const StateAugmentedLagrangianInterface<Scalar, XDim, Terms::CDim>*...>
+      terms_;
 };

@@ -45,11 +45,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @brief 在给定名义轨迹与对偶解下，对 OCP 做 LQ 近似，填充中间/终端 ModelData
  * 与可选的 Metrics。
- * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam UDim 输入维度。
- * @tparam PredictLength 预测步数。
- * @tparam StateEqLagrangianConstrains 等 各约束维度。
+ * @tparam Descriptor iLQR 描述类型，提供状态/输入/时域和约束布局。
  */
 template <typename Descriptor>
 struct LinearQuadraticApproximator {
@@ -62,16 +58,14 @@ struct LinearQuadraticApproximator {
   static constexpr int XDim = Traits::XDim;
   static constexpr int UDim = Traits::UDim;
   static constexpr std::size_t PredictLength = Traits::PredictLength;
-  static constexpr int StateEqLagrangianConstrains = Traits::StateEq;
-  static constexpr int StateIneqLagrangianConstrains = Traits::StateIneq;
-  static constexpr int StateInputEqLagrangianConstrains =
-      Traits::StateInputEq;
-  static constexpr int StateInputIneqLagrangianConstrains =
-      Traits::StateInputIneq;
-  static constexpr int FinalStateEqLagrangianConstrains =
-      Traits::FinalStateEq;
-  static constexpr int FinalStateIneqFinalLagrangianConstrains =
-      Traits::FinalStateIneq;
+  static constexpr int StateEqConstraintDim = Traits::StateEqDim;
+  static constexpr int StateIneqConstraintDim = Traits::StateIneqDim;
+  static constexpr int StateInputEqConstraintDim = Traits::StateInputEqDim;
+  static constexpr int StateInputIneqConstraintDim =
+      Traits::StateInputIneqDim;
+  static constexpr int FinalStateEqConstraintDim = Traits::FinalStateEqDim;
+  static constexpr int FinalStateIneqConstraintDim =
+      Traits::FinalStateIneqDim;
 
   using OptimalControlProblem_t =
       OptimalControlProblem<Scalar, TranscriptionConfig, ConstraintConfig>;
@@ -79,14 +73,14 @@ struct LinearQuadraticApproximator {
   using InputVector_t = typename Traits::InputVector_t;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
 
-  using IntermediateMultiplierCollection_t =
-      MultiplierCollection<Scalar,
-                           typename Traits::IntermediateStageConstraintLayout_t>;
+  using IntermediateMultiplierCollection_t = MultiplierCollection<
+      Scalar, typename Traits::IntermediateStageConstraintLayout_t>;
   using FinalMultiplierCollection_t =
       MultiplierCollection<Scalar,
                            typename Traits::FinalStageConstraintLayout_t>;
   using IntermediateMetrics_t =
-      Metrics<Scalar, Dims, typename Traits::IntermediateStageConstraintLayout_t>;
+      Metrics<Scalar, Dims,
+              typename Traits::IntermediateStageConstraintLayout_t>;
   using FinalMetrics_t =
       Metrics<Scalar, Dims, typename Traits::FinalStageConstraintLayout_t>;
   using TimeTrajectory_t = typename Traits::TimeTrajectory_t;
@@ -118,7 +112,7 @@ struct LinearQuadraticApproximator {
     modelData.cost = approximateCost(problem, time, state, input);
 
     // Lagrangians
-    if constexpr (StateEqLagrangianConstrains != 0) {
+    if constexpr (StateEqConstraintDim != 0) {
       ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx =
           problem.stateEqualityLagrangian.getQuadraticApproximation(
               time, state, multipliers.stateEq);
@@ -126,7 +120,7 @@ struct LinearQuadraticApproximator {
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
-    if constexpr (StateIneqLagrangianConstrains != 0) {
+    if constexpr (StateIneqConstraintDim != 0) {
       ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx =
           problem.stateInequalityLagrangian.getQuadraticApproximation(
               time, state, multipliers.stateIneq);
@@ -134,11 +128,11 @@ struct LinearQuadraticApproximator {
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
-    if constexpr (StateInputEqLagrangianConstrains != 0) {
+    if constexpr (StateInputEqConstraintDim != 0) {
       modelData.cost += problem.equalityLagrangian.getQuadraticApproximation(
           time, state, input, multipliers.stateInputEq);
     }
-    if constexpr (StateInputIneqLagrangianConstrains != 0) {
+    if constexpr (StateInputIneqConstraintDim != 0) {
       modelData.cost += problem.inequalityLagrangian.getQuadraticApproximation(
           time, state, input, multipliers.stateInputIneq);
     }
@@ -192,14 +186,14 @@ struct LinearQuadraticApproximator {
     modelData.cost = approximateFinalCost(problem, time, state);
 
     // Lagrangians
-    if constexpr (FinalStateEqLagrangianConstrains != 0) {
+    if constexpr (FinalStateEqConstraintDim != 0) {
       auto approx = problem.finalEqualityLagrangian.getQuadraticApproximation(
           time, state, multipliers.stateEq);
       modelData.cost.f += approx.f;
       modelData.cost.dfdx += approx.dfdx;
       modelData.cost.dfdxx += approx.dfdxx;
     }
-    if constexpr (FinalStateIneqFinalLagrangianConstrains != 0) {
+    if constexpr (FinalStateIneqConstraintDim != 0) {
       auto approx = problem.finalInequalityLagrangian.getQuadraticApproximation(
           time, state, multipliers.stateIneq);
       modelData.cost.f += approx.f;
@@ -362,23 +356,23 @@ struct LinearQuadraticApproximator {
         computeIntermediateMetrics(problem, time, state, input);
 
     // Equality Lagrangians
-    if constexpr (StateEqLagrangianConstrains != 0) {
+    if constexpr (StateEqConstraintDim != 0) {
       metrics.stateEqLagrangian = problem.stateEqualityLagrangian.getValue(
           time, state, multipliers.stateEq);
     }
 
-    if constexpr (StateInputEqLagrangianConstrains != 0) {
+    if constexpr (StateInputEqConstraintDim != 0) {
       metrics.stateInputEqLagrangian = problem.equalityLagrangian.getValue(
           time, state, input, multipliers.stateInputEq);
     }
 
     // Inequality Lagrangians
-    if constexpr (StateIneqLagrangianConstrains != 0) {
+    if constexpr (StateIneqConstraintDim != 0) {
       metrics.stateIneqLagrangian = problem.stateInequalityLagrangian.getValue(
           time, state, multipliers.stateIneq);
     }
 
-    if constexpr (StateInputIneqLagrangianConstrains != 0) {
+    if constexpr (StateInputIneqConstraintDim != 0) {
       metrics.stateInputIneqLagrangian = problem.inequalityLagrangian.getValue(
           time, state, input, multipliers.stateInputIneq);
     }
@@ -432,14 +426,14 @@ struct LinearQuadraticApproximator {
     // cost, equlaity constraints, inequlaity constraints
     FinalMetrics_t metrics = computeFinalMetrics(problem, time, state);
 
-    if constexpr (FinalStateEqLagrangianConstrains != 0) {
+    if constexpr (FinalStateEqConstraintDim != 0) {
       // Equality Lagrangians
       metrics.stateEqLagrangian = problem.finalEqualityLagrangian.getValue(
           time, state, multipliers.stateEq);
     }
 
     // Inequality Lagrangians
-    if constexpr (FinalStateIneqFinalLagrangianConstrains != 0) {
+    if constexpr (FinalStateIneqConstraintDim != 0) {
       metrics.stateIneqLagrangian = problem.finalInequalityLagrangian.getValue(
           time, state, multipliers.stateIneq);
     }
