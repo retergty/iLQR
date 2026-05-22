@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "Reference.hpp"
 #include "Types.hpp"
 #include "iLQRDescriptor.hpp"
 
@@ -59,6 +60,7 @@ struct iLQRDescriptorTraits {
   using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
   using StateTrajectory_t = std::array<StateVector_t, PredictLength + 1>;
   using InputTrajectory_t = std::array<InputVector_t, PredictLength + 1>;
+  using TargetTrajectories_t = TargetTrajectories<Scalar, TranscriptionConfig>;
 
   using IntermediateStageConstraintLayout_t =
       IntermediateStageConstraintLayout<ConstraintConfig>;

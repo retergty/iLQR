@@ -90,6 +90,8 @@ class iLQR {
   using TimeTrajectory_t = typename Types::TimeTrajectory_t;
   using StateTrajectory_t = typename Types::StateTrajectory_t;
   using InputTrajectory_t = typename Types::InputTrajectory_t;
+  using TargetTrajectories_t = typename Types::TargetTrajectories_t;
+
   using IntermediateMultiplierTrajectory_t =
       typename Types::IntermediateMultiplierTrajectory_t;
   using ModelDataTrajectory_t = typename Types::ModelDataTrajectory_t;
@@ -213,9 +215,8 @@ class iLQR {
   void setDesireTrajectory(const TimeTrajectory_t& timeTrajectory,
                            const StateTrajectory_t& stateTrajectory,
                            const InputTrajectory_t& inputTrajectory) {
-    optimalControlProblem_.timeTrajectory = timeTrajectory;
-    optimalControlProblem_.stateTrajectory = stateTrajectory;
-    optimalControlProblem_.inputTrajectory = inputTrajectory;
+    targetTrajectory_.setTrajectory(timeTrajectory, stateTrajectory,
+                                    inputTrajectory);
   }
 
   const PrimalSolution_t& primalSolution() const {
@@ -223,6 +224,9 @@ class iLQR {
   }
   const PerformanceIndex_t performanceIndex() const {
     return performanceIndex_;
+  }
+  const TargetTrajectories_t& targetTrajectory() const {
+    return targetTrajectory_;
   }
 
  private:
@@ -314,8 +318,9 @@ class iLQR {
         optimizedDualSolution_, nominalDualData_.dualSolution);
 
     computeRolloutMetrics(
-        optimalControlProblem_, nominalPrimalData_.primalSolution,
-        nominalDualData_.dualSolution, nominalPrimalData_.problemMetrics);
+        optimalControlProblem_, targetTrajectory_,
+        nominalPrimalData_.primalSolution, nominalDualData_.dualSolution,
+        nominalPrimalData_.problemMetrics);
 
     // calculates rollout merit
     performanceIndex_ = computeRolloutPerformanceIndex(
@@ -350,8 +355,8 @@ class iLQR {
         nominalPrimalData_.primalSolution.stateTrajectory_.back();
     const FinalMultiplierCollection_t& multiplier =
         nominalDualData_.dualSolution.final;
-    modelData = approximator_.approximateFinalLQ(optimalControlProblem_, time,
-                                                 state, multiplier);
+    modelData = approximator_.approximateFinalLQ(
+        optimalControlProblem_, targetTrajectory_, time, state, multiplier);
 
     // shift Hessian for final time
     if (ddpSettings_.strategy_ == SearchStrategyType::LINE_SEARCH) {
@@ -384,9 +389,9 @@ class iLQR {
       // approximate continuous LQ for the given time index
       ModelData_t continuousTimeModelData =
           approximator_.approximateIntermediateLQ(
-              optimalControlProblem_, timeTrajectory[timeIndex],
-              stateTrajectory[timeIndex], inputTrajectory[timeIndex],
-              multiplierTrajectory[timeIndex]);
+              optimalControlProblem_, targetTrajectory_,
+              timeTrajectory[timeIndex], stateTrajectory[timeIndex],
+              inputTrajectory[timeIndex], multiplierTrajectory[timeIndex]);
 
       // TO DO:checking the numerical properties
 
@@ -878,11 +883,13 @@ class iLQR {
    * the primalSolution rollout.
    *
    * @param [in] problem 最优控制问题。
+   * @param [in] targetTrajectory 参考轨迹。
    * @param [in] primalSolution 原始解（轨迹）。
    * @param [in] dualSolution 对偶解。
    * @param [out] problemMetrics 各时刻代价、软约束与约束值。
    */
   static void computeRolloutMetrics(OptimalControlProblem_t& problem,
+                                    const TargetTrajectories_t& targetTrajectory,
                                     const PrimalSolution_t& primalSolution,
                                     const DualSolution_t& dualSolution,
                                     ProblemMetrics_t& problemMetrics) {
@@ -894,14 +901,16 @@ class iLQR {
       // intermediate time cost and constraints
       problemMetrics.intermediates[k] =
           approximator_.computeIntermediateMetrics(
-              problem, tTrajectory[k], xTrajectory[k], uTrajectory[k],
-              dualSolution.intermediates[k]);
+              problem, targetTrajectory, tTrajectory[k], xTrajectory[k],
+              uTrajectory[k], dualSolution.intermediates[k]);
     }
 
     // final time cost and constraints
     problemMetrics.final = approximator_.computeFinalMetrics(
-        problem, tTrajectory.back(), xTrajectory.back(), dualSolution.final);
+        problem, targetTrajectory, tTrajectory.back(), xTrajectory.back(),
+        dualSolution.final);
   }
+
 
   /**
    * Forward integrate the system dynamics with given controller. It uses the
@@ -1043,10 +1052,7 @@ class iLQR {
 
   LineSearchStrategy_t lineSearchStrategy_;
 
-  // reference trajectory
-  TimeTrajectory_t timeTrajectory_;
-  StateTrajectory_t stateTrajectory_;
-  InputTrajectory_t inputTrajectory_;
+  TargetTrajectories_t targetTrajectory_;
 
   // optimized data
   PrimalSolution_t optimizedPrimalSolution_;

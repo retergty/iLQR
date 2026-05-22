@@ -23,6 +23,10 @@ class DiscreteTranscriptionTest : public testing::Test {
                                            0, 0, 0, 0, 0>;
   using Trajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
+  using Transcription_t =
+      qp_solver::QpTranscriptionConfig_t<Scalar, STATE_DIM, INPUT_DIM, N, 0, 0,
+                                         0, 0, 0, 0>;
+  using TargetTrajectories_t = TargetTrajectories<Scalar, Transcription_t>;
   using LinearQuadraticStage_t =
       qp_solver::LinearQuadraticStage<Scalar, STATE_DIM, INPUT_DIM>;
 
@@ -53,20 +57,19 @@ class DiscreteTranscriptionTest : public testing::Test {
 
     linearization =
         test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
-    setReferenceTrajectories(problem, linearization);
+    setReferenceTrajectories(linearization);
 
-    unconstrainedLqr =
-        qp_solver::getLinearQuadraticApproximation(problem, linearization);
+    unconstrainedLqr = qp_solver::getLinearQuadraticApproximation(
+        problem, targetTrajectory, linearization);
   }
 
-  void setReferenceTrajectories(Problem_t& targetProblem,
-                                const Trajectory_t& trajectory) const {
-    targetProblem.timeTrajectory = trajectory.timeTrajectory;
-    targetProblem.stateTrajectory = trajectory.stateTrajectory;
+  void setReferenceTrajectories(const Trajectory_t& trajectory) {
+    targetTrajectory.timeTrajectory = trajectory.timeTrajectory;
+    targetTrajectory.stateTrajectory = trajectory.stateTrajectory;
     for (size_t k = 0; k < N; ++k) {
-      targetProblem.inputTrajectory[k] = trajectory.inputTrajectory[k];
+      targetTrajectory.inputTrajectory[k] = trajectory.inputTrajectory[k];
     }
-    targetProblem.inputTrajectory[N] = trajectory.inputTrajectory[N - 1];
+    targetTrajectory.inputTrajectory[N] = trajectory.inputTrajectory[N - 1];
   }
 
   void checkSizes(const std::vector<LinearQuadraticStage_t>& lqr) const {
@@ -117,6 +120,7 @@ class DiscreteTranscriptionTest : public testing::Test {
   std::unique_ptr<QuadraticStateCost<Scalar, STATE_DIM, N + 1>> stateCost;
   std::unique_ptr<QuadraticStateCost<Scalar, STATE_DIM, N + 1>> finalCost;
   Problem_t problem;
+  TargetTrajectories_t targetTrajectory;
   Trajectory_t linearization;
   std::vector<LinearQuadraticStage_t> unconstrainedLqr;
 };
@@ -160,9 +164,10 @@ TEST_F(DiscreteTranscriptionTest, linearizationInvariance) {
       test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
   linearization2.timeTrajectory = linearization.timeTrajectory;
 
-  setReferenceTrajectories(problem, linearization2);
+  setReferenceTrajectories(linearization2);
   const auto lqp2 =
-      qp_solver::getLinearQuadraticApproximation(problem, linearization2);
+      qp_solver::getLinearQuadraticApproximation(problem, targetTrajectory,
+                                                 linearization2);
 
   // All Hessians and Jacobians stay the same. The linear and constant parts
   // change with the nominal trajectory.

@@ -132,25 +132,28 @@ TEST(ApproximationTest,
   problem.cost.add(stateInputCost);
   problem.stateCost.add(stateCost);
 
-  problem.timeTrajectory = {0.0, 1.0, 2.0};
-  problem.stateTrajectory[0] << 0.0, 0.0;
-  problem.stateTrajectory[1] << 1.0, 1.0;
-  problem.stateTrajectory[2] << 2.0, 2.0;
-  problem.inputTrajectory[0] << 0.0, 0.0;
-  problem.inputTrajectory[1] << 1.0, -1.0;
-  problem.inputTrajectory[2] << 2.0, -2.0;
+  Approximator::TargetTrajectories_t targetTrajectory;
+  targetTrajectory.timeTrajectory = {0.0, 1.0, 2.0};
+  targetTrajectory.stateTrajectory[0] << 0.0, 0.0;
+  targetTrajectory.stateTrajectory[1] << 1.0, 1.0;
+  targetTrajectory.stateTrajectory[2] << 2.0, 2.0;
+  targetTrajectory.inputTrajectory[0] << 0.0, 0.0;
+  targetTrajectory.inputTrajectory[1] << 1.0, -1.0;
+  targetTrajectory.inputTrajectory[2] << 2.0, -2.0;
 
   Eigen::Vector2d state;
   state << 2.0, 3.0;
   Eigen::Vector2d input;
   input << 4.0, -1.0;
 
-  const double cost = Approximator::computeCost(problem, 0.5, state, input);
+  const double cost =
+      Approximator::computeCost(problem, targetTrajectory, 0.5, state, input);
   const auto costApproximation =
-      Approximator::approximateCost(problem, 0.5, state, input);
+      Approximator::approximateCost(problem, targetTrajectory, 0.5, state,
+                                    input);
   Approximator::IntermediateMultiplierCollection_t multipliers;
   const auto modelData = Approximator::approximateIntermediateLQ(
-      problem, 0.5, state, input, multipliers);
+      problem, targetTrajectory, 0.5, state, input, multipliers);
 
   Eigen::Vector2d expectedDfdx;
   expectedDfdx << 13.5, 37.5;
@@ -190,20 +193,22 @@ TEST(ApproximationTest, LinearQuadraticApproximatorComputesFinalCostAndLQ) {
   QuadraticStateCost<double, 2, 3> finalCost(QFinal);
   problem.finalCost.add(finalCost);
 
-  problem.timeTrajectory = {0.0, 1.0, 2.0};
-  problem.stateTrajectory[0] << 0.0, 0.0;
-  problem.stateTrajectory[1] << 1.0, 1.0;
-  problem.stateTrajectory[2] << 2.0, 2.0;
+  Approximator::TargetTrajectories_t targetTrajectory;
+  targetTrajectory.timeTrajectory = {0.0, 1.0, 2.0};
+  targetTrajectory.stateTrajectory[0] << 0.0, 0.0;
+  targetTrajectory.stateTrajectory[1] << 1.0, 1.0;
+  targetTrajectory.stateTrajectory[2] << 2.0, 2.0;
 
   Eigen::Vector2d state;
   state << 3.5, -0.5;
 
   Approximator::FinalMultiplierCollection_t multipliers;
-  const double cost = Approximator::computeFinalCost(problem, 1.5, state);
+  const double cost =
+      Approximator::computeFinalCost(problem, targetTrajectory, 1.5, state);
   const auto costApproximation =
-      Approximator::approximateFinalCost(problem, 1.5, state);
-  const auto modelData =
-      Approximator::approximateFinalLQ(problem, 1.5, state, multipliers);
+      Approximator::approximateFinalCost(problem, targetTrajectory, 1.5, state);
+  const auto modelData = Approximator::approximateFinalLQ(
+      problem, targetTrajectory, 1.5, state, multipliers);
 
   Eigen::Vector2d expectedDfdx;
   expectedDfdx << 4.0, -12.0;

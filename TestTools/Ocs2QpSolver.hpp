@@ -59,6 +59,7 @@ ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
 solveLinearQuadraticOptimalControlProblem(
     const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
+    const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>& nominalTrajectory,
     const Vector<Scalar, Transcription::XDim>& initialState,
@@ -75,8 +76,8 @@ solveLinearQuadraticOptimalControlProblem(
 
   // Approximate
   const auto lqApproximation = getLinearQuadraticApproximation(
-      optimalControlProblem, nominalTrajectory, intermediateMultipliers,
-      finalMultipliers);
+      optimalControlProblem, targetTrajectory, nominalTrajectory,
+      intermediateMultipliers, finalMultipliers);
 
   // Solve for an update step
   ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> deltaSolution;
@@ -108,6 +109,7 @@ ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
 solveLinearQuadraticOptimalControlProblem(
     const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
+    const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>& nominalTrajectory,
     const Vector<Scalar, Transcription::XDim>& initialState) {
@@ -118,7 +120,29 @@ solveLinearQuadraticOptimalControlProblem(
   MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>
       finalMultipliers{};
   return solveLinearQuadraticOptimalControlProblem(
-      optimalControlProblem, nominalTrajectory, initialState,
+      optimalControlProblem, targetTrajectory, nominalTrajectory, initialState,
+      intermediateMultipliers, finalMultipliers);
+}
+
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
+ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                     Transcription::PredictLength>
+solveLinearQuadraticOptimalControlProblem(
+    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+        optimalControlProblem,
+    const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                               Transcription::PredictLength>& nominalTrajectory,
+    const Vector<Scalar, Transcription::XDim>& initialState) {
+  std::array<MultiplierCollection<
+                 Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
+             Transcription::PredictLength>
+      intermediateMultipliers{};
+  MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>
+      finalMultipliers{};
+  const auto targetTrajectory =
+      toTargetTrajectories<Scalar, Transcription>(nominalTrajectory);
+  return solveLinearQuadraticOptimalControlProblem(
+      optimalControlProblem, targetTrajectory, nominalTrajectory, initialState,
       intermediateMultipliers, finalMultipliers);
 }
 

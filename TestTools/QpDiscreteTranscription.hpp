@@ -39,6 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "OptimalControlProblem.hpp"
 #include "QpSolverTypes.hpp"
 #include "QpTrajectories.hpp"
+#include "Reference.hpp"
 #include "SensitivityIntegrator.hpp"
 #include "iLQRDescriptor.hpp"
 
@@ -155,6 +156,23 @@ makeZeroDynamics() {
   return dynamics;
 }
 
+template <typename Scalar, typename Transcription>
+TargetTrajectories<Scalar, Transcription> toTargetTrajectories(
+    const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                               Transcription::PredictLength>& trajectory) {
+  TargetTrajectories<Scalar, Transcription> targetTrajectory;
+  targetTrajectory.timeTrajectory = trajectory.timeTrajectory;
+  targetTrajectory.stateTrajectory = trajectory.stateTrajectory;
+  for (size_t k = 0; k < Transcription::PredictLength; ++k) {
+    targetTrajectory.inputTrajectory[k] = trajectory.inputTrajectory[k];
+  }
+  if constexpr (Transcription::PredictLength > 0) {
+    targetTrajectory.inputTrajectory[Transcription::PredictLength] =
+        trajectory.inputTrajectory[Transcription::PredictLength - 1];
+  }
+  return targetTrajectory;
+}
+
 template <typename Scalar, int XDim, int UDim>
 typename LinearQuadraticStage<Scalar, XDim, UDim>::DynamicsApproximation_t
 approximateDynamics(SystemDynamicsBase<Scalar, XDim, UDim>& system,
@@ -172,6 +190,7 @@ LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>
 approximateStage(
     const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
+    const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     TrajectoryRef<Scalar, Transcription::XDim, Transcription::UDim> start,
     StateTrajectoryRef<Scalar, Transcription::XDim> end,
     const MultiplierCollection<
@@ -185,7 +204,8 @@ approximateStage(
   using LqStage_t = LinearQuadraticStage<Scalar, XDim, UDim>;
 
   const auto modelData = Approximator_t::approximateIntermediateLQ(
-      optimalControlProblem, start.t, start.x, start.u, multipliers);
+      optimalControlProblem, targetTrajectory, start.t, start.x, start.u,
+      multipliers);
 
   LqStage_t lqStage;
   const Scalar dt = end.t - start.t;
@@ -220,6 +240,29 @@ getLinearQuadraticApproximation(
     const MultiplierCollection<Scalar,
                                FinalStageConstraintLayout<ConstraintConfig>>&
         finalMultipliers) {
+  const auto targetTrajectory =
+      toTargetTrajectories<Scalar, Transcription>(nominalTrajectory);
+  return getLinearQuadraticApproximation(
+      optimalControlProblem, targetTrajectory, nominalTrajectory,
+      intermediateMultipliers, finalMultipliers);
+}
+
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
+std::vector<
+    LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
+getLinearQuadraticApproximation(
+    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+        optimalControlProblem,
+    const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
+    const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                               Transcription::PredictLength>& nominalTrajectory,
+    const std::array<
+        MultiplierCollection<
+            Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
+        Transcription::PredictLength>& intermediateMultipliers,
+    const MultiplierCollection<Scalar,
+                               FinalStageConstraintLayout<ConstraintConfig>>&
+        finalMultipliers) {
   constexpr int XDim = Transcription::XDim;
   constexpr int UDim = Transcription::UDim;
   constexpr size_t PredictLength = Transcription::PredictLength;
@@ -243,13 +286,14 @@ getLinearQuadraticApproximation(
   std::vector<LinearQuadraticStage<Scalar, XDim, UDim>> lqp;
   lqp.reserve(N + 1);
   for (size_t k = 0; k < N; ++k) {  // Intermediate stages
-    lqp.emplace_back(approximateStage(optimalControlProblem, {t[k], x[k], u[k]},
+    lqp.emplace_back(approximateStage(optimalControlProblem, targetTrajectory,
+                                      {t[k], x[k], u[k]},
                                       {t[k + 1], x[k + 1]},
                                       intermediateMultipliers[k]));
   }
 
   auto modelData = Approximator_t::approximateFinalLQ(
-      optimalControlProblem, t[N], x[N], finalMultipliers);
+      optimalControlProblem, targetTrajectory, t[N], x[N], finalMultipliers);
   lqp.emplace_back(std::move(modelData.cost),
                    makeZeroDynamics<Scalar, XDim, UDim>(),
                    makeZeroConstraints<Scalar, XDim, UDim>());
@@ -263,6 +307,7 @@ std::vector<
 getLinearQuadraticApproximation(
     const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
+    const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>&
         nominalTrajectory) {
@@ -273,8 +318,30 @@ getLinearQuadraticApproximation(
   MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>
       finalMultipliers{};
   return getLinearQuadraticApproximation(
-      optimalControlProblem, nominalTrajectory, intermediateMultipliers,
-      finalMultipliers);
+      optimalControlProblem, targetTrajectory, nominalTrajectory,
+      intermediateMultipliers, finalMultipliers);
+}
+
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
+std::vector<
+    LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
+getLinearQuadraticApproximation(
+    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+        optimalControlProblem,
+    const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
+                               Transcription::PredictLength>&
+        nominalTrajectory) {
+  const auto targetTrajectory =
+      toTargetTrajectories<Scalar, Transcription>(nominalTrajectory);
+  std::array<MultiplierCollection<
+                 Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
+             Transcription::PredictLength>
+      intermediateMultipliers{};
+  MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>
+      finalMultipliers{};
+  return getLinearQuadraticApproximation(
+      optimalControlProblem, targetTrajectory, nominalTrajectory,
+      intermediateMultipliers, finalMultipliers);
 }
 
 }  // namespace qp_solver

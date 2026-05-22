@@ -119,6 +119,8 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
       LagrangianMetricsGroup<Scalar, Layout>& termsMetrics,
       MultiplierGroup<Scalar, Layout>& termsMultiplier,
       std::index_sequence<Is...>) const {
+    (void)time;
+    (void)state;
     ((std::tie(std::get<Is>(termsMultiplier.terms),
                std::get<Is>(termsMetrics.terms).penalty) =
           getTerm<Is>()->updateLagrangian(
@@ -131,6 +133,7 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
   void initializeLagrangianImpl(
       const Scalar time, MultiplierGroup<Scalar, Layout>& termsMultiplier,
       std::index_sequence<Is...>) const {
+    (void)time;
     ((std::get<Is>(termsMultiplier.terms) =
           getTerm<Is>()->initializeLagrangian(time)),
      ...);

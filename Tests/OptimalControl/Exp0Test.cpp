@@ -54,6 +54,7 @@ class Exp0 : public testing::Test {
                                          Horizon<PredictLength>>>;
   using Solver_t = iLQR<Descriptor_t>;
   using Problem_t = typename Solver_t::OptimalControlProblem_t;
+  using TargetTrajectories_t = typename Solver_t::TargetTrajectories_t;
   using PrimalSolution_t = typename Solver_t::PrimalSolution_t;
   using DualSolution_t = typename Solver_t::DualSolution_t;
   using ProblemMetrics_t = typename Solver_t::ProblemMetrics_t;
@@ -105,9 +106,9 @@ class Exp0 : public testing::Test {
     const InputVector_t targetInput = exp0::getExp0TargetInput<Scalar>();
 
     for (size_t k = 0; k < PredictLength + 1; ++k) {
-      problem.timeTrajectory[k] = static_cast<Scalar>(k) * timeStep;
-      problem.stateTrajectory[k] = targetState;
-      problem.inputTrajectory[k] = targetInput;
+      targetTrajectory.timeTrajectory[k] = static_cast<Scalar>(k) * timeStep;
+      targetTrajectory.stateTrajectory[k] = targetState;
+      targetTrajectory.inputTrajectory[k] = targetInput;
     }
   }
 
@@ -141,8 +142,8 @@ class Exp0 : public testing::Test {
       Problem_t& targetProblem, const PrimalSolution_t& solution) const {
     DualSolution_t dualSolution;
     ProblemMetrics_t problemMetrics;
-    Solver_t::computeRolloutMetrics(targetProblem, solution, dualSolution,
-                                    problemMetrics);
+    Solver_t::computeRolloutMetrics(targetProblem, targetTrajectory, solution,
+                                    dualSolution, problemMetrics);
     return Solver_t::computeRolloutPerformanceIndex(solution.timeTrajectory_,
                                                     problemMetrics);
   }
@@ -163,6 +164,7 @@ class Exp0 : public testing::Test {
   const StateVector_t initState = (StateVector_t() << 0.0, 2.0).finished();
 
   Problem_t& problem;
+  TargetTrajectories_t targetTrajectory;
   std::unique_ptr<Initializer_t> initializerPtr;
 };
 
@@ -188,8 +190,9 @@ TEST_F(Exp0, ddp_feedback_policy) {
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   ddp.optimalControlProblem_.cost.add(cost);
   ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(problem.timeTrajectory, problem.stateTrajectory,
-                          problem.inputTrajectory);
+  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
+                          targetTrajectory.stateTrajectory,
+                          targetTrajectory.inputTrajectory);
 
   // run ddp
   EXPECT_NO_THROW(ddp.run(startTime, initState));
@@ -222,8 +225,9 @@ TEST_F(Exp0, ddp_feedforward_policy) {
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   ddp.optimalControlProblem_.cost.add(cost);
   ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(problem.timeTrajectory, problem.stateTrajectory,
-                          problem.inputTrajectory);
+  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
+                          targetTrajectory.stateTrajectory,
+                          targetTrajectory.inputTrajectory);
 
   // run ddp
   EXPECT_NO_THROW(ddp.run(startTime, initState));
@@ -259,8 +263,9 @@ TEST_F(Exp0, ddp_moving_horizon) {
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   ddp.optimalControlProblem_.cost.add(cost);
   ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(problem.timeTrajectory, problem.stateTrajectory,
-                          problem.inputTrajectory);
+  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
+                          targetTrajectory.stateTrajectory,
+                          targetTrajectory.inputTrajectory);
 
   const auto expectSolutionEndsAt = [&ddp](Scalar expectedFinalTime) {
     const auto& solution = ddp.primalSolution();
@@ -310,15 +315,17 @@ TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   ddp.optimalControlProblem_.cost.add(cost);
   ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(problem.timeTrajectory, problem.stateTrajectory,
-                          problem.inputTrajectory);
+  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
+                          targetTrajectory.stateTrajectory,
+                          targetTrajectory.inputTrajectory);
 
   ASSERT_NO_THROW(ddp.run(startTime, initState));
   const auto& ilqrSolution = ddp.primalSolution();
   const auto ilqrPerformance = ddp.performanceIndex();
 
   const auto qpSolution = qp_solver::solveLinearQuadraticOptimalControlProblem(
-      ddp.optimalControlProblem_, toQpTrajectory(ilqrSolution), initState);
+      ddp.optimalControlProblem_, targetTrajectory, toQpTrajectory(ilqrSolution),
+      initState);
   const auto qpPrimalSolution = toPrimalSolution(qpSolution);
   const auto qpPerformance =
       getPerformanceIndex(ddp.optimalControlProblem_, qpPrimalSolution);
@@ -361,8 +368,9 @@ TEST_F(Exp0, ddp_q_function) {
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   ddp.optimalControlProblem_.cost.add(cost);
   ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(problem.timeTrajectory, problem.stateTrajectory,
-                          problem.inputTrajectory);
+  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
+                          targetTrajectory.stateTrajectory,
+                          targetTrajectory.inputTrajectory);
 
   // run ddp
   ddp.run(startTime, initState);
@@ -460,8 +468,9 @@ TEST_P(Exp0Param, ILQR) {
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   ddp.optimalControlProblem_.cost.add(cost);
   ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(problem.timeTrajectory, problem.stateTrajectory,
-                          problem.inputTrajectory);
+  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
+                          targetTrajectory.stateTrajectory,
+                          targetTrajectory.inputTrajectory);
 
   // run ddp
   EXPECT_NO_THROW(ddp.run(startTime, initState));

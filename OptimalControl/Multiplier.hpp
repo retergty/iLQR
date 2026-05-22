@@ -198,6 +198,7 @@ MultiplierGroup<Scalar, GroupLayout> interpolateCollectionGroupImpl(
     const MultiplierGroup<Scalar, GroupLayout>
         MultiplierCollection<Scalar, Layout>::* member,
     std::index_sequence<Is...>) {
+  (void)member;
   MultiplierGroup<Scalar, GroupLayout> out;
   out.terms = std::make_tuple(
       interpolateCollectionGroupTerm<Is>(indexAlpha, dataArray, member)...);

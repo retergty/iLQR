@@ -16,6 +16,7 @@
 #include "PrimalSolution.hpp"
 #include "ProblemMetrics.hpp"
 #include "QuadraticApproximation.hpp"
+#include "Reference.hpp"
 #include "RiccatiModification.hpp"
 #include "RolloutBase.hpp"
 #include "SearchStrategyBase.hpp"
@@ -57,6 +58,7 @@ struct iLQRTypes {
   using TimeTrajectory_t = typename Traits::TimeTrajectory_t;
   using StateTrajectory_t = typename Traits::StateTrajectory_t;
   using InputTrajectory_t = typename Traits::InputTrajectory_t;
+  using TargetTrajectories_t = typename Traits::TargetTrajectories_t;
 
   using ControlledSystemBase_t = ControlledSystemBase<Scalar, XDim, UDim>;
   using SystemDynamicsBase_t = SystemDynamicsBase<Scalar, XDim, UDim>;

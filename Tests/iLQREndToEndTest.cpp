@@ -79,7 +79,8 @@ TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts) {
 
   Solver::DualSolution_t dualSolution;
   Solver::ProblemMetrics_t metrics;
-  Solver::computeRolloutMetrics(solver.optimalControlProblem_, primalSolution,
+  Solver::computeRolloutMetrics(solver.optimalControlProblem_,
+                                solver.targetTrajectory(), primalSolution,
                                 dualSolution, metrics);
 
   EXPECT_DOUBLE_EQ(metrics.intermediates[0].cost, 1.0);

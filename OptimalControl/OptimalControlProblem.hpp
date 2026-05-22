@@ -6,6 +6,7 @@
 #include <array>
 
 #include "CostCollection.hpp"
+#include "Reference.hpp"
 #include "StateAugmentedLagrangianCollection.hpp"
 #include "StateInputAugmentedLagrangianCollection.hpp"
 #include "SystemDynamicsBase.hpp"
@@ -33,8 +34,7 @@ struct OptimalControlProblem {
 
   static constexpr int StateEqConstraintDim = StateEqLayout::TotalDim;
   static constexpr int StateIneqConstraintDim = StateIneqLayout::TotalDim;
-  static constexpr int StateInputEqConstraintDim =
-      StateInputEqLayout::TotalDim;
+  static constexpr int StateInputEqConstraintDim = StateInputEqLayout::TotalDim;
   static constexpr int StateInputIneqConstraintDim =
       StateInputIneqLayout::TotalDim;
   static constexpr int FinalStateEqConstraintDim = FinalStateEqLayout::TotalDim;
@@ -53,13 +53,6 @@ struct OptimalControlProblem {
   /** @brief 禁止拷贝赋值。 */
   OptimalControlProblem& operator=(const OptimalControlProblem& rhs) = delete;
 
-  // /** Move constructor */
-  // OptimalControlProblem(OptimalControlProblem &&other) noexcept = default;
-
-  // /** Move assignment */
-  // OptimalControlProblem &operator=(OptimalControlProblem &&rhs) noexcept =
-  // default;
-
   /** @brief 中间代价（状态-输入）。 */
   StateInputCostCollection<Scalar, XDim, UDim, PredictLength + 1> cost;
   /** @brief 仅状态中间代价。 */
@@ -67,13 +60,6 @@ struct OptimalControlProblem {
 
   /** @brief 终端代价。 */
   StateCostCollection<Scalar, XDim, PredictLength + 1> finalCost;
-
-  /** @brief 参考时间轨迹。 */
-  std::array<Scalar, PredictLength + 1> timeTrajectory;
-  /** @brief 参考状态轨迹。 */
-  std::array<Vector<Scalar, XDim>, PredictLength + 1> stateTrajectory;
-  /** @brief 参考输入轨迹。 */
-  std::array<Vector<Scalar, UDim>, PredictLength + 1> inputTrajectory;
 
   /** @brief 状态-输入等式约束增广拉格朗日。 */
   StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,

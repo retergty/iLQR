@@ -23,11 +23,15 @@ class Ocs2QpSolverTest : public testing::Test {
                                            0, 0, 0, 0, 0>;
   using Trajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
+  using Transcription_t =
+      qp_solver::QpTranscriptionConfig_t<Scalar, STATE_DIM, INPUT_DIM, N, 0, 0,
+                                         0, 0, 0, 0>;
+  using TargetTrajectories_t = TargetTrajectories<Scalar, Transcription_t>;
 
   void checkDeviationDynamics(const Trajectory_t& solution,
                               const Trajectory_t& nominal) const {
-    const auto lqp =
-        qp_solver::getLinearQuadraticApproximation(problem, nominal);
+    const auto lqp = qp_solver::getLinearQuadraticApproximation(
+        problem, targetTrajectory, nominal);
 
     ASSERT_TRUE(
         (solution.stateTrajectory.front() - nominal.stateTrajectory.front())
@@ -86,21 +90,20 @@ class Ocs2QpSolverTest : public testing::Test {
         test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
     referenceTrajectory =
         test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
-    setReferenceTrajectories(problem, referenceTrajectory);
+    setReferenceTrajectories(referenceTrajectory);
 
     x0 = Vector<Scalar, STATE_DIM>::Random();
     solution = qp_solver::solveLinearQuadraticOptimalControlProblem(
-        problem, nominalTrajectory, x0);
+        problem, targetTrajectory, nominalTrajectory, x0);
   }
 
-  void setReferenceTrajectories(Problem_t& targetProblem,
-                                const Trajectory_t& trajectory) const {
-    targetProblem.timeTrajectory = trajectory.timeTrajectory;
-    targetProblem.stateTrajectory = trajectory.stateTrajectory;
+  void setReferenceTrajectories(const Trajectory_t& trajectory) {
+    targetTrajectory.timeTrajectory = trajectory.timeTrajectory;
+    targetTrajectory.stateTrajectory = trajectory.stateTrajectory;
     for (size_t k = 0; k < N; ++k) {
-      targetProblem.inputTrajectory[k] = trajectory.inputTrajectory[k];
+      targetTrajectory.inputTrajectory[k] = trajectory.inputTrajectory[k];
     }
-    targetProblem.inputTrajectory[N] = trajectory.inputTrajectory[N - 1];
+    targetTrajectory.inputTrajectory[N] = trajectory.inputTrajectory[N - 1];
   }
 
   static Trajectory_t getZeroTrajectory() {
@@ -126,6 +129,7 @@ class Ocs2QpSolverTest : public testing::Test {
       intermediateCost;
   std::unique_ptr<QuadraticStateCost<Scalar, STATE_DIM, N + 1>> finalCost;
   Problem_t problem;
+  TargetTrajectories_t targetTrajectory;
   Trajectory_t nominalTrajectory;
   Trajectory_t referenceTrajectory;
   Vector<Scalar, STATE_DIM> x0;
@@ -154,9 +158,9 @@ TEST_F(Ocs2QpSolverTest, invariantUnderLinearization) {
 
   // Compare solutions
   const auto solution1 = qp_solver::solveLinearQuadraticOptimalControlProblem(
-      problem, linearization1, x0);
+      problem, targetTrajectory, linearization1, x0);
   const auto solution2 = qp_solver::solveLinearQuadraticOptimalControlProblem(
-      problem, linearization2, x0);
+      problem, targetTrajectory, linearization2, x0);
   for (size_t k = 0; k < N + 1; ++k) {
     ASSERT_TRUE(solution1.stateTrajectory[k].isApprox(
         solution2.stateTrajectory[k], precision));
@@ -171,12 +175,12 @@ TEST_F(Ocs2QpSolverTest, knownSolutionAtOrigin) {
   // If the cost's nominal trajectory is set to zero, and the initial state is
   // zero, then the solution has only zeros.
   const auto zeroReference = getZeroTrajectory();
-  setReferenceTrajectories(problem, zeroReference);
+  setReferenceTrajectories(zeroReference);
   const Vector<Scalar, STATE_DIM> zeroX0 = Vector<Scalar, STATE_DIM>::Zero();
 
   // Obtain solution with a zero nominal trajectory.
   auto zeroSolution = qp_solver::solveLinearQuadraticOptimalControlProblem(
-      problem, zeroReference, zeroX0);
+      problem, targetTrajectory, zeroReference, zeroX0);
 
   for (size_t k = 0; k < N + 1; ++k) {
     ASSERT_TRUE(zeroSolution.stateTrajectory[k].isZero(precision));
