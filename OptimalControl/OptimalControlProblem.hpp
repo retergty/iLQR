@@ -3,14 +3,11 @@
  * @brief 最优控制问题定义：代价、拉格朗日、参考轨迹与动力学指针。
  */
 #pragma once
-#include <array>
 
 #include "CostCollection.hpp"
-#include "Reference.hpp"
 #include "StateAugmentedLagrangianCollection.hpp"
 #include "StateInputAugmentedLagrangianCollection.hpp"
 #include "SystemDynamicsBase.hpp"
-#include "Types.hpp"
 
 /**
  * @brief

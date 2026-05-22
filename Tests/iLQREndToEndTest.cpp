@@ -19,12 +19,15 @@ TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost) {
   DDPSettings<double> ddp_setting;
   using Descriptor =
       iLQRDescriptor<double, TranscriptionConfig<Dimensions<2, 2>, Horizon<5>>>;
-  iLQR<Descriptor> solver(ddp_setting, &dynamics, &initializer);
+  using Solver = iLQR<Descriptor>;
+  Solver::OptimalControlProblem_t problem;
+  problem.dynamicsPtr = &dynamics;
   QuadraticStateInputCost<double, 2, 2, 6> runningCost(
       Eigen::Matrix2d::Identity(), Eigen::Matrix2d::Identity());
   QuadraticStateCost<double, 2, 6> finalCost(2.0 * Eigen::Matrix2d::Identity());
-  solver.optimalControlProblem_.cost.add(runningCost);
-  solver.optimalControlProblem_.finalCost.add(finalCost);
+  problem.cost.add(runningCost);
+  problem.finalCost.add(finalCost);
+  Solver solver(ddp_setting, problem, &initializer);
 
   std::array<double, 6> timeTraj;
   std::array<Eigen::Vector2d, 6> stateTraj, inputTraj;
@@ -52,13 +55,15 @@ TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts) {
   LinearSystemDynamics<double, 2, 2> dynamics(A, B);
   DefaultInitializer<double, 2, 2> initializer;
   DDPSettings<double> ddp_setting;
-  Solver solver(ddp_setting, &dynamics, &initializer);
 
   QuadraticStateInputCost<double, 2, 2, 3> runningCost(
       Eigen::Matrix2d::Identity(), Eigen::Matrix2d::Identity());
   QuadraticStateCost<double, 2, 3> finalCost(2.0 * Eigen::Matrix2d::Identity());
-  solver.optimalControlProblem_.cost.add(runningCost);
-  solver.optimalControlProblem_.finalCost.add(finalCost);
+  Solver::OptimalControlProblem_t problem;
+  problem.dynamicsPtr = &dynamics;
+  problem.cost.add(runningCost);
+  problem.finalCost.add(finalCost);
+  Solver solver(ddp_setting, problem, &initializer);
 
   std::array<double, 3> timeTraj = {0.0, 1.0, 2.0};
   std::array<Eigen::Vector2d, 3> stateTraj, inputTraj;
@@ -77,9 +82,13 @@ TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts) {
   primalSolution.inputTrajectory_[1] << 0.0, 2.0;
   primalSolution.inputTrajectory_[2].setZero();
 
+  Solver::DualSolution_t cachedDualSolution;
+  cachedDualSolution.clear();
   Solver::DualSolution_t dualSolution;
+  initializeDualSolution(solver.optimalControlProblem(), primalSolution,
+                         cachedDualSolution, dualSolution);
   Solver::ProblemMetrics_t metrics;
-  Solver::computeRolloutMetrics(solver.optimalControlProblem_,
+  Solver::computeRolloutMetrics(solver.optimalControlProblem(),
                                 solver.targetTrajectory(), primalSolution,
                                 dualSolution, metrics);
 

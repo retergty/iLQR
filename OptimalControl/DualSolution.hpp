@@ -27,6 +27,9 @@ struct DualSolution {
       MultiplierCollection<Scalar,
                            FinalStageConstraintLayout<ConstraintConfig>>;
 
+  /** @brief 默认构造为空缓存状态。 */
+  DualSolution() { clear(); }
+
   /** @brief 时间序列，与轨迹对齐。 */
   std::array<Scalar, PredictLength + 1> timeTrajectory;
 

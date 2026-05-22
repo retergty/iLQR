@@ -47,6 +47,9 @@ struct Metrics {
   static constexpr int StateInputEq = StateInputEqLayout::TotalDim;
   static constexpr int StateInputIneq = StateInputIneqLayout::TotalDim;
 
+  /** @brief 默认构造为清空状态。 */
+  Metrics() { clear(); }
+
   /** @brief 该时刻总代价。 */
   Scalar cost;
 

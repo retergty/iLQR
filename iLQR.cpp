@@ -1,6 +1,7 @@
 #include "iLQR.hpp"
 
 #include "DefaultInitializer.hpp"
+#include "LinearSystemDynamics.hpp"
 
 int main() {
   DefaultInitializer<double, 3, 2> init;
@@ -8,8 +9,15 @@ int main() {
   using Descriptor =
       iLQRDescriptor<double,
                      TranscriptionConfig<Dimensions<3, 2>, Horizon<10>>>;
-  iLQR<Descriptor> ilqr(ddp_setting, nullptr, &init);
+  using Solver = iLQR<Descriptor>;
+  Eigen::Matrix<double, 3, 3> A = Eigen::Matrix<double, 3, 3>::Zero();
+  Eigen::Matrix<double, 3, 2> B = Eigen::Matrix<double, 3, 2>::Zero();
+  LinearSystemDynamics<double, 3, 2> dynamics(A, B);
+  Solver::OptimalControlProblem_t problem;
+  problem.dynamicsPtr = &dynamics;
+  Solver ilqr(ddp_setting, problem, &init);
   decltype(ilqr)::StateVector_t init_state;
+  init_state.setZero();
   ilqr.run(0, init_state);
   return 0;
 }

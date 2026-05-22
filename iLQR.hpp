@@ -117,18 +117,19 @@ class iLQR {
       typename Types::DiscreteTimeRiccatiEquations_t;
 
   /**
-   * @brief 构造 iLQR 求解器，绑定动力学与初始化器。
-   * @param [in] systemPtr 系统动力学指针（用于 rollout 与离散化），不可为
-   * nullptr。
+   * @brief 构造 iLQR 求解器，绑定外部最优控制问题与初始化器。
+   * @param [in] optimalControlProblem 最优控制问题定义，生命周期需长于求解器。
    * @param [in] initializer 轨迹初始化器，用于填补无控制器的时间段。
    */
-  iLQR(const DDPSettings<Scalar>& ddp_setting, SystemDynamicsBase_t* systemPtr,
+  iLQR(const DDPSettings<Scalar>& ddp_setting,
+       OptimalControlProblem_t& optimalControlProblem,
        Initializer_t* initializer)
       : ddpSettings_(ddp_setting),
-        rollout_(systemPtr, ddpSettings_.timeStep_),
+        optimalControlProblem_(optimalControlProblem),
+        rollout_(optimalControlProblem_.dynamicsPtr, ddpSettings_.timeStep_),
         initializerRollout_(*initializer, ddpSettings_.timeStep_),
         lineSearchStrategy_(makeLineSearchSettings(ddp_setting), *this) {
-    optimalControlProblem_.dynamicsPtr = systemPtr;
+    assert(optimalControlProblem_.dynamicsPtr != nullptr);
     // set zero solution
     optimizedPrimalSolution_.clear();
     optimizedDualSolution_.clear();
@@ -228,6 +229,12 @@ class iLQR {
   const TargetTrajectories_t& targetTrajectory() const {
     return targetTrajectory_;
   }
+  OptimalControlProblem_t& optimalControlProblem() {
+    return optimalControlProblem_;
+  }
+  const OptimalControlProblem_t& optimalControlProblem() const {
+    return optimalControlProblem_;
+  }
 
  private:
   static LineSearchSettings<Scalar> makeLineSearchSettings(
@@ -317,10 +324,10 @@ class iLQR {
         optimalControlProblem_, nominalPrimalData_.primalSolution,
         optimizedDualSolution_, nominalDualData_.dualSolution);
 
-    computeRolloutMetrics(
-        optimalControlProblem_, targetTrajectory_,
-        nominalPrimalData_.primalSolution, nominalDualData_.dualSolution,
-        nominalPrimalData_.problemMetrics);
+    computeRolloutMetrics(optimalControlProblem_, targetTrajectory_,
+                          nominalPrimalData_.primalSolution,
+                          nominalDualData_.dualSolution,
+                          nominalPrimalData_.problemMetrics);
 
     // calculates rollout merit
     performanceIndex_ = computeRolloutPerformanceIndex(
@@ -400,7 +407,7 @@ class iLQR {
       // (timeTrajectory[timeIndex + 1] - timeTrajectory[timeIndex]) : 0.0; if
       // (!numerics::almost_eq(timeStep, 0.0))
       // {
-      //     discreteLQWorker(*optimalControlProblem_.dynamicsPtr,
+      //     discreteLQWorker(optimalControlProblem_.dynamicsPtr,
       //     timeTrajectory[timeIndex], stateTrajectory[timeIndex],
       //                      inputTrajectory[timeIndex], timeStep,
       //                      continuousTimeModelData,
@@ -888,11 +895,11 @@ class iLQR {
    * @param [in] dualSolution 对偶解。
    * @param [out] problemMetrics 各时刻代价、软约束与约束值。
    */
-  static void computeRolloutMetrics(OptimalControlProblem_t& problem,
-                                    const TargetTrajectories_t& targetTrajectory,
-                                    const PrimalSolution_t& primalSolution,
-                                    const DualSolution_t& dualSolution,
-                                    ProblemMetrics_t& problemMetrics) {
+  static void computeRolloutMetrics(
+      OptimalControlProblem_t& problem,
+      const TargetTrajectories_t& targetTrajectory,
+      const PrimalSolution_t& primalSolution,
+      const DualSolution_t& dualSolution, ProblemMetrics_t& problemMetrics) {
     const TimeTrajectory_t& tTrajectory = primalSolution.timeTrajectory_;
     const StateTrajectory_t& xTrajectory = primalSolution.stateTrajectory_;
     const InputTrajectory_t& uTrajectory = primalSolution.inputTrajectory_;
@@ -910,7 +917,6 @@ class iLQR {
         problem, targetTrajectory, tTrajectory.back(), xTrajectory.back(),
         dualSolution.final);
   }
-
 
   /**
    * Forward integrate the system dynamics with given controller. It uses the
@@ -1023,7 +1029,7 @@ class iLQR {
   DDPSettings<Scalar> ddpSettings_{};
 
  public:
-  OptimalControlProblem_t optimalControlProblem_;
+  OptimalControlProblem_t& optimalControlProblem_;
 
   // roll out
   TimeTriggeredRollout_t rollout_;

@@ -16,7 +16,6 @@
 #include "PrimalSolution.hpp"
 #include "ProblemMetrics.hpp"
 #include "QuadraticApproximation.hpp"
-#include "Reference.hpp"
 #include "RiccatiModification.hpp"
 #include "RolloutBase.hpp"
 #include "SearchStrategyBase.hpp"

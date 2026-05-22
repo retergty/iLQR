@@ -246,7 +246,7 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
 
     // compute problem metrics
     iLQR_t::computeRolloutMetrics(
-        ilqr_.optimalControlProblem_, ilqr_.targetTrajectory(),
+        ilqr_.optimalControlProblem(), ilqr_.targetTrajectory(),
         solution.primalSolution, *lineSearchInputRef_.dualSolutionPtr,
         solution.problemMetrics);
 

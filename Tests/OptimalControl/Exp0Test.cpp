@@ -140,12 +140,33 @@ class Exp0 : public testing::Test {
 
   typename Solver_t::PerformanceIndex_t getPerformanceIndex(
       Problem_t& targetProblem, const PrimalSolution_t& solution) const {
+    DualSolution_t cachedDualSolution;
+    cachedDualSolution.clear();
     DualSolution_t dualSolution;
+    initializeDualSolution(targetProblem, solution, cachedDualSolution,
+                           dualSolution);
     ProblemMetrics_t problemMetrics;
     Solver_t::computeRolloutMetrics(targetProblem, targetTrajectory, solution,
                                     dualSolution, problemMetrics);
     return Solver_t::computeRolloutPerformanceIndex(solution.timeTrajectory_,
                                                     problemMetrics);
+  }
+
+  template <typename Cost, typename FinalCost>
+  std::unique_ptr<Solver_t> createSolver(const DDPSettings_t& ddpSettings,
+                                         exp0::EXP0_Sys1<Scalar>& systemDynamics,
+                                         Cost& cost, FinalCost& finalCost,
+                                         Problem_t& localProblem) const {
+    localProblem.dynamicsPtr = &systemDynamics;
+    localProblem.cost.add(cost);
+    localProblem.finalCost.add(finalCost);
+    auto solver =
+        std::make_unique<Solver_t>(ddpSettings, localProblem,
+                                   initializerPtr.get());
+    solver->setDesireTrajectory(targetTrajectory.timeTrajectory,
+                                targetTrajectory.stateTrajectory,
+                                targetTrajectory.inputTrajectory);
+    return solver;
   }
 
   static std::string searchStrategyToString(SearchStrategyType strategy) {
@@ -185,20 +206,17 @@ TEST_F(Exp0, ddp_feedback_policy) {
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
   // instantiate
-  Solver_t ddp(ddpSettings, &systemDynamics, initializerPtr.get());
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
-  ddp.optimalControlProblem_.cost.add(cost);
-  ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
-                          targetTrajectory.stateTrajectory,
-                          targetTrajectory.inputTrajectory);
+  Problem_t localProblem;
+  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
+                          localProblem);
 
   // run ddp
-  EXPECT_NO_THROW(ddp.run(startTime, initState));
+  EXPECT_NO_THROW(ddp->run(startTime, initState));
 
   // get solution
-  const auto& solution = ddp.primalSolution();
+  const auto& solution = ddp->primalSolution();
   const auto& ctrl = solution.controller_;
 
   EXPECT_EQ(ctrl.getType(), ControllerType::LINEAR)
@@ -220,20 +238,17 @@ TEST_F(Exp0, ddp_feedforward_policy) {
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
   // instantiate
-  Solver_t ddp(ddpSettings, &systemDynamics, initializerPtr.get());
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
-  ddp.optimalControlProblem_.cost.add(cost);
-  ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
-                          targetTrajectory.stateTrajectory,
-                          targetTrajectory.inputTrajectory);
+  Problem_t localProblem;
+  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
+                          localProblem);
 
   // run ddp
-  EXPECT_NO_THROW(ddp.run(startTime, initState));
+  EXPECT_NO_THROW(ddp->run(startTime, initState));
 
   // get solution
-  const auto& solution = ddp.primalSolution();
+  const auto& solution = ddp->primalSolution();
   const auto& ctrl = solution.controller_;
 
   EXPECT_EQ(ctrl.getType(), ControllerType::LINEAR)
@@ -258,17 +273,14 @@ TEST_F(Exp0, ddp_moving_horizon) {
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
   // instantiate
-  Solver_t ddp(ddpSettings, &systemDynamics, initializerPtr.get());
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
-  ddp.optimalControlProblem_.cost.add(cost);
-  ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
-                          targetTrajectory.stateTrajectory,
-                          targetTrajectory.inputTrajectory);
+  Problem_t localProblem;
+  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
+                          localProblem);
 
   const auto expectSolutionEndsAt = [&ddp](Scalar expectedFinalTime) {
-    const auto& solution = ddp.primalSolution();
+    const auto& solution = ddp->primalSolution();
     EXPECT_DOUBLE_EQ(solution.controller_.timeStamp_.back(), expectedFinalTime)
         << "MESSAGE: iLQR failed in policy final time of controller!";
     EXPECT_DOUBLE_EQ(solution.timeTrajectory_.back(), expectedFinalTime)
@@ -277,25 +289,25 @@ TEST_F(Exp0, ddp_moving_horizon) {
 
   // run iLQR (no active event)
   Scalar movingStartTime = 0.2;
-  EXPECT_NO_THROW(ddp.run(movingStartTime, initState));
+  EXPECT_NO_THROW(ddp->run(movingStartTime, initState));
   expectSolutionEndsAt(movingStartTime +
                        static_cast<Scalar>(PredictLength) * timeStep);
 
   // move the time horizon forward with overlap
   movingStartTime = 0.6;
-  EXPECT_NO_THROW(ddp.run(movingStartTime, initState));
+  EXPECT_NO_THROW(ddp->run(movingStartTime, initState));
   expectSolutionEndsAt(movingStartTime +
                        static_cast<Scalar>(PredictLength) * timeStep);
 
   // move the time horizon forward with partial overlap
   movingStartTime = 1.1;
-  EXPECT_NO_THROW(ddp.run(movingStartTime, initState));
+  EXPECT_NO_THROW(ddp->run(movingStartTime, initState));
   expectSolutionEndsAt(movingStartTime +
                        static_cast<Scalar>(PredictLength) * timeStep);
 
   // move the time horizon (no overlap)
   movingStartTime = 1.6;
-  EXPECT_NO_THROW(ddp.run(movingStartTime, initState));
+  EXPECT_NO_THROW(ddp->run(movingStartTime, initState));
   expectSolutionEndsAt(movingStartTime +
                        static_cast<Scalar>(PredictLength) * timeStep);
 }
@@ -310,25 +322,22 @@ TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
 
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
-  Solver_t ddp(ddpSettings, &systemDynamics, initializerPtr.get());
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
-  ddp.optimalControlProblem_.cost.add(cost);
-  ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
-                          targetTrajectory.stateTrajectory,
-                          targetTrajectory.inputTrajectory);
+  Problem_t localProblem;
+  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
+                          localProblem);
 
-  ASSERT_NO_THROW(ddp.run(startTime, initState));
-  const auto& ilqrSolution = ddp.primalSolution();
-  const auto ilqrPerformance = ddp.performanceIndex();
+  ASSERT_NO_THROW(ddp->run(startTime, initState));
+  const auto& ilqrSolution = ddp->primalSolution();
+  const auto ilqrPerformance = ddp->performanceIndex();
 
   const auto qpSolution = qp_solver::solveLinearQuadraticOptimalControlProblem(
-      ddp.optimalControlProblem_, targetTrajectory, toQpTrajectory(ilqrSolution),
-      initState);
+      ddp->optimalControlProblem(), targetTrajectory,
+      toQpTrajectory(ilqrSolution), initState);
   const auto qpPrimalSolution = toPrimalSolution(qpSolution);
   const auto qpPerformance =
-      getPerformanceIndex(ddp.optimalControlProblem_, qpPrimalSolution);
+      getPerformanceIndex(ddp->optimalControlProblem(), qpPrimalSolution);
 
   EXPECT_NEAR(qpPerformance.cost, ilqrPerformance.cost, 1e-1)
       << "QP cost: " << qpPerformance.cost
@@ -363,19 +372,16 @@ TEST_F(Exp0, ddp_q_function) {
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
   // instantiate
-  Solver_t ddp(ddpSettings, &systemDynamics, initializerPtr.get());
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
-  ddp.optimalControlProblem_.cost.add(cost);
-  ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
-                          targetTrajectory.stateTrajectory,
-                          targetTrajectory.inputTrajectory);
+  Problem_t localProblem;
+  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
+                          localProblem);
 
   // run ddp
-  ddp.run(startTime, initState);
+  ddp->run(startTime, initState);
   // get solution
-  const auto& solution = ddp.primalSolution();
+  const auto& solution = ddp->primalSolution();
   const auto& controller = solution.controller_;
 
   // define precision for tests
@@ -388,7 +394,7 @@ TEST_F(Exp0, ddp_q_function) {
   const Scalar time = solution.timeTrajectory_[timeIndex];
   StateVector_t state = solution.stateTrajectory_[timeIndex];
   InputVector_t input = controller.computeInput(time, state);
-  auto qFunction = ddp.getQFunction(timeIndex, state, input);
+  auto qFunction = ddp->getQFunction(timeIndex, state, input);
   const InputVector_t dQdu1a = qFunction.dfdu;
   EXPECT_TRUE(dQdu1a.isZero(precision))
       << "MESSAGE for test 1a: Derivative of Q function w.r.t. to u is not "
@@ -425,7 +431,7 @@ TEST_F(Exp0, ddp_q_function) {
   // policy is globally optimal
   state = StateVector_t::Random();
   input = controller.computeInput(time, state);
-  qFunction = ddp.getQFunction(timeIndex, state, input);
+  qFunction = ddp->getQFunction(timeIndex, state, input);
   const InputVector_t dQdu2 = qFunction.dfdu;
   EXPECT_TRUE(dQdu2.isZero(precision)) << "MESSAGE for test 2: Derivative of Q "
                                           "function w.r.t. to u is not zero: "
@@ -435,7 +441,7 @@ TEST_F(Exp0, ddp_q_function) {
   // expected outcome: false, because a random input is not optimal
   state = solution.stateTrajectory_[timeIndex];
   input = InputVector_t::Random();
-  qFunction = ddp.getQFunction(timeIndex, state, input);
+  qFunction = ddp->getQFunction(timeIndex, state, input);
   const InputVector_t dQdu3 = qFunction.dfdu;
   EXPECT_FALSE(dQdu3.isZero(precision))
       << "MESSAGE for test 3: Derivative of Q function w.r.t. to u is zero: "
@@ -463,20 +469,17 @@ TEST_P(Exp0Param, ILQR) {
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
   // instantiate
-  Solver_t ddp(ddpSettings, &systemDynamics, initializerPtr.get());
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
-  ddp.optimalControlProblem_.cost.add(cost);
-  ddp.optimalControlProblem_.finalCost.add(finalCost);
-  ddp.setDesireTrajectory(targetTrajectory.timeTrajectory,
-                          targetTrajectory.stateTrajectory,
-                          targetTrajectory.inputTrajectory);
+  Problem_t localProblem;
+  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
+                          localProblem);
 
   // run ddp
-  EXPECT_NO_THROW(ddp.run(startTime, initState));
+  EXPECT_NO_THROW(ddp->run(startTime, initState));
 
   // get solution
-  const auto& solution = ddp.primalSolution();
+  const auto& solution = ddp->primalSolution();
   const auto& ctrl = solution.controller_;
 
   EXPECT_EQ(ctrl.getType(), ControllerType::LINEAR)
