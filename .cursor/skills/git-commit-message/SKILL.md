@@ -1,6 +1,6 @@
 ---
 name: git-commit-message
-description: Generates Chinese git commit messages for this iLQR repository by reading Project_Description.md and analyzing git diffs. Use when the user asks to write, polish, summarize, or generate a git commit message for current changes.
+description: Generates Chinese git commit messages for this iLQR repository by reading Project_Description.md, .gitignore, and staged git diffs. Use when the user asks to write, polish, summarize, or generate a git commit message for staged changes.
 ---
 
 # Git Commit Message
@@ -10,13 +10,20 @@ description: Generates Chinese git commit messages for this iLQR repository by r
 When generating a commit message in this repository:
 
 1. Read `Project_Description.md` first to understand the project architecture, solver workflow, module boundaries, and static-size design constraints.
-2. Inspect the current Git state with `git status --short`.
-3. Read changes with Git diff commands:
-   - Use `git diff --stat` and `git diff` for unstaged changes.
-   - Use `git diff --cached --stat` and `git diff --cached` for staged changes.
-   - If both staged and unstaged changes exist, distinguish what is staged from what is only in the working tree.
-4. Optionally read recent commit style with `git log -5 --oneline` when choosing tone or length.
-5. Summarize the intent of the change, not just the changed filenames.
+2. Read `.gitignore` and use it to avoid analyzing ignored build/output folders or other ignored local artifacts.
+3. Inspect the current Git state with `git status --short --untracked-files=all`.
+4. Generate the commit message from the staged area only, comparing the index against `HEAD`:
+   - Use `git diff --cached --stat`, `git diff --cached --name-status`, and `git diff --cached`.
+   - If `git diff --cached` is empty, say there are no staged changes to summarize and ask the user to `git add` the desired files or hunks first.
+   - For staged new files, rely on `git diff --cached`; they are included once added to the index.
+5. Treat unstaged and untracked files as out of scope for the commit message:
+   - Use `git diff --stat` only to notice whether there are extra unstaged changes that are not part of the proposed commit.
+   - Use `git ls-files --others --exclude-standard` only to notice untracked files that have not been added yet.
+   - Mention these excluded changes briefly only when it helps the user avoid accidentally omitting work.
+   - Do not include unstaged or untracked content in the commit message unless the user explicitly asks for a working-tree summary.
+6. If a file has both staged and unstaged edits, make the message describe only the staged hunks shown by `git diff --cached`.
+7. Optionally read recent commit style with `git log -5 --oneline` when choosing tone or length.
+8. Summarize the intent of the staged change, not just the changed filenames.
 
 ## Project Context To Preserve
 
@@ -43,11 +50,10 @@ Provide a ready-to-use commit message in this structure:
 
 1. <修改点一>
 2. <修改点二>
-3. <修改点三>
-4. <修改点四>
+3. <按当前修改逻辑继续列出必要修改点>
 ```
 
-Use 1 to 4 numbered points. Keep each point concise and behavior-focused.
+Use as many numbered points as the current change logically needs. Keep each point concise, behavior-focused, and avoid splitting one coherent change into multiple artificial bullets.
 
 ## Message Guidelines
 
