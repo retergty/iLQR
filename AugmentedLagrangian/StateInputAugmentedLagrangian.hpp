@@ -99,8 +99,7 @@ class StateInputAugmentedLagrangian final
 
   std::pair<Multiplier<Scalar, CDim>, Scalar> updateLagrangian(
       const Scalar time, const Vector<Scalar, XDim>& state,
-      const Vector<Scalar, UDim>& input,
-      const Vector<Scalar, CDim>& constraint,
+      const Vector<Scalar, UDim>& input, const Vector<Scalar, CDim>& constraint,
       const Multiplier<Scalar, CDim>& multiplier) const override {
     (void)input;
     (void)state;

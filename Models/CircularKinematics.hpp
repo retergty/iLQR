@@ -2,8 +2,11 @@
 #include "Cost.hpp"
 #include "OptimalControlProblem.hpp"
 #include "QuadraticPenalty.hpp"
+#include "StateInputAugmentedLagrangian.hpp"
+#include "StateInputConstraint.hpp"
 #include "SystemDynamicsBase.hpp"
 #include "iLQRDescriptor.hpp"
+
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
@@ -153,27 +156,30 @@ class CircularKinematicsCost
  */
 template <typename Scalar>
 class CircularKinematicsConstraints final
-    : public StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM> {
+    : public StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM, 1> {
  public:
   CircularKinematicsConstraints()
-      : StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM>(
+      : StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM, 1>(
             ConstraintOrder::Linear) {}
   ~CircularKinematicsConstraints() override = default;
 
-  Scalar getValue(const Scalar time, const Vector<Scalar, STATE_DIM>& state,
-                  const Vector<Scalar, INPUT_DIM>& input) const override {
+  Vector<Scalar, 1> getValue(
+      const Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input) const override {
     (void)time;
-    return state.dot(input);
+    Vector<Scalar, 1> value;
+    value(0) = state.dot(input);
+    return value;
   }
 
-  ScalarFunctionLinearApproximation<Scalar, STATE_DIM, INPUT_DIM>
+  VectorFunctionLinearApproximation<Scalar, 1, STATE_DIM, INPUT_DIM>
   getLinearApproximation(
       const Scalar time, const Vector<Scalar, STATE_DIM>& state,
       const Vector<Scalar, INPUT_DIM>& input) const override {
-    ScalarFunctionLinearApproximation<Scalar, STATE_DIM, INPUT_DIM> result;
+    VectorFunctionLinearApproximation<Scalar, 1, STATE_DIM, INPUT_DIM> result;
     result.f = getValue(time, state, input);
-    result.dfdx = input;
-    result.dfdu = state;
+    result.dfdx = input.transpose();
+    result.dfdu = state.transpose();
     return result;
   }
 };
@@ -183,19 +189,22 @@ class CircularKinematicsConstraints final
 /******************************************************************************************************/
 template <typename Scalar, size_t PredictLength>
 inline OptimalControlProblem<
-    Scalar, TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
-                                Horizon<PredictLength>>,
-    ConstraintConfig<StateConstraintConfig<ConstraintLayout<0, 0>>,
-                     StateInputConstraintConfig<ConstraintLayout<1, 0>>,
-                     FinalStateConstraintConfig<ConstraintLayout<0, 0>>>>&
+    Scalar,
+    TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
+                        Horizon<PredictLength>>,
+    ConstraintConfig<
+        StateConstraintConfig<ConstraintLayout<>>,
+        StateInputConstraintConfig<ConstraintLayout<
+            ConstraintGroupLayout<ConstraintTerm<1>>, ConstraintGroupLayout<>>>,
+        FinalStateConstraintConfig<ConstraintLayout<>>>>&
 createCircularKinematicsProblem() {
-  using Transcription_t =
-      TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
-                          Horizon<PredictLength>>;
-  using ConstraintConfig_t =
-      ConstraintConfig<StateConstraintConfig<ConstraintLayout<0, 0>>,
-                       StateInputConstraintConfig<ConstraintLayout<1, 0>>,
-                       FinalStateConstraintConfig<ConstraintLayout<0, 0>>>;
+  using Transcription_t = TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
+                                              Horizon<PredictLength>>;
+  using ConstraintConfig_t = ConstraintConfig<
+      StateConstraintConfig<ConstraintLayout<>>,
+      StateInputConstraintConfig<ConstraintLayout<
+          ConstraintGroupLayout<ConstraintTerm<1>>, ConstraintGroupLayout<>>>,
+      FinalStateConstraintConfig<ConstraintLayout<>>>;
   using Problem_t =
       OptimalControlProblem<Scalar, Transcription_t, ConstraintConfig_t>;
   using Cost_t =
@@ -203,7 +212,7 @@ createCircularKinematicsProblem() {
   using Constraint_t = CircularKinematicsConstraints<Scalar>;
   using Penalty_t = QuadraticPenalty<Scalar>;
   using AugmentedLagrangian_t =
-      StateInputAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM>;
+      StateInputAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM, 1>;
 
   static CircularKinematicsSystem<Scalar> dynamics;
   static Cost_t cost(0);
@@ -217,7 +226,7 @@ createCircularKinematicsProblem() {
   if (!initialized) {
     problem.dynamicsPtr = &dynamics;
     problem.cost.add(cost);
-    problem.equalityLagrangian.add(&augmentedLagrangian);
+    problem.equalityLagrangian.template set<0>(&augmentedLagrangian);
     initialized = true;
   }
 

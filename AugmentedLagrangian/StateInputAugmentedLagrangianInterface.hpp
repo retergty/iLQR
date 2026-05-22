@@ -67,8 +67,7 @@ class StateInputAugmentedLagrangianInterface {
   /** Update Lagrange/penalty multipliers and the penalty function value. */
   virtual std::pair<Multiplier<Scalar, CDim>, Scalar> updateLagrangian(
       Scalar time, const Vector<Scalar, XDim>& state,
-      const Vector<Scalar, UDim>& input,
-      const Vector<Scalar, CDim>& constraint,
+      const Vector<Scalar, UDim>& input, const Vector<Scalar, CDim>& constraint,
       const Multiplier<Scalar, CDim>& lagrangian) const = 0;
 
   /** Initialize Lagrange/penalty multipliers. */

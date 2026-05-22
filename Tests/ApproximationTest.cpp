@@ -110,8 +110,7 @@ TEST(ApproximationTest, LinearAndQuadraticApproximationUtilities) {
 TEST(ApproximationTest,
      LinearQuadraticApproximatorComputesIntermediateCostAndLQ) {
   using Descriptor =
-      iLQRDescriptor<double,
-                     TranscriptionConfig<Dimensions<2, 2>, Horizon<2>>>;
+      iLQRDescriptor<double, TranscriptionConfig<Dimensions<2, 2>, Horizon<2>>>;
   using Approximator = LinearQuadraticApproximator<Descriptor>;
 
   Eigen::Matrix2d A;
@@ -182,8 +181,7 @@ TEST(ApproximationTest,
 // 验证 LQ 近似器对终端代价近似和终端模型数据的计算结果。
 TEST(ApproximationTest, LinearQuadraticApproximatorComputesFinalCostAndLQ) {
   using Descriptor =
-      iLQRDescriptor<double,
-                     TranscriptionConfig<Dimensions<2, 2>, Horizon<2>>>;
+      iLQRDescriptor<double, TranscriptionConfig<Dimensions<2, 2>, Horizon<2>>>;
   using Approximator = LinearQuadraticApproximator<Descriptor>;
 
   Approximator::OptimalControlProblem_t problem;

@@ -24,7 +24,8 @@ struct DualSolution {
       MultiplierCollection<Scalar,
                            IntermediateStageConstraintLayout<ConstraintConfig>>;
   using FinalMultiplierCollection_t =
-      MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>;
+      MultiplierCollection<Scalar,
+                           FinalStageConstraintLayout<ConstraintConfig>>;
 
   /** @brief 时间序列，与轨迹对齐。 */
   std::array<Scalar, PredictLength + 1> timeTrajectory;
@@ -69,8 +70,7 @@ template <typename Scalar, typename Horizon, typename ConstraintConfig>
 struct DualSolutionRef {
   static constexpr std::size_t PredictLength = Horizon::PredictLength;
 
-  using DualSolution_t =
-      DualSolution<Scalar, Horizon, ConstraintConfig>;
+  using DualSolution_t = DualSolution<Scalar, Horizon, ConstraintConfig>;
   using IntermediateMultiplierCollection_t =
       typename DualSolution_t::IntermediateMultiplierCollection_t;
   using FinalMultiplierCollection_t =
@@ -99,11 +99,12 @@ struct DualSolutionRef {
  * @return 该时刻对应的状态/状态-输入、等式/不等式拉格朗日乘子集合（插值结果）。
  */
 template <typename Scalar, typename Horizon, typename ConstraintConfig>
-inline typename DualSolution<Scalar, Horizon,
-                             ConstraintConfig>::IntermediateMultiplierCollection_t
-getIntermediateDualSolutionAtTime(
-    const DualSolution<Scalar, Horizon, ConstraintConfig>& dualSolution,
-    Scalar time) {
+inline
+    typename DualSolution<Scalar, Horizon,
+                          ConstraintConfig>::IntermediateMultiplierCollection_t
+    getIntermediateDualSolutionAtTime(
+        const DualSolution<Scalar, Horizon, ConstraintConfig>& dualSolution,
+        Scalar time) {
   const std::pair<int, Scalar> indexAlpha =
       LinearInterpolation::timeSegment(time, dualSolution.timeTrajectory);
   return LinearInterpolation::interpolate(indexAlpha,

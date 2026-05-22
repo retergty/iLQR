@@ -37,12 +37,12 @@ struct iLQRTypes {
   static constexpr int UDim = Traits::UDim;
   static constexpr std::size_t PredictLength = Traits::PredictLength;
 
-  static constexpr int StateEq = Traits::StateEq;
-  static constexpr int StateIneq = Traits::StateIneq;
-  static constexpr int StateInputEq = Traits::StateInputEq;
-  static constexpr int StateInputIneq = Traits::StateInputIneq;
-  static constexpr int FinalStateEq = Traits::FinalStateEq;
-  static constexpr int FinalStateIneq = Traits::FinalStateIneq;
+  static constexpr int StateEq = Traits::StateEqDim;
+  static constexpr int StateIneq = Traits::StateIneqDim;
+  static constexpr int StateInputEq = Traits::StateInputEqDim;
+  static constexpr int StateInputIneq = Traits::StateInputIneqDim;
+  static constexpr int FinalStateEq = Traits::FinalStateEqDim;
+  static constexpr int FinalStateIneq = Traits::FinalStateIneqDim;
 
   using StateVector_t = typename Traits::StateVector_t;
   using InputVector_t = typename Traits::InputVector_t;
@@ -72,14 +72,14 @@ struct iLQRTypes {
   using LinearController_t =
       LinearController<Scalar, XDim, UDim, PredictLength + 1>;
   using ModelData_t = ModelData<Scalar, XDim, UDim>;
-  using IntermediateMultiplierCollection_t =
-      MultiplierCollection<Scalar,
-                           typename Traits::IntermediateStageConstraintLayout_t>;
+  using IntermediateMultiplierCollection_t = MultiplierCollection<
+      Scalar, typename Traits::IntermediateStageConstraintLayout_t>;
   using FinalMultiplierCollection_t =
       MultiplierCollection<Scalar,
                            typename Traits::FinalStageConstraintLayout_t>;
   using IntermediateMetrics_t =
-      Metrics<Scalar, Dims, typename Traits::IntermediateStageConstraintLayout_t>;
+      Metrics<Scalar, Dims,
+              typename Traits::IntermediateStageConstraintLayout_t>;
   using FinalMetrics_t =
       Metrics<Scalar, Dims, typename Traits::FinalStageConstraintLayout_t>;
   using PrimalSolution_t = PrimalSolution<Scalar, TranscriptionConfig>;

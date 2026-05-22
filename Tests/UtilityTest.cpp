@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <tuple>
 
 #include "DefaultInitializer.hpp"
 #include "HessianCorrection.hpp"
@@ -102,47 +103,61 @@ TEST(UtilityTest, LinearControllerClearAndSwap) {
 
 // 验证单个乘子插值会同时插值 penalty 和 lagrangian 字段。
 TEST(UtilityTest, MultiplierInterpolationInterpolatesAllFields) {
-  std::array<Multiplier<double>, 3> multipliers = {
-      Multiplier<double>{1.0, 10.0},
-      Multiplier<double>{3.0, 30.0},
-      Multiplier<double>{5.0, 50.0},
+  using Multiplier_t = Multiplier<double, 1>;
+  std::array<Multiplier_t, 3> multipliers = {
+      Multiplier_t{1.0, Vector<double, 1>::Constant(10.0)},
+      Multiplier_t{3.0, Vector<double, 1>::Constant(30.0)},
+      Multiplier_t{5.0, Vector<double, 1>::Constant(50.0)},
   };
 
   const auto interpolated =
-      LinearInterpolation::interpolate<double, 3>({0, 0.25}, multipliers);
+      LinearInterpolation::interpolate<double, 1, 3>({0, 0.25}, multipliers);
 
   EXPECT_DOUBLE_EQ(interpolated.penalty, 2.5);
-  EXPECT_DOUBLE_EQ(interpolated.lagrangian, 25.0);
+  EXPECT_DOUBLE_EQ(interpolated.lagrangian(0), 25.0);
 }
 
 // 验证乘子集合插值会分别处理各类约束乘子。
 TEST(UtilityTest, MultiplierCollectionInterpolationInterpolatesEachCategory) {
-  using Collection =
-      MultiplierCollection<double, StageConstraintLayout<1, 1, 1, 1>>;
+  using OneDimGroup = ConstraintGroupLayout<ConstraintTerm<1>>;
+  using Layout =
+      StageConstraintLayout<OneDimGroup, OneDimGroup, OneDimGroup, OneDimGroup>;
+  using Collection = MultiplierCollection<double, Layout>;
   std::array<Collection, 2> trajectory;
 
-  trajectory[0].stateEq[0] = {1.0, 10.0};
-  trajectory[0].stateIneq[0] = {2.0, 20.0};
-  trajectory[0].stateInputEq[0] = {3.0, 30.0};
-  trajectory[0].stateInputIneq[0] = {4.0, 40.0};
-  trajectory[1].stateEq[0] = {11.0, 110.0};
-  trajectory[1].stateIneq[0] = {12.0, 120.0};
-  trajectory[1].stateInputEq[0] = {13.0, 130.0};
-  trajectory[1].stateInputIneq[0] = {14.0, 140.0};
+  std::get<0>(trajectory[0].stateEq.terms) = {
+      1.0, Vector<double, 1>::Constant(10.0)};
+  std::get<0>(trajectory[0].stateIneq.terms) = {
+      2.0, Vector<double, 1>::Constant(20.0)};
+  std::get<0>(trajectory[0].stateInputEq.terms) = {
+      3.0, Vector<double, 1>::Constant(30.0)};
+  std::get<0>(trajectory[0].stateInputIneq.terms) = {
+      4.0, Vector<double, 1>::Constant(40.0)};
+  std::get<0>(trajectory[1].stateEq.terms) = {
+      11.0, Vector<double, 1>::Constant(110.0)};
+  std::get<0>(trajectory[1].stateIneq.terms) = {
+      12.0, Vector<double, 1>::Constant(120.0)};
+  std::get<0>(trajectory[1].stateInputEq.terms) = {
+      13.0, Vector<double, 1>::Constant(130.0)};
+  std::get<0>(trajectory[1].stateInputIneq.terms) = {
+      14.0, Vector<double, 1>::Constant(140.0)};
 
   const Collection interpolated =
-      LinearInterpolation::
-          interpolate<double, StageConstraintLayout<1, 1, 1, 1>, 2>(
-              {0, 0.25}, trajectory);
+      LinearInterpolation::interpolate<double, Layout, 2>({0, 0.25},
+                                                          trajectory);
 
-  EXPECT_DOUBLE_EQ(interpolated.stateEq[0].penalty, 8.5);
-  EXPECT_DOUBLE_EQ(interpolated.stateEq[0].lagrangian, 85.0);
-  EXPECT_DOUBLE_EQ(interpolated.stateIneq[0].penalty, 9.5);
-  EXPECT_DOUBLE_EQ(interpolated.stateIneq[0].lagrangian, 95.0);
-  EXPECT_DOUBLE_EQ(interpolated.stateInputEq[0].penalty, 10.5);
-  EXPECT_DOUBLE_EQ(interpolated.stateInputEq[0].lagrangian, 105.0);
-  EXPECT_DOUBLE_EQ(interpolated.stateInputIneq[0].penalty, 11.5);
-  EXPECT_DOUBLE_EQ(interpolated.stateInputIneq[0].lagrangian, 115.0);
+  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateEq.terms).penalty, 8.5);
+  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateEq.terms).lagrangian(0), 85.0);
+  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateIneq.terms).penalty, 9.5);
+  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateIneq.terms).lagrangian(0),
+                   95.0);
+  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateInputEq.terms).penalty, 10.5);
+  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateInputEq.terms).lagrangian(0),
+                   105.0);
+  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateInputIneq.terms).penalty,
+                   11.5);
+  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateInputIneq.terms).lagrangian(0),
+                   115.0);
 }
 
 // 验证默认初始化器保持状态不变并把输入初值清零。

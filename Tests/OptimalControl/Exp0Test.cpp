@@ -326,10 +326,10 @@ TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
   EXPECT_NEAR(qpPerformance.cost, ilqrPerformance.cost, 1e-1)
       << "QP cost: " << qpPerformance.cost
       << ", iLQR cost: " << ilqrPerformance.cost;
-  EXPECT_LT((qpSolution.stateTrajectory.back() -
-             ilqrSolution.stateTrajectory_.back())
-                .norm(),
-            1e-1)
+  EXPECT_LT(
+      (qpSolution.stateTrajectory.back() - ilqrSolution.stateTrajectory_.back())
+          .norm(),
+      1e-1)
       << "QP final state: " << qpSolution.stateTrajectory.back().transpose()
       << ", iLQR final state: "
       << ilqrSolution.stateTrajectory_.back().transpose();

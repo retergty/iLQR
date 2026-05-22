@@ -36,7 +36,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <array>
 
-
 /**
  * @brief 对 (timeTrajectory, valueTrajectory) 做梯形积分，从 initialValue
  * 起累加。

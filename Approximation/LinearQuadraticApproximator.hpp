@@ -61,11 +61,9 @@ struct LinearQuadraticApproximator {
   static constexpr int StateEqConstraintDim = Traits::StateEqDim;
   static constexpr int StateIneqConstraintDim = Traits::StateIneqDim;
   static constexpr int StateInputEqConstraintDim = Traits::StateInputEqDim;
-  static constexpr int StateInputIneqConstraintDim =
-      Traits::StateInputIneqDim;
+  static constexpr int StateInputIneqConstraintDim = Traits::StateInputIneqDim;
   static constexpr int FinalStateEqConstraintDim = Traits::FinalStateEqDim;
-  static constexpr int FinalStateIneqConstraintDim =
-      Traits::FinalStateIneqDim;
+  static constexpr int FinalStateIneqConstraintDim = Traits::FinalStateIneqDim;
 
   using OptimalControlProblem_t =
       OptimalControlProblem<Scalar, TranscriptionConfig, ConstraintConfig>;

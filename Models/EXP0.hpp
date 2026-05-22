@@ -85,15 +85,15 @@ Vector<Scalar, INPUT_DIM> getExp0TargetInput() {
 /******************************************************************************************************/
 template <typename Scalar, size_t PredictLength>
 inline OptimalControlProblem<
-    Scalar, TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
-                                Horizon<PredictLength>>,
+    Scalar,
+    TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
+                        Horizon<PredictLength>>,
     ConstraintConfig<>>&
 createExp0Problem() {
-  using Transcription_t =
-      TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
-                          Horizon<PredictLength>>;
-  using Problem_t = OptimalControlProblem<Scalar, Transcription_t,
-                                          ConstraintConfig<>>;
+  using Transcription_t = TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
+                                              Horizon<PredictLength>>;
+  using Problem_t =
+      OptimalControlProblem<Scalar, Transcription_t, ConstraintConfig<>>;
   using Cost_t = EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)>;
   using FinalCost_t =
       EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)>;

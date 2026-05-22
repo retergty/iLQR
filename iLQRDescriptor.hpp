@@ -112,17 +112,17 @@ struct StageConstraintLayout {
 };
 
 template <typename ConstraintConfig_>
-using IntermediateStageConstraintLayout = StageConstraintLayout<
-    typename ConstraintConfig_::StateEqLayout,
-    typename ConstraintConfig_::StateIneqLayout,
-    typename ConstraintConfig_::StateInputEqLayout,
-    typename ConstraintConfig_::StateInputIneqLayout>;
+using IntermediateStageConstraintLayout =
+    StageConstraintLayout<typename ConstraintConfig_::StateEqLayout,
+                          typename ConstraintConfig_::StateIneqLayout,
+                          typename ConstraintConfig_::StateInputEqLayout,
+                          typename ConstraintConfig_::StateInputIneqLayout>;
 
 template <typename ConstraintConfig_>
-using FinalStageConstraintLayout = StageConstraintLayout<
-    typename ConstraintConfig_::FinalStateEqLayout,
-    typename ConstraintConfig_::FinalStateIneqLayout, ConstraintGroupLayout<>,
-    ConstraintGroupLayout<>>;
+using FinalStageConstraintLayout =
+    StageConstraintLayout<typename ConstraintConfig_::FinalStateEqLayout,
+                          typename ConstraintConfig_::FinalStateIneqLayout,
+                          ConstraintGroupLayout<>, ConstraintGroupLayout<>>;
 
 template <typename Scalar_, typename TranscriptionConfig_,
           typename ConstraintConfig_ = ConstraintConfig<>>

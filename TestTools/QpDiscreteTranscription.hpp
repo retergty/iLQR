@@ -59,15 +59,115 @@ template <int StateEqLagrangianConstrainNumbers,
           int StateInputIneqLagrangianConstrainNumbers,
           int FinalStateEqLagrangianConstrainNumbers,
           int FinalStateIneqFinalLagrangianConstrainNumbers>
+using StateEqQpGroupLayout_t = std::conditional_t<
+    StateEqLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
+    ConstraintGroupLayout<ConstraintTerm<StateEqLagrangianConstrainNumbers>>>;
+
+template <int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers,
+          int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
+using StateIneqQpGroupLayout_t = std::conditional_t<
+    StateIneqLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
+    ConstraintGroupLayout<ConstraintTerm<StateIneqLagrangianConstrainNumbers>>>;
+
+template <int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers,
+          int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
+using StateInputEqQpGroupLayout_t = std::conditional_t<
+    StateInputEqLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
+    ConstraintGroupLayout<
+        ConstraintTerm<StateInputEqLagrangianConstrainNumbers>>>;
+
+template <int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers,
+          int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
+using StateInputIneqQpGroupLayout_t = std::conditional_t<
+    StateInputIneqLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
+    ConstraintGroupLayout<
+        ConstraintTerm<StateInputIneqLagrangianConstrainNumbers>>>;
+
+template <int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers,
+          int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
+using FinalStateEqQpGroupLayout_t = std::conditional_t<
+    FinalStateEqLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
+    ConstraintGroupLayout<
+        ConstraintTerm<FinalStateEqLagrangianConstrainNumbers>>>;
+
+template <int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers,
+          int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
+using FinalStateIneqQpGroupLayout_t = std::conditional_t<
+    FinalStateIneqFinalLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
+    ConstraintGroupLayout<
+        ConstraintTerm<FinalStateIneqFinalLagrangianConstrainNumbers>>>;
+
+template <int StateEqLagrangianConstrainNumbers,
+          int StateIneqLagrangianConstrainNumbers,
+          int StateInputEqLagrangianConstrainNumbers,
+          int StateInputIneqLagrangianConstrainNumbers,
+          int FinalStateEqLagrangianConstrainNumbers,
+          int FinalStateIneqFinalLagrangianConstrainNumbers>
 using QpConstraintConfig_t = ConstraintConfig<
-    StateConstraintConfig<ConstraintLayout<StateEqLagrangianConstrainNumbers,
-                                           StateIneqLagrangianConstrainNumbers>>,
+    StateConstraintConfig<ConstraintLayout<
+        StateEqQpGroupLayout_t<StateEqLagrangianConstrainNumbers,
+                               StateIneqLagrangianConstrainNumbers,
+                               StateInputEqLagrangianConstrainNumbers,
+                               StateInputIneqLagrangianConstrainNumbers,
+                               FinalStateEqLagrangianConstrainNumbers,
+                               FinalStateIneqFinalLagrangianConstrainNumbers>,
+        StateIneqQpGroupLayout_t<
+            StateEqLagrangianConstrainNumbers,
+            StateIneqLagrangianConstrainNumbers,
+            StateInputEqLagrangianConstrainNumbers,
+            StateInputIneqLagrangianConstrainNumbers,
+            FinalStateEqLagrangianConstrainNumbers,
+            FinalStateIneqFinalLagrangianConstrainNumbers>>>,
     StateInputConstraintConfig<
-        ConstraintLayout<StateInputEqLagrangianConstrainNumbers,
-                         StateInputIneqLagrangianConstrainNumbers>>,
+        ConstraintLayout<StateInputEqQpGroupLayout_t<
+                             StateEqLagrangianConstrainNumbers,
+                             StateIneqLagrangianConstrainNumbers,
+                             StateInputEqLagrangianConstrainNumbers,
+                             StateInputIneqLagrangianConstrainNumbers,
+                             FinalStateEqLagrangianConstrainNumbers,
+                             FinalStateIneqFinalLagrangianConstrainNumbers>,
+                         StateInputIneqQpGroupLayout_t<
+                             StateEqLagrangianConstrainNumbers,
+                             StateIneqLagrangianConstrainNumbers,
+                             StateInputEqLagrangianConstrainNumbers,
+                             StateInputIneqLagrangianConstrainNumbers,
+                             FinalStateEqLagrangianConstrainNumbers,
+                             FinalStateIneqFinalLagrangianConstrainNumbers>>>,
     FinalStateConstraintConfig<
-        ConstraintLayout<FinalStateEqLagrangianConstrainNumbers,
-                         FinalStateIneqFinalLagrangianConstrainNumbers>>>;
+        ConstraintLayout<FinalStateEqQpGroupLayout_t<
+                             StateEqLagrangianConstrainNumbers,
+                             StateIneqLagrangianConstrainNumbers,
+                             StateInputEqLagrangianConstrainNumbers,
+                             StateInputIneqLagrangianConstrainNumbers,
+                             FinalStateEqLagrangianConstrainNumbers,
+                             FinalStateIneqFinalLagrangianConstrainNumbers>,
+                         FinalStateIneqQpGroupLayout_t<
+                             StateEqLagrangianConstrainNumbers,
+                             StateIneqLagrangianConstrainNumbers,
+                             StateInputEqLagrangianConstrainNumbers,
+                             StateInputIneqLagrangianConstrainNumbers,
+                             FinalStateEqLagrangianConstrainNumbers,
+                             FinalStateIneqFinalLagrangianConstrainNumbers>>>>;
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int StateEqLagrangianConstrainNumbers,
@@ -78,13 +178,13 @@ template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int FinalStateIneqFinalLagrangianConstrainNumbers>
 using QpDescriptor_t = iLQRDescriptor<
     Scalar,
-    QpTranscriptionConfig_t<
-        Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateIneqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
-        StateInputIneqLagrangianConstrainNumbers,
-        FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers>,
+    QpTranscriptionConfig_t<Scalar, XDim, UDim, PredictLength,
+                            StateEqLagrangianConstrainNumbers,
+                            StateIneqLagrangianConstrainNumbers,
+                            StateInputEqLagrangianConstrainNumbers,
+                            StateInputIneqLagrangianConstrainNumbers,
+                            FinalStateEqLagrangianConstrainNumbers,
+                            FinalStateIneqFinalLagrangianConstrainNumbers>,
     QpConstraintConfig_t<StateEqLagrangianConstrainNumbers,
                          StateIneqLagrangianConstrainNumbers,
                          StateInputEqLagrangianConstrainNumbers,
@@ -100,14 +200,13 @@ template <typename Scalar, int XDim, int UDim, size_t PredictLength,
           int FinalStateEqLagrangianConstrainNumbers,
           int FinalStateIneqFinalLagrangianConstrainNumbers>
 using QpOptimalControlProblem_t =
-    typename LinearQuadraticApproximator<
-        QpDescriptor_t<Scalar, XDim, UDim, PredictLength,
-                       StateEqLagrangianConstrainNumbers,
-                       StateIneqLagrangianConstrainNumbers,
-                       StateInputEqLagrangianConstrainNumbers,
-                       StateInputIneqLagrangianConstrainNumbers,
-                       FinalStateEqLagrangianConstrainNumbers,
-                       FinalStateIneqFinalLagrangianConstrainNumbers>>::
+    typename LinearQuadraticApproximator<QpDescriptor_t<
+        Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
+        StateIneqLagrangianConstrainNumbers,
+        StateInputEqLagrangianConstrainNumbers,
+        StateInputIneqLagrangianConstrainNumbers,
+        FinalStateEqLagrangianConstrainNumbers,
+        FinalStateIneqFinalLagrangianConstrainNumbers>>::
         OptimalControlProblem_t;
 
 template <typename Scalar, int StateEqLagrangianConstrainNumbers,
@@ -116,17 +215,18 @@ template <typename Scalar, int StateEqLagrangianConstrainNumbers,
           int StateInputIneqLagrangianConstrainNumbers>
 using QpIntermediateMultiplierCollection_t = MultiplierCollection<
     Scalar,
-    StageConstraintLayout<StateEqLagrangianConstrainNumbers,
-                          StateIneqLagrangianConstrainNumbers,
-                          StateInputEqLagrangianConstrainNumbers,
-                          StateInputIneqLagrangianConstrainNumbers>>;
+    IntermediateStageConstraintLayout<QpConstraintConfig_t<
+        StateEqLagrangianConstrainNumbers, StateIneqLagrangianConstrainNumbers,
+        StateInputEqLagrangianConstrainNumbers,
+        StateInputIneqLagrangianConstrainNumbers, 0, 0>>>;
 
 template <typename Scalar, int FinalStateEqLagrangianConstrainNumbers,
           int FinalStateIneqFinalLagrangianConstrainNumbers>
-using QpFinalMultiplierCollection_t = MultiplierCollection<
-    Scalar, StageConstraintLayout<FinalStateEqLagrangianConstrainNumbers,
-                                  FinalStateIneqFinalLagrangianConstrainNumbers,
-                                  0, 0>>;
+using QpFinalMultiplierCollection_t =
+    MultiplierCollection<Scalar,
+                         FinalStageConstraintLayout<QpConstraintConfig_t<
+                             0, 0, 0, 0, FinalStateEqLagrangianConstrainNumbers,
+                             FinalStateIneqFinalLagrangianConstrainNumbers>>>;
 
 template <typename Scalar, int XDim, int UDim>
 typename LinearQuadraticStage<Scalar, XDim, UDim>::ConstraintApproximation_t
@@ -199,8 +299,8 @@ approximateStage(
 }
 
 template <typename Scalar, typename Transcription, typename ConstraintConfig>
-std::vector<LinearQuadraticStage<Scalar, Transcription::XDim,
-                                 Transcription::UDim>>
+std::vector<
+    LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
 getLinearQuadraticApproximation(
     const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
@@ -210,8 +310,8 @@ getLinearQuadraticApproximation(
         MultiplierCollection<
             Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
         Transcription::PredictLength>& intermediateMultipliers,
-    const MultiplierCollection<
-        Scalar, FinalStageConstraintLayout<ConstraintConfig>>&
+    const MultiplierCollection<Scalar,
+                               FinalStageConstraintLayout<ConstraintConfig>>&
         finalMultipliers) {
   constexpr int XDim = Transcription::XDim;
   constexpr int UDim = Transcription::UDim;
@@ -251,18 +351,17 @@ getLinearQuadraticApproximation(
 }
 
 template <typename Scalar, typename Transcription, typename ConstraintConfig>
-std::vector<LinearQuadraticStage<Scalar, Transcription::XDim,
-                                 Transcription::UDim>>
+std::vector<
+    LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
 getLinearQuadraticApproximation(
     const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>&
         nominalTrajectory) {
-  std::array<
-      MultiplierCollection<Scalar,
-                           IntermediateStageConstraintLayout<ConstraintConfig>>,
-      Transcription::PredictLength>
+  std::array<MultiplierCollection<
+                 Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
+             Transcription::PredictLength>
       intermediateMultipliers{};
   MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>
       finalMultipliers{};

@@ -66,8 +66,8 @@ solveLinearQuadraticOptimalControlProblem(
         MultiplierCollection<
             Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
         Transcription::PredictLength>& intermediateMultipliers,
-    const MultiplierCollection<
-        Scalar, FinalStageConstraintLayout<ConstraintConfig>>&
+    const MultiplierCollection<Scalar,
+                               FinalStageConstraintLayout<ConstraintConfig>>&
         finalMultipliers) {
   constexpr int XDim = Transcription::XDim;
   constexpr int UDim = Transcription::UDim;
@@ -111,10 +111,9 @@ solveLinearQuadraticOptimalControlProblem(
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>& nominalTrajectory,
     const Vector<Scalar, Transcription::XDim>& initialState) {
-  std::array<
-      MultiplierCollection<Scalar,
-                           IntermediateStageConstraintLayout<ConstraintConfig>>,
-      Transcription::PredictLength>
+  std::array<MultiplierCollection<
+                 Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
+             Transcription::PredictLength>
       intermediateMultipliers{};
   MultiplierCollection<Scalar, FinalStageConstraintLayout<ConstraintConfig>>
       finalMultipliers{};

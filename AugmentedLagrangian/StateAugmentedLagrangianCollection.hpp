@@ -24,8 +24,8 @@ template <typename Scalar, int XDim, typename GroupLayout>
 class StateAugmentedLagrangianCollection;
 
 template <typename Scalar, int XDim, typename... Terms>
-class StateAugmentedLagrangianCollection<
-    Scalar, XDim, ConstraintGroupLayout<Terms...>> {
+class StateAugmentedLagrangianCollection<Scalar, XDim,
+                                         ConstraintGroupLayout<Terms...>> {
  public:
   using Layout = ConstraintGroupLayout<Terms...>;
 
@@ -35,9 +35,8 @@ class StateAugmentedLagrangianCollection<
   using TermLayout = typename Layout::template Term<I>;
 
   template <std::size_t I>
-  using TermPtr =
-      const StateAugmentedLagrangianInterface<
-          Scalar, XDim, TermLayout<I>::CDim>*;
+  using TermPtr = const StateAugmentedLagrangianInterface<Scalar, XDim,
+                                                          TermLayout<I>::CDim>*;
 
   /** @brief 设置第 I 个增广拉格朗日项。 */
   template <std::size_t I>
@@ -62,9 +61,8 @@ class StateAugmentedLagrangianCollection<
     ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> penalty;
     penalty.setZero();
 
-    getQuadraticApproximationImpl(
-        penalty, time, state, termsMultiplier,
-        std::make_index_sequence<Layout::NumTerms>{});
+    getQuadraticApproximationImpl(penalty, time, state, termsMultiplier,
+                                  std::make_index_sequence<Layout::NumTerms>{});
     return penalty;
   }
 
@@ -99,9 +97,8 @@ class StateAugmentedLagrangianCollection<
       const MultiplierGroup<Scalar, Layout>& termsMultiplier,
       std::index_sequence<Is...>) const {
     LagrangianMetricsGroup<Scalar, Layout> result;
-    result.terms = std::make_tuple(
-        getTerm<Is>()->getValue(time, state,
-                                std::get<Is>(termsMultiplier.terms))...);
+    result.terms = std::make_tuple(getTerm<Is>()->getValue(
+        time, state, std::get<Is>(termsMultiplier.terms))...);
     return result;
   }
 
@@ -112,7 +109,8 @@ class StateAugmentedLagrangianCollection<
       const MultiplierGroup<Scalar, Layout>& termsMultiplier,
       std::index_sequence<Is...>) const {
     ((penalty += getTerm<Is>()->getQuadraticApproximation(
-          time, state, std::get<Is>(termsMultiplier.terms))), ...);
+          time, state, std::get<Is>(termsMultiplier.terms))),
+     ...);
   }
 
   template <std::size_t... Is>
@@ -125,7 +123,8 @@ class StateAugmentedLagrangianCollection<
                std::get<Is>(termsMetrics.terms).penalty) =
           getTerm<Is>()->updateLagrangian(
               time, state, std::get<Is>(termsMetrics.terms).constraint,
-              std::get<Is>(termsMultiplier.terms))), ...);
+              std::get<Is>(termsMultiplier.terms))),
+     ...);
   }
 
   template <std::size_t... Is>
@@ -133,7 +132,8 @@ class StateAugmentedLagrangianCollection<
       const Scalar time, MultiplierGroup<Scalar, Layout>& termsMultiplier,
       std::index_sequence<Is...>) const {
     ((std::get<Is>(termsMultiplier.terms) =
-          getTerm<Is>()->initializeLagrangian(time)), ...);
+          getTerm<Is>()->initializeLagrangian(time)),
+     ...);
   }
 
   std::tuple<

@@ -8,8 +8,7 @@
 // 验证 incrementController 保留时间戳和增益，只更新前馈偏置。
 TEST(LinearSystemILQRTest, IncrementControllerUpdatesOnlyFeedforwardBias) {
   using Descriptor =
-      iLQRDescriptor<double,
-                     TranscriptionConfig<Dimensions<2, 1>, Horizon<2>>>;
+      iLQRDescriptor<double, TranscriptionConfig<Dimensions<2, 1>, Horizon<2>>>;
   using Solver = iLQR<Descriptor>;
   Solver::LinearController_t unoptimizedController;
   Solver::LinearController_t controller;
@@ -45,8 +44,7 @@ TEST(LinearSystemILQRTest, IncrementControllerUpdatesOnlyFeedforwardBias) {
 // 验证控制器更新量的积分按梯形积分计算。
 TEST(LinearSystemILQRTest, ControllerUpdateIntegralUsesTrapezoidalRule) {
   using Descriptor =
-      iLQRDescriptor<double,
-                     TranscriptionConfig<Dimensions<2, 1>, Horizon<2>>>;
+      iLQRDescriptor<double, TranscriptionConfig<Dimensions<2, 1>, Horizon<2>>>;
   using Solver = iLQR<Descriptor>;
   Solver::LinearController_t controller;
 
@@ -64,8 +62,7 @@ TEST(LinearSystemILQRTest, ControllerUpdateIntegralUsesTrapezoidalRule) {
 // 验证 rolloutTrajectory 会把时间、状态和输入写回 primal solution。
 TEST(LinearSystemILQRTest, RolloutTrajectoryWritesPrimalSolution) {
   using Descriptor =
-      iLQRDescriptor<double,
-                     TranscriptionConfig<Dimensions<2, 2>, Horizon<4>>>;
+      iLQRDescriptor<double, TranscriptionConfig<Dimensions<2, 2>, Horizon<4>>>;
   using Solver = iLQR<Descriptor>;
 
   Eigen::Matrix2d A = Eigen::Matrix2d::Zero();

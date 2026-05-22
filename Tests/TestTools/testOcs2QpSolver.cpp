@@ -29,17 +29,15 @@ class Ocs2QpSolverTest : public testing::Test {
     const auto lqp =
         qp_solver::getLinearQuadraticApproximation(problem, nominal);
 
-    ASSERT_TRUE((solution.stateTrajectory.front() -
-                 nominal.stateTrajectory.front())
-                    .isApprox(x0 - nominal.stateTrajectory.front(),
-                              precision));
+    ASSERT_TRUE(
+        (solution.stateTrajectory.front() - nominal.stateTrajectory.front())
+            .isApprox(x0 - nominal.stateTrajectory.front(), precision));
 
     for (size_t k = 0; k < N; ++k) {
       const auto dx = solution.stateTrajectory[k] - nominal.stateTrajectory[k];
       const auto du = solution.inputTrajectory[k] - nominal.inputTrajectory[k];
-      const auto expectedNextDx =
-          lqp[k].dynamics.dfdx * dx + lqp[k].dynamics.dfdu * du +
-          lqp[k].dynamics.f;
+      const auto expectedNextDx = lqp[k].dynamics.dfdx * dx +
+                                  lqp[k].dynamics.dfdu * du + lqp[k].dynamics.f;
       const auto nextDx =
           solution.stateTrajectory[k + 1] - nominal.stateTrajectory[k + 1];
       ASSERT_TRUE(expectedNextDx.isApprox(nextDx, precision));
