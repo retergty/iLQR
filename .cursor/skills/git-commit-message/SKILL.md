@@ -46,18 +46,20 @@ Default to Chinese unless the user asks otherwise.
 Provide a ready-to-use commit message in this structure:
 
 ```text
-<一句话标题>
+<Feature 或 Fix>: <一句话标题>
 
 1. <修改点一>
 2. <修改点二>
 3. <按当前修改逻辑继续列出必要修改点>
 ```
 
-Use as many numbered points as the current change logically needs. Keep each point concise, behavior-focused, and avoid splitting one coherent change into multiple artificial bullets.
+The title must start with either `Feature:` or `Fix:`. Use as many numbered points as the current change logically needs. Keep each point concise, behavior-focused, and avoid splitting one coherent change into multiple artificial bullets.
 
 ## Message Guidelines
 
 - Use verbs that match the change: `新增`, `更新`, `修复`, `重构`, `完善`, `移除`, `整理`.
+- Use `Fix:` only when the staged change corrects a bug, build failure, incorrect behavior, or documentation error. Use `Feature:` for new capabilities, enhancements, refactors, tests, tooling, and other non-fix changes.
+- If staged changes contain both feature and fix work, choose the title type that matches the primary intent and mention the secondary change in the numbered points.
 - Mention the most important affected module or concept, such as `约束布局`, `增广拉格朗日`, `Riccati 递推`, `线性二次近似`, `rollout`, or `项目文档`.
 - For documentation-only changes, say `新增/完善文档` instead of implying runtime behavior changed.
 - For mixed code and documentation changes, make the title cover both only if both are meaningful.

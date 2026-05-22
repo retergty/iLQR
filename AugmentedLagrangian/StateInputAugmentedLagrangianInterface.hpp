@@ -33,7 +33,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #pragma once
 
-#include "IntrusiveList.hpp"
 #include "LagrangianMetrics.hpp"
 #include "Multiplier.hpp"
 #include "QuadraticApproximation.hpp"
@@ -46,32 +45,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @tparam XDim 状态维度。
  * @tparam UDim 输入维度。
  */
-template <typename Scalar, int XDim, int UDim>
-class StateInputAugmentedLagrangianInterface
-    : IntrusiveListNode<
-          StateInputAugmentedLagrangianInterface<Scalar, XDim, UDim>> {
+template <typename Scalar, int XDim, int UDim, int CDim>
+class StateInputAugmentedLagrangianInterface {
  public:
   StateInputAugmentedLagrangianInterface() = default;
   virtual ~StateInputAugmentedLagrangianInterface() = default;
 
   /** Get the constraint and its penalty value */
-  virtual LagrangianMetrics<Scalar> getValue(
+  virtual LagrangianMetrics<Scalar, CDim> getValue(
       Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
-      const Multiplier<Scalar>& lagrangian) const = 0;
+      const Multiplier<Scalar, CDim>& lagrangian) const = 0;
 
   /** Get the constraint's penalty quadratic approximation */
   virtual ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  getQuadraticApproximation(Scalar time, const Vector<Scalar, XDim>& state,
-                            const Vector<Scalar, UDim>& input,
-                            const Multiplier<Scalar>& lagrangian) const = 0;
+  getQuadraticApproximation(
+      Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input,
+      const Multiplier<Scalar, CDim>& lagrangian) const = 0;
 
   /** Update Lagrange/penalty multipliers and the penalty function value. */
-  virtual std::pair<Multiplier<Scalar>, Scalar> updateLagrangian(
+  virtual std::pair<Multiplier<Scalar, CDim>, Scalar> updateLagrangian(
       Scalar time, const Vector<Scalar, XDim>& state,
-      const Vector<Scalar, UDim>& input, const Scalar constraint,
-      const Multiplier<Scalar>& lagrangian) const = 0;
+      const Vector<Scalar, UDim>& input,
+      const Vector<Scalar, CDim>& constraint,
+      const Multiplier<Scalar, CDim>& lagrangian) const = 0;
 
   /** Initialize Lagrange/penalty multipliers. */
-  virtual Multiplier<Scalar> initializeLagrangian(Scalar time) const = 0;
+  virtual Multiplier<Scalar, CDim> initializeLagrangian(Scalar time) const = 0;
 };

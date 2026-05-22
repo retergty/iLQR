@@ -5,7 +5,7 @@
 #pragma once
 #include "AugmentedPenaltyBase.hpp"
 #include "LagrangianMetrics.hpp"
-#include "Penalty.hpp"
+#include "MultidimensionalPenalty.hpp"
 #include "QuadraticApproximation.hpp"
 #include "StateAugmentedLagrangianInterface.hpp"
 #include "StateConstraint.hpp"
@@ -17,23 +17,23 @@
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  */
-template <typename Scalar, int XDim>
+template <typename Scalar, int XDim, int CDim>
 class StateAugmentedLagrangian final
-    : public StateAugmentedLagrangianInterface<Scalar, XDim> {
+    : public StateAugmentedLagrangianInterface<Scalar, XDim, CDim> {
  public:
   /**
    * @brief 用约束指针与惩罚指针构造。
    * @param [in] constraint 作为软约束的仅状态约束。
    * @param [in] augmented_penalty 约束上的惩罚函数。
    */
-  StateAugmentedLagrangian(StateConstraint<Scalar, XDim>* constraint,
+  StateAugmentedLagrangian(StateConstraint<Scalar, XDim, CDim>* constraint,
                            AugmentedPenaltyBase<Scalar>* augmented_penalty)
-      : constraint_ptr_(constraint), penalty_(augmented_penalty) {};
+      : constraintPtr_(constraint), penalty_(augmented_penalty) {};
 
-  LagrangianMetrics<Scalar> getValue(
+  LagrangianMetrics<Scalar, CDim> getValue(
       const Scalar time, const Vector<Scalar, XDim>& state,
-      const Multiplier<Scalar>& multiplier) const override {
-    const Scalar h = constraint_ptr_->getValue(time, state);
+      const Multiplier<Scalar, CDim>& multiplier) const override {
+    const Vector<Scalar, CDim> h = constraintPtr_->getValue(time, state);
     const Scalar p =
         multiplier.penalty * penalty_.getValue(time, h, multiplier.lagrangian);
     return {p, h};
@@ -42,30 +42,29 @@ class StateAugmentedLagrangian final
   ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
   getQuadraticApproximation(
       const Scalar time, const Vector<Scalar, XDim>& state,
-      const Multiplier<Scalar>& multiplier) const override {
-    switch (constraint_ptr_->getOrder()) {
+      const Multiplier<Scalar, CDim>& multiplier) const override {
+    switch (constraintPtr_->getOrder()) {
       case ConstraintOrder::Linear:
         return multiplier.penalty *
                penalty_.getQuadraticApproximation(
-                   time, constraint_ptr_->getLinearApproximation(time, state),
+                   time, constraintPtr_->getLinearApproximation(time, state),
                    multiplier.lagrangian);
       case ConstraintOrder::Quadratic:
         return multiplier.penalty *
                penalty_.getQuadraticApproximation(
-                   time,
-                   constraint_ptr_->getQuadraticApproximation(time, state),
+                   time, constraintPtr_->getQuadraticApproximation(time, state),
                    multiplier.lagrangian);
       default:
-        return ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>();
+        return ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>::Zero();
     }
   }
 
-  std::pair<Multiplier<Scalar>, Scalar> updateLagrangian(
+  std::pair<Multiplier<Scalar, CDim>, Scalar> updateLagrangian(
       const Scalar time, const Vector<Scalar, XDim>& state,
-      const Scalar constraint,
-      const Multiplier<Scalar>& multiplier) const override {
+      const Vector<Scalar, CDim>& constraint,
+      const Multiplier<Scalar, CDim>& multiplier) const override {
     (void)state;
-    const Multiplier<Scalar> updatedMultiplier{
+    const Multiplier<Scalar, CDim> updatedMultiplier{
         multiplier.penalty,
         penalty_.updateMultipliers(time, constraint, multiplier.lagrangian)};
     const Scalar penalty =
@@ -73,12 +72,13 @@ class StateAugmentedLagrangian final
         penalty_.getValue(time, constraint, updatedMultiplier.lagrangian);
     return {updatedMultiplier, penalty};
   }
-  Multiplier<Scalar> initializeLagrangian(const Scalar time) const override {
+  Multiplier<Scalar, CDim> initializeLagrangian(
+      const Scalar time) const override {
     (void)time;
-    return {1.0, penalty_.initializeMultipliers()};
+    return {static_cast<Scalar>(1), penalty_.initializeMultipliers()};
   }
 
  private:
-  StateConstraint<Scalar, XDim>* constraint_ptr_;
-  Penalty<Scalar, XDim, 0> penalty_;
+  StateConstraint<Scalar, XDim, CDim>* constraintPtr_;
+  MultidimensionalPenalty<Scalar, XDim, 0, CDim> penalty_;
 };

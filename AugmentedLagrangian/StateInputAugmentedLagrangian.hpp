@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "AugmentedPenaltyBase.hpp"
 #include "LagrangianMetrics.hpp"
-#include "Penalty.hpp"
+#include "MultidimensionalPenalty.hpp"
 #include "QuadraticApproximation.hpp"
 #include "StateInputAugmentedLagrangianInterface.hpp"
 #include "StateInputConstraint.hpp"
@@ -49,9 +49,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @tparam XDim 状态维度。
  * @tparam UDim 输入维度。
  */
-template <typename Scalar, int XDim, int UDim>
+template <typename Scalar, int XDim, int UDim, int CDim>
 class StateInputAugmentedLagrangian final
-    : public StateInputAugmentedLagrangianInterface<Scalar, XDim, UDim> {
+    : public StateInputAugmentedLagrangianInterface<Scalar, XDim, UDim, CDim> {
  public:
   /**
    * @brief 用约束指针与惩罚指针构造。
@@ -59,15 +59,15 @@ class StateInputAugmentedLagrangian final
    * @param [in] augmented_penalty 约束上的惩罚函数。
    */
   StateInputAugmentedLagrangian(
-      StateInputConstraint<Scalar, XDim, UDim>* constraintPtr,
+      StateInputConstraint<Scalar, XDim, UDim, CDim>* constraintPtr,
       AugmentedPenaltyBase<Scalar>* augmented_penalty)
-      : constraint_ptr_(constraintPtr), penalty_(augmented_penalty) {};
+      : constraintPtr_(constraintPtr), penalty_(augmented_penalty) {};
 
-  LagrangianMetrics<Scalar> getValue(
+  LagrangianMetrics<Scalar, CDim> getValue(
       const Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
-      const Multiplier<Scalar>& multiplier) const override {
-    const Scalar h = constraint_ptr_->getValue(time, state, input);
+      const Multiplier<Scalar, CDim>& multiplier) const override {
+    const Vector<Scalar, CDim> h = constraintPtr_->getValue(time, state, input);
     const Scalar p =
         multiplier.penalty * penalty_.getValue(time, h, multiplier.lagrangian);
     return {p, h};
@@ -77,34 +77,35 @@ class StateInputAugmentedLagrangian final
   getQuadraticApproximation(
       const Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
-      const Multiplier<Scalar>& multiplier) const override {
-    switch (constraint_ptr_->getOrder()) {
+      const Multiplier<Scalar, CDim>& multiplier) const override {
+    switch (constraintPtr_->getOrder()) {
       case ConstraintOrder::Linear:
         return multiplier.penalty *
                penalty_.getQuadraticApproximation(
                    time,
-                   constraint_ptr_->getLinearApproximation(time, state, input),
+                   constraintPtr_->getLinearApproximation(time, state, input),
                    multiplier.lagrangian);
       case ConstraintOrder::Quadratic:
         return multiplier.penalty *
                penalty_.getQuadraticApproximation(
                    time,
-                   constraint_ptr_->getQuadraticApproximation(time, state,
-                                                              input),
+                   constraintPtr_->getQuadraticApproximation(time, state,
+                                                             input),
                    multiplier.lagrangian);
       default:
-        return ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>();
+        return ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>::Zero();
     }
   }
 
-  std::pair<Multiplier<Scalar>, Scalar> updateLagrangian(
+  std::pair<Multiplier<Scalar, CDim>, Scalar> updateLagrangian(
       const Scalar time, const Vector<Scalar, XDim>& state,
-      const Vector<Scalar, UDim>& input, const Scalar constraint,
-      const Multiplier<Scalar>& multiplier) const override {
+      const Vector<Scalar, UDim>& input,
+      const Vector<Scalar, CDim>& constraint,
+      const Multiplier<Scalar, CDim>& multiplier) const override {
     (void)input;
     (void)state;
 
-    const Multiplier<Scalar> updatedMultiplier{
+    const Multiplier<Scalar, CDim> updatedMultiplier{
         multiplier.penalty,
         penalty_.updateMultipliers(time, constraint, multiplier.lagrangian)};
     const Scalar penalty =
@@ -113,12 +114,13 @@ class StateInputAugmentedLagrangian final
     return {updatedMultiplier, penalty};
   }
 
-  Multiplier<Scalar> initializeLagrangian(const Scalar time) const override {
+  Multiplier<Scalar, CDim> initializeLagrangian(
+      const Scalar time) const override {
     (void)time;
     return {1.0, penalty_.initializeMultipliers()};
   }
 
  private:
-  StateInputConstraint<Scalar, XDim, UDim>* constraint_ptr_;
-  Penalty<Scalar, XDim, UDim> penalty_;
+  StateInputConstraint<Scalar, XDim, UDim, CDim>* constraintPtr_;
+  MultidimensionalPenalty<Scalar, XDim, UDim, CDim> penalty_;
 };
