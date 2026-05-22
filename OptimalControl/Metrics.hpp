@@ -4,10 +4,28 @@
  */
 #pragma once
 
-#include <cmath>
+#include <tuple>
 
 #include "LagrangianMetrics.hpp"
 #include "Types.hpp"
+#include "iLQRDescriptor.hpp"
+
+template <typename Scalar, typename GroupLayout>
+struct LagrangianMetricsGroup;
+
+template <typename Scalar, typename... Terms>
+struct LagrangianMetricsGroup<Scalar, ConstraintGroupLayout<Terms...>> {
+  /** @brief 每个 constraint term 对应一个固定维度的拉格朗日指标。 */
+  std::tuple<LagrangianMetrics<Scalar, Terms::CDim>...> terms;
+
+  /** @brief 与另一 LagrangianMetricsGroup 交换内容。 */
+  void swap(LagrangianMetricsGroup& other) { terms.swap(other.terms); }
+
+  /** @brief 清空组内所有拉格朗日指标。 */
+  void setZero() {
+    std::apply([](auto&... metrics) { (metrics.setZero(), ...); }, terms);
+  }
+};
 
 /**
  * @brief
@@ -19,10 +37,15 @@
 template <typename Scalar, typename Dims, typename Layout>
 struct Metrics {
   static constexpr int XDim = Dims::XDim;
-  static constexpr int StateEq = Layout::StateEq;
-  static constexpr int StateIneq = Layout::StateIneq;
-  static constexpr int StateInputEq = Layout::StateInputEq;
-  static constexpr int StateInputIneq = Layout::StateInputIneq;
+  using StateEqLayout = typename Layout::StateEqLayout;
+  using StateIneqLayout = typename Layout::StateIneqLayout;
+  using StateInputEqLayout = typename Layout::StateInputEqLayout;
+  using StateInputIneqLayout = typename Layout::StateInputIneqLayout;
+
+  static constexpr int StateEq = StateEqLayout::TotalDim;
+  static constexpr int StateIneq = StateIneqLayout::TotalDim;
+  static constexpr int StateInputEq = StateInputEqLayout::TotalDim;
+  static constexpr int StateInputIneq = StateInputIneqLayout::TotalDim;
 
   /** @brief 该时刻总代价。 */
   Scalar cost;
@@ -30,16 +53,14 @@ struct Metrics {
   /** @brief 动力学违反向量。 */
   Vector<Scalar, XDim> dynamicsViolation;
 
-  /** @brief 状态等式约束的拉格朗日项数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateEq> stateEqLagrangian;
-  /** @brief 状态不等式约束的拉格朗日项数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateIneq> stateIneqLagrangian;
-  /** @brief 状态-输入等式约束的拉格朗日项数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateInputEq>
-      stateInputEqLagrangian;
-  /** @brief 状态-输入不等式约束的拉格朗日项数组。 */
-  std::array<LagrangianMetrics<Scalar>, StateInputIneq>
-      stateInputIneqLagrangian;
+  /** @brief 状态等式约束的拉格朗日指标组。 */
+  LagrangianMetricsGroup<Scalar, StateEqLayout> stateEqLagrangian;
+  /** @brief 状态不等式约束的拉格朗日指标组。 */
+  LagrangianMetricsGroup<Scalar, StateIneqLayout> stateIneqLagrangian;
+  /** @brief 状态-输入等式约束的拉格朗日指标组。 */
+  LagrangianMetricsGroup<Scalar, StateInputEqLayout> stateInputEqLagrangian;
+  /** @brief 状态-输入不等式约束的拉格朗日指标组。 */
+  LagrangianMetricsGroup<Scalar, StateInputIneqLayout> stateInputIneqLagrangian;
 
   /** @brief 与另一 Metrics 交换各成员。 */
   void swap(Metrics& other) {
@@ -51,46 +72,47 @@ struct Metrics {
     stateInputIneqLagrangian.swap(other.stateInputIneqLagrangian);
   }
 
-  /** @brief 清空/重置：代价置零、动力学违反置零；拉格朗日数组由
-   * computeRolloutMetrics 覆盖。 */
+  /** @brief 清空/重置所有指标。 */
   void clear() {
     cost = 0;
     dynamicsViolation.setZero();
+    stateEqLagrangian.setZero();
+    stateIneqLagrangian.setZero();
+    stateInputEqLagrangian.setZero();
+    stateInputIneqLagrangian.setZero();
   }
 };
 
 /**
- * @brief 求一组 LagrangianMetrics 的惩罚值之和。
- * @param [in] metricsArray 拉格朗日指标数组。
- * @return 所有元素的 penalty 之和。
+ * @brief 求一个 LagrangianMetricsGroup 的惩罚值之和。
+ * @param [in] metricsGroup 拉格朗日指标组。
+ * @return 所有 term 的 penalty 之和。
  */
-template <typename Scalar, size_t ArrayLen>
+template <typename Scalar, typename... Terms>
 inline Scalar sumPenalties(
-    const std::array<LagrangianMetrics<Scalar>, ArrayLen>& metricsArray) {
-  Scalar s = 0.0;
-  // std::for_each(metricsArray.begin(), metricsArray.end(), [&s](const
-  // LagrangianMetrics<Scalar>& m) { s += m.penalty; });
-  for (size_t i = 0; i < ArrayLen; ++i) {
-    s += metricsArray[i].penalty;
-  }
-  return s;
+    const LagrangianMetricsGroup<Scalar, ConstraintGroupLayout<Terms...>>&
+        metricsGroup) {
+  return std::apply(
+      [](const auto&... metrics) {
+        return (Scalar(0) + ... + metrics.penalty);
+      },
+      metricsGroup.terms);
 }
 
 /**
- * @brief 求一组 LagrangianMetrics 的约束值绝对值之和（标量约束）。
- * @param [in] metricsArray 拉格朗日指标数组。
- * @return 各元素 constraint 的绝对值之和。
+ * @brief 求一个 LagrangianMetricsGroup 的约束违反平方范数之和。
+ * @param [in] metricsGroup 拉格朗日指标组。
+ * @return 各 term 的 constraint.squaredNorm() 之和。
  */
-template <typename Scalar, size_t ArrayLen>
+template <typename Scalar, typename... Terms>
 inline Scalar constraintsSquaredNorm(
-    const std::array<LagrangianMetrics<Scalar>, ArrayLen>& metricsArray) {
-  Scalar s = 0.0;
-  // std::for_each(metricsArray.begin(), metricsArray.end(), [&s](const
-  // LagrangianMetrics& m) { s += m.constraint.squaredNorm(); });
-  for (int i = 0; i < ArrayLen; ++i) {
-    s += std::abs(metricsArray[i].constraint);
-  }
-  return s;
+    const LagrangianMetricsGroup<Scalar, ConstraintGroupLayout<Terms...>>&
+        metricsGroup) {
+  return std::apply(
+      [](const auto&... metrics) {
+        return (Scalar(0) + ... + metrics.constraint.squaredNorm());
+      },
+      metricsGroup.terms);
 }
 
 /**

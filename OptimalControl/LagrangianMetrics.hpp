@@ -1,24 +1,28 @@
 /**
  * @file LagrangianMetrics.hpp
- * @brief 拉格朗日指标：单约束项的惩罚值与约束值。
+ * @brief 拉格朗日指标：单个增广拉格朗日项的惩罚值与约束违反值。
  */
 #pragma once
 #include "Types.hpp"
 
 /**
- * @brief 单约束项的拉格朗日指标：惩罚值与约束值（标量）。
+ * @brief 单个增广拉格朗日项的指标：惩罚值与约束违反值。
+ *
+ * 当前实现仍保存标量约束值；在向量约束重构完成后，`constraint`
+ * 将扩展为固定维度向量，用于表示同一个拉格朗日项内的多个约束分量。
+ *
  * @tparam Scalar 标量类型。
  */
-template <typename Scalar>
+template <typename Scalar, int CDim>
 struct LagrangianMetrics {
-  /** @brief 默认构造，penalty 与 constraint 为 0。 */
-  LagrangianMetrics() : LagrangianMetrics(0, 0) {}
-  /** @brief 用给定惩罚与约束值构造。 */
-  LagrangianMetrics(Scalar penaltyArg, Scalar constraintArg)
+  LagrangianMetrics() { setZero(); }
+  LagrangianMetrics(Scalar penaltyArg,
+                    const Vector<Scalar, CDim>& constraintArg)
       : penalty(penaltyArg), constraint(constraintArg) {}
-
-  /** @brief 惩罚值。 */
+  void setZero() {
+    penalty = Scalar(0);
+    constraint.setZero();
+  }
   Scalar penalty;
-  /** @brief 约束值。 */
-  Scalar constraint;
+  Vector<Scalar, CDim> constraint;
 };
