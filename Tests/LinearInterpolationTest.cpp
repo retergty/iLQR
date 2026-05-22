@@ -1,45 +1,19 @@
 /**
  * @file LinearInterpolationTest.cpp
- * @brief 线性插值工具测试：findIndex、findInterval、timeSegment、interpolate。
+ * @brief 线性插值工具测试：固定步长 timeSegment 与 interpolate。
  */
 #include <gtest/gtest.h>
 
 #include <array>
 #include <cmath>
 
+#include <Eigen/Core>
+
 #include "LinearInterpolation.hpp"
-#include "Types.hpp"
 
 using namespace LinearInterpolation;
 
-// 验证 findIndexInTimeArray 在区间内外都返回预期的插入位置。
-TEST(LinearInterpolationTest, FindIndexInTimeArray) {
-  std::array<double, 5> times = {0.0, 1.0, 2.0, 3.0, 4.0};
-
-  EXPECT_EQ(findIndexInTimeArray(times, -0.1), 0u);
-  EXPECT_EQ(findIndexInTimeArray(times, 0.0), 0u);
-  EXPECT_EQ(findIndexInTimeArray(times, 0.5), 1u);
-  EXPECT_EQ(findIndexInTimeArray(times, 1.0), 1u);
-  EXPECT_EQ(findIndexInTimeArray(times, 2.5), 3u);
-  EXPECT_EQ(findIndexInTimeArray(times, 4.0), 4u);
-  EXPECT_EQ(findIndexInTimeArray(times, 5.0), 5u);
-}
-
-// 验证 findIntervalInTimeArray 在边界和区间内外返回正确分段索引。
-TEST(LinearInterpolationTest, FindIntervalInTimeArray) {
-  std::array<double, 5> times = {0.0, 1.0, 2.0, 3.0, 4.0};
-
-  EXPECT_EQ(findIntervalInTimeArray(times, -0.1), -1);
-  EXPECT_EQ(findIntervalInTimeArray(times, 0.0), -1);
-  EXPECT_EQ(findIntervalInTimeArray(times, 0.5), 0);
-  EXPECT_EQ(findIntervalInTimeArray(times, 1.0), 0);
-  EXPECT_EQ(findIntervalInTimeArray(times, 1.5), 1);
-  EXPECT_EQ(findIntervalInTimeArray(times, 3.5), 3);
-  EXPECT_EQ(findIntervalInTimeArray(times, 4.0), 3);
-  EXPECT_EQ(findIntervalInTimeArray(times, 5.0), 4);
-}
-
-// 验证 timeSegment 返回的左端索引和插值权重正确。
+// 验证固定步长 timeSegment 返回的左端索引和插值权重正确。
 TEST(LinearInterpolationTest, TimeSegment) {
   std::array<double, 4> times = {0.0, 1.0, 2.0, 3.0};
 
@@ -57,8 +31,30 @@ TEST(LinearInterpolationTest, TimeSegment) {
   EXPECT_DOUBLE_EQ(alpha2, 1.0);
 
   auto [idx3, alpha3] = timeSegment(3.0, times);
-  EXPECT_GE(idx3, 0);
+  EXPECT_EQ(idx3, 2);
   EXPECT_DOUBLE_EQ(alpha3, 0.0);
+}
+
+// 验证查询时间落在采样节点时，固定步长算法选择该节点作为新区间左端。
+TEST(LinearInterpolationTest, TimeSegmentAtInteriorKnot) {
+  std::array<double, 4> times = {0.0, 1.0, 2.0, 3.0};
+
+  auto [idx, alpha] = timeSegment(1.0, times);
+  EXPECT_EQ(idx, 1);
+  EXPECT_DOUBLE_EQ(alpha, 1.0);
+}
+
+// 验证超出时间范围时固定步长 timeSegment 会钳制到边界区间。
+TEST(LinearInterpolationTest, TimeSegmentOutOfRangeClampsToBoundary) {
+  std::array<double, 4> times = {0.0, 1.0, 2.0, 3.0};
+
+  auto [idx0, alpha0] = timeSegment(-10.0, times);
+  EXPECT_EQ(idx0, 0);
+  EXPECT_DOUBLE_EQ(alpha0, 1.0);
+
+  auto [idx1, alpha1] = timeSegment(10.0, times);
+  EXPECT_EQ(idx1, 2);
+  EXPECT_DOUBLE_EQ(alpha1, 0.0);
 }
 
 // 验证向量样本在线性插值节点和中点处的结果正确。

@@ -109,13 +109,12 @@ class LinearController final : public ControllerBase<Scalar, XDim, UDim> {
 
   /** @brief 判断是否为空：若所有时间戳近似为 0 则视为空。 */
   bool empty() const override {
-    bool is_empty = true;
     for (size_t i = 0; i < ArrayLen; ++i) {
       if (abs(timeStamp_[i]) > 1e-6f) {
-        is_empty = false;
+        return false;
       }
     }
-    return is_empty;
+    return true;
   }
 
   /** @brief 返回时间节点数（数组长度）。 */

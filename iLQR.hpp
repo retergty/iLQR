@@ -616,24 +616,6 @@ class iLQR {
               timeTrajectory[timeIndex], stateTrajectory[timeIndex],
               inputTrajectory[timeIndex], multiplierTrajectory[timeIndex]);
 
-      // TO DO:checking the numerical properties
-
-      // // discretize LQ problem
-      // const Scalar timeStep = (timeIndex + 1 < timeTrajectory.size()) ?
-      // (timeTrajectory[timeIndex + 1] - timeTrajectory[timeIndex]) : 0.0; if
-      // (!numerics::almost_eq(timeStep, 0.0))
-      // {
-      //     discreteLQWorker(optimalControlProblem_.dynamicsPtr,
-      //     timeTrajectory[timeIndex], stateTrajectory[timeIndex],
-      //                      inputTrajectory[timeIndex], timeStep,
-      //                      continuousTimeModelData,
-      //                      modelDataTrajectory[timeIndex]);
-      // }
-      // else
-      // {
-      //     modelDataTrajectory[timeIndex] = continuousTimeModelData;
-      // }
-
       const Scalar timeStep =
           timeTrajectory[timeIndex + 1] - timeTrajectory[timeIndex];
       discreteLQWorker(*optimalControlProblem_.dynamicsPtr,

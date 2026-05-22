@@ -1,47 +1,17 @@
 /**
  * @file LinearInterpolation.hpp
- * @brief 线性插值：在有序时间数组上查找索引/区间、计算插值系数及轨迹插值。
+ * @brief 线性插值：在固定步长时间数组上计算区间、插值系数及轨迹插值。
  */
 #pragma once
 #include <algorithm>
 #include <array>
+#include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <type_traits>
 
 namespace LinearInterpolation {
-/**
- * @brief 在有序时间数组中查找时间对应的索引（区间右端点索引）。
- * 索引约定：t0 左侧为 0，[t0,t1) 为 1，…，t(n-1) 右侧为 n。
- * 若 time 等于某节点取较小索引；若多节点时间相同取首次出现前的索引。
- * @param [in] timeArray 有序时间数组。
- * @param [in] time 查询时间。
- * @return 索引，范围 [0, size(timeArray)]。
- */
-template <typename Scalar, size_t ArrayLength>
-size_t findIndexInTimeArray(const std::array<Scalar, ArrayLength>& timeArray,
-                            Scalar time) {
-  size_t index = 0;
-  for (index = 0; index < ArrayLength; ++index) {
-    if (time <= timeArray[index]) {
-      break;
-    }
-  }
-  return index;
-}
-
-/**
- * @brief 在有序时间数组中查找时间所属区间索引。区间 [t_i, t_{i+1}) 对应区间索引
- * i。
- * @param [in] timeArray 有序时间数组。
- * @param [in] time 查询时间。
- * @return 区间索引，范围 [-1, size(timeArray)-1]。
- */
-template <typename Scalar, size_t ArrayLength>
-int findIntervalInTimeArray(const std::array<Scalar, ArrayLength>& timeArray,
-                            Scalar time) {
-  return static_cast<int>(findIndexInTimeArray(timeArray, time)) - 1;
-}
-
+/** @brief 在严格等间隔时间数组中用 O(1) 算术定位查询时间所在区间。 */
 template <typename Scalar, size_t ArrayLength>
 std::pair<int, Scalar> timeSegment(
     Scalar enquiryTime, const std::array<Scalar, ArrayLength>& timeArray) {
@@ -49,40 +19,19 @@ std::pair<int, Scalar> timeSegment(
   if constexpr (ArrayLength <= 1) {
     return {0, Scalar(1.0)};
   } else {
-    const int index = findIntervalInTimeArray(timeArray, enquiryTime);
-    const int lastInterval = ArrayLength - 1;
-    if (index >= 0) {
-      if (index < lastInterval) {
-        // interpolation : 0 <= index < lastInterval
-        assert(enquiryTime <=
-               timeArray[index + 1]);  // assert upper bound of lookup
-        assert(timeArray[index] <=
-               enquiryTime);  // assert lower bound of lookup
-        const Scalar intervalLength = timeArray[index + 1] - timeArray[index];
-        const Scalar timeTillNext = timeArray[index + 1] - enquiryTime;
+    const Scalar dt = timeArray[1] - timeArray[0];
+    assert(dt > Scalar(0));
 
-        // Normal case: interval is large enough for normal interpolation
-        constexpr Scalar minIntervalTime = 2.0 * 1e-5;
-        if (intervalLength > minIntervalTime) {
-          return {index, (timeTillNext / intervalLength)};
-        }
+    constexpr int lastInterval = static_cast<int>(ArrayLength) - 1;
+    constexpr int maxIndex = lastInterval - 1;
+    
+    const Scalar position = (enquiryTime - timeArray.front()) / dt;
+    int index = static_cast<int>(std::floor(position));
+    index = std::clamp(index, 0, maxIndex);
 
-        // Take closes point for small time intervals
-        if (timeTillNext <
-            0.5 *
-                intervalLength) {  // short interval, closest to time[index + 1]
-          return {index, Scalar(0.0)};
-        } else {  // short interval, closest to time[index]
-          return {index, Scalar(1.0)};
-        }
-      } else {
-        // upper bound : index >= lastInterval
-        return {std::max(lastInterval - 1, 0), Scalar(0.0)};
-      }
-    } else {
-      // lower bound : index < 0
-      return {0, Scalar(1.0)};
-    }
+    Scalar alpha = Scalar(1) - (position - static_cast<Scalar>(index));
+    alpha = std::clamp(alpha, Scalar(0), Scalar(1));
+    return {index, alpha};
   }
 }
 

@@ -47,14 +47,12 @@ struct DualSolution {
 
   /** @brief 判断是否为空：时间序列是否全为 0。 */
   bool empty() const {
-    bool ret = true;
     for (size_t i = 0; i < timeTrajectory.size(); ++i) {
       if (!numerics::almost_eq(timeTrajectory[i], static_cast<Scalar>(0))) {
-        ret = false;
-        break;
+        return false;
       }
     }
-    return ret;
+    return true;
   }
 
   /** @brief 清空：时间序列置零。 */

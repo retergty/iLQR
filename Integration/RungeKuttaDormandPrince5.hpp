@@ -25,11 +25,13 @@ class RungeKuttaDormandPrince5Stepper {
    * @param [in] dt 步长。
    * @param [out] x_out 下一状态。
    * @param [out] dxdt_out 下一状态的导数。
+   * @param [in] computeDxdtOut 是否计算下一状态导数；最后一步可跳过。
    */
   void doStep(const OdeBase<Scalar, XDim>& system,
               const Vector<Scalar, XDim>& x0, const Vector<Scalar, XDim>& dxdt,
               const Scalar t, const Scalar dt, Vector<Scalar, XDim>& x_out,
-              Vector<Scalar, XDim>& dxdt_out) {
+              Vector<Scalar, XDim>& dxdt_out,
+              bool computeDxdtOut = true) {
     /* Runge Kutta Dormand-Prince Butcher tableau constants.
      * https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method */
     constexpr Scalar a2 = 1.0 / 5;
@@ -77,7 +79,9 @@ class RungeKuttaDormandPrince5Stepper {
     k6_ = system.computeFlowMap(t + dt, x);
     // update x_out and dxdt_out (x_out can be x0 and dxdt_out can be dxdt)
     x_out = x0 + dt * (c1 * k1_ + c3 * k3_ + c4 * k4_ + c5 * k5_ + c6 * k6_);
-    dxdt_out = system.computeFlowMap(t + dt, x_out);
+    if (computeDxdtOut) {
+      dxdt_out = system.computeFlowMap(t + dt, x_out);
+    }
   }
 
  private:
@@ -137,8 +141,6 @@ class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDim> {
                       const Vector<Scalar, XDim>& initialState,
                       const Scalar startTime, const Scalar finalTime,
                       const Scalar dt) override {
-    // TODO(mspieler): This does one redundant system() evaluation at the end.
-
     // Ensure that finalTime is included by adding a fraction of dt such that: N
     // * dt <= finalTime < (N + 1) * dt.
     Scalar finalTimeLocal = finalTime + 0.1 * dt;
@@ -150,9 +152,13 @@ class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDim> {
     int step = 0;
     while (lessWithSign(t + dt, finalTimeLocal, dt)) {
       observer.observe(x, t);
-      stepper_.doStep(system, x, dxdt, t, dt, x, dxdt);
-      step++;
-      t = startTime + step * dt;
+      const int nextStep = step + 1;
+      const Scalar nextTime = startTime + nextStep * dt;
+      const bool hasFollowingStep =
+          lessWithSign(nextTime + dt, finalTimeLocal, dt);
+      stepper_.doStep(system, x, dxdt, t, dt, x, dxdt, hasFollowingStep);
+      step = nextStep;
+      t = nextTime;
     }
     observer.observe(x, t);
   }

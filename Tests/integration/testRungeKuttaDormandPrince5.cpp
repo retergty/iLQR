@@ -18,8 +18,14 @@ class ExponentialOde final : public OdeBase<Scalar, XDim> {
  public:
   StateVector computeFlowMap(Scalar t, const StateVector& x) const override {
     (void)t;
+    ++evaluationCount_;
     return x;
   }
+
+  int evaluationCount() const { return evaluationCount_; }
+
+ private:
+  mutable int evaluationCount_{0};
 };
 }  // namespace
 
@@ -63,6 +69,28 @@ TEST(RungeKuttaDormandPrince5Test, IntegrateConstMatchesAnalyticSolution) {
     EXPECT_NEAR(timeTrajectory[i], t, 1e-12);
     EXPECT_NEAR(stateTrajectory[i](0), std::exp(t), 1e-8);
   }
+}
+
+TEST(RungeKuttaDormandPrince5Test,
+     IntegrateConstSkipsUnusedFinalDerivativeEvaluation) {
+  ExponentialOde system;
+  RungeKuttaDormandPrince5<Scalar, XDim> integrator;
+
+  constexpr size_t NumSamples = 11;
+  std::array<Scalar, NumSamples> timeTrajectory{};
+  std::array<StateVector, NumSamples> stateTrajectory{};
+  Observer<Scalar, XDim> observer(NumSamples, stateTrajectory.data(),
+                                  timeTrajectory.data());
+
+  StateVector x0;
+  x0 << 1.0;
+
+  integrator.integrateConst(system, observer, x0, 0.0, 1.0, 0.1);
+
+  // 10 fixed steps: 1 initial derivative + 5 stage evaluations per step +
+  // 9 carried derivatives for the following steps. The final derivative is not
+  // needed because there is no following step.
+  EXPECT_EQ(system.evaluationCount(), 60);
 }
 
 TEST(RungeKuttaDormandPrince5Test, IntegrateConstSupportsBackwardTime) {
