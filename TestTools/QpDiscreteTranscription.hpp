@@ -31,6 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <array>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 #include "LinearQuadraticApproximator.hpp"
@@ -44,189 +45,95 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace qp_solver {
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
+          int StateEqConstraintDim,
+          int StateIneqConstraintDim,
+          int StateInputEqConstraintDim,
+          int StateInputIneqConstraintDim,
+          int FinalStateEqConstraintDim,
+          int FinalStateIneqConstraintDim>
 using QpTranscriptionConfig_t =
     TranscriptionConfig<Dimensions<XDim, UDim>, Horizon<PredictLength>>;
 
-template <int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-using StateEqQpGroupLayout_t = std::conditional_t<
-    StateEqLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
-    ConstraintGroupLayout<ConstraintTerm<StateEqLagrangianConstrainNumbers>>>;
+template <int ConstraintDim>
+using QpConstraintGroupLayout_t =
+    std::conditional_t<ConstraintDim == 0, ConstraintGroupLayout<>,
+                       ConstraintGroupLayout<ConstraintTerm<ConstraintDim>>>;
 
-template <int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-using StateIneqQpGroupLayout_t = std::conditional_t<
-    StateIneqLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
-    ConstraintGroupLayout<ConstraintTerm<StateIneqLagrangianConstrainNumbers>>>;
-
-template <int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-using StateInputEqQpGroupLayout_t = std::conditional_t<
-    StateInputEqLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
-    ConstraintGroupLayout<
-        ConstraintTerm<StateInputEqLagrangianConstrainNumbers>>>;
-
-template <int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-using StateInputIneqQpGroupLayout_t = std::conditional_t<
-    StateInputIneqLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
-    ConstraintGroupLayout<
-        ConstraintTerm<StateInputIneqLagrangianConstrainNumbers>>>;
-
-template <int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-using FinalStateEqQpGroupLayout_t = std::conditional_t<
-    FinalStateEqLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
-    ConstraintGroupLayout<
-        ConstraintTerm<FinalStateEqLagrangianConstrainNumbers>>>;
-
-template <int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
-using FinalStateIneqQpGroupLayout_t = std::conditional_t<
-    FinalStateIneqFinalLagrangianConstrainNumbers == 0, ConstraintGroupLayout<>,
-    ConstraintGroupLayout<
-        ConstraintTerm<FinalStateIneqFinalLagrangianConstrainNumbers>>>;
-
-template <int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
+template <int StateEqConstraintDim,
+          int StateIneqConstraintDim,
+          int StateInputEqConstraintDim,
+          int StateInputIneqConstraintDim,
+          int FinalStateEqConstraintDim,
+          int FinalStateIneqConstraintDim>
 using QpConstraintConfig_t = ConstraintConfig<
     StateConstraintConfig<ConstraintLayout<
-        StateEqQpGroupLayout_t<StateEqLagrangianConstrainNumbers,
-                               StateIneqLagrangianConstrainNumbers,
-                               StateInputEqLagrangianConstrainNumbers,
-                               StateInputIneqLagrangianConstrainNumbers,
-                               FinalStateEqLagrangianConstrainNumbers,
-                               FinalStateIneqFinalLagrangianConstrainNumbers>,
-        StateIneqQpGroupLayout_t<
-            StateEqLagrangianConstrainNumbers,
-            StateIneqLagrangianConstrainNumbers,
-            StateInputEqLagrangianConstrainNumbers,
-            StateInputIneqLagrangianConstrainNumbers,
-            FinalStateEqLagrangianConstrainNumbers,
-            FinalStateIneqFinalLagrangianConstrainNumbers>>>,
+        QpConstraintGroupLayout_t<StateEqConstraintDim>,
+        QpConstraintGroupLayout_t<StateIneqConstraintDim>>>,
     StateInputConstraintConfig<
-        ConstraintLayout<StateInputEqQpGroupLayout_t<
-                             StateEqLagrangianConstrainNumbers,
-                             StateIneqLagrangianConstrainNumbers,
-                             StateInputEqLagrangianConstrainNumbers,
-                             StateInputIneqLagrangianConstrainNumbers,
-                             FinalStateEqLagrangianConstrainNumbers,
-                             FinalStateIneqFinalLagrangianConstrainNumbers>,
-                         StateInputIneqQpGroupLayout_t<
-                             StateEqLagrangianConstrainNumbers,
-                             StateIneqLagrangianConstrainNumbers,
-                             StateInputEqLagrangianConstrainNumbers,
-                             StateInputIneqLagrangianConstrainNumbers,
-                             FinalStateEqLagrangianConstrainNumbers,
-                             FinalStateIneqFinalLagrangianConstrainNumbers>>>,
+        ConstraintLayout<QpConstraintGroupLayout_t<StateInputEqConstraintDim>,
+                         QpConstraintGroupLayout_t<StateInputIneqConstraintDim>>>,
     FinalStateConstraintConfig<
-        ConstraintLayout<FinalStateEqQpGroupLayout_t<
-                             StateEqLagrangianConstrainNumbers,
-                             StateIneqLagrangianConstrainNumbers,
-                             StateInputEqLagrangianConstrainNumbers,
-                             StateInputIneqLagrangianConstrainNumbers,
-                             FinalStateEqLagrangianConstrainNumbers,
-                             FinalStateIneqFinalLagrangianConstrainNumbers>,
-                         FinalStateIneqQpGroupLayout_t<
-                             StateEqLagrangianConstrainNumbers,
-                             StateIneqLagrangianConstrainNumbers,
-                             StateInputEqLagrangianConstrainNumbers,
-                             StateInputIneqLagrangianConstrainNumbers,
-                             FinalStateEqLagrangianConstrainNumbers,
-                             FinalStateIneqFinalLagrangianConstrainNumbers>>>>;
+        ConstraintLayout<QpConstraintGroupLayout_t<FinalStateEqConstraintDim>,
+                         QpConstraintGroupLayout_t<FinalStateIneqConstraintDim>>>>;
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
+          int StateEqConstraintDim,
+          int StateIneqConstraintDim,
+          int StateInputEqConstraintDim,
+          int StateInputIneqConstraintDim,
+          int FinalStateEqConstraintDim,
+          int FinalStateIneqConstraintDim>
 using QpDescriptor_t = iLQRDescriptor<
     Scalar,
     QpTranscriptionConfig_t<Scalar, XDim, UDim, PredictLength,
-                            StateEqLagrangianConstrainNumbers,
-                            StateIneqLagrangianConstrainNumbers,
-                            StateInputEqLagrangianConstrainNumbers,
-                            StateInputIneqLagrangianConstrainNumbers,
-                            FinalStateEqLagrangianConstrainNumbers,
-                            FinalStateIneqFinalLagrangianConstrainNumbers>,
-    QpConstraintConfig_t<StateEqLagrangianConstrainNumbers,
-                         StateIneqLagrangianConstrainNumbers,
-                         StateInputEqLagrangianConstrainNumbers,
-                         StateInputIneqLagrangianConstrainNumbers,
-                         FinalStateEqLagrangianConstrainNumbers,
-                         FinalStateIneqFinalLagrangianConstrainNumbers>>;
+                            StateEqConstraintDim,
+                            StateIneqConstraintDim,
+                            StateInputEqConstraintDim,
+                            StateInputIneqConstraintDim,
+                            FinalStateEqConstraintDim,
+                            FinalStateIneqConstraintDim>,
+    QpConstraintConfig_t<StateEqConstraintDim,
+                         StateIneqConstraintDim,
+                         StateInputEqConstraintDim,
+                         StateInputIneqConstraintDim,
+                         FinalStateEqConstraintDim,
+                         FinalStateIneqConstraintDim>>;
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength,
-          int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers,
-          int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
+          int StateEqConstraintDim,
+          int StateIneqConstraintDim,
+          int StateInputEqConstraintDim,
+          int StateInputIneqConstraintDim,
+          int FinalStateEqConstraintDim,
+          int FinalStateIneqConstraintDim>
 using QpOptimalControlProblem_t =
     typename LinearQuadraticApproximator<QpDescriptor_t<
-        Scalar, XDim, UDim, PredictLength, StateEqLagrangianConstrainNumbers,
-        StateIneqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
-        StateInputIneqLagrangianConstrainNumbers,
-        FinalStateEqLagrangianConstrainNumbers,
-        FinalStateIneqFinalLagrangianConstrainNumbers>>::
+        Scalar, XDim, UDim, PredictLength, StateEqConstraintDim,
+        StateIneqConstraintDim,
+        StateInputEqConstraintDim,
+        StateInputIneqConstraintDim,
+        FinalStateEqConstraintDim,
+        FinalStateIneqConstraintDim>>::
         OptimalControlProblem_t;
 
-template <typename Scalar, int StateEqLagrangianConstrainNumbers,
-          int StateIneqLagrangianConstrainNumbers,
-          int StateInputEqLagrangianConstrainNumbers,
-          int StateInputIneqLagrangianConstrainNumbers>
+template <typename Scalar, int StateEqConstraintDim,
+          int StateIneqConstraintDim,
+          int StateInputEqConstraintDim,
+          int StateInputIneqConstraintDim>
 using QpIntermediateMultiplierCollection_t = MultiplierCollection<
     Scalar,
     IntermediateStageConstraintLayout<QpConstraintConfig_t<
-        StateEqLagrangianConstrainNumbers, StateIneqLagrangianConstrainNumbers,
-        StateInputEqLagrangianConstrainNumbers,
-        StateInputIneqLagrangianConstrainNumbers, 0, 0>>>;
+        StateEqConstraintDim, StateIneqConstraintDim,
+        StateInputEqConstraintDim,
+        StateInputIneqConstraintDim, 0, 0>>>;
 
-template <typename Scalar, int FinalStateEqLagrangianConstrainNumbers,
-          int FinalStateIneqFinalLagrangianConstrainNumbers>
+template <typename Scalar, int FinalStateEqConstraintDim,
+          int FinalStateIneqConstraintDim>
 using QpFinalMultiplierCollection_t =
     MultiplierCollection<Scalar,
                          FinalStageConstraintLayout<QpConstraintConfig_t<
-                             0, 0, 0, 0, FinalStateEqLagrangianConstrainNumbers,
-                             FinalStateIneqFinalLagrangianConstrainNumbers>>>;
+                             0, 0, 0, 0, FinalStateEqConstraintDim,
+                             FinalStateIneqConstraintDim>>>;
 
 template <typename Scalar, int XDim, int UDim>
 typename LinearQuadraticStage<Scalar, XDim, UDim>::ConstraintApproximation_t

@@ -46,7 +46,7 @@
 
 `iLQR.hpp` 是主要求解器实现，负责组织名义轨迹初始化、问题近似、Riccati 反向递推、控制器更新、线搜索、性能指标计算和乘子更新等步骤。`iLQR.cpp` 提供最小化入口示例，用于展示求解器的基本构造方式。
 
-`iLQRDescriptor.hpp`、`iLQRDescriptorTraits.hpp` 和 `iLQRTypes.hpp` 构成静态类型描述体系。它们将标量类型、系统维度、预测长度和约束布局转换为统一的轨迹、控制器、乘子、模型数据和求解缓存类型，是项目实现固定尺寸和禁止动态内存分配的重要基础。
+`iLQRDescriptor.hpp`、`iLQRDescriptorTraits.hpp` 和 `iLQRTypes.hpp` 构成静态类型描述体系。它们将标量类型、系统维度、预测长度和约束布局转换为统一的轨迹、控制器、乘子、模型数据和求解缓存类型，是项目实现固定尺寸和禁止动态内存分配的重要基础。约束布局采用 `ConstraintGroupLayout<ConstraintTerm<N>...>` 描述：每个 `ConstraintTerm<N>` 表示一个增广拉格朗日项内部的 `N` 维向量约束，同一类约束可以包含多个 term。
 
 `DDPSetting.hpp`、`DDPData.hpp` 和 `HessianCorrection.hpp` 提供求解参数、迭代数据和 Hessian 修正逻辑，用于改善 Riccati 递推和控制更新的数值稳定性。
 
@@ -74,11 +74,11 @@
 
 `Cost` 目录定义运行代价、终端代价和代价集合，并向近似器提供代价值、一阶导数和二阶导数。
 
-`Constraint` 目录定义状态约束和状态-输入约束接口，并通过约束阶次描述其可用的近似形式。约束不会作为独立硬约束直接进入 Riccati 求解，而是由增广拉格朗日模块转化为优化目标中的附加项。
+`Constraint` 目录定义状态约束和状态-输入约束接口，并通过约束阶次描述其可用的近似形式。约束以固定维度向量形式表达，例如 `StateInputConstraint<Scalar, XDim, UDim, CDim>` 返回 `Vector<Scalar, CDim>` 及对应的向量函数近似。约束不会作为独立硬约束直接进入 Riccati 求解，而是由增广拉格朗日模块转化为优化目标中的附加项。
 
-`AugmentedLagrangian` 目录封装状态约束和状态-输入约束的增广拉格朗日表达。该模块将约束函数、惩罚函数和拉格朗日乘子组合起来，提供约束取值、二次近似和乘子更新接口，是本项目处理等式与不等式约束的核心机制。
+`AugmentedLagrangian` 目录封装状态约束和状态-输入约束的增广拉格朗日表达。该模块将约束函数、惩罚函数和拉格朗日乘子组合起来，提供约束取值、二次近似和乘子更新接口，是本项目处理等式与不等式约束的核心机制。每个增广拉格朗日 term 可以绑定一个向量约束，乘子为同维度向量；多个 term 通过 collection 组织，并使用 `set<I>()` 在编译期按位置注册。
 
-`Penalties` 目录提供增广拉格朗日所需的惩罚模型，包括二次惩罚、光滑绝对值惩罚、松弛铰链惩罚和 relaxed barrier 等形式。不同惩罚模型决定了约束违反在目标函数中的权重形式和乘子更新行为。
+`Penalties` 目录提供增广拉格朗日所需的惩罚模型，包括二次惩罚、光滑绝对值惩罚、松弛铰链惩罚和 relaxed barrier 等形式。不同惩罚模型决定了约束违反在目标函数中的权重形式和乘子更新行为。`MultidimensionalPenalty` 负责将标量惩罚函数逐分量应用到向量约束，并通过链式法则生成最终标量代价的二次近似。
 
 ### Riccati 递推与搜索策略
 
@@ -197,7 +197,48 @@ const auto& controller = solution.controller_;
 
 运行代价和终端代价通过 `optimalControlProblem_` 中的代价集合注册。对于二次型跟踪任务，可以使用 `QuadraticStateInputCost` 和 `QuadraticStateCost`；对于更复杂的任务，需要派生相应的代价接口，并提供代价值、一阶导数和二阶导数。
 
-约束通过增广拉格朗日模块接入。状态约束和状态-输入约束应先实现对应的约束接口，再与惩罚函数组合为增广拉格朗日项，最后注册到 `OptimalControlProblem` 中的等式或不等式约束集合。求解器会在局部近似阶段将这些约束项转换为代价函数中的二次近似项，并在迭代过程中更新乘子。
+约束通过增广拉格朗日模块接入。状态约束和状态-输入约束应先实现对应的向量约束接口，再与惩罚函数组合为增广拉格朗日项，最后注册到 `OptimalControlProblem` 中的等式或不等式约束集合。求解器会在局部近似阶段将这些约束项转换为代价函数中的二次近似项，并在迭代过程中更新乘子。
+
+约束配置采用两层结构：
+
+```cpp
+using ConstraintConfig_t = ConstraintConfig<
+    StateConstraintConfig<ConstraintLayout<
+        ConstraintGroupLayout<>,                         // state equality
+        ConstraintGroupLayout<>>>,                       // state inequality
+    StateInputConstraintConfig<ConstraintLayout<
+        ConstraintGroupLayout<ConstraintTerm<1>>,         // state-input equality
+        ConstraintGroupLayout<>>>,                       // state-input inequality
+    FinalStateConstraintConfig<ConstraintLayout<
+        ConstraintGroupLayout<>,                         // final state equality
+        ConstraintGroupLayout<>>>>;                      // final state inequality
+```
+
+其中 `ConstraintGroupLayout<ConstraintTerm<1>>` 表示该类约束包含一个增广拉格朗日 term，term 内部约束维度为 1。如果需要一个 3 维约束项，可写成 `ConstraintGroupLayout<ConstraintTerm<3>>`；如果同一类约束有两个 term，维度分别为 2 和 1，则写成 `ConstraintGroupLayout<ConstraintTerm<2>, ConstraintTerm<1>>`。
+
+以一个状态-输入等式约束为例：
+
+```cpp
+using Constraint_t = MyStateInputConstraint<double>;  // 派生自 StateInputConstraint<double, XDim, UDim, CDim>
+using Penalty_t = QuadraticPenalty<double>;
+using Lagrangian_t =
+    StateInputAugmentedLagrangian<double, XDim, UDim, CDim>;
+
+static Constraint_t constraint;
+static Penalty_t penalty(typename Penalty_t::Config{100.0, 0.1});
+static Lagrangian_t lagrangian(&constraint, &penalty);
+
+problem.equalityLagrangian.template set<0>(&lagrangian);
+```
+
+注意，代价集合仍使用 `add()` 注册：
+
+```cpp
+problem.cost.add(runningCost);
+problem.finalCost.add(finalCost);
+```
+
+而增广拉格朗日约束集合使用 `set<I>()` 注册，因为不同 term 的约束维度可能不同，需要在编译期确定位置和类型。
 
 ### 内存约束
 

@@ -31,17 +31,14 @@ struct OptimalControlProblem {
   using FinalStateEqLayout = typename ConstraintConfig::FinalStateEqLayout;
   using FinalStateIneqLayout = typename ConstraintConfig::FinalStateIneqLayout;
 
-  static constexpr int StateEqLagrangianContrainNumbers =
-      StateEqLayout::TotalDim;
-  static constexpr int StateIneqLagrangianContrainNumbers =
-      StateIneqLayout::TotalDim;
-  static constexpr int StateInputEqLagrangianContrainNumbers =
+  static constexpr int StateEqConstraintDim = StateEqLayout::TotalDim;
+  static constexpr int StateIneqConstraintDim = StateIneqLayout::TotalDim;
+  static constexpr int StateInputEqConstraintDim =
       StateInputEqLayout::TotalDim;
-  static constexpr int StateInputIneqLagrangianContrainNumbers =
+  static constexpr int StateInputIneqConstraintDim =
       StateInputIneqLayout::TotalDim;
-  static constexpr int FinalStateEqLagrangianContrainNumbers =
-      FinalStateEqLayout::TotalDim;
-  static constexpr int FinalStateIneqFinalLagrangianContrainNumbers =
+  static constexpr int FinalStateEqConstraintDim = FinalStateEqLayout::TotalDim;
+  static constexpr int FinalStateIneqConstraintDim =
       FinalStateIneqLayout::TotalDim;
 
   /** @brief 默认构造。 */
