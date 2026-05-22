@@ -85,6 +85,7 @@ set(ILQR_HEADERS
   Penalties/QuadraticPenalty.hpp
   Penalties/SlacknessSquaredHingePenalty.hpp
   Penalties/SmoothAbsolutePenalty.hpp
+  Penalties/MultidimensionalPenalty.hpp
   RiccatiEquations/DiscreteTimeRiccatiEquations.hpp
   RiccatiEquations/RiccatiModification.hpp
   Rollout/InitializerRollout.hpp

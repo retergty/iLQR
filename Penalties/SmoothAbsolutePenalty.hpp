@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @tparam Scalar 标量类型。
  */
 template <typename Scalar>
-class SmoothAbsolutePenalty final : public AugmentedPenaltyBase {
+class SmoothAbsolutePenalty final : public AugmentedPenaltyBase<Scalar> {
  public:
   /**
    * Configuration object for the smooth absolute penalty.
