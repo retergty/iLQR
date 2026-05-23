@@ -32,6 +32,7 @@ set(TEST_SOURCES
     TestTools/testQpSolver.cpp
     TestTools/testOcs2QpSolver.cpp
     OptimalControl/Exp0Test.cpp
+    OptimalControl/CircularKinematicsTest.cpp
 )
 
 # 循环添加所有测试
