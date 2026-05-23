@@ -281,13 +281,6 @@ class DDPCorrectness
   ocs2::qp_solver::ContinuousTrajectory qpSolution;
 };
 
-constexpr size_t DDPCorrectness::N;
-constexpr size_t DDPCorrectness::STATE_DIM;
-constexpr size_t DDPCorrectness::INPUT_DIM;
-constexpr ocs2::scalar_t DDPCorrectness::minRelCost;
-constexpr ocs2::scalar_t DDPCorrectness::solutionPrecision;
-constexpr size_t DDPCorrectness::numStateInputConstraints;
-
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/

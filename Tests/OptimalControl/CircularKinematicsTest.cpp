@@ -2,13 +2,15 @@
 
 #include <cmath>
 #include <string>
+#include <tuple>
 
 #include "CircularKinematics.hpp"
 #include "DefaultInitializer.hpp"
 #include "iLQR.hpp"
 
 class CircularKinematicsTest
-    : public testing::TestWithParam<SearchStrategyType> {
+    : public testing::TestWithParam<std::tuple<
+          SearchStrategyType, circular_model::AugmentedLagrangianType>> {
  protected:
   using Scalar = double;
   static constexpr int STATE_DIM = circular_model::STATE_DIM;
@@ -36,11 +38,12 @@ class CircularKinematicsTest
   using StateVector_t = typename Solver_t::StateVector_t;
   using TargetTrajectories_t = typename Solver_t::TargetTrajectories_t;
 
-  CircularKinematicsTest()
-      : problem(
-            circular_model::createCircularKinematicsProblem<Scalar,
-                                                            PredictLength>()) {
-    setZeroReferenceTrajectory();
+  CircularKinematicsTest() {
+    for (size_t k = 0; k < PredictLength + 1; ++k) {
+      targetTrajectory.timeTrajectory[k] = static_cast<Scalar>(k) * timeStep;
+      targetTrajectory.stateTrajectory[k].setZero();
+      targetTrajectory.inputTrajectory[k].setZero();
+    }
   }
 
   DDPSettings<Scalar> getSettings(SearchStrategyType strategy) const {
@@ -55,31 +58,47 @@ class CircularKinematicsTest
     return ddpSettings;
   }
 
-  std::string getTestName(SearchStrategyType strategy) const {
-    switch (strategy) {
-      case SearchStrategyType::LINE_SEARCH:
-        return "Circular-Kinematics Test { Algorithm: iLQR, Strategy: "
-               "LINE_SEARCH }";
-      case SearchStrategyType::LEVENBERG_MARQUARDT:
-        return "Circular-Kinematics Test { Algorithm: iLQR, Strategy: "
-               "LEVENBERG_MARQUARDT }";
+ public:
+  static std::string augmentedLagrangianTypeToString(
+      circular_model::AugmentedLagrangianType type) {
+    switch (type) {
+      case circular_model::AugmentedLagrangianType::Quadratic:
+        return "QUADRATIC";
+      case circular_model::AugmentedLagrangianType::QuadraticStrong:
+        return "QUADRATIC_STRONG";
+      case circular_model::AugmentedLagrangianType::SmoothAbsolute:
+        return "SMOOTH_ABSOLUTE";
       default:
-        return "Circular-Kinematics Test { Algorithm: iLQR, Strategy: "
-               "UNKNOWN }";
+        return "UNKNOWN";
     }
   }
 
-  void setZeroReferenceTrajectory() {
-    for (size_t k = 0; k < PredictLength + 1; ++k) {
-      targetTrajectory.timeTrajectory[k] = static_cast<Scalar>(k) * timeStep;
-      targetTrajectory.stateTrajectory[k].setZero();
-      targetTrajectory.inputTrajectory[k].setZero();
+ protected:
+  std::string getTestName(
+      SearchStrategyType strategy,
+      circular_model::AugmentedLagrangianType augmentedLagrangianType) const {
+    switch (strategy) {
+      case SearchStrategyType::LINE_SEARCH:
+        return "Circular-Kinematics Test { Algorithm: iLQR, Strategy: "
+               "LINE_SEARCH, Augmented Lagrangian: " +
+               augmentedLagrangianTypeToString(augmentedLagrangianType) + " }";
+      case SearchStrategyType::LEVENBERG_MARQUARDT:
+        return "Circular-Kinematics Test { Algorithm: iLQR, Strategy: "
+               "LEVENBERG_MARQUARDT, Augmented Lagrangian: " +
+               augmentedLagrangianTypeToString(augmentedLagrangianType) + " }";
+      default:
+        return "Circular-Kinematics Test { Algorithm: iLQR, Strategy: "
+               "UNKNOWN, Augmented Lagrangian: " +
+               augmentedLagrangianTypeToString(augmentedLagrangianType) + " }";
     }
   }
 
   void expectCircularMotion(const Solver_t& solver,
                             const std::string& testName) const {
     const auto performanceIndex = solver.performanceIndex();
+    EXPECT_TRUE(std::isfinite(performanceIndex.cost));
+    EXPECT_TRUE(std::isfinite(performanceIndex.equalityLagrangian));
+    EXPECT_TRUE(std::isfinite(performanceIndex.inequalityLagrangian));
     EXPECT_LT(performanceIndex.cost, expectedCost)
         << "MESSAGE: " << testName << ": failed in the cost test!";
     EXPECT_NEAR(performanceIndex.equalityLagrangian, Scalar(0.0),
@@ -100,8 +119,8 @@ class CircularKinematicsTest
           << ": failed in state-input equality constraint at k = " << k;
     }
 
-    const Scalar finalRadius = solution.stateTrajectory_.back().norm();
-    EXPECT_NEAR(finalRadius, Scalar(1.0), radiusTolerance)
+    EXPECT_NEAR(solution.stateTrajectory_.back().norm(), Scalar(1.0),
+                radiusTolerance)
         << "MESSAGE: " << testName
         << ": failed to keep the trajectory on the unit circle!";
   }
@@ -109,28 +128,17 @@ class CircularKinematicsTest
   const Scalar startTime = 0.0;
   const StateVector_t initState = (StateVector_t() << 1.0, 0.0).finished();
 
-  typename Solver_t::OptimalControlProblem_t& problem;
   TargetTrajectories_t targetTrajectory;
   Initializer_t initializer;
 };
 
-constexpr int CircularKinematicsTest::STATE_DIM;
-constexpr int CircularKinematicsTest::INPUT_DIM;
-constexpr CircularKinematicsTest::Scalar CircularKinematicsTest::timeStep;
-constexpr CircularKinematicsTest::Scalar CircularKinematicsTest::expectedCost;
-constexpr CircularKinematicsTest::Scalar
-    CircularKinematicsTest::radialVelocityTolerance;
-constexpr CircularKinematicsTest::Scalar
-    CircularKinematicsTest::radiusTolerance;
-constexpr CircularKinematicsTest::Scalar
-    CircularKinematicsTest::equalityLagrangianTolerance;
-constexpr CircularKinematicsTest::Scalar
-    CircularKinematicsTest::inequalityLagrangianTolerance;
-constexpr size_t CircularKinematicsTest::PredictLength;
-
 TEST_P(CircularKinematicsTest, ILQR) {
-  const auto strategy = GetParam();
+  const auto strategy = std::get<0>(GetParam());
+  const auto augmentedLagrangianType = std::get<1>(GetParam());
   const auto ddpSettings = getSettings(strategy);
+  auto& problem =
+      circular_model::createCircularKinematicsProblem<Scalar, PredictLength>(
+          augmentedLagrangianType);
 
   Solver_t solver(ddpSettings, problem, &initializer);
   solver.setDesireTrajectory(targetTrajectory.timeTrajectory,
@@ -138,21 +146,33 @@ TEST_P(CircularKinematicsTest, ILQR) {
                              targetTrajectory.inputTrajectory);
 
   ASSERT_NO_THROW(solver.run(startTime, initState));
-  expectCircularMotion(solver, getTestName(strategy));
+  expectCircularMotion(solver, getTestName(strategy, augmentedLagrangianType));
 }
 
 INSTANTIATE_TEST_SUITE_P(
     CircularKinematicsTestCase, CircularKinematicsTest,
-    testing::ValuesIn({SearchStrategyType::LINE_SEARCH}),
+    testing::Combine(
+        testing::ValuesIn({SearchStrategyType::LINE_SEARCH}),
+        testing::ValuesIn(
+            {circular_model::AugmentedLagrangianType::Quadratic,
+             circular_model::AugmentedLagrangianType::QuadraticStrong})),
     [](const testing::TestParamInfo<CircularKinematicsTest::ParamType>& info) {
-      switch (info.param) {
+      std::string name;
+      switch (std::get<0>(info.param)) {
         case SearchStrategyType::LINE_SEARCH:
-          return std::string("LINE_SEARCH");
+          name += "LINE_SEARCH";
+          break;
         case SearchStrategyType::LEVENBERG_MARQUARDT:
-          return std::string("LEVENBERG_MARQUARDT");
+          name += "LEVENBERG_MARQUARDT";
+          break;
         default:
-          return std::string("UNKNOWN");
+          name += "UNKNOWN";
+          break;
       }
+      name += "__";
+      name += CircularKinematicsTest::augmentedLagrangianTypeToString(
+          std::get<1>(info.param));
+      return name;
     });
 
 int main(int argc, char** argv) {

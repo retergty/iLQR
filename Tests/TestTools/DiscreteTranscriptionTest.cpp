@@ -125,11 +125,6 @@ class DiscreteTranscriptionTest : public testing::Test {
   std::vector<LinearQuadraticStage_t> unconstrainedLqr;
 };
 
-constexpr size_t DiscreteTranscriptionTest::N;
-constexpr int DiscreteTranscriptionTest::STATE_DIM;
-constexpr int DiscreteTranscriptionTest::INPUT_DIM;
-constexpr DiscreteTranscriptionTest::Scalar DiscreteTranscriptionTest::dt;
-
 TEST_F(DiscreteTranscriptionTest, unconstrainedLqrHasCorrectSizes) {
   checkSizes(unconstrainedLqr);
 }
@@ -165,9 +160,8 @@ TEST_F(DiscreteTranscriptionTest, linearizationInvariance) {
   linearization2.timeTrajectory = linearization.timeTrajectory;
 
   setReferenceTrajectories(linearization2);
-  const auto lqp2 =
-      qp_solver::getLinearQuadraticApproximation(problem, targetTrajectory,
-                                                 linearization2);
+  const auto lqp2 = qp_solver::getLinearQuadraticApproximation(
+      problem, targetTrajectory, linearization2);
 
   // All Hessians and Jacobians stay the same. The linear and constant parts
   // change with the nominal trajectory.

@@ -2,6 +2,7 @@
 #include "Cost.hpp"
 #include "OptimalControlProblem.hpp"
 #include "QuadraticPenalty.hpp"
+#include "SmoothAbsolutePenalty.hpp"
 #include "StateInputAugmentedLagrangian.hpp"
 #include "StateInputConstraint.hpp"
 #include "SystemDynamicsBase.hpp"
@@ -18,6 +19,24 @@
 namespace circular_model {
 static constexpr int STATE_DIM = 2;
 static constexpr int INPUT_DIM = 2;
+
+enum class AugmentedLagrangianType {
+  Quadratic,
+  QuadraticStrong,
+  SmoothAbsolute
+};
+
+template <typename Scalar, size_t PredictLength>
+using CircularKinematicsProblem = OptimalControlProblem<
+    Scalar,
+    TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
+                        Horizon<PredictLength>>,
+    ConstraintConfig<
+        StateConstraintConfig<ConstraintLayout<>>,
+        StateInputConstraintConfig<ConstraintLayout<
+            ConstraintGroupLayout<ConstraintTerm<1>>, ConstraintGroupLayout<>>>,
+        FinalStateConstraintConfig<ConstraintLayout<>>>>;
+
 template <typename Scalar>
 class CircularKinematicsSystem final
     : public SystemDynamicsBase<Scalar, STATE_DIM, INPUT_DIM> {
@@ -184,41 +203,20 @@ class CircularKinematicsConstraints final
   }
 };
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-template <typename Scalar, size_t PredictLength>
-inline OptimalControlProblem<
-    Scalar,
-    TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
-                        Horizon<PredictLength>>,
-    ConstraintConfig<
-        StateConstraintConfig<ConstraintLayout<>>,
-        StateInputConstraintConfig<ConstraintLayout<
-            ConstraintGroupLayout<ConstraintTerm<1>>, ConstraintGroupLayout<>>>,
-        FinalStateConstraintConfig<ConstraintLayout<>>>>&
-createCircularKinematicsProblem() {
-  using Transcription_t = TranscriptionConfig<Dimensions<STATE_DIM, INPUT_DIM>,
-                                              Horizon<PredictLength>>;
-  using ConstraintConfig_t = ConstraintConfig<
-      StateConstraintConfig<ConstraintLayout<>>,
-      StateInputConstraintConfig<ConstraintLayout<
-          ConstraintGroupLayout<ConstraintTerm<1>>, ConstraintGroupLayout<>>>,
-      FinalStateConstraintConfig<ConstraintLayout<>>>;
-  using Problem_t =
-      OptimalControlProblem<Scalar, Transcription_t, ConstraintConfig_t>;
+template <typename Scalar, size_t PredictLength, AugmentedLagrangianType Type,
+          typename Penalty_t>
+inline CircularKinematicsProblem<Scalar, PredictLength>&
+createCircularKinematicsProblemWithPenalty(Penalty_t& penalty) {
   using Cost_t =
       CircularKinematicsCost<Scalar, static_cast<int>(PredictLength + 1)>;
   using Constraint_t = CircularKinematicsConstraints<Scalar>;
-  using Penalty_t = QuadraticPenalty<Scalar>;
   using AugmentedLagrangian_t =
       StateInputAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM, 1>;
+  using Problem_t = CircularKinematicsProblem<Scalar, PredictLength>;
 
   static CircularKinematicsSystem<Scalar> dynamics;
   static Cost_t cost(0);
   static Constraint_t constraint;
-  static Penalty_t penalty(
-      typename Penalty_t::Config{Scalar(100.0), Scalar(0.1)});
   static AugmentedLagrangian_t augmentedLagrangian(&constraint, &penalty);
   static Problem_t problem;
   static bool initialized = false;
@@ -231,6 +229,53 @@ createCircularKinematicsProblem() {
   }
 
   return problem;
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+template <typename Scalar, size_t PredictLength>
+inline CircularKinematicsProblem<Scalar, PredictLength>&
+createCircularKinematicsProblemImpl(AugmentedLagrangianType type) {
+  using QuadraticPenalty_t = QuadraticPenalty<Scalar>;
+  using SmoothAbsolutePenalty_t = SmoothAbsolutePenalty<Scalar>;
+
+  switch (type) {
+    case AugmentedLagrangianType::Quadratic: {
+      static QuadraticPenalty_t penalty(
+          typename QuadraticPenalty_t::Config{Scalar(100.0), Scalar(0.1)});
+      return createCircularKinematicsProblemWithPenalty<
+          Scalar, PredictLength, AugmentedLagrangianType::Quadratic>(penalty);
+    }
+    case AugmentedLagrangianType::QuadraticStrong: {
+      static QuadraticPenalty_t penalty(
+          typename QuadraticPenalty_t::Config{Scalar(150.0), Scalar(0.1)});
+      return createCircularKinematicsProblemWithPenalty<
+          Scalar, PredictLength, AugmentedLagrangianType::QuadraticStrong>(
+          penalty);
+    }
+    case AugmentedLagrangianType::SmoothAbsolute: {
+      static SmoothAbsolutePenalty_t penalty(
+          typename SmoothAbsolutePenalty_t::Config{Scalar(0.1), Scalar(0.1),
+                                                   Scalar(0.1)});
+      return createCircularKinematicsProblemWithPenalty<
+          Scalar, PredictLength, AugmentedLagrangianType::SmoothAbsolute>(
+          penalty);
+    }
+  }
+
+  static QuadraticPenalty_t fallbackPenalty(
+      typename QuadraticPenalty_t::Config{Scalar(100.0), Scalar(0.1)});
+  return createCircularKinematicsProblemWithPenalty<
+      Scalar, PredictLength, AugmentedLagrangianType::Quadratic>(
+      fallbackPenalty);
+}
+
+template <typename Scalar, size_t PredictLength>
+inline CircularKinematicsProblem<Scalar, PredictLength>&
+createCircularKinematicsProblem(
+    AugmentedLagrangianType type = AugmentedLagrangianType::Quadratic) {
+  return createCircularKinematicsProblemImpl<Scalar, PredictLength>(type);
 }
 
 };  // namespace circular_model

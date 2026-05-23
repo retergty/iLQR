@@ -69,22 +69,27 @@ class SmoothAbsolutePenalty final : public AugmentedPenaltyBase<Scalar> {
 
   Scalar getValue(const Scalar t, const Scalar l,
                   const Scalar h) const override {
+    (void)t;
     return -l * h + config_.scale *
                         sqrt(h * h + config_.relaxation * config_.relaxation);
   }
   Scalar getDerivative(const Scalar t, const Scalar l,
                        const Scalar h) const override {
+    (void)t;
     return -l + config_.scale * h /
                     sqrt(h * h + config_.relaxation * config_.relaxation);
   }
   Scalar getSecondDerivative(const Scalar t, const Scalar l,
                              const Scalar h) const override {
+    (void)t;
+    (void)l;
     const Scalar deltaSquare = config_.relaxation * config_.relaxation;
     return config_.scale * deltaSquare / pow(h * h + deltaSquare, 1.5);
   }
 
   Scalar updateMultiplier(const Scalar t, const Scalar l,
                           const Scalar h) const override {
+    (void)t;
     return l - config_.stepSize * config_.scale * h;
   }
   Scalar initializeMultiplier() const override { return 0.0; }

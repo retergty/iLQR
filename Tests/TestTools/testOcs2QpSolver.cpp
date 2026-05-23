@@ -136,12 +136,6 @@ class Ocs2QpSolverTest : public testing::Test {
   Trajectory_t solution;
 };
 
-constexpr size_t Ocs2QpSolverTest::N;
-constexpr int Ocs2QpSolverTest::STATE_DIM;
-constexpr int Ocs2QpSolverTest::INPUT_DIM;
-constexpr Ocs2QpSolverTest::Scalar Ocs2QpSolverTest::precision;
-constexpr Ocs2QpSolverTest::Scalar Ocs2QpSolverTest::dt;
-
 TEST_F(Ocs2QpSolverTest, initialCondition) {
   ASSERT_TRUE(x0.isApprox(solution.stateTrajectory.front(), precision));
 }

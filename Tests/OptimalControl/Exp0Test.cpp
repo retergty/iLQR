@@ -189,11 +189,6 @@ class Exp0 : public testing::Test {
   std::unique_ptr<Initializer_t> initializerPtr;
 };
 
-constexpr int Exp0::STATE_DIM;
-constexpr int Exp0::INPUT_DIM;
-constexpr Exp0::Scalar Exp0::timeStep;
-constexpr Exp0::Scalar Exp0::minRelCost;
-constexpr size_t Exp0::PredictLength;
 
 /******************************************************************************************************/
 /******************************************************************************************************/

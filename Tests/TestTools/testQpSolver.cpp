@@ -145,13 +145,6 @@ class QpSolverTest : public testing::Test {
   Vector<Scalar, Eigen::Dynamic> dualSolution;
 };
 
-constexpr int QpSolverTest::N_;
-constexpr int QpSolverTest::nx_;
-constexpr int QpSolverTest::nu_;
-constexpr int QpSolverTest::nc_;
-constexpr int QpSolverTest::numDecisionVariables;
-constexpr int QpSolverTest::numConstraints;
-
 TEST_F(QpSolverTest, constraintSatisfaction) {
   ASSERT_TRUE(constraints.f.isApprox(-constraints.dfdx * primalSolution));
 }
