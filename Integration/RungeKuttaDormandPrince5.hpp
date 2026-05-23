@@ -30,8 +30,7 @@ class RungeKuttaDormandPrince5Stepper {
   void doStep(const OdeBase<Scalar, XDim>& system,
               const Vector<Scalar, XDim>& x0, const Vector<Scalar, XDim>& dxdt,
               const Scalar t, const Scalar dt, Vector<Scalar, XDim>& x_out,
-              Vector<Scalar, XDim>& dxdt_out,
-              bool computeDxdtOut = true) {
+              Vector<Scalar, XDim>& dxdt_out, bool computeDxdtOut = true) {
     /* Runge Kutta Dormand-Prince Butcher tableau constants.
      * https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method */
     constexpr Scalar a2 = 1.0 / 5;
@@ -143,34 +142,23 @@ class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDim> {
                       const Scalar dt) override {
     // Ensure that finalTime is included by adding a fraction of dt such that: N
     // * dt <= finalTime < (N + 1) * dt.
-    Scalar finalTimeLocal = finalTime + 0.1 * dt;
+    const Scalar finalTimeLocal = finalTime + 0.1 * dt;
+    const int numSteps = static_cast<int>((finalTimeLocal - startTime) / dt);
+    assert(numSteps >= 0);
 
     Scalar t = startTime;
     Vector<Scalar, XDim> x = initialState;
     Vector<Scalar, XDim> dxdt;
     dxdt = system.computeFlowMap(t, x);
-    int step = 0;
-    while (lessWithSign(t + dt, finalTimeLocal, dt)) {
+    for (int step = 0; step < numSteps; ++step) {
       observer.observe(x, t);
       const int nextStep = step + 1;
       const Scalar nextTime = startTime + nextStep * dt;
-      const bool hasFollowingStep =
-          lessWithSign(nextTime + dt, finalTimeLocal, dt);
+      const bool hasFollowingStep = nextStep < numSteps;
       stepper_.doStep(system, x, dxdt, t, dt, x, dxdt, hasFollowingStep);
-      step = nextStep;
       t = nextTime;
     }
     observer.observe(x, t);
-  }
-
- private:
-  /** Helper less comparison for both positive and negative dt case. */
-  bool lessWithSign(Scalar t1, Scalar t2, Scalar dt) {
-    if (dt > 0) {
-      return t2 - t1 > std::numeric_limits<Scalar>::epsilon();
-    } else {
-      return t1 - t2 > std::numeric_limits<Scalar>::epsilon();
-    }
   }
 
  private:

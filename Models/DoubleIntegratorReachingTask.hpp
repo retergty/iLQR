@@ -1,21 +1,29 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <iostream>
-#include <memory>
 
-#include "Cost.hpp"
 #include "DefaultInitializer.hpp"
+#include "LinearStateConstraint.hpp"
 #include "LinearSystemDynamics.hpp"
+#include "OptimalControlProblem.hpp"
+#include "QuadraticPenalty.hpp"
 #include "QuadraticStateCost.hpp"
-#include "SmoothAbsolutePenalty.hpp"
+#include "StateAugmentedLagrangian.hpp"
+#include "Types.hpp"
+#include "iLQRDescriptor.hpp"
 
 namespace double_integrator {
 template <typename Scalar, int ArrayLength>
 class DoubleIntegratorReachingTask {
  public:
+  static_assert(ArrayLength > 1,
+                "DoubleIntegratorReachingTask requires at least two nodes.");
+
   static constexpr int STATE_DIM = 2;
   static constexpr int INPUT_DIM = 1;
+  static constexpr int GOAL_CONSTRAINT_DIM = STATE_DIM;
   static constexpr Scalar timeStep = 1e-2;
   static constexpr Scalar minRelCost = 1e-12;  // to avoid early termination
   static constexpr Scalar constraintTolerance = 1e-3;
@@ -24,19 +32,19 @@ class DoubleIntegratorReachingTask {
   using InputVector_t = Vector<Scalar, INPUT_DIM>;
   using InputMatrix_t = Matrix<Scalar, INPUT_DIM, INPUT_DIM>;
   using StateInputMatrix_t = Matrix<Scalar, STATE_DIM, INPUT_DIM>;
+  using TimeTrajectory_t = std::array<Scalar, ArrayLength>;
+  using StateTrajectory_t = std::array<StateVector_t, ArrayLength>;
+  using InputTrajectory_t = std::array<InputVector_t, ArrayLength>;
   using DefaultInitializer_t = DefaultInitializer<Scalar, STATE_DIM, INPUT_DIM>;
-  using StateInputCost_t =
-      StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>;
   using QuadraticStateInputCost_t =
       QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>;
   using LinearSystemDynamics_t =
       LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>;
-  using SystemDynamicsBase_t = SystemDynamicsBase<Scalar, STATE_DIM, INPUT_DIM>;
-
-  enum class PenaltyType {
-    QuadraticPenalty,
-    SmoothAbsolutePenalty,
-  };
+  using GoalConstraint_t =
+      LinearStateConstraint<Scalar, STATE_DIM, GOAL_CONSTRAINT_DIM>;
+  using GoalPenalty_t = QuadraticPenalty<Scalar>;
+  using GoalAugmentedLagrangian_t =
+      StateAugmentedLagrangian<Scalar, STATE_DIM, GOAL_CONSTRAINT_DIM>;
 
   DoubleIntegratorReachingTask() = default;
   virtual ~DoubleIntegratorReachingTask() = default;
@@ -44,98 +52,53 @@ class DoubleIntegratorReachingTask {
  protected:
   const Scalar tGoal = 1.0;
   const StateVector_t xInit = StateVector_t::Zero();
-  const StateVector_t xGoal = (StateVector_t << 2.0, 0.0).finished();
+  const StateVector_t xGoal = (StateVector_t() << 2.0, 0.0).finished();
 
-  std::unique_ptr<DefaultInitializer_t> getInitializer() const {
-    return std::make_unique<DefaultInitializer_t>();
-  }
-
-  std::shared_ptr<ReferenceManager> getReferenceManagerPtr() const {
-    const ModeSchedule modeSchedule({tGoal}, {0, 1});
-    const TargetTrajectories targetTrajectories({tGoal}, {xGoal},
-                                                {vector_t::Zero(INPUT_DIM)});
-    return std::make_shared<ReferenceManager>(targetTrajectories, modeSchedule);
-  }
-
-  std::unique_ptr<StateInputCost_t> getCostPtr() const {
-    StateMatrix_t Q = StateMatrix_t::Zero();
-    InputMatrix_t R = 0.1 * InputMatrix_t::Identity();
-    return std::make_unique<QuadraticStateInputCost_t>(std::move(Q),
-                                                       std::move(R));
-  }
-
-  std::unique_ptr<SystemDynamicsBase_t> getDynamicsPtr() const {
-    StateMatrix_t A = (StateMatrix_t() << 0.0, 1.0, 0.0, 0.0).finished();
-    StateInputMatrix_t B = (StateInputMatrix_t << 0.0, 1.0).finished();
-    return std::make_unique<LinearSystemDynamics_t>(std::move(A), std::move(B));
-  }
-
-  std::unique_ptr<StateAugmentedLagrangian> getGoalReachingAugmentedLagrangian(
-      const StateVector_t& xGoal, PenaltyType penaltyType) {
-    constexpr Scalar scale = 10.0;
-    constexpr Scalar stepSize = 1.0;
-
-    auto goalReachingConstraintPtr = std::make_unique<LinearStateConstraint>(
-        -xGoal, matrix_t::Identity(xGoal.size(), xGoal.size()));
-
-    switch (penaltyType) {
-      case PenaltyType::QuadraticPenalty: {
-        using penalty_type = augmented::QuadraticPenalty;
-        penalty_type::Config boundsConfig{scale, stepSize};
-        return create(std::move(goalReachingConstraintPtr),
-                      penalty_type::create(boundsConfig));
-      }
-      case PenaltyType::SmoothAbsolutePenalty: {
-        using penalty_type = augmented::SmoothAbsolutePenalty;
-        penalty_type::Config boundsConfig{scale, 0.1, stepSize};
-        return create(std::move(goalReachingConstraintPtr),
-                      penalty_type::create(boundsConfig));
-      }
-      default:
-        return nullptr;
-    }
-  }
-
-  /** This class enforces zero force at the second mode (mode = 1)*/
-  class ZeroInputConstraint final : public StateInputConstraint {
+ public:
+  class TerminalGoalAugmentedLagrangian final {
    public:
-    ZeroInputConstraint(const ReferenceManager& referenceManager)
-        : StateInputConstraint(ConstraintOrder::Linear),
-          referenceManagerPtr_(&referenceManager) {}
+    explicit TerminalGoalAugmentedLagrangian(const StateVector_t& target)
+        : constraint_(-target, StateMatrix_t::Identity()),
+          scalarPenalty_(
+              typename GoalPenalty_t::Config{penaltyScale, stepSize}),
+          augmentedLagrangian_(&constraint_, &scalarPenalty_) {}
 
-    ~ZeroInputConstraint() override = default;
-    ZeroInputConstraint* clone() const override {
-      return new ZeroInputConstraint(*this);
+    GoalAugmentedLagrangian_t* get() { return &augmentedLagrangian_; }
+    const GoalAugmentedLagrangian_t* get() const {
+      return &augmentedLagrangian_;
     }
 
-    size_t getNumConstraints(Scalar time) const override { return 1; }
-
-    /** Only active after the fist mode */
-    bool isActive(Scalar time) const override {
-      return referenceManagerPtr_->getModeSchedule().modeAtTime(time) > 0
-                 ? true
-                 : false;
-    }
-
-    vector_t getValue(Scalar t, const vector_t& x, const vector_t& u,
-                      const PreComputation&) const override {
-      return u;
-    }
-
-    VectorFunctionLinearApproximation getLinearApproximation(
-        Scalar t, const vector_t& x, const vector_t& u,
-        const PreComputation&) const override {
-      VectorFunctionLinearApproximation approx;
-      approx.f = u;
-      approx.dfdx.setZero(getNumConstraints(t), x.size());
-      approx.dfdu.setIdentity(getNumConstraints(t), u.size());
-      return approx;
-    }
+    const GoalConstraint_t& constraint() const { return constraint_; }
 
    private:
-    ZeroInputConstraint(const ZeroInputConstraint&) = default;
-    const ReferenceManager* referenceManagerPtr_;
+    static constexpr Scalar penaltyScale = 10.0;
+    static constexpr Scalar stepSize = 1.0;
+
+    GoalConstraint_t constraint_;
+    GoalPenalty_t scalarPenalty_;
+    GoalAugmentedLagrangian_t augmentedLagrangian_;
   };
+
+  /*
+   * The task is intentionally single-mode:
+   *   min integral 0.5 * u'Ru dt
+   *   s.t. x_dot = [v, u], x(0) = xInit, x(tGoal) = xGoal
+   *
+   * Attach TerminalGoalAugmentedLagrangian::get() to
+   * problem.finalEqualityLagrangian. No intermediate mode-dependent
+   * state-input constraints are used.
+   */
+  void configureTargetTrajectory(TimeTrajectory_t& timeTrajectory,
+                                 StateTrajectory_t& stateTrajectory,
+                                 InputTrajectory_t& inputTrajectory) const {
+    for (size_t i = 0; i < timeTrajectory.size(); ++i) {
+      const Scalar alpha = static_cast<Scalar>(i) /
+                           static_cast<Scalar>(timeTrajectory.size() - 1);
+      timeTrajectory[i] = alpha * tGoal;
+      stateTrajectory[i] = (Scalar(1) - alpha) * xInit + alpha * xGoal;
+      inputTrajectory[i].setZero();
+    }
+  }
 
   /*
    * printout trajectory. Use the following commands for plotting in MATLAB:
@@ -144,7 +107,9 @@ class DoubleIntegratorReachingTask {
    * subplot(2, 1, 2); plot(timeTrajectory, inputTrajectory);
    * xlabel("time [sec]"); legend("force");
    */
-  void printSolution(const PrimalSolution& primalSolution, bool display) const {
+  template <typename PrimalSolution_t>
+  void printSolution(const PrimalSolution_t& primalSolution,
+                     bool display) const {
     if (display) {
       std::cerr << "\n";
       // time
@@ -168,4 +133,68 @@ class DoubleIntegratorReachingTask {
     }
   }
 };
+
+template <typename Scalar, std::size_t PredictLength>
+using DoubleIntegratorReachingTaskForHorizon =
+    DoubleIntegratorReachingTask<Scalar, static_cast<int>(PredictLength + 1)>;
+
+template <typename Scalar, std::size_t PredictLength>
+using DoubleIntegratorReachingConstraintConfig =
+    ConstraintConfig<StateConstraintConfig<ConstraintLayout<>>,
+                     StateInputConstraintConfig<ConstraintLayout<>>,
+                     FinalStateConstraintConfig<ConstraintLayout<
+                         ConstraintGroupLayout<ConstraintTerm<
+                             DoubleIntegratorReachingTaskForHorizon<
+                                 Scalar, PredictLength>::GOAL_CONSTRAINT_DIM>>,
+                         ConstraintGroupLayout<>>>>;
+
+template <typename Scalar, std::size_t PredictLength>
+using DoubleIntegratorReachingProblem = OptimalControlProblem<
+    Scalar,
+    TranscriptionConfig<Dimensions<DoubleIntegratorReachingTaskForHorizon<
+                                       Scalar, PredictLength>::STATE_DIM,
+                                   DoubleIntegratorReachingTaskForHorizon<
+                                       Scalar, PredictLength>::INPUT_DIM>,
+                        Horizon<PredictLength>>,
+    DoubleIntegratorReachingConstraintConfig<Scalar, PredictLength>>;
+
+template <typename Scalar, std::size_t PredictLength>
+inline DoubleIntegratorReachingProblem<Scalar, PredictLength>&
+createDoubleIntegratorReachingProblem() {
+  using Task_t = DoubleIntegratorReachingTaskForHorizon<Scalar, PredictLength>;
+  using StateVector_t = typename Task_t::StateVector_t;
+  using StateMatrix_t = typename Task_t::StateMatrix_t;
+  using InputMatrix_t = typename Task_t::InputMatrix_t;
+  using StateInputMatrix_t = typename Task_t::StateInputMatrix_t;
+  using Dynamics_t = typename Task_t::LinearSystemDynamics_t;
+  using Cost_t = typename Task_t::QuadraticStateInputCost_t;
+  using TerminalGoal_t = typename Task_t::TerminalGoalAugmentedLagrangian;
+  using Problem_t = DoubleIntegratorReachingProblem<Scalar, PredictLength>;
+
+  static const StateMatrix_t A =
+      (StateMatrix_t() << Scalar(0.0), Scalar(1.0), Scalar(0.0), Scalar(0.0))
+          .finished();
+  static const StateInputMatrix_t B =
+      (StateInputMatrix_t() << Scalar(0.0), Scalar(1.0)).finished();
+  static Dynamics_t dynamics(A, B);
+
+  static const StateMatrix_t Q = StateMatrix_t::Zero();
+  static const InputMatrix_t R = Scalar(0.1) * InputMatrix_t::Identity();
+  static Cost_t cost(Q, R);
+
+  static const StateVector_t xGoal =
+      (StateVector_t() << Scalar(2.0), Scalar(0.0)).finished();
+  static TerminalGoal_t terminalGoal(xGoal);
+  static Problem_t problem;
+  static bool initialized = false;
+
+  if (!initialized) {
+    problem.dynamicsPtr = &dynamics;
+    problem.cost.add(cost);
+    problem.finalEqualityLagrangian.template set<0>(terminalGoal.get());
+    initialized = true;
+  }
+
+  return problem;
+}
 };  // namespace double_integrator

@@ -37,14 +37,14 @@ class MultidimensionalPenalty final {
    * @brief 获取向量约束的总惩罚值。
    * @param [in] t 评估时间。
    * @param [in] h 约束值向量。
-   * @param [in] l 拉格朗日乘子向量；为空时使用惩罚函数默认初值。
+   * @param [in] l 拉格朗日乘子向量。
    * @return 各约束分量惩罚值之和。
    */
   Scalar getValue(const Scalar t, const Vector<Scalar, CDim>& h,
-                  const Vector<Scalar, CDim>* l = nullptr) const {
+                  const Vector<Scalar, CDim>& l) const {
     Scalar penalty = 0;
     for (int i = 0; i < CDim; ++i) {
-      penalty += penalty_ptr_->getValue(t, getMultiplier(l, i), h(i));
+      penalty += penalty_ptr_->getValue(t, l(i), h(i));
     }
 
     return penalty;
@@ -54,14 +54,14 @@ class MultidimensionalPenalty final {
    * @brief 由向量约束的线性近似经链式法则得到标量惩罚的二次近似。
    * @param [in] t 评估时间。
    * @param [in] h 约束的线性近似。
-   * @param [in] l 拉格朗日乘子向量；为空时使用惩罚函数默认初值。
+   * @param [in] l 拉格朗日乘子向量。
    * @return 标量惩罚函数对状态/输入的二次近似。
    */
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   getQuadraticApproximation(
       const Scalar t,
       const VectorFunctionLinearApproximation<Scalar, CDim, XDim, UDim>& h,
-      const Vector<Scalar, CDim>* l = nullptr) const {
+      const Vector<Scalar, CDim>& l) const {
     Scalar penaltyValue = 0.0;
     Vector<Scalar, CDim> penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) =
@@ -90,14 +90,14 @@ class MultidimensionalPenalty final {
    * @brief 由向量约束的二次近似经链式法则得到标量惩罚的二次近似。
    * @param [in] t 评估时间。
    * @param [in] h 约束的二次近似。
-   * @param [in] l 拉格朗日乘子向量；为空时使用惩罚函数默认初值。
+   * @param [in] l 拉格朗日乘子向量。
    * @return 标量惩罚函数对状态/输入的二次近似。
    */
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   getQuadraticApproximation(
       const Scalar t,
       const VectorFunctionQuadraticApproximation<Scalar, CDim, XDim, UDim>& h,
-      const Vector<Scalar, CDim>* l = nullptr) const {
+      const Vector<Scalar, CDim>& l) const {
     Scalar penaltyValue = 0.0;
     Vector<Scalar, CDim> penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) =
@@ -164,23 +164,18 @@ class MultidimensionalPenalty final {
  private:
   std::tuple<Scalar, Vector<Scalar, CDim>, Vector<Scalar, CDim>>
   getPenaltyValue1stDev2ndDev(Scalar t, const Vector<Scalar, CDim>& h,
-                              const Vector<Scalar, CDim>* l) const {
+                              const Vector<Scalar, CDim>& l) const {
     Scalar penaltyValue = 0.0;
     Vector<Scalar, CDim> penaltyDerivative;
     Vector<Scalar, CDim> penaltySecondDerivative;
     for (int i = 0; i < CDim; ++i) {
-      penaltyValue += penalty_ptr_->getValue(t, getMultiplier(l, i), h(i));
-      penaltyDerivative(i) =
-          penalty_ptr_->getDerivative(t, getMultiplier(l, i), h(i));
+      penaltyValue += penalty_ptr_->getValue(t, l(i), h(i));
+      penaltyDerivative(i) = penalty_ptr_->getDerivative(t, l(i), h(i));
       penaltySecondDerivative(i) =
-          penalty_ptr_->getSecondDerivative(t, getMultiplier(l, i), h(i));
+          penalty_ptr_->getSecondDerivative(t, l(i), h(i));
     }
 
     return {penaltyValue, penaltyDerivative, penaltySecondDerivative};
-  }
-
-  Scalar getMultiplier(const Vector<Scalar, CDim>* l, const int index) const {
-    return l == nullptr ? static_cast<Scalar>(0) : (*l)(index);
   }
 
   const AugmentedPenaltyBase<Scalar>* penalty_ptr_;

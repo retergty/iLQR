@@ -209,14 +209,6 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
       maxNumOfLineSearches = 0;
     } else {
       Scalar ratio = settings.minStepLength / settings.maxStepLength;
-      // maxNumOfLineSearches =
-      //     static_cast<size_t>(std::log(ratio +
-      //     numeric_traits::limitEpsilon<Scalar>()) /
-      //     std::log(settings_.contractionRate) + 1);
-      // search it constexpr, find a maxNumOfLineSearches to satisfy
-      // settings_.maxStepLength *
-      // settings_.contractionRate^maxNumOfLineSearches <
-      // settings_.minStepLength
       Scalar result = 1;
 
       while (result >= ratio) {
