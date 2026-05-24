@@ -1,32 +1,3 @@
-/******************************************************************************
-Copyright (c) 2020, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
 /**
  * @file AugmentedPenaltyBase.hpp
  * @brief
@@ -49,57 +20,57 @@ class AugmentedPenaltyBase {
   /** @brief 默认构造。 */
   AugmentedPenaltyBase() = default;
 
-  /** Default destructor */
+  /** 默认析构函数 */
   virtual ~AugmentedPenaltyBase() = default;
 
   /**
-   * Compute the penalty value at a certain constraint value.
+   * 计算某个约束值处的惩罚值。
    *
-   * @param [in] t: The time that the constraint is evaluated.
-   * @param [in] l: The Lagrange multiplier.
-   * @param [in] h: Constraint value.
-   * @return penalty cost.
+   * @param [in] t: 约束评估时间。
+   * @param [in] l: 拉格朗日乘子。
+   * @param [in] h: 约束值。
+   * @return 惩罚代价。
    */
   virtual Scalar getValue(const Scalar t, const Scalar l,
                           const Scalar h) const = 0;
 
   /**
-   * Compute the penalty derivative at a certain constraint value.
+   * 计算某个约束值处的惩罚一阶导数。
    *
-   * @param [in] t: The time that the constraint is evaluated.
-   * @param [in] l: The Lagrange multiplier.
-   * @param [in] h: Constraint value.
-   * @return penalty derivative with respect to constraint value.
+   * @param [in] t: 约束评估时间。
+   * @param [in] l: 拉格朗日乘子。
+   * @param [in] h: 约束值。
+   * @return 惩罚对约束值的一阶导数。
    */
   virtual Scalar getDerivative(const Scalar t, const Scalar l,
                                const Scalar h) const = 0;
 
   /**
-   * Compute the penalty second derivative at a certain constraint value.
+   * 计算某个约束值处的惩罚二阶导数。
    *
-   * @param [in] t: The time that the constraint is evaluated.
-   * @param [in] l: The Lagrange multiplier.
-   * @param [in] h: Constraint value.
-   * @return penalty second derivative with respect to constraint value.
+   * @param [in] t: 约束评估时间。
+   * @param [in] l: 拉格朗日乘子。
+   * @param [in] h: 约束值。
+   * @return 惩罚对约束值的二阶导数。
    */
   virtual Scalar getSecondDerivative(const Scalar t, const Scalar l,
                                      const Scalar h) const = 0;
 
   /**
-   * Updates the Lagrange multiplier.
+   * 更新拉格朗日乘子。
    *
-   * @param [in] t: The time stamp.
-   * @param [in] l: The Lagrange multiplier.
-   * @param [in] h: Constraint values.
-   * @return updated Lagrange multiplier.
+   * @param [in] t: 时间戳。
+   * @param [in] l: 拉格朗日乘子。
+   * @param [in] h: 约束值。
+   * @return 更新后的拉格朗日乘子。
    */
   virtual Scalar updateMultiplier(const Scalar t, const Scalar l,
                                   const Scalar h) const = 0;
 
   /**
-   * Initializes the Lagrange multiplier.
+   * 初始化拉格朗日乘子。
    *
-   * @return initial value of the Lagrange multiplier.
+   * @return 拉格朗日乘子的初始值。
    */
   virtual Scalar initializeMultiplier() const = 0;
 

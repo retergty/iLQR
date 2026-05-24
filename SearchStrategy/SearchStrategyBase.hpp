@@ -107,13 +107,13 @@ class SearchStrategyBase {
 
   /**
    * @brief 根据未优化控制器与对偶解执行搜索，将最优轨迹、控制器与性能指标写入
-   * solution。
+   * 解。
    * @param [in] timePeriod 时间区间 (初始时间, 终止时间)。
    * @param [in] initState 初始状态。
    * @param [in] expectedCost 基于 LQ 模型的期望代价。
    * @param [in] unoptimizedController 待搜索的未优化控制器。
    * @param [in] dualSolution 对偶解。
-   * @param [in,out] solution
+   * @param [in,out] solution 解。
    * 输出（primalSolution、performanceIndex、problemMetrics、avgTimeStep）。
    * @return 搜索是否成功。
    */

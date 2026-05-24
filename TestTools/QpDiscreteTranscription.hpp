@@ -93,7 +93,7 @@ approximateDynamics(SystemDynamicsBase<Scalar, XDim, UDim>& system,
   EK2DynamicsDiscretizer<Scalar, XDim, UDim> discretizer;
   auto discreteDynamics =
       discretizer.sensitivityDiscretize(system, start.t, start.x, start.u, dt);
-  // Use deviation dynamics without an affine defect term.
+  // 使用不含仿射缺陷项的偏差动力学。
   discreteDynamics.f.setZero();
   return discreteDynamics;
 }
@@ -146,13 +146,13 @@ approximateStage(
   lqStage.cost = modelData.cost;
   lqStage.cost *= dt;
 
-  // Discrete LQ deviation dynamics: dx[k+1] = A dx[k] + B du[k].
-  // Nominal trajectory defects are not included in this transcription.
+  // 离散 LQ 偏差动力学：dx[k+1] = A dx[k] + B du[k]。
+  // 该转录不包含名义轨迹缺陷。
   lqStage.dynamics =
       approximateDynamics(*optimalControlProblem.dynamicsPtr, start, dt);
 
-  // In this project constraint penalties are folded into the approximated cost
-  // through AugmentedLagrangian.
+  // 本项目中约束惩罚会折叠到近似代价中，
+  // 通过 AugmentedLagrangian 实现。
   lqStage.constraints = makeZeroConstraints<Scalar, XDim, UDim>();
 
   return lqStage;
@@ -243,11 +243,11 @@ getLinearQuadraticApproximation(
   const auto& u = nominalTrajectory.inputTrajectory;
   constexpr size_t N = PredictLength;
 
-  // LinearQuadraticProblem with N+1 elements. Terminal stage lqp[N].dynamics is
-  // ignored.
+  // 包含 N+1 个元素的 LinearQuadraticProblem。终端阶段 lqp[N].dynamics 会被
+  // 忽略。
   std::vector<LinearQuadraticStage<Scalar, XDim, UDim>> lqp;
   lqp.reserve(N + 1);
-  for (size_t k = 0; k < N; ++k) {  // Intermediate stages
+  for (size_t k = 0; k < N; ++k) {  // 中间阶段。
     lqp.emplace_back(approximateStage(optimalControlProblem, targetTrajectory,
                                       {t[k], x[k], u[k]}, {t[k + 1], x[k + 1]},
                                       intermediateMultipliers[k]));

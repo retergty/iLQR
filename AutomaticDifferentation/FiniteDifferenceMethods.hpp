@@ -35,7 +35,7 @@ Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(
   Matrix<Scalar, StateDimisions, VarDimisions> jacobian;
 
   for (size_t i = 0; i < VarDimisions; i++) {
-    // inspired from:
+    // 灵感来源：
     // http://en.wikipedia.org/wiki/Numerical_differentiation#Practical_considerations_using_floating_point_arithmetic
     Scalar h = eps * std::max(std::fabs(x0(i)), 1.0);
 
@@ -85,7 +85,7 @@ Matrix<Scalar, XDim, XDim> finiteDifferenceDerivativeState(
       f, x, eps, doubleSidedDerivative);
 
   if (isSecondOrderSystem) {
-    // Assumes state vector = [x, x_dot]
+    // 假定状态向量 = [x, x_dot]。
     A.topLeftCorner(x.rows() / 2, x.rows() / 2).setZero();
     A.topRightCorner(x.rows() / 2, x.rows() / 2).setIdentity();
   }
@@ -123,7 +123,7 @@ Matrix<Scalar, XDim, UDim> finiteDifferenceDerivativeInput(
       f, u, eps, doubleSidedDerivative);
 
   if (isSecondOrderSystem) {
-    // Assumes state vector = [x, x_dot]
+    // 假定状态向量 = [x, x_dot]。
     B.topRows(x.rows() / 2).setZero();
   }
   return B;

@@ -55,7 +55,7 @@ TEST(LinearSystemILQRTest, ControllerUpdateIntegralUsesTrapezoidalRule) {
   controller.deltaBiasArray_[1] << 3.0;
   controller.deltaBiasArray_[2] << 5.0;
 
-  // Integral of squared norms [1, 9, 25] over [0, 1, 3].
+  // 在 [0, 1, 3] 上对平方范数 [1, 9, 25] 积分。
   EXPECT_DOUBLE_EQ(Solver::computeControllerUpdateIS(controller), 39.0);
 }
 

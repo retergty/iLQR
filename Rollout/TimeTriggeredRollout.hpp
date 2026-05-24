@@ -55,26 +55,26 @@ class TimeTriggeredRollout : public RolloutBase<Scalar, XDim, UDim> {
           RolloutTrajectoryPointer_t& trajectory) override {
     assert(finalTime > initTime);
 
-    // set controller
+    // 设置控制器。
     systemDynamicsPtr_->setController(controller);
 
-    Observer<Scalar, XDim> observer(
-        trajectory.maxLength, trajectory.stateTrajectory,
-        trajectory.timeTrajectory);  // concatenate trajectory
-    // integrate controlled system
+    Observer<Scalar, XDim> observer(trajectory.maxLength,
+                                    trajectory.stateTrajectory,
+                                    trajectory.timeTrajectory);  // 拼接轨迹。
+    // 积分受控系统。
     RK45Intergraor_.integrateConst(*systemDynamicsPtr_, observer, initState,
                                    initTime, finalTime,
                                    this->settings().timeStep);
 
     int RolloutIntegrateCount = observer.getCount();
 
-    // compute control input trajectory and concatenate to inputTrajectory
+    // 计算控制输入轨迹并拼接到 inputTrajectory。
     if (this->settings().reconstructInputTrajectory) {
       for (int i = 0; i < RolloutIntegrateCount; i++) {
         trajectory.inputTrajectory[i] =
             systemDynamicsPtr_->controllerPtr()->computeInput(
                 trajectory.timeTrajectory[i], trajectory.stateTrajectory[i]);
-      }  // end of k_u loop
+      }  // k_u 循环结束。
     }
 
     return RolloutIntegrateCount;
@@ -87,12 +87,12 @@ class TimeTriggeredRollout : public RolloutBase<Scalar, XDim, UDim> {
   //     ArrayLen>& inputTrajectory) override
   // {
   //     Scalar finalTime = initTime + steps * this->settings().timeStep;
-  //     // set controller
+  //     // 设置控制器。
   //     systemDynamicsPtr_->setController(&controller);
 
   //     Observer<Scalar, XDim> observer(ArrayLen, stateTrajectory.data(),
   //     timeTrajectory.data()); // concatenate trajectory
-  //     // integrate controlled system
+  //     // 积分受控系统。
   //     RK45Intergraor_.integrateConst(*systemDynamicsPtr_, observer,
   //     initState, initTime, finalTime, this->settings().timeStep);
   // }

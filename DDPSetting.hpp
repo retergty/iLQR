@@ -36,4 +36,4 @@ struct DDPSettings {
   /** @brief 线搜索策略参数。 */
   LineSearchSettings<Scalar> lineSearch_{};
 
-};  // end of DDP_Settings
+};  // DDP_Settings 结束。

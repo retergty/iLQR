@@ -25,7 +25,7 @@ class DoubleIntegratorReachingTask {
   static constexpr int INPUT_DIM = 1;
   static constexpr int GOAL_CONSTRAINT_DIM = STATE_DIM;
   static constexpr Scalar timeStep = 1e-2;
-  static constexpr Scalar minRelCost = 1e-12;  // to avoid early termination
+  static constexpr Scalar minRelCost = 1e-12;  // 避免过早终止。
   static constexpr Scalar constraintTolerance = 1e-3;
   using StateVector_t = Vector<Scalar, STATE_DIM>;
   using StateMatrix_t = Matrix<Scalar, STATE_DIM, STATE_DIM>;
@@ -80,13 +80,13 @@ class DoubleIntegratorReachingTask {
   };
 
   /*
-   * The task is intentionally single-mode:
-   *   min integral 0.5 * u'Ru dt
-   *   s.t. x_dot = [v, u], x(0) = xInit, x(tGoal) = xGoal
+   * 该任务有意保持为单模式：
+   *   min integral 0.5 * u'Ru dt。
+   *   s.t. x_dot = [v, u], x(0) = xInit, x(tGoal) = xGoal。
    *
-   * Attach TerminalGoalAugmentedLagrangian::get() to
-   * problem.finalEqualityLagrangian. No intermediate mode-dependent
-   * state-input constraints are used.
+   * 将 TerminalGoalAugmentedLagrangian::get() 绑定到
+   * problem.finalEqualityLagrangian。不使用中间模式相关的
+   * 状态-输入约束。
    */
   void configureTargetTrajectory(TimeTrajectory_t& timeTrajectory,
                                  StateTrajectory_t& stateTrajectory,
@@ -101,7 +101,7 @@ class DoubleIntegratorReachingTask {
   }
 
   /*
-   * printout trajectory. Use the following commands for plotting in MATLAB:
+   * 打印轨迹。可在 MATLAB 中使用以下命令绘图：
    * subplot(2, 1, 1); plot(timeTrajectory, stateTrajectory);
    * xlabel("time [sec]"); legend("pos", "vel");
    * subplot(2, 1, 2); plot(timeTrajectory, inputTrajectory);
@@ -112,19 +112,19 @@ class DoubleIntegratorReachingTask {
                      bool display) const {
     if (display) {
       std::cerr << "\n";
-      // time
+      // 时间
       std::cerr << "timeTrajectory = [";
       for (const auto& t : primalSolution.timeTrajectory_) {
         std::cerr << t << "; ";
       }
       std::cerr << "];\n";
-      // state
+      // 状态
       std::cerr << "stateTrajectory = [";
       for (const auto& x : primalSolution.stateTrajectory_) {
         std::cerr << x.transpose() << "; ";
       }
       std::cerr << "];\n";
-      // input
+      // 输入。
       std::cerr << "inputTrajectory = [";
       for (const auto& u : primalSolution.inputTrajectory_) {
         std::cerr << u.transpose() << "; ";

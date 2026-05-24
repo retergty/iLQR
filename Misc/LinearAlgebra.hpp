@@ -20,9 +20,9 @@ namespace LinearAlgebra {
 template <typename Scalar, int Dimisions>
 void computeInverseMatrixUUT(const Matrix<Scalar, Dimisions, Dimisions>& Am,
                              Matrix<Scalar, Dimisions, Dimisions>& AmInvUmUmT) {
-  // Am = Lm Lm^T --> inv(Am) = inv(Lm^T) inv(Lm) where Lm^T is upper triangular
+  // Am = Lm Lm^T --> inv(Am) = inv(Lm^T) inv(Lm)，其中 Lm^T 为上三角矩阵。
   Eigen::LLT<Matrix<Scalar, Dimisions, Dimisions>> lltOfA(Am);
-  AmInvUmUmT.setIdentity(Am.rows(), Am.cols());  // for dynamic size matrices
+  AmInvUmUmT.setIdentity(Am.rows(), Am.cols());  // 用于动态尺寸矩阵。
   lltOfA.matrixU().solveInPlace(AmInvUmUmT);
 }
 }  // namespace LinearAlgebra

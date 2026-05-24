@@ -87,9 +87,9 @@ TEST(RungeKuttaDormandPrince5Test,
 
   integrator.integrateConst(system, observer, x0, 0.0, 1.0, 0.1);
 
-  // 10 fixed steps: 1 initial derivative + 5 stage evaluations per step +
-  // 9 carried derivatives for the following steps. The final derivative is not
-  // needed because there is no following step.
+  // 10 个固定步：1 个初始导数 + 每步 5 次阶段评估 +
+  // 后续步复用的 9 个导数。不需要终端导数，
+  // 因为没有下一步。
   EXPECT_EQ(system.evaluationCount(), 60);
 }
 

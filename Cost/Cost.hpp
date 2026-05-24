@@ -107,7 +107,7 @@ class StateInputCost : public IntrusiveListNode<
       const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory)
       const = 0;
 
-  // identify state input cost, must be unique
+  // 标识状态-输入代价，必须唯一。
   int number;
 
  protected:

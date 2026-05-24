@@ -1,32 +1,3 @@
-/******************************************************************************
-Copyright (c) 2020, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
 /**
  * @file SmoothAbsolutePenalty.hpp
  * @brief 光滑绝对值惩罚：用于等式约束 h=0，p(h)=μ√(h²+δ²)，乘子更新
@@ -45,10 +16,10 @@ template <typename Scalar>
 class SmoothAbsolutePenalty final : public AugmentedPenaltyBase<Scalar> {
  public:
   /**
-   * Configuration object for the smooth absolute penalty.
-   * scale: scaling factor, see class description
-   * relaxation: relaxation parameter, see class description
-   * stepLenght: step-length parameter, see class description
+   * 光滑绝对值惩罚的配置对象。
+   * scale：缩放因子，参见类说明。
+   * relaxation：松弛参数，参见类说明。
+   * stepLenght：步长参数，参见类说明。
    */
   struct Config {
     Config() : Config(100.0, 1e-2, 0.0) {}
@@ -62,7 +33,7 @@ class SmoothAbsolutePenalty final : public AugmentedPenaltyBase<Scalar> {
     Scalar stepSize;
   };
 
-  /** Constructor */
+  /** 构造函数 */
   explicit SmoothAbsolutePenalty(const Config& config) : config_(config) {}
 
   ~SmoothAbsolutePenalty() override = default;

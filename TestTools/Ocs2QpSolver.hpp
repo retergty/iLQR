@@ -1,32 +1,3 @@
-/******************************************************************************
-Copyright (c) 2017, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
- * Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
- * Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
-
 #pragma once
 
 #include <array>
@@ -40,18 +11,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace qp_solver {
 
 /**
- * Solves a constrained discrete-time linear quadratic control problem around a
- * provided linearization trajectory. The time horizon and discretization steps
- * are defined by the time trajectory of the provided linearization.
+ * 围绕给定线性化轨迹求解带约束的离散时间线性二次控制问题。
+ * 时间区间和离散步数由给定线性化轨迹的时间轨迹定义。
  *
- * @param optimalControlProblem: The optimal control problem definition.
- * @param nominalTrajectory : time, state and input trajectory to make the
- * linear quadratic approximation around
- * @param initialState : state at the start of the horizon.
- * @param intermediateMultipliers : multipliers for intermediate augmented
- * Lagrangians.
- * @param finalMultipliers : multipliers for final augmented Lagrangians.
- * @return time, state, and input solution.
+ * @param optimalControlProblem: 最优控制问题定义。
+ * @param nominalTrajectory: 用于构造线性二次近似的时间、状态和输入轨迹。
+ * @param initialState: 预测区间起点状态。
+ * @param intermediateMultipliers: 中间增广拉格朗日项的乘子。
+ * 拉格朗日项。
+ * @param finalMultipliers: 终端增广拉格朗日项的乘子。
+ * @return 时间、状态和输入解。
  */
 template <typename Scalar, typename Transcription, typename ConstraintConfig>
 ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
@@ -74,12 +43,12 @@ solveLinearQuadraticOptimalControlProblem(
   constexpr int UDim = Transcription::UDim;
   constexpr size_t PredictLength = Transcription::PredictLength;
 
-  // Approximate
+  // 近似
   const auto lqApproximation = getLinearQuadraticApproximation(
       optimalControlProblem, targetTrajectory, nominalTrajectory,
       intermediateMultipliers, finalMultipliers);
 
-  // Solve for an update step
+  // 求解更新步
   ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> deltaSolution;
   deltaSolution.timeTrajectory = nominalTrajectory.timeTrajectory;
   const Vector<Scalar, XDim> dx0 =
@@ -96,12 +65,12 @@ solveLinearQuadraticOptimalControlProblem(
   deltaSolution.stateTrajectory[PredictLength] =
       stateDeltaTrajectory[PredictLength];
 
-  // Take a full step: Add update to nominal trajectory
+  // 执行完整步长：将更新量加入名义轨迹。
   return nominalTrajectory + deltaSolution;
 }
 
 /**
- * Overload for problems without an externally provided multiplier trajectory.
+ * 用于未外部提供乘子轨迹的问题的重载。
  */
 template <typename Scalar, typename Transcription, typename ConstraintConfig>
 ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,

@@ -7,11 +7,11 @@
 #include "iLQRDescriptor.hpp"
 
 /**
- * @brief Centralized view of an iLQR descriptor.
+ * @brief iLQR descriptor 的集中视图。
  *
- * Components should depend on this traits type when they need to read common
- * descriptor fields, instead of depending on the higher-level iLQRTypes
- * aggregation.
+ * 组件需要读取公共 descriptor 字段时，应依赖该 traits 类型，
+ * 而不是依赖更高层的 iLQRTypes
+ * 聚合。
  */
 template <typename Descriptor>
 struct iLQRDescriptorTraits {

@@ -144,9 +144,9 @@ class IntrusiveList {
   };
 
   /**
-   * Remove the node from List
-   * @param [in] Node: point to node
-   * @return -1: error, 0 success
+   * 从 List 中移除节点。
+   * @param [in] Node: 指向节点的指针。
+   * @return -1 表示错误，0 表示成功。
    */
   int remove(IntrusiveListNode<T>* node_ptr) {
     assert(node_ptr != nullptr);
@@ -163,7 +163,7 @@ class IntrusiveList {
     prev->next_ = next;
     next->prev_ = prev;
 
-    // if it is head, change it
+    // 如果它是头节点，则更新头节点。
     if (owner->head_ == node_ptr) {
       owner->head_ = next;
     }
@@ -176,17 +176,17 @@ class IntrusiveList {
   }
 
   /**
-   * insert the node to this List ahead pos
-   * @param [in] pos: insert position
-   * @param [in] Node: node to be inserted
-   * @return iterator point to inserted node
+   * 将节点插入到当前 List 中 pos 之前。
+   * @param [in] pos: 插入位置。
+   * @param [in] Node: 待插入节点。
+   * @return 指向已插入节点的迭代器。
    */
   iterator insert(iterator pos, IntrusiveListNode<T>& node) {
     assert(pos.now_ != nullptr);
     assert(pos.now_->owner_ == this);
 
     if (node.owner_) {
-      // this node is in other list, remove it first
+      // 该节点已在其他列表中，先将其移除。
       remove(&node);
     }
 
@@ -208,10 +208,10 @@ class IntrusiveList {
   }
 
   /**
-   * Erases the specified elements from the container.
-   * @param [in] pos: removes the element at pos
-   * @return Iterator following the last removed element.If pos refers to the
-   * last element, then the end() iterator is returned.
+   * 从容器中删除指定元素。
+   * @param [in] pos: 删除 pos 处的元素。
+   * @return 指向被删除元素之后位置的迭代器；如果 pos 指向
+   * 最后一个元素，则返回 end() 迭代器。
    */
   iterator erase(iterator pos) {
     assert(pos.now_ != nullptr);
@@ -225,7 +225,7 @@ class IntrusiveList {
     last->next_ = next;
     next->prev_ = last;
 
-    // if it is head, change it
+    // 如果它是头节点，则更新头节点。
     if (head_ == node_ptr) {
       head_ = next;
     }

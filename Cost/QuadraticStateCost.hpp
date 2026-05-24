@@ -63,7 +63,7 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
     return Phi;
   }
 
-  /** Get cost term quadratic approximation */
+  /** 获取代价项二次近似。 */
   ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
   getQuadraticApproximation(
       int time_index, const Vector<Scalar, XDim>& state,
@@ -83,9 +83,9 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
  protected:
   QuadraticStateCost(const QuadraticStateCost& rhs) = default;
 
-  /** Computes the state deviation for the nominal state.
-   * This method can be overwritten if desiredTrajectory has a different
-   * dimensions. */
+  /** 计算相对于名义状态的状态偏差。
+   * 如果 desiredTrajectory 具有不同
+   * 维度，可重写此方法。 */
   Vector<Scalar, XDim> getStateDeviation(
       Scalar time, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
@@ -95,9 +95,9 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
                                                     stateTrajectoy);
   }
 
-  /** Computes the state deviation for the nominal state.
-   * This method can be overwritten if desiredTrajectory has a different
-   * dimensions. */
+  /** 计算相对于名义状态的状态偏差。
+   * 如果 desiredTrajectory 具有不同
+   * 维度，可重写此方法。 */
   Vector<Scalar, XDim> getStateDeviation(
       int time_index, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
@@ -111,13 +111,13 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
   Matrix<Scalar, XDim, XDim> Q_;
 };
 
-/** Quadratic state-input cost term */
+/** 二次状态-输入代价项。 */
 template <typename Scalar, int XDim, int UDim, int ArrayLength>
 class QuadraticStateInputCost
     : public StateInputCost<Scalar, XDim, UDim, ArrayLength> {
  public:
   /**
-   * Constructor for the quadratic cost function defined as the following:
+   * 构造以下形式定义的二次代价函数：
    * \f$ L = 0.5(x-x_{n})' Q (x-x_{n}) + 0.5(u-u_{n})' R (u-u_{n}) + (u-u_{n})'
    * P (x-x_{n}) \f$
    * @param [in] Q: \f$ Q \f$
@@ -143,7 +143,7 @@ class QuadraticStateInputCost
 
   ~QuadraticStateInputCost() override = default;
 
-  /** Get cost term value */
+  /** 获取代价项取值。 */
   Scalar getValue(
       Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
@@ -166,7 +166,7 @@ class QuadraticStateInputCost
     }
   }
 
-  /** Get cost term value */
+  /** 获取代价项取值。 */
   Scalar getValue(
       int time_index, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
@@ -190,7 +190,7 @@ class QuadraticStateInputCost
     }
   }
 
-  /** Get cost term quadratic approximation */
+  /** 获取代价项二次近似。 */
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   getQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDim>& state,
@@ -228,9 +228,9 @@ class QuadraticStateInputCost
  protected:
   QuadraticStateInputCost(const QuadraticStateInputCost& rhs) = default;
 
-  /** Computes the state-input deviation pair around the nominal state and
-   * input. This method can be overwritten if desiredTrajectory has a different
-   * dimensions. */
+  /** 计算相对于名义状态和输入的状态-输入偏差对。
+   * 如果 desiredTrajectory 具有不同维度，可重写此方法。
+   * 维度，可重写此方法。 */
   Vector<Scalar, XDim> getStateDeviation(
       Scalar time, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
@@ -239,9 +239,9 @@ class QuadraticStateInputCost
     return state - LinearInterpolation::interpolate(time, timeTrajectory,
                                                     stateTrajectoy);
   }
-  /** Computes the state-input deviation pair around the nominal state and
-   * input. This method can be overwritten if desiredTrajectory has a different
-   * dimensions. */
+  /** 计算相对于名义状态和输入的状态-输入偏差对。
+   * 如果 desiredTrajectory 具有不同维度，可重写此方法。
+   * 维度，可重写此方法。 */
   Vector<Scalar, XDim> getStateDeviation(
       int time_index, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,

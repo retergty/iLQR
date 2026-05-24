@@ -66,8 +66,8 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
     return penalty;
   }
 
-  /** Update Lagrange/penalty multipliers, and the penalty value for each active
-   * term. */
+  /** 更新每个激活项的拉格朗日/惩罚乘子以及惩罚值。
+   * 项。 */
   void updateLagrangian(
       Scalar time, const Vector<Scalar, XDim>& state,
       LagrangianMetricsGroup<Scalar, Layout>& termsMetrics,
@@ -76,7 +76,7 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
                          std::make_index_sequence<Layout::NumTerms>{});
   }
 
-  /** Initialize Lagrange/penalty multipliers for each active term. */
+  /** 初始化每个激活项的拉格朗日/惩罚乘子。 */
   void initializeLagrangian(
       Scalar time, MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
     initializeLagrangianImpl(time, termsMultiplier,

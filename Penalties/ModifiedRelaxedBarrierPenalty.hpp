@@ -19,10 +19,10 @@ class ModifiedRelaxedBarrierPenalty final
     : public AugmentedPenaltyBase<Scalar> {
  public:
   /**
-   * Configuration object for the modified relaxed barrier penalty.
-   * scale: scaling factor, see class description
-   * relaxation: relaxation parameter, see class description
-   * stepLenght: step-length parameter, see class description
+   * modified relaxed barrier 惩罚的配置对象。
+   * scale：缩放因子，参见类说明。
+   * relaxation：松弛参数，参见类说明。
+   * stepLenght：步长参数，参见类说明。
    */
   struct Config {
     Config() : Config(10.0, 0.0, 1.0) {}
@@ -36,7 +36,7 @@ class ModifiedRelaxedBarrierPenalty final
     Scalar stepSize;
   };
 
-  /** Constructor */
+  /** 构造函数 */
   explicit ModifiedRelaxedBarrierPenalty(const Config& config)
       : config_(config), quadCoeff_(config) {}
 

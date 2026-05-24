@@ -170,24 +170,23 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
     return problem;
   }
 
-  /** Modifies given trajectory to satisfy the constraints */
+  /** 修改给定轨迹以满足约束。 */
   QpTrajectory_t getFeasibleTrajectory(
       const VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
                                               Eigen::Dynamic, 0>& qpConstraints,
       const QpTrajectory_t& trajectory) const {
-    const auto& A =
-        qpConstraints.dfdx;  // A w + b = 0,  A must be full row-rank such that
-                             // (A A') is invertible
+    const auto& A = qpConstraints.dfdx;  // A w + b = 0，A 必须行满秩，使得
+                                         // (A A') 可逆。
     const auto& b =
         qpConstraints.f;  // b = [x0; e[0]; b[0]; ... e[N-1]; b[N-1]; e[N]]
 
-    /* Find the trajectory correction w to satisfy the constraint by solving
-     *   min  1/2 w' w
+    /* 通过求解以下问题寻找满足约束的轨迹修正 w：
+     *   min  1/2 w' w。
      *   s.t. A w + b = 0  */
     const Vector<Scalar, Eigen::Dynamic> w =
         -A.transpose() * (A * A.transpose()).inverse() * b;
 
-    // Make trajectory feasible
+    // 使轨迹可行。
     auto feasibleTrajectory = trajectory;
     Eigen::Index nextIndex = 0;
     const auto numStages = feasibleTrajectory.inputTrajectory.size();

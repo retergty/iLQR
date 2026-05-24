@@ -1,32 +1,3 @@
-/******************************************************************************
-Copyright (c) 2017, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
- * Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
- * Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
-
 /**
  * @file LinearQuadraticApproximator.hpp
  * @brief 线性二次近似器：在名义轨迹上对最优控制问题做 LQ 近似，得到各节点
@@ -87,16 +58,15 @@ struct LinearQuadraticApproximator {
   using TargetTrajectories_t = typename Traits::TargetTrajectories_t;
 
   /**
-   * Calculates an LQ approximate of the constrained optimal control problem at
-   * a given time, state, and input.
+   * 计算约束最优控制问题在以下位置的 LQ 近似：
+   * 给定时间、状态和输入。
    *
-   * @param [in] problem: The optimal control problem
-   * @param [in] time: The current time.
-   * @param [in] state: The current state.
-   * @param [in] input: The current input.
-   * @param [in] multipliers: The current multipliers associated to the equality
-   * and inequality Lagrangians.
-   * @param [out] modelData: The output data model.
+   * @param [in] problem: 最优控制问题。
+   * @param [in] time: 当前时间。
+   * @param [in] state: 当前状态。
+   * @param [in] input: 当前输入。
+   * @param [in] multipliers: 当前与等式和不等式拉格朗日项关联的乘子。
+   * @param [out] modelData: 输出数据模型。
    */
   static void approximateIntermediateLQ(
       const OptimalControlProblem_t& problem,
@@ -104,15 +74,15 @@ struct LinearQuadraticApproximator {
       const StateVector_t& state, const InputVector_t& input,
       const IntermediateMultiplierCollection_t& multipliers,
       ModelData_t& modelData) {
-    // Dynamics
+    // 动力学
     modelData.dynamics =
         problem.dynamicsPtr->linearApproximation(time, state, input);
 
-    // Cost
+    // 代价
     modelData.cost =
         approximateCost(problem, targetTrajectories, time, state, input);
 
-    // Lagrangians
+    // 拉格朗日项
     if constexpr (StateEqConstraintDim != 0) {
       ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx =
           problem.stateEqualityLagrangian.getQuadraticApproximation(
@@ -140,16 +110,15 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * Calculates an LQ approximate of the constrained optimal control problem at
-   * a given time, state, and input.
+   * 计算约束最优控制问题在以下位置的 LQ 近似：
+   * 给定时间、状态和输入。
    *
-   * @param [in] problem: The optimal control problem
-   * @param [in] time: The current time.
-   * @param [in] state: The current state.
-   * @param [in] input: The current input.
-   * @param [in] multipliers: The current multipliers associated to the equality
-   * and inequality Lagrangians.
-   * @return The output data model.
+   * @param [in] problem: 最优控制问题。
+   * @param [in] time: 当前时间。
+   * @param [in] state: 当前状态。
+   * @param [in] input: 当前输入。
+   * @param [in] multipliers: 当前与等式和不等式拉格朗日项关联的乘子。
+   * @return 输出数据模型。
    */
   static inline ModelData_t approximateIntermediateLQ(
       const OptimalControlProblem_t& problem,
@@ -163,15 +132,14 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * Calculates an LQ approximate of the constrained optimal control problem at
-   * final time.
+   * 计算约束最优控制问题在以下位置的 LQ 近似：
+   * 终端时刻。
    *
-   * @param [in] problem: The optimal control problem
-   * @param [in] time: The current time.
-   * @param [in] state: The current state.
-   * @param [in] multipliers: The current multipliers associated to the equality
-   * and inequality Lagrangians.
-   * @param [out] modelData: The output data model.
+   * @param [in] problem: 最优控制问题。
+   * @param [in] time: 当前时间。
+   * @param [in] state: 当前状态。
+   * @param [in] multipliers: 当前与等式和不等式拉格朗日项关联的乘子。
+   * @param [out] modelData: 输出数据模型。
    */
   static void approximateFinalLQ(const OptimalControlProblem_t& problem,
                                  const TargetTrajectories_t& targetTrajectories,
@@ -183,14 +151,14 @@ struct LinearQuadraticApproximator {
     VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> finalDynamics;
     finalDynamics.setZero();
 
-    // Dynamics
+    // 动力学
     modelData.dynamics = finalDynamics;
 
-    // Final cost
-    modelData.cost = approximateFinalCost(problem, targetTrajectories, time,
-                                          state);
+    // 终端代价
+    modelData.cost =
+        approximateFinalCost(problem, targetTrajectories, time, state);
 
-    // Lagrangians
+    // 拉格朗日项
     if constexpr (FinalStateEqConstraintDim != 0) {
       auto approx = problem.finalEqualityLagrangian.getQuadraticApproximation(
           time, state, multipliers.stateEq);
@@ -208,15 +176,14 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * Calculates an LQ approximate of the constrained optimal control problem at
-   * final time.
+   * 计算约束最优控制问题在以下位置的 LQ 近似：
+   * 终端时刻。
    *
-   * @param [in] problem: The optimal control problem
-   * @param [in] time: The current time.
-   * @param [in] state: The current state.
-   * @param [in] multipliers: The current multipliers associated to the equality
-   * and inequality Lagrangians.
-   * @return The output data model.
+   * @param [in] problem: 最优控制问题。
+   * @param [in] time: 当前时间。
+   * @param [in] state: 当前状态。
+   * @param [in] multipliers: 当前与等式和不等式拉格朗日项关联的乘子。
+   * @return 输出数据模型。
    */
   static inline ModelData_t approximateFinalLQ(
       const OptimalControlProblem_t& problem,
@@ -230,8 +197,8 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * Compute the total intermediate cost (i.e. cost + softConstraints). It is
-   * assumed that the precomputation request is already made.
+   * 计算中间时刻总代价（即 cost + softConstraints）。
+   * 假定预计算请求已经发出。
    */
   static Scalar computeCost(const OptimalControlProblem_t& problem,
                             const TargetTrajectories_t& targetTrajectories,
@@ -244,7 +211,7 @@ struct LinearQuadraticApproximator {
     const InputTrajectory_t& targetInputTrajectories =
         targetTrajectories.inputTrajectory;
 
-    // Compute and sum all costs
+    // 计算并累加所有代价。
     Scalar cost =
         problem.cost.getValue(time, state, input, targetTimeTrajectories,
                               targetStateTrajectories, targetInputTrajectories);
@@ -255,9 +222,9 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * Compute the quadratic approximation of the total intermediate cost (i.e.
-   * cost + softConstraints). It is assumed that the precomputation request is
-   * already made.
+   * 计算中间时刻总代价（即
+   * cost + softConstraints）的二次近似。假定预计算请求
+   * 已经发出。
    */
   static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   approximateCost(const OptimalControlProblem_t& problem,
@@ -271,13 +238,13 @@ struct LinearQuadraticApproximator {
     const InputTrajectory_t& targetInputTrajectories =
         targetTrajectories.inputTrajectory;
 
-    // get the state-input cost approximations
+    // 获取状态-输入代价近似。
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost =
         problem.cost.getQuadraticApproximation(
             time, state, input, targetTimeTrajectories, targetStateTrajectories,
             targetInputTrajectories);
 
-    // get the state only cost approximations
+    // 获取仅状态代价近似。
     cost += problem.stateCost.getQuadraticApproximation(
         time, state, targetTimeTrajectories, targetStateTrajectories);
 
@@ -285,8 +252,8 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * Compute the total final cost (i.e. cost + softConstraints). It is assumed
-   * that the precomputation request is already made.
+   * 计算终端总代价（即 cost + softConstraints）。假定
+   * 预计算请求已经发出。
    */
   static Scalar computeFinalCost(const OptimalControlProblem_t& problem,
                                  const TargetTrajectories_t& targetTrajectories,
@@ -304,9 +271,9 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * Compute the quadratic approximation of the total final cost (i.e. cost +
-   * softConstraints). It is assumed that the precomputation request is already
-   * made.
+   * 计算终端总代价（即 cost +
+   * softConstraints）的二次近似。假定预计算请求已经
+   * 发出。
    */
   static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   approximateFinalCost(const OptimalControlProblem_t& problem,
@@ -325,20 +292,20 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * Compute the intermediate-time Metrics (i.e. cost, softConstraints, and
-   * constraints).
+   * 计算中间时刻 Metrics（即 cost、softConstraints 和
+   * 约束）。
    *
-   * @note It is assumed that the precomputation request is already made.
+   * @note 假定预计算请求已经发出。
    * problem.preComputationPtr->request(Request::Cost + Request::Constraint +
    * Request::SoftConstraint, t, x, u)
    *
-   * @param [in] problem: The optimal control probelm
-   * @param [in] time: The current time.
-   * @param [in] state: The current state.
-   * @param [in] input: The current input.
-   * @param [in] dynamicsViolation: The violation of dynamics. It depends on the
-   * transcription method.
-   * @return The output Metrics.
+   * @param [in] problem: 最优控制问题。
+   * @param [in] time: 当前时间。
+   * @param [in] state: 当前状态。
+   * @param [in] input: 当前输入。
+   * @param [in] dynamicsViolation: 动力学违反量，取决于
+   * 转录方法。
+   * @return 输出 Metrics。
    */
   static IntermediateMetrics_t computeIntermediateMetrics(
       const OptimalControlProblem_t& problem,
@@ -346,41 +313,39 @@ struct LinearQuadraticApproximator {
       const StateVector_t& state, const InputVector_t& input) {
     IntermediateMetrics_t metrics;
 
-    // Cost
+    // 代价
     metrics.cost = computeCost(problem, targetTrajectories, time, state, input);
 
     return metrics;
   }
 
   /**
-   * Compute the intermediate-time Metrics (i.e. cost, softConstraints, and
-   * constraints).
+   * 计算中间时刻 Metrics（即 cost、softConstraints 和
+   * 约束）。
    *
-   * @note It is assumed that the precomputation request is already made.
+   * @note 假定预计算请求已经发出。
    * problem.preComputationPtr->request(Request::Cost + Request::Constraint +
    * Request::SoftConstraint, t, x, u)
    *
-   * @param [in] problem: The optimal control probelm
-   * @param [in] time: The current time.
-   * @param [in] state: The current state.
-   * @param [in] input: The current input.
-   * @param [in] multipliers: The current multipliers associated to the equality
-   * and inequality Lagrangians.
-   * @param [in] dynamicsViolation: The violation of dynamics. It depends on the
-   * transcription method.
-   * @return The output Metrics.
+   * @param [in] problem: 最优控制问题。
+   * @param [in] time: 当前时间。
+   * @param [in] state: 当前状态。
+   * @param [in] input: 当前输入。
+   * @param [in] multipliers: 当前与等式和不等式拉格朗日项关联的乘子。
+   * @param [in] dynamicsViolation: 动力学违反量，取决于
+   * 转录方法。
+   * @return 输出 Metrics。
    */
   static IntermediateMetrics_t computeIntermediateMetrics(
       const OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state, const InputVector_t& input,
       const IntermediateMultiplierCollection_t& multipliers) {
-    // cost, dynamics violation, equlaity constraints, inequlaity constraints
-    IntermediateMetrics_t metrics =
-        computeIntermediateMetrics(problem, targetTrajectories, time, state,
-                                   input);
+    // 代价、动力学违反、等式约束和不等式约束。
+    IntermediateMetrics_t metrics = computeIntermediateMetrics(
+        problem, targetTrajectories, time, state, input);
 
-    // Equality Lagrangians
+    // 等式拉格朗日项
     if constexpr (StateEqConstraintDim != 0) {
       metrics.stateEqLagrangian = problem.stateEqualityLagrangian.getValue(
           time, state, multipliers.stateEq);
@@ -391,7 +356,7 @@ struct LinearQuadraticApproximator {
           time, state, input, multipliers.stateInputEq);
     }
 
-    // Inequality Lagrangians
+    // 不等式拉格朗日项
     if constexpr (StateIneqConstraintDim != 0) {
       metrics.stateIneqLagrangian = problem.stateInequalityLagrangian.getValue(
           time, state, multipliers.stateIneq);
@@ -406,17 +371,17 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * Compute the final-time Metrics (i.e. cost, softConstraints, and
-   * constraints).
+   * 计算终端时刻 Metrics（即 cost、softConstraints 和
+   * 约束）。
    *
-   * @note It is assumed that the precomputation request is already made.
+   * @note 假定预计算请求已经发出。
    * problem.preComputationPtr->requestFinal(Request::Cost + Request::Constraint
    * + Request::SoftConstraint, t, x)
    *
-   * @param [in] problem: The optimal control probelm
-   * @param [in] time: The current time.
-   * @param [in] state: The current state.
-   * @return The output Metrics.
+   * @param [in] problem: 最优控制问题。
+   * @param [in] time: 当前时间。
+   * @param [in] state: 当前状态。
+   * @return 输出 Metrics。
    */
   static FinalMetrics_t computeFinalMetrics(
       const OptimalControlProblem_t& problem,
@@ -424,43 +389,42 @@ struct LinearQuadraticApproximator {
       const StateVector_t& state) {
     FinalMetrics_t metrics;
 
-    // Cost
+    // 代价
     metrics.cost = computeFinalCost(problem, targetTrajectories, time, state);
 
     return metrics;
   }
 
   /**
-   * Compute the final-time Metrics (i.e. cost, softConstraints, and
-   * constraints).
+   * 计算终端时刻 Metrics（即 cost、softConstraints 和
+   * 约束）。
    *
-   * @note It is assumed that the precomputation request is already made.
+   * @note 假定预计算请求已经发出。
    * problem.preComputationPtr->requestFinal(Request::Cost + Request::Constraint
    * + Request::SoftConstraint, t, x)
    *
-   * @param [in] problem: The optimal control probelm
-   * @param [in] time: The current time.
-   * @param [in] state: The current state.
-   * @param [in] multipliers: The current multipliers associated to the equality
-   * and inequality Lagrangians.
-   * @return The output Metrics.
+   * @param [in] problem: 最优控制问题。
+   * @param [in] time: 当前时间。
+   * @param [in] state: 当前状态。
+   * @param [in] multipliers: 当前与等式和不等式拉格朗日项关联的乘子。
+   * @return 输出 Metrics。
    */
   static FinalMetrics_t computeFinalMetrics(
       const OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state,
       const FinalMultiplierCollection_t& multipliers) {
-    // cost, equlaity constraints, inequlaity constraints
+    // 代价、等式约束和不等式约束。
     FinalMetrics_t metrics =
         computeFinalMetrics(problem, targetTrajectories, time, state);
 
     if constexpr (FinalStateEqConstraintDim != 0) {
-      // Equality Lagrangians
+      // 等式拉格朗日项
       metrics.stateEqLagrangian = problem.finalEqualityLagrangian.getValue(
           time, state, multipliers.stateEq);
     }
 
-    // Inequality Lagrangians
+    // 不等式拉格朗日项
     if constexpr (FinalStateIneqConstraintDim != 0) {
       metrics.stateIneqLagrangian = problem.finalInequalityLagrangian.getValue(
           time, state, multipliers.stateIneq);
@@ -468,5 +432,4 @@ struct LinearQuadraticApproximator {
 
     return metrics;
   }
-
 };

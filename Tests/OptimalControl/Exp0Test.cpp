@@ -1,32 +1,3 @@
-/******************************************************************************
-Copyright (c) 2017, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
 #include <gtest/gtest.h>
 
 #include <cstdlib>
@@ -71,7 +42,7 @@ class Exp0 : public testing::Test {
     setConstantReferenceTrajectory();
   }
 
-  // rollout settings
+  // rollout 设置。
   RolloutSettings_t rolloutSettings() const {
     RolloutSettings_t rolloutSettings;
     rolloutSettings.timeStep = timeStep;
@@ -188,23 +159,23 @@ class Exp0 : public testing::Test {
 /******************************************************************************************************/
 /******************************************************************************************************/
 TEST_F(Exp0, ddp_feedback_policy) {
-  // ddp settings
+  // DDP 设置。
   auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, true);
 
-  // dynamics and rollout
+  // 动力学和 rollout。
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
-  // instantiate
+  // 实例化。
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
   auto ddp =
       createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
 
-  // run ddp
+  // 运行 DDP。
   EXPECT_NO_THROW(ddp->run(startTime, initState));
 
-  // get solution
+  // 获取解。
   const auto& solution = ddp->primalSolution();
   const auto& ctrl = solution.controller_;
 
@@ -220,23 +191,23 @@ TEST_F(Exp0, ddp_feedback_policy) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 TEST_F(Exp0, ddp_feedforward_policy) {
-  // ddp settings
+  // DDP 设置。
   auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, false);
 
-  // dynamics and rollout
+  // 动力学和 rollout。
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
-  // instantiate
+  // 实例化。
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
   auto ddp =
       createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
 
-  // run ddp
+  // 运行 DDP。
   EXPECT_NO_THROW(ddp->run(startTime, initState));
 
-  // get solution
+  // 获取解。
   const auto& solution = ddp->primalSolution();
   const auto& ctrl = solution.controller_;
 
@@ -255,13 +226,13 @@ TEST_F(Exp0, ddp_feedforward_policy) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 TEST_F(Exp0, ddp_moving_horizon) {
-  // ddp settings
+  // DDP 设置。
   const auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, true);
 
-  // dynamics and rollout
+  // 动力学和 rollout。
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
-  // instantiate
+  // 实例化。
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
@@ -276,25 +247,25 @@ TEST_F(Exp0, ddp_moving_horizon) {
         << "MESSAGE: iLQR failed in policy final time of trajectory!";
   };
 
-  // run iLQR (no active event)
+  // 运行 iLQR（无激活事件）。
   Scalar movingStartTime = 0.2;
   EXPECT_NO_THROW(ddp->run(movingStartTime, initState));
   expectSolutionEndsAt(movingStartTime +
                        static_cast<Scalar>(PredictLength) * timeStep);
 
-  // move the time horizon forward with overlap
+  // 以重叠方式向前移动时间窗口。
   movingStartTime = 0.6;
   EXPECT_NO_THROW(ddp->run(movingStartTime, initState));
   expectSolutionEndsAt(movingStartTime +
                        static_cast<Scalar>(PredictLength) * timeStep);
 
-  // move the time horizon forward with partial overlap
+  // 以部分重叠方式向前移动时间窗口。
   movingStartTime = 1.1;
   EXPECT_NO_THROW(ddp->run(movingStartTime, initState));
   expectSolutionEndsAt(movingStartTime +
                        static_cast<Scalar>(PredictLength) * timeStep);
 
-  // move the time horizon (no overlap)
+  // 移动时间窗口（无重叠）。
   movingStartTime = 1.6;
   EXPECT_NO_THROW(ddp->run(movingStartTime, initState));
   expectSolutionEndsAt(movingStartTime +
@@ -351,35 +322,35 @@ TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 TEST_F(Exp0, ddp_q_function) {
-  // ddp settings
+  // DDP 设置。
   auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, true);
   ddpSettings.maxNumIterations_ = 50;
-  ddpSettings.minRelCost_ = 1e-9;  // to allow more iterations that the effect
-                                   // of final linesearch is negligible
+  ddpSettings.minRelCost_ = 1e-9;  // 允许更多迭代，使
+                                   // 最终线搜索的影响可以忽略。
 
-  // dynamics and rollout
+  // 动力学和 rollout。
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
-  // instantiate
+  // 实例化。
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
   auto ddp =
       createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
 
-  // run ddp
+  // 运行 DDP。
   ddp->run(startTime, initState);
-  // get solution
+  // 获取解。
   const auto& solution = ddp->primalSolution();
   const auto& controller = solution.controller_;
 
-  // define precision for tests
+  // 定义测试精度。
   constexpr Scalar precision = 1e-3;
 
   const size_t timeIndex = 0;
 
-  // get Q function at current solution
-  // expected outcome: true, because the current solution should be optimal
+  // 获取当前解处的 Q 函数。
+  // 期望结果：true，因为当前解应为最优。
   const Scalar time = solution.timeTrajectory_[timeIndex];
   StateVector_t state = solution.stateTrajectory_[timeIndex];
   InputVector_t input = controller.computeInput(time, state);
@@ -390,9 +361,9 @@ TEST_F(Exp0, ddp_q_function) {
          "zero: "
       << dQdu1a.transpose();
 
-  // evaluate Q function at different state (but using feedback policy)
-  // expected outcome: true, because for a linear system the LQ approximation of
-  // Q is exact and the linear feedback policy is globally optimal
+  // 在不同状态处评估 Q 函数（但使用反馈策略）。
+  // 期望结果：true，因为对线性系统，LQ 近似
+  // Q 是精确的，线性反馈策略全局最优。
   StateVector_t queryState = StateVector_t::Random();
   InputVector_t queryInput = controller.computeInput(time, queryState);
   const InputVector_t dQdu1b = qFunction.dfdux * (queryState - state) +
@@ -403,9 +374,9 @@ TEST_F(Exp0, ddp_q_function) {
          "zero: "
       << dQdu1b.transpose();
 
-  // evaluate Q function at different input
-  // expected outcome: false, because for a linear system the LQ approximation
-  // of Q is exact and a random input is not optimal
+  // 在不同输入处评估 Q 函数。
+  // 期望结果：false，因为对线性系统，LQ 近似
+  // Q 是精确的，而随机输入不是最优。
   queryState = solution.stateTrajectory_[timeIndex];
   queryInput = InputVector_t::Random();
   const InputVector_t dQdu1c = qFunction.dfdux * (queryState - state) +
@@ -415,9 +386,9 @@ TEST_F(Exp0, ddp_q_function) {
       << "MESSAGE for test 1c: Derivative of Q function w.r.t. to u is zero: "
       << dQdu1c.transpose();
 
-  // get Q function at different state (but using feedback policy)
-  // expected outcome: true, because for a linear system the linear feedback
-  // policy is globally optimal
+  // 获取不同状态处的 Q 函数（但使用反馈策略）。
+  // 期望结果：true，因为对线性系统，线性反馈
+  // 策略全局最优。
   state = StateVector_t::Random();
   input = controller.computeInput(time, state);
   qFunction = ddp->getQFunction(timeIndex, state, input);
@@ -426,8 +397,8 @@ TEST_F(Exp0, ddp_q_function) {
                                           "function w.r.t. to u is not zero: "
                                        << dQdu2.transpose();
 
-  // get Q function at different input
-  // expected outcome: false, because a random input is not optimal
+  // 获取不同输入处的 Q 函数。
+  // 期望结果：false，因为随机输入不是最优。
   state = solution.stateTrajectory_[timeIndex];
   input = InputVector_t::Random();
   qFunction = ddp->getQFunction(timeIndex, state, input);
@@ -440,7 +411,7 @@ TEST_F(Exp0, ddp_q_function) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-/* Add parameterized test suite */
+/* 添加参数化测试套件。 */
 class Exp0Param : public Exp0,
                   public testing::WithParamInterface<SearchStrategyType> {
  protected:
@@ -451,23 +422,23 @@ class Exp0Param : public Exp0,
 /******************************************************************************************************/
 /******************************************************************************************************/
 TEST_P(Exp0Param, ILQR) {
-  // ddp settings
+  // DDP 设置。
   const auto ddpSettings = getSettings(getSearchStrategy(), true);
 
-  // dynamics and rollout
+  // 动力学和 rollout。
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
-  // instantiate
+  // 实例化。
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
   auto ddp =
       createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
 
-  // run ddp
+  // 运行 DDP。
   EXPECT_NO_THROW(ddp->run(startTime, initState));
 
-  // get solution
+  // 获取解。
   const auto& solution = ddp->primalSolution();
   const auto& ctrl = solution.controller_;
 
@@ -490,7 +461,7 @@ INSTANTIATE_TEST_SUITE_P(
     testing::ValuesIn({SearchStrategyType::LINE_SEARCH,
                        SearchStrategyType::LEVENBERG_MARQUARDT}),
     [](const testing::TestParamInfo<Exp0Param::ParamType>& info) {
-      /* returns test name for gtest summary */
+      /* 返回用于 gtest 摘要的测试名称。 */
       switch (info.param) {
         case SearchStrategyType::LINE_SEARCH:
           return std::string("LINE_SEARCH");

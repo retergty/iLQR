@@ -4,10 +4,9 @@
  */
 #include <gtest/gtest.h>
 
+#include <Eigen/Core>
 #include <array>
 #include <cmath>
-
-#include <Eigen/Core>
 
 #include "LinearInterpolation.hpp"
 
@@ -20,7 +19,7 @@ TEST(LinearInterpolationTest, TimeSegment) {
   auto [idx0, alpha0] = timeSegment(0.5, times);
   EXPECT_EQ(idx0, 0);
   EXPECT_DOUBLE_EQ(alpha0,
-                   0.5);  // alpha = (t1 - t) / (t1 - t0) = (1 - 0.5)/1 = 0.5
+                   0.5);  // alpha = (t1 - t) / (t1 - t0) = (1 - 0.5)/1 = 0.5。
 
   auto [idx1, alpha1] = timeSegment(1.5, times);
   EXPECT_EQ(idx1, 1);

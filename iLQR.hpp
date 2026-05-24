@@ -130,65 +130,65 @@ class iLQR {
         initializerRollout_(*initializer, ddpSettings_.timeStep_),
         lineSearchStrategy_(makeLineSearchSettings(ddp_setting), *this) {
     assert(optimalControlProblem_.dynamicsPtr != nullptr);
-    // set zero solution
+    // 设置零解。
     optimizedPrimalSolution_.clear();
     optimizedDualSolution_.clear();
   };
 
   /**
-   * The main routine of solver which runs the optimizer for a given initial
-   * state, initial time, and final time.
+   * 求解器主流程：针对给定初始
+   * 状态、初始时间和终止时间运行优化器。
    *
    * @param [in] initTime 初始时间。
    * @param [in] initState 初始状态。
    */
   void run(Scalar initTime, const StateVector_t& initState) {
-    // initialize parameters
+    // 初始化参数。
     initTime_ = initTime;
     initState_ = initState;
     lastFinalTime_ = finalTime_;
     finalTime_ = initTime + ddpSettings_.timeStep_ * (PredictLength);
     const size_t initIteration = totalNumIterations_;
 
-    // optimized --> nominal: initializes the nominal primal and dual solutions
-    // based on the optimized ones
+    // optimized --> nominal：基于优化解初始化名义原始解和对偶解。
+    // 基于优化解。
     bool initialSolutionExists =
-        initializePrimalSolution();  // true if the rollout is not purely from
-                                     // the Initializer
+        initializePrimalSolution();  // 如果 rollout 不完全来自
+                                     // Initializer，则为 true。
     initializeDualSolutionAndMetrics();
 
     performanceIndexLast_ = performanceIndex_;
-    // convergence variables of the main loop
+    // 主循环收敛变量。
     bool isConverged = false;
 
-    // DDP main loop
+    // DDP 主循环。
     while (true) {
-      // nominal --> nominal: constructs the LQ problem around the nominal
-      // trajectories
+      // nominal --> nominal：围绕名义轨迹构造 LQ 问题。
+      // 轨迹。
       approximateOptimalControlProblem();
 
-      // nominal --> nominal: solves the LQ problem
+      // nominal --> nominal：求解 LQ 问题。
       avgTimeStepBP_ = solveSequentialRiccatiEquations(
           nominalPrimalData_.modelDataFinalTime.cost);
 
-      // calculate controller and store the result in unoptimizedController_
+      // 计算控制器并将结果存入 unoptimizedController_。
       calculateController();
 
-      // the expected cost/merit calculated by the Riccati solution is not
-      // reliable
+      // Riccati 解计算出的期望代价/merit 不
+      // 可靠。
       const auto lqModelExpectedCost =
           initialSolutionExists
               ? nominalDualData_.valueFunctionTrajectory.front().f
               : performanceIndex_.merit;
 
-      // nominal --> optimized: based on the current LQ solution updates the
-      // optimized primal and dual solutions
+      // nominal --> optimized：基于当前 LQ 解更新
+      // 优化后的原始解和对偶解。
       takePrimalDualStep(lqModelExpectedCost);
 
-      // iteration info
+      // 迭代信息。
       ++totalNumIterations_;
 
-      // check convergence
+      // 检查收敛。
       isConverged = lineSearchStrategy_.checkConvergence(
           !initialSolutionExists, performanceIndexLast_, performanceIndex_);
       performanceIndexLast_ = performanceIndex_;
@@ -198,13 +198,13 @@ class iLQR {
                              ddpSettings_.maxNumIterations_) {
         break;
       } else {
-        // optimized --> nominal: use the optimized solution as the nominal for
-        // the next iteration
+        // optimized --> nominal：将优化解作为下一次迭代的名义解。
+        // 下一次迭代。
         optimizedDualSolution_.swap(nominalDualData_.dualSolution);
         optimizedPrimalSolution_.swap(nominalPrimalData_.primalSolution);
         optimizedProblemMetrics_.swap(nominalPrimalData_.problemMetrics);
       }
-    }  // end of while loop
+    }  // while 循环结束。
   }
 
   /**
@@ -295,26 +295,26 @@ class iLQR {
   }
 
   /**
-   * Calculates the merit function based on the performance index .
+   * 根据性能指标计算 merit 函数。
    *
    * @param [in] performanceIndex 性能指标（含 cost、等式/不等式拉格朗日等）。
    * @return 用于线搜索与收敛判据的 merit 值。
    */
   static Scalar calculateRolloutMerit(
       const PerformanceIndex_t& performanceIndex) {
-    // cost
+    // 代价
     Scalar merit = performanceIndex.cost;
-    // state/state-input equality Lagrangian
+    // 状态/状态-输入等式拉格朗日项。
     merit += performanceIndex.equalityLagrangian;
-    // state/state-input inequality Lagrangian
+    // 状态/状态-输入不等式拉格朗日项。
     merit += performanceIndex.inequalityLagrangian;
 
     return merit;
   }
 
   /**
-   * Computes cost, soft constraints and constraints values of each point in the
-   * the primalSolution rollout.
+   * 计算 primalSolution rollout 中每个点的代价、软约束和约束值。
+   * primalSolution rollout。
    *
    * @param [in] problem 最优控制问题。
    * @param [in] targetTrajectory 参考轨迹。
@@ -332,23 +332,23 @@ class iLQR {
     const InputTrajectory_t& uTrajectory = primalSolution.inputTrajectory_;
 
     for (size_t k = 0; k < PredictLength; k++) {
-      // intermediate time cost and constraints
+      // 中间时刻代价和约束。
       problemMetrics.intermediates[k] =
           approximator_.computeIntermediateMetrics(
               problem, targetTrajectory, tTrajectory[k], xTrajectory[k],
               uTrajectory[k], dualSolution.intermediates[k]);
     }
 
-    // final time cost and constraints
+    // 终端时刻代价和约束。
     problemMetrics.final = approximator_.computeFinalMetrics(
         problem, targetTrajectory, tTrajectory.back(), xTrajectory.back(),
         dualSolution.final);
   }
 
   /**
-   * Forward integrate the system dynamics with given controller. It uses the
-   * given control policies and initial state, to integrate the system dynamics
-   * in time period [initTime, finalTime].
+   * 使用给定控制器正向积分系统动力学。
+   * 使用给定控制策略和初始状态对系统动力学进行积分，
+   * 积分区间为 [initTime, finalTime]。
    *
    * @param [in] rollout 前向积分用的 rollout 对象。
    * @param [in] initTime 初始时间。
@@ -368,12 +368,12 @@ class iLQR {
         primalSolution.inputTrajectory_.data(), PredictLength + 1);
     rollout.run(initTime, initState, finalTime, &primalSolution.controller_,
                 rolloutTrajectortPtr);
-    // average time step
+    // 平均时间步长。
     return (finalTime - initTime) / static_cast<Scalar>(PredictLength);
   }
 
   /**
-   * Calculates the PerformanceIndex associated to the given ProblemMetrics.
+   * 计算给定 ProblemMetrics 对应的 PerformanceIndex。
    *
    * @param [in] timeTrajectory rollout 的时间戳序列。
    * @param [in] problemMetrics 各时刻代价与约束指标。
@@ -382,10 +382,10 @@ class iLQR {
   static PerformanceIndex_t computeRolloutPerformanceIndex(
       const TimeTrajectory_t& timeTrajectory,
       const ProblemMetrics_t& problemMetrics) {
-    // Final
+    // 终端
     PerformanceIndex_t finalperformanceIndex =
         toPerformanceIndex(problemMetrics.final);
-    // Intermediates
+    // 中间节点
     IntermediatePerformanceIndexTrajectory_t performanceIndexTrajectory;
 
     for (size_t i = 0; i < performanceIndexTrajectory.size(); ++i) {
@@ -393,7 +393,7 @@ class iLQR {
           toPerformanceIndex(problemMetrics.intermediates[i]);
     }
 
-    // Intermediates
+    // 中间节点
     return trapezoidalIntegration(timeTrajectory, performanceIndexTrajectory,
                                   finalperformanceIndex);
   }
@@ -435,7 +435,7 @@ class iLQR {
   }
 
   /**
-   * Computes the integral of the squared (IS) norm of the controller update.
+   * 计算控制器更新平方范数的积分（IS）。
    *
    * @param [in] controller 控制器（含 deltaBiasArray）。
    * @return 控制器更新量的平方范数沿时间的积分（梯形积分）。
@@ -447,7 +447,7 @@ class iLQR {
     for (size_t i = 0; i < controller.size(); ++i) {
       biasArraySquaredNorm[i] = controller.deltaBiasArray_[i].squaredNorm();
     }
-    // integrates using the trapezoidal approximation method
+    // 使用梯形近似方法积分。
     return trapezoidalIntegration(controller.timeStamp_, biasArraySquaredNorm,
                                   0.0);
   }
@@ -460,11 +460,11 @@ class iLQR {
     return settings;
   }
 
-  /** Initializes the nominal primal based on the optimized ones.
-   * @return True if the rollout is not purely from the Initializer.
+  /** 基于优化解初始化名义原始解。
+   * @return 如果 rollout 不完全来自 Initializer，则返回 true。
    */
   bool initializePrimalSolution() {
-    // try to initialize with controller
+    // 尝试使用控制器初始化。
     int numSteps = 0;
     bool ret = false;
     if (lastFinalTime_ > initTime_) {
@@ -472,18 +472,18 @@ class iLQR {
                                           nominalPrimalData_.primalSolution);
       ret = true;
     }
-    // past too long before last run.
+    // 距离上次运行已过去太久。
     rolloutInitializer(nominalPrimalData_.primalSolution, numSteps);
     return ret;
   }
 
   /**
-   * Forward integrate the system dynamics with the controller in
-   * inputPrimalSolution. In general, it uses the given control policies and the
-   * initial state, to integrate the system dynamics in the time period
-   * [initTime, finalTime]. However, if inputPrimalSolution's controller does
-   * not cover the period [initTime, finalTime], it will use the controller till
-   * the final time of the controller
+   * 使用 inputPrimalSolution 中的控制器正向积分系统动力学。
+   * 通常会使用给定控制策略和初始状态，
+   * 在时间区间内积分系统动力学。
+   * [initTime, finalTime]。但如果 inputPrimalSolution 的控制器
+   * 未覆盖区间 [initTime, finalTime]，则使用该控制器直到
+   * 控制器的终止时间。
    *
    * @param [in] inputPrimalSolution 其控制器将用于前向积分。
    * @param [out] outputPrimalSolution 得到的原始解（轨迹与控制器）。
@@ -491,8 +491,8 @@ class iLQR {
    */
   int rolloutInitialController(PrimalSolution_t& inputPrimalSolution,
                                PrimalSolution_t& outputPrimalSolution) {
-    // Ensure that finalTime is included by adding a fraction of dt such that: N
-    // * dt <= finalTime < (N + 1) * dt.
+    // 通过加入一个 dt 的小分数确保包含 finalTime，使得：N
+    // * dt <= finalTime < (N + 1) * dt。
     Scalar finalTimeLocal = std::min(lastFinalTime_, finalTime_) +
                             static_cast<Scalar>(0.01) * ddpSettings_.timeStep_;
     int numSteps = std::min(
@@ -507,9 +507,9 @@ class iLQR {
   }
 
   /**
-   * It will check the content of the primalSolution, and if its final time is
-   * smaller than the current solver finalTime_, it will concatenate it with the
-   * result of Initializer.
+   * 该过程会检查 primalSolution 的内容；如果其终止时间
+   * 小于当前求解器的 finalTime_，则将其与
+   * Initializer 的结果拼接。
    */
   void rolloutInitializer(PrimalSolution_t& primalSolution, int numSteps) {
     RolloutTrajectoryPointer_t rolloutTrajectoryPtr(
@@ -531,11 +531,11 @@ class iLQR {
   }
 
   /**
-   * Initializes the nominal dual solutions based on the optimized ones and
-   * nominal primal solution. Moreover, it updates ProblemMetrics.
+   * 基于优化解和名义原始解初始化名义对偶解，
+   * 同时更新 ProblemMetrics。
    */
   void initializeDualSolutionAndMetrics() {
-    // initialize dual solution
+    // 初始化对偶解。
     initializeDualSolution(
         optimalControlProblem_, nominalPrimalData_.primalSolution,
         optimizedDualSolution_, nominalDualData_.dualSolution);
@@ -545,7 +545,7 @@ class iLQR {
                           nominalDualData_.dualSolution,
                           nominalPrimalData_.problemMetrics);
 
-    // calculates rollout merit
+    // 计算 rollout merit。
     performanceIndex_ = computeRolloutPerformanceIndex(
         nominalPrimalData_.primalSolution.timeTrajectory_,
         nominalPrimalData_.problemMetrics);
@@ -553,23 +553,23 @@ class iLQR {
   }
 
   /**
-   * Approximates the nonlinear problem as a linear-quadratic problem around the
-   * nominal state and control trajectories. This method updates the following
-   * variables:
-   * 	- linearized system model and constraints
-   * 	- quadratized cost function
-   * 	- as well as the constrained coefficients of
-   * 		- linearized system model
-   * 		- quadratized intermediate cost function
-   * 		- quadratized final cost
+   * 围绕名义状态和控制轨迹，将非线性问题近似为线性二次问题。
+   * 该方法会更新以下变量：
+   * 变量：
+   * 	- 线性化系统模型和约束
+   * 	- 二次化代价函数
+   * 	- 以及以下对象的约束系数
+   * 		- 线性化系统模型
+   * 		- 二次化中间代价函数
+   * 		- 二次化终端代价
    */
   void approximateOptimalControlProblem() {
     approximateIntermediateLQ(nominalDualData_.dualSolution,
                               nominalPrimalData_);
 
     /*
-     * compute the Heuristics function at the final time. Also call shiftHessian
-     * on the Heuristics 2nd order derivative.
+     * 计算终端时刻的 Heuristics 函数，并调用 shiftHessian
+     * 处理 Heuristics 的二阶导数。
      */
     ModelData_t& modelData = nominalPrimalData_.modelDataFinalTime;
     const Scalar& time =
@@ -581,7 +581,7 @@ class iLQR {
     modelData = approximator_.approximateFinalLQ(
         optimalControlProblem_, targetTrajectory_, time, state, multiplier);
 
-    // shift Hessian for final time
+    // 修正终端时刻 Hessian。
     if (ddpSettings_.strategy_ == SearchStrategyType::LINE_SEARCH) {
       shiftHessian(ddpSettings_.lineSearch_.hessianCorrectionStrategy,
                    modelData.cost.dfdxx,
@@ -590,14 +590,14 @@ class iLQR {
   }
 
   /**
-   * Calculates an LQ approximate of the optimal control problem for the nodes.
+   * 计算节点处最优控制问题的 LQ 近似。
    *
    * @param [in] dualSolution 对偶解。
    * @param [in,out] primalData 原始数据（读轨迹，写 modelDataTrajectory）。
    */
   void approximateIntermediateLQ(const DualSolution_t& dualSolution,
                                  PrimalDataContainer_t& primalData) {
-    // create alias
+    // 创建别名。
     const TimeTrajectory_t& timeTrajectory =
         primalData.primalSolution.timeTrajectory_;
     const StateTrajectory_t& stateTrajectory =
@@ -609,7 +609,7 @@ class iLQR {
     ModelDataTrajectory_t& modelDataTrajectory = primalData.modelDataTrajectory;
 
     for (size_t timeIndex = 0; timeIndex < PredictLength; ++timeIndex) {
-      // approximate continuous LQ for the given time index
+      // 对给定时间索引进行连续 LQ 近似。
       ModelData_t continuousTimeModelData =
           approximator_.approximateIntermediateLQ(
               optimalControlProblem_, targetTrajectory_,
@@ -626,8 +626,8 @@ class iLQR {
   }
 
   /**
-   * Calculates the discrete-time LQ approximation from the continuous-time LQ
-   * approximation.
+   * 由连续时间 LQ 近似计算离散时间 LQ 近似。
+   * 近似。
    *
    * @param [in] system 系统动力学。
    * @param [in] time 当前时刻 t_k。
@@ -644,12 +644,12 @@ class iLQR {
                         ModelData_t& modelData) {
     modelData.time = continuousTimeModelData.time;
 
-    // linearize system dynamics
+    // 线性化系统动力学。
     modelData.dynamics = discretizer_.sensitivityDiscretize(system, time, state,
                                                             input, timeStep);
-    modelData.dynamics.f.setZero();  // why?
+    modelData.dynamics.f.setZero();  // 为什么？
 
-    // quadratic approximation to the cost function
+    // 代价函数的二次近似。
     modelData.cost = continuousTimeModelData.cost * timeStep;
   }
 
@@ -678,12 +678,12 @@ class iLQR {
    */
   void computeProjections(const HmMatrix_t& Hm,
                           HmMatrix_t& constraintNullProjector) const {
-    // UUT decomposition of inv(Hm)
+    // inv(Hm) 的 UUT 分解。
     HmMatrix_t HmInvUmUmT;
 
     LinearAlgebra::computeInverseMatrixUUT(Hm, HmInvUmUmT);
 
-    // compute DmDagger, DmDaggerTHmDmDaggerUUT, HmInverseConstrainedLowRank
+    // 计算 DmDagger、DmDaggerTHmDmDaggerUUT 和 HmInverseConstrainedLowRank。
     constraintNullProjector = HmInvUmUmT;
   }
 
@@ -697,28 +697,28 @@ class iLQR {
   void projectLQ(const ModelData_t& modelData,
                  const HmMatrix_t& constraintNullProjector,
                  ModelData_t& projectedModelData) const {
-    // dimensions and time
+    // 维度和时间。
     projectedModelData.time = modelData.time;
 
-    // Change of variables u = Pu * tilde{u}
+    // 变量变换 u = Pu * tilde{u}。
     // Pu = constraintNullProjector;
 
-    // dynamics
+    // 动力学
     projectedModelData.dynamics = modelData.dynamics;
     changeOfInputVariables(projectedModelData.dynamics,
                            constraintNullProjector);
 
-    // cost
+    // 代价
     projectedModelData.cost = modelData.cost;
     changeOfInputVariables(projectedModelData.cost, constraintNullProjector);
   }
 
   /**
-   * Takes the following steps: (1) Computes the Hessian of the Hamiltonian
-   * (i.e., Hm) (2) Based on Hm, it calculates the range space and the null
-   * space projections of the input-state equality constraints. (3) Based on
-   * these two projections, defines the projected LQ model. (4) Finally, defines
-   * the Riccati equation modifiers based on the search strategy.
+   * 执行以下步骤：(1) 计算 Hamiltonian 的 Hessian；
+   * （即 Hm）；(2) 基于 Hm 计算输入-状态等式约束的值域空间和零空间投影；
+   * (3) 基于这两个投影定义投影 LQ 模型；
+   * (4) 最后根据搜索策略定义
+   * Riccati 方程修正项。
    *
    * @param [in] modelData 当前节点模型数据。
    * @param [in] Sm 下一时刻 Riccati 矩阵。
@@ -729,27 +729,27 @@ class iLQR {
       const ModelData_t& modelData, const SmMatrix_t& Sm,
       ModelData_t& projectedModelData,
       RiccatiModification_t& riccatiModification) const {
-    // compute the Hamiltonian's Hessian
+    // 计算 Hamiltonian 的 Hessian。
     riccatiModification.time_ = modelData.time;
     riccatiModification.hamiltonianHessian_ =
         computeHamiltonianHessian(modelData, Sm);
 
-    // compute projectors
+    // 计算投影器。
     computeProjections(riccatiModification.hamiltonianHessian_,
                        riccatiModification.constraintNullProjector_);
 
-    // project LQ
+    // 投影 LQ。
     projectLQ(modelData, riccatiModification.constraintNullProjector_,
               projectedModelData);
 
-    // compute deltaQm, deltaGv, deltaGm
+    // 计算 deltaQm、deltaGv、deltaGm。
     lineSearchStrategy_.computeRiccatiModification(
         projectedModelData, riccatiModification.deltaQm_);
   }
 
   /**
    * @brief 从终端到初始时刻顺序求解 Riccati 方程，得到 value function 与
-   * projected Lv/Km。
+   * 投影 Lv/Km。
    * @param [in] finalValueFunction 终端价值函数二次近似（Sm=dfdxx, Sv=dfdx,
    * s=f）。
    * @return 平均时间步长（用于统计）。
@@ -771,14 +771,14 @@ class iLQR {
                                             finalProjectedModelData,
                                             finalRiccatiModification);
 
-    // projected feedforward
+    // 投影前馈。
     finalProjectedLvFinal = -finalProjectedModelData.cost.dfdu;
-    // last
+    // 最后一个。
     // finalProjectedLvFinal -=
     // finalProjectedModelData.dynamics.dfdu.transpose() *
     // finalValueFunction.dfdx;
 
-    // projected feedback
+    // 投影反馈。
     finalProjectedKmFinal = -finalProjectedModelData.cost.dfdux;
     // finalProjectedKmFinal -=
     // finalProjectedModelData.dynamics.dfdu.transpose() *
@@ -788,7 +788,7 @@ class iLQR {
   }
 
   /**
-   * The implementation for solving Riccati equations for all the partitions.
+   * 用于求解所有分区 Riccati 方程的实现。
    *
    * @param [in] finalValueFunction 终端价值函数（Sm=dfdxx, Sv=dfdx, s=f）。
    * @return 平均时间步长。
@@ -799,20 +799,20 @@ class iLQR {
 
     riccatiEquationsWorker(finalValueFunction);
 
-    // average time step
+    // 平均时间步长。
     return (finalTime_ - initTime_) / PredictLength;
   }
 
   /**
-   * Solves a Riccati equations and type_1 constraints error correction
-   * compensation for the partition in the given index.
+   * 求解给定索引分区中的 Riccati 方程和 type_1 约束误差校正
+   * 补偿。
    *
    * @param [in] finalValueFunction 终端价值函数，用于反向递推的初值。
    */
   void riccatiEquationsWorker(
       const ValueFunctionQuadraticApproximation_t& finalValueFunction) {
     /*
-     * solving the Riccati equations
+     * 求解 Riccati 方程。
      */
     const ValueFunctionQuadraticApproximation_t* valueFunctionNext =
         &finalValueFunction;
@@ -847,12 +847,12 @@ class iLQR {
       valueFunctionNext = &(nominalDualData_.valueFunctionTrajectory[curIndex]);
 
       --curIndex;
-    }  // while
+    }  // while 循环。
   }
 
   /**
-   * Calculates the controller. This method uses the following variables. The
-   * method modifies unoptimizedController_.
+   * 计算控制器。该方法使用以下变量，并会
+   * 修改 unoptimizedController_。
    */
   void calculateController() {
     unoptimizedController_.timeStamp_ =
@@ -865,10 +865,10 @@ class iLQR {
                                 unoptimizedController_);
     }
 
-    // Since the controller for the last timestamp is invalid, if the last time
-    // is not the event time, use the control policy of the second to last time
-    // for the last time finalTimeIsNotAnEvent && there are at least two time
-    // stamps
+    // 由于最后一个时间戳的控制器无效，如果最后时刻
+    // 不是事件时刻，则使用倒数第二个时刻的控制策略
+    // 作为最后时刻控制策略；finalTimeIsNotAnEvent && 至少有两个
+    // 时间戳。
     if (unoptimizedController_.size() >= 2) {
       const size_t secondToLastIndex = unoptimizedController_.size() - 2u;
       unoptimizedController_.gainArray_.back() =
@@ -881,8 +881,8 @@ class iLQR {
   }
 
   /**
-   * Calculate controller for the timeIndex by using primal and dual and write
-   * the result back to dstController
+   * 使用原始解和对偶解计算 timeIndex 对应的控制器，并写回
+   * dstController。
    *
    * @param [in] timeIndex 当前时间索引。
    * @param [in] primalData 用于计算控制器的原始数据。
@@ -903,11 +903,11 @@ class iLQR {
         dualData.riccatiModificationTrajectory[timeIndex]
             .constraintNullProjector_;
 
-    // feedback gains
+    // 反馈增益。
     dstController.gainArray_[timeIndex] =
         Qu * projectedKmTrajectoryStock_[timeIndex];
 
-    // bias input
+    // 偏置输入。
     dstController.biasArray_[timeIndex] = nominalInput;
     dstController.biasArray_[timeIndex] -=
         dstController.gainArray_[timeIndex] * nominalState;
@@ -915,10 +915,10 @@ class iLQR {
         Qu * projectedLvTrajectoryStock_[timeIndex];
   }
 
-  /** Based on the current LQ solution updates the optimized primal and dual
-   * solutions. */
+  /** 基于当前 LQ 解更新优化后的原始解和对偶
+   * 解。 */
   void takePrimalDualStep(Scalar lqModelExpectedCost) {
-    // update primal: run search strategy and find the optimal stepLength
+    // 更新原始解：运行搜索策略并找到最优 stepLength。
     Scalar avgTimeStep = 0;
     SearchStrategySolutionRef_t solution(
         avgTimeStep, optimizedDualSolution_, optimizedPrimalSolution_,
@@ -931,7 +931,7 @@ class iLQR {
       avgTimeStepFP_ = 0.9 * avgTimeStepFP_ + 0.1 * avgTimeStep;
     }
 
-    // update dual
+    // 更新对偶解。
     if (success) {
       DualSolutionRef_t DualSolutionRef = optimizedDualSolution_;
       updateDualSolution(optimalControlProblem_, optimizedPrimalSolution_,
@@ -941,8 +941,8 @@ class iLQR {
       performanceIndex_.merit = calculateRolloutMerit(performanceIndex_);
     }
 
-    // if failed, use nominal and to keep the consistency of cached data, all
-    // cache should be left untouched
+    // 如果失败，则使用名义解；为保持缓存数据一致性，所有
+    // 缓存都应保持不变。
     if (!success) {
       optimizedDualSolution_ = nominalDualData_.dualSolution;
       optimizedPrimalSolution_ = nominalPrimalData_.primalSolution;
@@ -955,7 +955,7 @@ class iLQR {
       const Scalar time, const StateVector_t& state,
       const PrimalSolution_t& primalSolution,
       const ValueFunctionTrajectory_t& valueFunctionTrajectory) const {
-    // result
+    // 结果。
     ValueFunctionQuadraticApproximation_t valueFunction;
     valueFunction.dfdu.setZero();
     valueFunction.dfdux.setZero();
@@ -975,13 +975,13 @@ class iLQR {
         +[](const ValueFunctionTrajectory_t& trajectory,
             size_t ind) -> const SmMatrix_t& { return trajectory[ind].dfdxx; });
 
-    // Re-center around query state
+    // 围绕查询状态重新居中。
     const StateVector_t xNominal = LinearInterpolation::interpolate(
         indexAlpha, primalSolution.stateTrajectory_);
     const StateVector_t deltaX = state - xNominal;
     const StateVector_t SmDeltaX = valueFunction.dfdxx * deltaX;
     valueFunction.f += deltaX.dot(0.5 * SmDeltaX + valueFunction.dfdx);
-    valueFunction.dfdx += SmDeltaX;  // Adapt dfdx after f!
+    valueFunction.dfdx += SmDeltaX;  // 在更新 f 后调整 dfdx！
 
     return valueFunction;
   }
@@ -1002,7 +1002,7 @@ class iLQR {
         state - primalSolution.stateTrajectory_[timeIndex];
     const StateVector_t SmDeltaX = valueFunction.dfdxx * deltaX;
     valueFunction.f += deltaX.dot(Scalar(0.5) * SmDeltaX + valueFunction.dfdx);
-    valueFunction.dfdx += SmDeltaX;  // Adapt dfdx after f!
+    valueFunction.dfdx += SmDeltaX;  // 在更新 f 后调整 dfdx！
 
     return valueFunction;
   }
@@ -1010,8 +1010,8 @@ class iLQR {
   DDPSettings<Scalar> ddpSettings_{};
 
  public:
-  // Kept public for search strategy integration and existing external setup
-  // code.
+  // 保持 public 以支持搜索策略集成和已有外部设置
+  // 代码。
   OptimalControlProblem_t& optimalControlProblem_;
   TimeTriggeredRollout_t rollout_;
   InitializerRollout_t initializerRollout_;
@@ -1019,38 +1019,38 @@ class iLQR {
  private:
   LineSearchStrategy_t lineSearchStrategy_;
 
-  // Shared linear-quadratic approximator for static rollout helpers.
+  // 供静态 rollout 辅助函数共享的线性二次近似器。
   inline static LinearQuadraticApproximator_t approximator_{};
 
   TargetTrajectories_t targetTrajectory_;
 
-  // Current solve time interval and initial condition.
+  // 当前求解时间区间和初始条件。
   Scalar initTime_{0.0};
   Scalar finalTime_{0.0};
   Scalar lastFinalTime_{0.0};
   StateVector_t initState_;
 
-  // Nominal data used by the current backward pass.
+  // 当前反向递推使用的名义数据。
   PrimalDataContainer_t nominalPrimalData_;
   DualDataContainer_t nominalDualData_;
 
-  // Best accepted solution and its rollout metrics.
+  // 当前接受的最佳解及其 rollout 指标。
   PrimalSolution_t optimizedPrimalSolution_;
   DualSolution_t optimizedDualSolution_;
   ProblemMetrics_t optimizedProblemMetrics_;
 
-  // Controller calculated from the LQ solution before line search.
+  // 线搜索前由 LQ 解计算出的控制器。
   LinearController_t unoptimizedController_;
 
-  // Linearization discretizer and Riccati recursion workspace.
+  // 线性化离散器和 Riccati 递推工作区。
   EK2DynamicsDiscretizer_t discretizer_;
   DiscreteTimeRiccatiEquations_t riccatiEquationsSolver_;
   std::array<KmMatrix_t, PredictLength + 1>
-      projectedKmTrajectoryStock_;  // projected feedback
+      projectedKmTrajectoryStock_;  // 投影反馈。
   std::array<LvVector_t, PredictLength + 1>
-      projectedLvTrajectoryStock_;  // projected feedforward
+      projectedLvTrajectoryStock_;  // 投影前馈。
 
-  // Performance and iteration bookkeeping.
+  // 性能和迭代记录。
   PerformanceIndex_t performanceIndex_;
   PerformanceIndex_t performanceIndexLast_;
   Scalar avgTimeStepFP_ = 0.0;

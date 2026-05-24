@@ -1,32 +1,3 @@
-/******************************************************************************
-Copyright (c) 2020, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
 /**
  * @file SlacknessSquaredHingePenalty.hpp
  * @brief 松弛平方铰链惩罚（PHR）：不等式 h≥0 的增广拉格朗日惩罚，引入松弛 s 后
@@ -45,11 +16,11 @@ template <typename Scalar>
 class SlacknessSquaredHingePenalty final : public AugmentedPenaltyBase<Scalar> {
  public:
   /**
-   * Configuration object for the squared hinge penalty.
-   * @param [in] scale : scaling factor. In the class description, it is
-   * referred to as \pho.
-   * @param [in] stepSize: step-size for updating Lagrange multiplier. In the
-   * class description, it is referred to as \alpha.
+   * 平方铰链惩罚的配置对象。
+   * @param [in] scale: 缩放因子，在类说明中记为
+   * \pho。
+   * @param [in] stepSize: 更新拉格朗日乘子的步长，在
+   * 类说明中记为 \alpha。
    */
   struct Config {
     Config() : Config(10.0, 1.0) {}
@@ -59,7 +30,7 @@ class SlacknessSquaredHingePenalty final : public AugmentedPenaltyBase<Scalar> {
     Scalar stepSize;
   };
 
-  /** Constructor */
+  /** 构造函数 */
   SlacknessSquaredHingePenalty(const Config& config) : config_(config) {}
 
   ~SlacknessSquaredHingePenalty() override = default;

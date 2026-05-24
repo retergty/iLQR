@@ -12,9 +12,9 @@
 /******************************************************************************************************/
 /******************************************************************************************************/
 /**
- * This example defines an optimal control problem where a kinematically modeled
- * particle is supposed to orbit a unite circle (defined as a constraint) with
- * velocity of 1[m/s] (defined as a cost).
+ * 该示例定义了一个最优控制问题，其中运动学建模的
+ * 粒子需要以 1[m/s] 速度绕单位圆运动（单位圆定义为约束），
+ * 速度要求定义为代价。
  */
 namespace circular_model {
 static constexpr int STATE_DIM = 2;
@@ -68,9 +68,9 @@ class CircularKinematicsSystem final
 /******************************************************************************************************/
 /******************************************************************************************************/
 /**
- * This example defines an optimal control problem where a kinematically modeled
- * particle is supposed to orbit a unite circle (defined as a constraint) with
- * velocity of 1[m/s] (defined as a cost).
+ * 该示例定义了一个最优控制问题，其中运动学建模的
+ * 粒子需要以 1[m/s] 速度绕单位圆运动（单位圆定义为约束），
+ * 速度要求定义为代价。
  */
 template <typename Scalar, int ArrayLength>
 class CircularKinematicsCost
@@ -169,9 +169,9 @@ class CircularKinematicsCost
 /******************************************************************************************************/
 /******************************************************************************************************/
 /**
- * This example defines an optimal control problem where a kinematically modeled
- * particle is supposed to orbit a unite circle (defined as a constraint) with
- * velocity of 1[m/s] (defined as a cost).
+ * 该示例定义了一个最优控制问题，其中运动学建模的
+ * 粒子需要以 1[m/s] 速度绕单位圆运动（单位圆定义为约束），
+ * 速度要求定义为代价。
  */
 template <typename Scalar>
 class CircularKinematicsConstraints final

@@ -143,12 +143,12 @@ TEST_F(Ocs2QpSolverTest, satisfiesDeviationDynamics) {
 }
 
 TEST_F(Ocs2QpSolverTest, invariantUnderLinearization) {
-  // For a linear system with quadratic costs, absolute solutions are invariant
-  // to dynamically consistent nominal trajectories.
+  // 对于具有二次代价的线性系统，绝对解对动态一致的
+  // 名义轨迹保持不变。
   const auto linearization1 = getDynamicallyConsistentTrajectory();
   const auto linearization2 = getDynamicallyConsistentTrajectory();
 
-  // Compare solutions
+  // 比较解。
   const auto solution1 = qp_solver::solveLinearQuadraticOptimalControlProblem(
       problem, targetTrajectory, linearization1, x0);
   const auto solution2 = qp_solver::solveLinearQuadraticOptimalControlProblem(
@@ -164,13 +164,13 @@ TEST_F(Ocs2QpSolverTest, invariantUnderLinearization) {
 }
 
 TEST_F(Ocs2QpSolverTest, knownSolutionAtOrigin) {
-  // If the cost's nominal trajectory is set to zero, and the initial state is
-  // zero, then the solution has only zeros.
+  // 如果代价的名义轨迹设为零且初始状态为
+  // 零，则解也全为零。
   const auto zeroReference = getZeroTrajectory();
   setReferenceTrajectories(zeroReference);
   const Vector<Scalar, STATE_DIM> zeroX0 = Vector<Scalar, STATE_DIM>::Zero();
 
-  // Obtain solution with a zero nominal trajectory.
+  // 获取零名义轨迹下的解。
   auto zeroSolution = qp_solver::solveLinearQuadraticOptimalControlProblem(
       problem, targetTrajectory, zeroReference, zeroX0);
 

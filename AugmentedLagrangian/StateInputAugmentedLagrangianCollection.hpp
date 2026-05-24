@@ -70,8 +70,8 @@ class StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
     return penalty;
   }
 
-  /** Update Lagrange/penalty multipliers and the penalty value for each active
-   * term. */
+  /** 更新每个激活项的拉格朗日/惩罚乘子和惩罚值。
+   * 项。 */
   void updateLagrangian(
       const Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
@@ -81,7 +81,7 @@ class StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
                          std::make_index_sequence<Layout::NumTerms>{});
   }
 
-  /** Initialize Lagrange/penalty multipliers for each active term. */
+  /** 初始化每个激活项的拉格朗日/惩罚乘子。 */
   void initializeLagrangian(
       const Scalar time,
       MultiplierGroup<Scalar, Layout>& termsMultiplier) const {

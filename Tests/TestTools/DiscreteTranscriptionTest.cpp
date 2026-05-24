@@ -73,7 +73,7 @@ class DiscreteTranscriptionTest : public testing::Test {
   void checkSizes(const std::vector<LinearQuadraticStage_t>& lqr) const {
     ASSERT_EQ(lqr.size(), N + 1);
     for (size_t k = 0; k < N; ++k) {
-      // Cost sizes
+      // 代价尺寸
       ASSERT_EQ(lqr[k].cost.dfdxx.rows(), STATE_DIM);
       ASSERT_EQ(lqr[k].cost.dfdxx.cols(), STATE_DIM);
       ASSERT_EQ(lqr[k].cost.dfdux.rows(), INPUT_DIM);
@@ -81,13 +81,13 @@ class DiscreteTranscriptionTest : public testing::Test {
       ASSERT_EQ(lqr[k].cost.dfduu.rows(), INPUT_DIM);
       ASSERT_EQ(lqr[k].cost.dfduu.cols(), INPUT_DIM);
 
-      // Dynamics sizes
+      // 动力学尺寸
       ASSERT_EQ(lqr[k].dynamics.dfdx.rows(), STATE_DIM);
       ASSERT_EQ(lqr[k].dynamics.dfdx.cols(), STATE_DIM);
       ASSERT_EQ(lqr[k].dynamics.dfdu.rows(), STATE_DIM);
       ASSERT_EQ(lqr[k].dynamics.dfdu.cols(), INPUT_DIM);
 
-      // Constraint sizes
+      // 约束尺寸
       ASSERT_EQ(lqr[k].constraints.f.rows(), 0);
       ASSERT_EQ(lqr[k].constraints.dfdx.rows(), 0);
       ASSERT_EQ(lqr[k].constraints.dfdx.cols(), STATE_DIM);
@@ -95,11 +95,11 @@ class DiscreteTranscriptionTest : public testing::Test {
       ASSERT_EQ(lqr[k].constraints.dfdu.cols(), INPUT_DIM);
     }
 
-    // Terminal Cost size
+    // 终端代价尺寸
     ASSERT_EQ(lqr[N].cost.dfdxx.rows(), STATE_DIM);
     ASSERT_EQ(lqr[N].cost.dfdxx.cols(), STATE_DIM);
 
-    // Terminal Constraint size
+    // 终端约束尺寸
     ASSERT_EQ(lqr[N].constraints.f.rows(), 0);
     ASSERT_EQ(lqr[N].constraints.dfdx.rows(), 0);
     ASSERT_EQ(lqr[N].constraints.dfdx.cols(), STATE_DIM);
@@ -190,31 +190,31 @@ TEST_F(DiscreteTranscriptionTest, linearizationInvariance) {
   const auto lqp2 = qp_solver::getLinearQuadraticApproximation(
       problem, targetTrajectory, linearization2);
 
-  // All Hessians and Jacobians stay the same. The linear and constant parts
-  // change with the nominal trajectory.
+  // 所有 Hessian 和 Jacobian 保持不变。线性项和常数项
+  // 随名义轨迹变化。
   for (size_t k = 0; k < N; ++k) {
-    // Cost
+    // 代价
     ASSERT_TRUE(unconstrainedLqr[k].cost.dfdxx.isApprox(lqp2[k].cost.dfdxx));
     ASSERT_TRUE(unconstrainedLqr[k].cost.dfdux.isApprox(lqp2[k].cost.dfdux));
     ASSERT_TRUE(unconstrainedLqr[k].cost.dfduu.isApprox(lqp2[k].cost.dfduu));
 
-    // Dynamics
+    // 动力学
     ASSERT_TRUE(
         unconstrainedLqr[k].dynamics.dfdx.isApprox(lqp2[k].dynamics.dfdx));
     ASSERT_TRUE(
         unconstrainedLqr[k].dynamics.dfdu.isApprox(lqp2[k].dynamics.dfdu));
 
-    // Constraints
+    // 约束
     ASSERT_TRUE(unconstrainedLqr[k].constraints.dfdx.isApprox(
         lqp2[k].constraints.dfdx));
     ASSERT_TRUE(unconstrainedLqr[k].constraints.dfdu.isApprox(
         lqp2[k].constraints.dfdu));
   }
 
-  // Terminal Cost
+  // 终端代价
   ASSERT_TRUE(unconstrainedLqr[N].cost.dfdxx.isApprox(lqp2[N].cost.dfdxx));
 
-  // Terminal Constraints
+  // 终端约束
   ASSERT_TRUE(
       unconstrainedLqr[N].constraints.dfdx.isApprox(lqp2[N].constraints.dfdx));
 }

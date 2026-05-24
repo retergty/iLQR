@@ -70,7 +70,7 @@ class StateInputCostCollection {
   StateInputCostCollection() = default;
   ~StateInputCostCollection() = default;
 
-  /** Get state-input cost value */
+  /** 获取状态-输入代价值。 */
   Scalar getValue(
       Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
@@ -86,7 +86,7 @@ class StateInputCostCollection {
     return cost;
   }
 
-  /** Get state-input cost quadratic approximation */
+  /** 获取状态-输入代价二次近似。 */
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   getQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDim>& state,
@@ -104,7 +104,7 @@ class StateInputCostCollection {
     return cost_appro;
   }
 
-  // add cost to list end
+  // 将代价加入列表尾部。
   void add(StateInputCost<Scalar, XDim, UDim, ArrayLength>& cost) {
     list_.insert(list_.end(), cost);
   }

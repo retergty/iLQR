@@ -36,9 +36,9 @@ template <typename Scalar>
 class QuadraticPenalty final : public AugmentedPenaltyBase<Scalar> {
  public:
   /**
-   * Configuration object for the quadratic penalty.
-   * scale: scaling factor, see class description
-   * stepSize: step-length parameter, see class description
+   * 二次惩罚的配置对象。
+   * scale：缩放因子，参见类说明。
+   * stepSize：步长参数，参见类说明。
    */
   struct Config {
     Config() : Config(100.0, 0.0) {}
@@ -48,7 +48,7 @@ class QuadraticPenalty final : public AugmentedPenaltyBase<Scalar> {
     Scalar stepSize;
   };
 
-  /** Constructor */
+  /** 构造函数 */
   explicit QuadraticPenalty(const Config& config) : config_(config) {}
 
   ~QuadraticPenalty() override = default;

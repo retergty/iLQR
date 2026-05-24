@@ -148,9 +148,8 @@ TEST(ApproximationTest,
 
   const double cost =
       Approximator::computeCost(problem, targetTrajectory, 0.5, state, input);
-  const auto costApproximation =
-      Approximator::approximateCost(problem, targetTrajectory, 0.5, state,
-                                    input);
+  const auto costApproximation = Approximator::approximateCost(
+      problem, targetTrajectory, 0.5, state, input);
   Approximator::IntermediateMultiplierCollection_t multipliers;
   const auto modelData = Approximator::approximateIntermediateLQ(
       problem, targetTrajectory, 0.5, state, input, multipliers);

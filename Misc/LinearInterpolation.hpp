@@ -15,7 +15,7 @@ namespace LinearInterpolation {
 template <typename Scalar, size_t ArrayLength>
 std::pair<int, Scalar> timeSegment(
     Scalar enquiryTime, const std::array<Scalar, ArrayLength>& timeArray) {
-  // corner cases (no time set OR single time element)
+  // 边界情况（未设置时间或只有一个时间元素）。
   if constexpr (ArrayLength <= 1) {
     return {0, Scalar(1.0)};
   } else {
@@ -24,7 +24,7 @@ std::pair<int, Scalar> timeSegment(
 
     constexpr int lastInterval = static_cast<int>(ArrayLength) - 1;
     constexpr int maxIndex = lastInterval - 1;
-    
+
     const Scalar position = (enquiryTime - timeArray.front()) / dt;
     int index = static_cast<int>(std::floor(position));
     index = std::clamp(index, 0, maxIndex);
@@ -52,7 +52,7 @@ auto interpolate(const std::pair<int, Scalar>& indexAlpha,
   static_assert(ArrayLength > 0);
 
   if constexpr (ArrayLength > 1) {
-    // Normal interpolation case
+    // 普通插值情况。
     int index = indexAlpha.first;
     Scalar alpha = indexAlpha.second;
     const auto& lhs = accessFun(dataArray, index);
@@ -60,7 +60,7 @@ auto interpolate(const std::pair<int, Scalar>& indexAlpha,
 
     return alpha * lhs + (Scalar(1.0) - alpha) * rhs;
   } else {  // dataArray.size() == 1
-            // Time vector has only 1 element -> Constant function
+            // 时间向量只有 1 个元素 -> 常值函数。
     return accessFun(dataArray, 0);
   }
 }

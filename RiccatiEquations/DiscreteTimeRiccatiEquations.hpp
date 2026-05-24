@@ -1,32 +1,3 @@
-/******************************************************************************
-Copyright (c) 2017, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
- * Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
- * Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
-
 /**
  * @file DiscreteTimeRiccatiEquations.hpp
  * @brief 离散时间 Riccati 差分方程：单步递推计算 value function (Sm,Sv,s) 与
@@ -133,7 +104,7 @@ class DiscreteTimeRiccatiEquations {
                       Vector<Scalar, UDim>& projectedLv,
                       Matrix<Scalar, XDim, XDim>& Sm, Vector<Scalar, XDim>& Sv,
                       Scalar& s) const {
-    // precomputation (1)
+    // 预计算 (1)
     // dreCache.Sm_projectedHv_ = SmNext * projectedModelData.dynamicsBias;
     dreCache.Sm_projectedAm_ = SmNext * projectedModelData.dynamics.dfdx;
     dreCache.Sm_projectedBm_ = SmNext * projectedModelData.dynamics.dfdu;
@@ -149,12 +120,12 @@ class DiscreteTimeRiccatiEquations {
     dreCache.projectedGv_ += projectedModelData.dynamics.dfdu.transpose() *
                              dreCache.Sv_plus_Sm_projectedHv_;
 
-    // projected feedback
+    // 投影反馈。
     projectedKm = -dreCache.projectedGm_;
-    // projected feedforward
+    // 投影前馈。
     projectedLv = -dreCache.projectedGv_;
 
-    // precomputation (2)
+    // 预计算 (2)
     dreCache.projectedKm_T_projectedGm_ =
         projectedKm.transpose() * dreCache.projectedGm_;
     if (!reducedFormRiccati_) {
@@ -177,7 +148,7 @@ class DiscreteTimeRiccatiEquations {
         dreCache.Sm_projectedAm_.transpose() * projectedModelData.dynamics.dfdx;
     if (reducedFormRiccati_) {
       // += Km^T * Gm (in reduced form Km = -Gm so Km^T*Gm = -Gm^T*Gm is
-      // symmetric; OCS2 only adds once)
+      // 对称项；OCS2 只添加一次）
       Sm += dreCache.projectedKm_T_projectedGm_;
     } else {
       // += Km^T * Gm + Gm^T * Km

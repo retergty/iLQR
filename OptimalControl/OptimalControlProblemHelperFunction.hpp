@@ -74,10 +74,10 @@ void initializeDualSolution(
   dualSolution.timeTrajectory = primalSolution.timeTrajectory_;
 
   if (!cachedDualSolution.empty()) {
-    // final
+    // 终端
     dualSolution.final = cachedDualSolution.final;
 
-    // intermediates
+    // 中间节点
     for (size_t i = 0; i < PredictLength; i++) {
       const Scalar& time = primalSolution.timeTrajectory_[i];
       IntermediateMultiplierCollection_t& multipliers =
@@ -85,11 +85,11 @@ void initializeDualSolution(
       multipliers = getIntermediateDualSolutionAtTime(cachedDualSolution, time);
     }
   } else {
-    // final
+    // 终端
     initializeFinalMultiplierCollection(
         ocp, primalSolution.timeTrajectory_.back(), dualSolution.final);
 
-    // intermediates
+    // 中间节点
     for (size_t i = 0; i < PredictLength; i++) {
       const Scalar& time = primalSolution.timeTrajectory_[i];
       IntermediateMultiplierCollection_t& multipliers =
@@ -130,7 +130,7 @@ void updateDualSolution(
       MultiplierCollection<Scalar,
                            IntermediateStageConstraintLayout<ConstraintConfig>>;
 
-  // final
+  // 终端
   {
     const Scalar& time = primalSolution.timeTrajectory_.back();
     const Vector<Scalar, XDim>& state = primalSolution.stateTrajectory_.back();
@@ -139,7 +139,7 @@ void updateDualSolution(
     updateFinalMultiplierCollection(ocp, time, state, metrics, multipliers);
   }
 
-  // intermediates
+  // 中间节点
   // static_assert(dualSolution.intermediates.size() ==
   // primalSolution.timeTrajectory_.size());
   // static_assert(problemMetrics.intermediates.size() ==

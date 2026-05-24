@@ -1,32 +1,3 @@
-/******************************************************************************
-Copyright (c) 2017, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
- * Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
- * Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
-
 #pragma once
 
 #include <Eigen/LU>
@@ -68,10 +39,10 @@ getStateAndInputTrajectory(const std::vector<int>& numStates,
                            const Vector<Scalar, Eigen::Dynamic>& w);
 
 /**
- * Extracts the problem state and inputs dimensions as well as number of
- * constraints from a linear quadratic approximation Looks at the size of the
- * flowmap derivatives of the dynamics.
- * @return { numStatesPerStage, numInputsPerStage, numConstraintsPerStage}
+ * 提取问题的状态、输入维度以及约束数量。
+ * 这些信息来自线性二次近似，并根据动力学 flowmap 导数尺寸确定。
+ * 动力学 flowmap 导数尺寸。
+ * @return { numStatesPerStage, numInputsPerStage, numConstraintsPerStage }。
  */
 template <typename Scalar, int XDim, int UDim>
 std::tuple<std::vector<int>, std::vector<int>, std::vector<int>>
@@ -103,7 +74,7 @@ getNumStatesInputsConstraints(
   return {numStates, numInputs, numConstraints};
 }
 
-/** Counts the number of decision variables in the QP */
+/** 统计 QP 中的决策变量数量。 */
 int getNumDecisionVariables(const std::vector<int>& numStates,
                             const std::vector<int>& numInputs) {
   const auto totalNumberOfStates =
@@ -113,24 +84,23 @@ int getNumDecisionVariables(const std::vector<int>& numStates,
   return totalNumberOfStates + totalNumberOfInputs;
 }
 
-/** Counts the number of constraints in the QP */
+/** 统计 QP 中的约束数量。 */
 int getNumConstraints(const std::vector<int>& numStates,
                       const std::vector<int>& numConstraints) {
-  // Each stage constrains x_{k+1} states, adding the x_0 constraint, all states
-  // are constrained exactly once.
+  // 每个阶段约束 x_{k+1} 状态；加上 x_0 约束后，所有状态
+  // 都会被精确约束一次。
   return std::accumulate(numStates.begin(), numStates.end(), 0) +
          std::accumulate(numConstraints.begin(), numConstraints.end(), 0);
 }
 
 /**
- * Solves the discretized linear quadratic optimal control problem by
- * constructing a dense QP and inverting the full KKT system. The decision
- * vector is defined as w = [dx[0], du[0], dx[1],  du[1], ..., dx[N]]
+ * 通过构造稠密 QP 并反转完整 KKT 系统，求解离散化线性二次最优控制问题。
+ * 构造稠密 QP 并反转完整 KKT 系统。决策
+ * 向量定义为 w = [dx[0], du[0], dx[1], du[1], ..., dx[N]]。
  *
- * @param lqApproximation : vector of stage-wise discrete quadratic cost and
- * linear dynamics
- * @param dx0 : initial state deviation from the nominal trajectories.
- * @return trajectory of state and inputs (in relative coordinates), .i.e.
+ * @param lqApproximation: 按阶段存储的离散二次代价和线性动力学向量。
+ * @param dx0: 相对于名义轨迹的初始状态偏差。
+ * @return 状态和输入轨迹（相对坐标），即。
  * dx(t), du(t)
  */
 template <typename Scalar, int XDim, int UDim>
@@ -139,7 +109,7 @@ solveLinearQuadraticProblem(
     const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>&
         lqApproximation,
     const Vector<Scalar, XDim>& dx0) {
-  // Extract sizes
+  // 提取尺寸
   std::vector<int> numStates;
   std::vector<int> numInputs;
   std::vector<int> numConstraints;
@@ -149,21 +119,21 @@ solveLinearQuadraticProblem(
       getNumDecisionVariables(numStates, numInputs);
   const auto numQpConstraints = getNumConstraints(numStates, numConstraints);
 
-  // Construct QP
+  // 构造 QP
   const auto qpConstraints = getConstraintMatrices(
       lqApproximation, dx0, numQpConstraints, numDecisionVariables);
   const auto qpCosts = getCostMatrices(lqApproximation, numDecisionVariables);
 
-  // Solve
+  // 求解
   const auto primalDualSolution = solveDenseQp(qpCosts, qpConstraints);
 
-  // Extract solution
+  // 提取解。
   return getStateAndInputTrajectory<Scalar, XDim, UDim>(
       numStates, numInputs, primalDualSolution.first);
 }
 
 /**
- * Constructs the matrix of stacked dynamic constraints A w + b = 0
+ * 构造堆叠动力学约束矩阵 A w + b = 0。
  *
  * A = [-I  *
  *       C  D  *  *
@@ -176,11 +146,11 @@ solveLinearQuadraticProblem(
  *
  * b = [x0; e[0]; b[0]; ... e[N-1]; b[N-1]; e[N]]
  *
- * @param lqp : linear quadratic problem.
- * @param dx0 : initial state deviation from the nominal trajectories.
- * @param numConstraints : number of rows in A
- * @param numDecisionVariables : size of w
- * @return linear constraints in w, where w is the vector of decision variables
+ * @param lqp: 线性二次问题。
+ * @param dx0: 相对于名义轨迹的初始状态偏差。
+ * @param numConstraints: A 的行数。
+ * @param numDecisionVariables: w 的尺寸。
+ * @return w 上的线性约束，其中 w 是决策变量向量。
  */
 template <typename Scalar, int XDim, int UDim>
 VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic, Eigen::Dynamic, 0>
@@ -195,7 +165,7 @@ getConstraintMatrices(
 
   const int N = lqp.size() - 1;
 
-  // Preallocate full constraint matrix
+  // 预分配完整约束矩阵。
   VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic, Eigen::Dynamic, 0>
       constraints;
   auto& A = constraints.dfdx;
@@ -203,7 +173,7 @@ getConstraintMatrices(
   A.setZero(numConstraints, numDecisionVariables);
   b.setZero(numConstraints);
 
-  // Initial state constraint
+  // 初始状态约束。
   const int nx_0 = dx0.size();
   A.topLeftCorner(nx_0, nx_0) =
       -Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Identity(nx_0, nx_0);
@@ -220,29 +190,29 @@ getConstraintMatrices(
     const int nc_k = constraints_k.f.size();
 
     if (nc_k > 0) {
-      // Add [C, D, 0]
+      // 添加 [C, D, 0]。
       A.block(currRow, currCol, nc_k, nx_k + nu_k) << constraints_k.dfdx,
           constraints_k.dfdu;
-      // Add [e]
+      // 添加 [e]。
       b.segment(currRow, nc_k) = constraints_k.f;
 
       currRow += nc_k;
     }
 
-    // Add [A, B, -I]
+    // 添加 [A, B, -I]。
     A.block(currRow, currCol, nx_Next, nx_k + nu_k + nx_Next)
         << dynamics_k.dfdx,
         dynamics_k.dfdu,
         -Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Identity(nx_Next,
                                                                   nx_Next);
-    // Add [b]
+    // 添加 [b]。
     b.segment(currRow, nx_Next) = dynamics_k.f;
 
     currRow += nx_Next;
     currCol += nx_k + nu_k;
   }
 
-  // Final state constraint
+  // 终端状态约束。
   const auto& constraints_N = lqp[N].constraints;
   const int nc_N = constraints_N.f.size();
   if (nc_N > 0) {
@@ -254,7 +224,7 @@ getConstraintMatrices(
 }
 
 /**
- * Constructs a matrix of stacked cost functions  1/2 w' H w + g' w
+ * 构造堆叠代价函数矩阵 1/2 w' H w + g' w。
  *
  * H = [ Q  P'
  *       P  R
@@ -264,10 +234,10 @@ getConstraintMatrices(
  *
  * g = [q[0]; r[0]; q[1]; r[1]; ... qf ]
  *
- * @param lqp
- * @param numDecisionVariables : size of w
- * @return quadratic cost function in w, where w is the vector of decision
- * variables
+ * @param lqp 线性二次问题。
+ * @param numDecisionVariables: w 的尺寸。
+ * @return w 上的二次代价函数，其中 w 是决策
+ * 变量。
  */
 template <typename Scalar, int XDim, int UDim>
 ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> getCostMatrices(
@@ -279,7 +249,7 @@ ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> getCostMatrices(
 
   const int N = lqp.size() - 1;
 
-  // Preallocate full Cost matrices
+  // 预分配完整代价矩阵。
   ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> qpCost;
   auto& H = qpCost.dfdxx;
   auto& g = qpCost.dfdx;
@@ -294,19 +264,19 @@ ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> getCostMatrices(
     const int nx_k = cost_k.dfdux.cols();
     const int nu_k = cost_k.dfdux.rows();
 
-    // Add [ Q, P'
+    // 添加 [ Q, P'。
     //       P, R ]
     H.block(currRow, currRow, nx_k + nu_k, nx_k + nu_k) << cost_k.dfdxx,
         cost_k.dfdux.transpose(), cost_k.dfdux, cost_k.dfduu;
-    // Add [ q, r]
+    // 添加 [ q, r]。
     g.segment(currRow, nx_k + nu_k) << cost_k.dfdx, cost_k.dfdu;
-    // Add nominal cost
+    // 添加名义代价。
     c += cost_k.f;
 
     currRow += nx_k + nu_k;
   }
 
-  // Terminal cost
+  // 终端代价。
   const auto& cost_N = lqp[N].cost;
   const int nx_N = cost_N.dfdx.size();
   H.block(currRow, currRow, nx_N, nx_N) << cost_N.dfdxx;
@@ -317,11 +287,11 @@ ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> getCostMatrices(
 }
 
 /**
- * Constructs the equality constrained QP from the discretized linear quadratic
- * control problem.
- * @param lqp : linear quadratic problem.
- * @param dx0 : initial state deviation from the nominal trajectories.
- * @return { cost matrices, constraint matrices }
+ * 由离散化线性二次控制问题构造等式约束 QP。
+ * 控制问题。
+ * @param lqp: 线性二次问题。
+ * @param dx0: 相对于名义轨迹的初始状态偏差。
+ * @return { 代价矩阵, 约束矩阵 }。
  */
 template <typename Scalar, int XDim, int UDim>
 std::pair<ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0>,
@@ -329,7 +299,7 @@ std::pair<ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0>,
                                             Eigen::Dynamic, 0>>
 getDenseQp(const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
            const Vector<Scalar, XDim>& dx0) {
-  // Extract sizes
+  // 提取尺寸
   std::vector<int> numStates;
   std::vector<int> numInputs;
   std::vector<int> numConstraints;
@@ -339,7 +309,7 @@ getDenseQp(const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
       getNumDecisionVariables(numStates, numInputs);
   const auto numQpConstraints = getNumConstraints(numStates, numConstraints);
 
-  // Construct QP
+  // 构造 QP
   const auto qpCosts = getCostMatrices(lqp, numDecisionVariables);
   const auto qpConstraints =
       getConstraintMatrices(lqp, dx0, numQpConstraints, numDecisionVariables);
@@ -348,14 +318,14 @@ getDenseQp(const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
 }
 
 /**
- * Solves the equality constrained QP
- * min_w  1/2 w' H w + g' w
+ * 求解等式约束 QP。
+ * min_w  1/2 w' H w + g' w。
  *   s.t. A w + b = 0
  *
- *   Assumes H is positive definite, rows of A are linearly independent.
+ *   假定 H 正定且 A 的各行线性无关。
  *
- * @return {w, lambda} at the solution, where w is the vector of decision
- * variables, and lambda is the vector of lagrange multipliers
+ * @return 解处的 {w, lambda}，其中 w 是决策
+ * 变量向量，lambda 是拉格朗日乘子向量。
  */
 template <typename Scalar>
 std::pair<Vector<Scalar, Eigen::Dynamic>, Vector<Scalar, Eigen::Dynamic>>
@@ -366,15 +336,15 @@ solveDenseQp(
   const int m = constraints.dfdx.rows();
   const int n = constraints.dfdx.cols();
 
-  // Assemble KKT condition
+  // 组装 KKT 条件。
   Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> kktMatrix(n + m, n + m);
   Vector<Scalar, Eigen::Dynamic> kktRhs(n + m);
   kktMatrix << cost.dfdxx, constraints.dfdx.transpose(), constraints.dfdx,
       Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(m, m);
   kktRhs << -cost.dfdx, -constraints.f;
 
-  // prerequisite for the LU factorization, and the solution would be
-  // non-unique.
+  // LU 分解的前提条件，否则解会
+  // 不唯一。
   if (kktMatrix.fullPivLu().rank() != n + m) {
     throw std::runtime_error("KKT matrix is not full rank");
   }
@@ -382,12 +352,12 @@ solveDenseQp(
   return {sol.head(n), sol.tail(m)};
 }
 /**
- * Reconstructs the optimal state and input trajectory recursively based on the
- * full qp solution vector
- * @param numStates : number of states per stage
- * @param numInputs : number of inputs per stage
- * @param w : the vector of decision variables
- * @return { state_trajectory, input_trajectory }
+ * 基于完整 QP 解向量递归重建最优状态和输入轨迹。
+ * 完整 QP 解向量。
+ * @param numStates: 每阶段状态数量。
+ * @param numInputs: 每阶段输入数量。
+ * @param w: 决策变量向量。
+ * @return { state_trajectory, input_trajectory }。
  */
 template <typename Scalar, int XDim, int UDim>
 std::pair<std::vector<Vector<Scalar, XDim>>, std::vector<Vector<Scalar, UDim>>>

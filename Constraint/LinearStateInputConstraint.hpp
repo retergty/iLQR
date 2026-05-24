@@ -1,50 +1,21 @@
-/******************************************************************************
-Copyright (c) 2021, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
 #pragma once
 
 #include "StateInputConstraint.hpp"
 #include "Types.hpp"
 
 /**
- * Linear state-input constraint
+ * 线性状态-输入约束。
  */
 template <typename Scalar, int XDim, int UDim, int CDim>
 class LinearStateInputConstraint
     : public StateInputConstraint<Scalar, XDim, UDim, CDim> {
  public:
   /**
-   * Constructor
+   * 构造函数
    *
-   * @param[in] e: Constant term in C * x + D * u + e = 0
-   * @param[in] C: x factor in C * x + D * u + e = 0
-   * @param[in] D: u factor in C * x + D * u + e = 0
+   * @param[in] e: C * x + D * u + e = 0 中的常数项。
+   * @param[in] C: C * x + D * u + e = 0 中的 x 系数。
+   * @param[in] D: C * x + D * u + e = 0 中的 u 系数。
    */
   LinearStateInputConstraint(const Vector<Scalar, CDim>& e,
                              const Matrix<Scalar, CDim, XDim>& C,
@@ -80,9 +51,7 @@ class LinearStateInputConstraint
   }
 
  public:
-  Vector<Scalar, CDim> e_; /**< State input constraint */
-  Matrix<Scalar, CDim, XDim>
-      C_; /**< State input constraint derivative wrt. state */
-  Matrix<Scalar, CDim, UDim>
-      D_; /**< State input constraint derivative wrt. input */
+  Vector<Scalar, CDim> e_;       /**< 状态-输入约束。 */
+  Matrix<Scalar, CDim, XDim> C_; /**< 状态-输入约束对状态的导数。 */
+  Matrix<Scalar, CDim, UDim> D_; /**< 状态-输入约束对输入的导数。 */
 };

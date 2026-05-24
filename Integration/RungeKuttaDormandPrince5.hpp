@@ -31,7 +31,7 @@ class RungeKuttaDormandPrince5Stepper {
               const Vector<Scalar, XDim>& x0, const Vector<Scalar, XDim>& dxdt,
               const Scalar t, const Scalar dt, Vector<Scalar, XDim>& x_out,
               Vector<Scalar, XDim>& dxdt_out, bool computeDxdtOut = true) {
-    /* Runge Kutta Dormand-Prince Butcher tableau constants.
+    /* Runge-Kutta Dormand-Prince Butcher 表常数。
      * https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method */
     constexpr Scalar a2 = 1.0 / 5;
     constexpr Scalar a3 = 3.0 / 10;
@@ -65,7 +65,7 @@ class RungeKuttaDormandPrince5Stepper {
     constexpr Scalar c5 = -2187.0 / 6784;
     constexpr Scalar c6 = 11.0 / 84;
 
-    k1_ = dxdt;  // k1 = system(x, t) from previous iteration
+    k1_ = dxdt;  // k1 = 上一次迭代中的 system(x, t)。
     Vector<Scalar, XDim> x = x0 + dt * b21 * k1_;
     k2_ = system.computeFlowMap(t + dt * a2, x);
     x = x0 + dt * b31 * k1_ + dt * b32 * k2_;
@@ -76,7 +76,7 @@ class RungeKuttaDormandPrince5Stepper {
     k5_ = system.computeFlowMap(t + dt * a5, x);
     x = x0 + dt * (b61 * k1_ + b62 * k2_ + b63 * k3_ + b64 * k4_ + b65 * k5_);
     k6_ = system.computeFlowMap(t + dt, x);
-    // update x_out and dxdt_out (x_out can be x0 and dxdt_out can be dxdt)
+    // 更新 x_out 和 dxdt_out（x_out 可以是 x0，dxdt_out 可以是 dxdt）。
     x_out = x0 + dt * (c1 * k1_ + c3 * k3_ + c4 * k4_ + c5 * k5_ + c6 * k6_);
     if (computeDxdtOut) {
       dxdt_out = system.computeFlowMap(t + dt, x_out);
@@ -85,15 +85,15 @@ class RungeKuttaDormandPrince5Stepper {
 
  private:
   /**
-   * Estimate the maximal error value.
+   * 估计最大误差值。
    *
-   * @param [in] x_old: prevoius state.
-   * @param [in] dxdt_old: prevoius derivative.
-   * @param [in] error: step error estimate.
-   * @param [in] dt: step size.
-   * @param [in] absTol: The absolute error tolerance.
-   * @param [in] relTol: The relative error tolerance.
-   * @return maximal error value.
+   * @param [in] x_old: 上一状态。
+   * @param [in] dxdt_old: 上一导数。
+   * @param [in] error: 步进误差估计。
+   * @param [in] dt: 步长。
+   * @param [in] absTol: 绝对误差容忍度。
+   * @param [in] relTol: 相对误差容忍度。
+   * @return 最大误差值。
    */
   static Scalar maxError(const Vector<Scalar, XDim>& x_old,
                          const Vector<Scalar, XDim>& dxdt_old,
@@ -106,15 +106,15 @@ class RungeKuttaDormandPrince5Stepper {
     return err.template lpNorm<Eigen::Infinity>();
   }
 
-  /** intermediate derivatives during Runge-Kutta step. */
+  /** Runge-Kutta 步中的中间导数。 */
   Vector<Scalar, XDim> k1_, k2_, k3_, k4_, k5_, k6_;
 };
 
 /*
- * 5th order Runge Kutta Dormand-Prince (ode45) Integrator class
+ * 五阶 Runge-Kutta Dormand-Prince（ode45）积分器类。
  *
- * The implementation is based on the boost odeint integrator with the
- * controlled boost::numeric::odeint::runge_kutta_dopri5 stepper.
+ * 该实现基于 boost odeint 积分器，并使用
+ * controlled boost::numeric::odeint::runge_kutta_dopri5 步进器。
  */
 template <typename Scalar, int XDim>
 class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDim> {
@@ -125,23 +125,23 @@ class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDim> {
 
   static constexpr size_t maxNumStepsRetries_ = 100;
   /**
-   * Equidistant integration based on initial and final time as well as step
-   * length.
+   * 基于初始时间、终止时间和步长的等距积分。
+   * 长度。
    *
-   * @param [in] system: System function
-   * @param [in] observer: Observer callback
-   * @param [in] initialState: Initial state.
-   * @param [in] startTime: Initial time.
-   * @param [in] finalTime: Final time.
-   * @param [in] dt: Time step.
+   * @param [in] system: 系统函数。
+   * @param [in] observer: 观察器回调。
+   * @param [in] initialState: 初始状态。
+   * @param [in] startTime: 初始时间。
+   * @param [in] finalTime: 终止时间。
+   * @param [in] dt: 时间步长。
    */
   void integrateConst(OdeBase<Scalar, XDim>& system,
                       Observer<Scalar, XDim>& observer,
                       const Vector<Scalar, XDim>& initialState,
                       const Scalar startTime, const Scalar finalTime,
                       const Scalar dt) override {
-    // Ensure that finalTime is included by adding a fraction of dt such that: N
-    // * dt <= finalTime < (N + 1) * dt.
+    // 通过加入一个 dt 的小分数确保包含 finalTime，使得：N
+    // * dt <= finalTime < (N + 1) * dt。
     const Scalar finalTimeLocal = finalTime + 0.1 * dt;
     const int numSteps = static_cast<int>((finalTimeLocal - startTime) / dt);
     assert(numSteps >= 0);

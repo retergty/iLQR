@@ -66,7 +66,7 @@ class RolloutBase {
 
   /**
    * @brief 从 initTime 到 finalTime 用给定控制器前向积分动力学，结果写入
-   * trajectory。
+   * 轨迹。
    * @param [in] initTime 初始时间。
    * @param [in] initState 初始状态。
    * @param [in] finalTime 终止时间。
@@ -80,18 +80,18 @@ class RolloutBase {
                   RolloutTrajectoryPointer_t& trajectory) = 0;
 
   // /**
-  //  * Forward integrate the system dynamics with given controller. It uses the
-  //  given control policies and initial state,
-  //  * to integrate the system dynamics in time period [initTime, finalTime].
+  //  * 使用给定控制器正向积分系统动力学。
+  //  使用给定控制策略和初始状态，
+  //  * 在时间区间 [initTime, finalTime] 内积分系统动力学。
   //  *
-  //  * @param [in] initTime: The initial time.
-  //  * @param [in] initState: The initial state.
-  //  * @param [in] steps: numbers of steps.
-  //  * @param [in] controller: control policy.
-  //  * @param [out] timeTrajectory: The time trajectory stamp.
-  //  * @param [out] stateTrajectory: The state trajectory.
-  //  * @param [out] inputTrajectory: The control input trajectory.
-  //  * @return the final time
+  //  * @param [in] initTime: 初始时间。
+  //  * @param [in] initState: 初始状态。
+  //  * @param [in] steps: 步数。
+  //  * @param [in] controller: 控制策略。
+  //  * @param [out] timeTrajectory: 时间戳轨迹。
+  //  * @param [out] stateTrajectory: 状态轨迹。
+  //  * @param [out] inputTrajectory: 控制输入轨迹。
+  //  * @return 终止时间。
   //  */
   // virtual int run(const Scalar initTime, const Vector<Scalar, XDim>&
   // initState, const int steps, ControllerBase<Scalar, XDim, UDim>& controller,

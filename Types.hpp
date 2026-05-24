@@ -89,7 +89,7 @@ class DiagonalMatrix {
   }
   /** @brief 拷贝赋值，含自赋值检查。 */
   DiagonalMatrix& operator=(const DiagonalMatrix& rhs) {
-    // self assignment check
+    // 自赋值检查。
     if (this != &rhs) {
       data_ = rhs.data_;
     }
