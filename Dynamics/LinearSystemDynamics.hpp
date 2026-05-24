@@ -7,6 +7,8 @@
 template <typename Scalar, int XDim, int UDim>
 class LinearSystemDynamics : public SystemDynamicsBase<Scalar, XDim, UDim> {
  public:
+  using LinearApproximation_t =
+      typename SystemDynamicsBase<Scalar, XDim, UDim>::LinearApproximation_t;
   using SystemDynamicsBase<Scalar, XDim, UDim>::computeFlowMap;
   /**
    * @brief 用状态矩阵 A 与控制矩阵 B 构造线性系统。
@@ -30,14 +32,28 @@ class LinearSystemDynamics : public SystemDynamicsBase<Scalar, XDim, UDim> {
     return f;
   }
 
-  /** @brief 返回线性近似：dfdx=A, dfdu=B, f=A*x+B*u。 */
-  VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>
-  linearApproximation(Scalar t, const Vector<Scalar, XDim>& x,
-                      const Vector<Scalar, UDim>& u) override {
+  /** @brief 返回完整线性近似：dfdx=A, dfdu=B, f=A*x+B*u。 */
+  LinearApproximation_t linearApproximation(
+      Scalar t, const Vector<Scalar, XDim>& x,
+      const Vector<Scalar, UDim>& u) override {
     (void)t;
-    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> approximation;
+    LinearApproximation_t approximation;
     approximation.f = A_ * x;
     approximation.f += B_ * u;
+    approximation.dfdx = A_;
+    approximation.dfdu = B_;
+    return approximation;
+  }
+
+  /** @brief 返回偏差动力学近似：dfdx=A, dfdu=B, f=0。 */
+  LinearApproximation_t deviationLinearApproximation(
+      Scalar t, const Vector<Scalar, XDim>& x,
+      const Vector<Scalar, UDim>& u) override {
+    (void)t;
+    (void)x;
+    (void)u;
+    LinearApproximation_t approximation;
+    approximation.f.setZero();
     approximation.dfdx = A_;
     approximation.dfdu = B_;
     return approximation;

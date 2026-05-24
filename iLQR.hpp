@@ -647,7 +647,7 @@ class iLQR {
     // 线性化系统动力学。
     modelData.dynamics = discretizer_.sensitivityDiscretize(system, time, state,
                                                             input, timeStep);
-    modelData.dynamics.f.setZero();  // 为什么？
+    modelData.dynamics.f.setZero();
 
     // 代价函数的二次近似。
     modelData.cost = continuousTimeModelData.cost * timeStep;
