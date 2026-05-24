@@ -52,6 +52,9 @@ set(ILQR_HEADERS
   Cost/CostCollection.hpp
   Cost/QuadraticStateCost.hpp
   Dynamics/ControlledSystemBase.hpp
+  Dynamics/DiscreteLinearSystemDynamics.hpp
+  Dynamics/DiscreteSystemBase.hpp
+  Dynamics/DiscreteSystemDynamicsBase.hpp
   Dynamics/LinearSystemDynamics.hpp
   Dynamics/SystemDynamicsBase.hpp
   Dynamics/SystemDynamicsLinearizer.hpp
@@ -88,6 +91,7 @@ set(ILQR_HEADERS
   Penalties/MultidimensionalPenalty.hpp
   RiccatiEquations/DiscreteTimeRiccatiEquations.hpp
   RiccatiEquations/RiccatiModification.hpp
+  Rollout/DiscreteTimeRollout.hpp
   Rollout/InitializerRollout.hpp
   Rollout/RolloutBase.hpp
   Rollout/TimeTriggeredRollout.hpp

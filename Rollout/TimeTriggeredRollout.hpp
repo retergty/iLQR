@@ -80,23 +80,6 @@ class TimeTriggeredRollout : public RolloutBase<Scalar, XDim, UDim> {
     return RolloutIntegrateCount;
   }
 
-  // Scalar run(const Scalar initTime, const Vector<Scalar, XDim>& initState,
-  // const int steps, ControllerBase<Scalar, XDim, UDim>& controller,
-  //     std::array<Scalar, ArrayLen>& timeTrajectory, std::array<Vector<Scalar,
-  //     XDim>, ArrayLen>& stateTrajectory, std::array<Vector<Scalar, UDim>,
-  //     ArrayLen>& inputTrajectory) override
-  // {
-  //     Scalar finalTime = initTime + steps * this->settings().timeStep;
-  //     // 设置控制器。
-  //     systemDynamicsPtr_->setController(&controller);
-
-  //     Observer<Scalar, XDim> observer(ArrayLen, stateTrajectory.data(),
-  //     timeTrajectory.data()); // concatenate trajectory
-  //     // 积分受控系统。
-  //     RK45Intergraor_.integrateConst(*systemDynamicsPtr_, observer,
-  //     initState, initTime, finalTime, this->settings().timeStep);
-  // }
-
  private:
   ControlledSystemBase<Scalar, XDim, UDim>* systemDynamicsPtr_{nullptr};
 

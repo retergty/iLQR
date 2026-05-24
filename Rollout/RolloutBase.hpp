@@ -79,26 +79,6 @@ class RolloutBase {
                   ControllerBase<Scalar, XDim, UDim>* controller,
                   RolloutTrajectoryPointer_t& trajectory) = 0;
 
-  // /**
-  //  * 使用给定控制器正向积分系统动力学。
-  //  使用给定控制策略和初始状态，
-  //  * 在时间区间 [initTime, finalTime] 内积分系统动力学。
-  //  *
-  //  * @param [in] initTime: 初始时间。
-  //  * @param [in] initState: 初始状态。
-  //  * @param [in] steps: 步数。
-  //  * @param [in] controller: 控制策略。
-  //  * @param [out] timeTrajectory: 时间戳轨迹。
-  //  * @param [out] stateTrajectory: 状态轨迹。
-  //  * @param [out] inputTrajectory: 控制输入轨迹。
-  //  * @return 终止时间。
-  //  */
-  // virtual int run(const Scalar initTime, const Vector<Scalar, XDim>&
-  // initState, const int steps, ControllerBase<Scalar, XDim, UDim>& controller,
-  //   std::array<Scalar, ArrayLen>& timeTrajectory, std::array<Vector<Scalar,
-  //   XDim>, ArrayLen>& stateTrajectory, std::array<Vector<Scalar, UDim>,
-  //   ArrayLen>& inputTrajectory) = 0;
-
  protected:
   RolloutSettings<Scalar> rolloutSettings_{};
 };
