@@ -78,11 +78,37 @@ struct LinearQuadraticApproximator {
     modelData.dynamics =
         problem.dynamicsPtr->linearApproximation(time, state, input);
 
-    // 代价
+    approximateIntermediateCostLQ(problem, targetTrajectories, time, state,
+                                  input, multipliers, modelData);
+  }
+
+  /**
+   * 计算中间节点的代价与增广拉格朗日二次近似，不计算动力学。
+   *
+   * 该函数用于转录层自行生成连续/离散动力学近似时复用代价逻辑，避免先
+   * 计算连续动力学线性化再被转录层覆盖。
+   *
+   * @param [in] problem 最优控制问题。
+   * @param [in] targetTrajectories 参考轨迹。
+   * @param [in] time 当前时间。
+   * @param [in] state 当前状态。
+   * @param [in] input 当前输入。
+   * @param [in] multipliers 当前中间节点乘子。
+   * @param [out] modelData 输出数据模型；仅写入 time 与 cost。
+   */
+  static void approximateIntermediateCostLQ(
+      const OptimalControlProblem_t& problem,
+      const TargetTrajectories_t& targetTrajectories, const Scalar time,
+      const StateVector_t& state, const InputVector_t& input,
+      const IntermediateMultiplierCollection_t& multipliers,
+      ModelData_t& modelData) {
+    modelData.time = time;
+
+    // 代价。
     modelData.cost =
         approximateCost(problem, targetTrajectories, time, state, input);
 
-    // 拉格朗日项
+    // 拉格朗日项。
     if constexpr (StateEqConstraintDim != 0) {
       ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx =
           problem.stateEqualityLagrangian.getQuadraticApproximation(
@@ -107,6 +133,22 @@ struct LinearQuadraticApproximator {
       modelData.cost += problem.inequalityLagrangian.getQuadraticApproximation(
           time, state, input, multipliers.stateInputIneq);
     }
+  }
+
+  /**
+   * 计算中间节点的代价与增广拉格朗日二次近似，不计算动力学。
+   *
+   * @return 仅包含 time 与 cost 的模型数据。
+   */
+  static inline ModelData_t approximateIntermediateCostLQ(
+      const OptimalControlProblem_t& problem,
+      const TargetTrajectories_t& targetTrajectories, const Scalar time,
+      const StateVector_t& state, const InputVector_t& input,
+      const IntermediateMultiplierCollection_t& multipliers) {
+    ModelData_t md;
+    approximateIntermediateCostLQ(problem, targetTrajectories, time, state,
+                                  input, multipliers, md);
+    return md;
   }
 
   /**

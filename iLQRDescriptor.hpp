@@ -13,10 +13,18 @@ struct Horizon {
   static constexpr std::size_t PredictLength = N_;
 };
 
-template <typename Dims_, typename Horizon_>
+/** @brief 连续时间动力学模式：模型提供 \f$\dot{x}=f(t,x,u)\f$。 */
+struct ContinuousDynamics {};
+
+/** @brief 离散时间动力学模式：模型提供 \f$x_{k+1}=f_d(t,x,u,dt)\f$。 */
+struct DiscreteDynamics {};
+
+template <typename Dims_, typename Horizon_,
+          typename DynamicsMode_ = ContinuousDynamics>
 struct TranscriptionConfig {
   using Dims = Dims_;
   using Horizon = Horizon_;
+  using DynamicsMode = DynamicsMode_;
   static constexpr int XDim = Dims::XDim;
   static constexpr int UDim = Dims::UDim;
   static constexpr std::size_t PredictLength = Horizon::PredictLength;

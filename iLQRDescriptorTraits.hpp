@@ -20,6 +20,7 @@ struct iLQRDescriptorTraits {
   using TranscriptionConfig = typename Descriptor::TranscriptionConfig;
   using Dims = typename Descriptor::Dims;
   using Horizon = typename Descriptor::Horizon;
+  using DynamicsMode = typename TranscriptionConfig::DynamicsMode;
   using ConstraintConfig = typename Descriptor::ConstraintConfig;
 
   using StateConstraintConfig = typename ConstraintConfig::State;
