@@ -40,7 +40,7 @@ This project is an iLQR optimal control implementation derived from OCS2 ideas b
 2. Read nearby tests before changing behavior.
 3. Match the local template style and compile-time dimension patterns.
 4. Prefer explicit fixed-size aliases from the existing type system.
-5. Decide whether the code change affects `Project_Description.md`.
+5. Decide whether the code change affects `README.md`.
 6. After editing, check lints for touched files and run the narrowest relevant tests when practical.
 
 ## Testing Guidance
@@ -64,7 +64,7 @@ ctest --preset gcc-debug
 
 ## Documentation
 
-For project-level context, consult `Project_Description.md`.
+For project-level context, consult `README.md`.
 
 For algorithm background, consult:
 
@@ -73,6 +73,6 @@ For algorithm background, consult:
 
 When updating documentation, keep the style structured and formal. Do not copy the user's wording directly if they ask for rewritten project documentation.
 
-When code changes alter public usage, module responsibilities, solver workflow, constraints, memory assumptions, build/test commands, or project conventions, update `Project_Description.md` in the same task.
+When code changes alter public usage, module responsibilities, solver workflow, constraints, memory assumptions, build/test commands, or project conventions, update `README.md` in the same task.
 
 Do not update documentation for purely local bug fixes, formatting-only changes, or tests that do not change behavior or project conventions.

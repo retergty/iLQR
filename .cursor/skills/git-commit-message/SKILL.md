@@ -1,6 +1,6 @@
 ---
 name: git-commit-message
-description: Generates Chinese git commit messages for this iLQR repository by reading Project_Description.md, .gitignore, and staged git diffs. Use when the user asks to write, polish, summarize, or generate a git commit message for staged changes.
+description: Generates Chinese git commit messages for this iLQR repository by reading README.md, .gitignore, and staged git diffs. Use when the user asks to write, polish, summarize, or generate a git commit message for staged changes.
 ---
 
 # Git Commit Message
@@ -9,7 +9,7 @@ description: Generates Chinese git commit messages for this iLQR repository by r
 
 When generating a commit message in this repository:
 
-1. Read `Project_Description.md` first to understand the project architecture, solver workflow, module boundaries, and static-size design constraints.
+1. Read `README.md` first to understand the project architecture, solver workflow, module boundaries, and static-size design constraints.
 2. Read `.gitignore` and use it to avoid analyzing ignored build/output folders or other ignored local artifacts.
 3. Inspect the current Git state with `git status --short --untracked-files=all`.
 4. Generate the commit message from the staged area only, comparing the index against `HEAD`:
@@ -37,7 +37,7 @@ This repository implements an iLQR optimal control solver with augmented Lagrang
 - Constraints, penalties, and augmented Lagrangian logic: `Constraint/`, `Penalties/`, `AugmentedLagrangian/`
 - Riccati recursion and search strategy: `RiccatiEquations/`, `SearchStrategy/`
 - Tests and validation tools: `Tests/`, `TestTools/`
-- Project or algorithm documentation: `Project_Description.md`, `Documents/`
+- Project or algorithm documentation: `README.md`, `Documents/`
 
 ## Output Format
 
