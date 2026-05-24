@@ -102,6 +102,8 @@ class iLQR {
   using DualDataContainer_t = typename Types::DualDataContainer_t;
   using ProblemMetrics_t = typename Types::ProblemMetrics_t;
   using PerformanceIndex_t = typename Types::PerformanceIndex_t;
+  using PerformanceIndexEvaluator_t =
+      typename Types::PerformanceIndexEvaluator_t;
   using IntermediatePerformanceIndexTrajectory_t =
       typename Types::IntermediatePerformanceIndexTrajectory_t;
 
@@ -374,7 +376,7 @@ class iLQR {
    *
    * @param [in] timeTrajectory rollout 的时间戳序列。
    * @param [in] problemMetrics 各时刻代价与约束指标。
-   * @return 整条轨迹的 PerformanceIndex（梯形积分汇总）。
+   * @return 整条轨迹的 PerformanceIndex。
    */
   static PerformanceIndex_t computeRolloutPerformanceIndex(
       const TimeTrajectory_t& timeTrajectory,
@@ -390,9 +392,8 @@ class iLQR {
           toPerformanceIndex(problemMetrics.intermediates[i]);
     }
 
-    // 中间节点
-    return trapezoidalIntegration(timeTrajectory, performanceIndexTrajectory,
-                                  finalperformanceIndex);
+    return PerformanceIndexEvaluator_t::evaluate(
+        timeTrajectory, performanceIndexTrajectory, finalperformanceIndex);
   }
 
   /**
@@ -608,7 +609,7 @@ class iLQR {
     for (size_t timeIndex = 0; timeIndex < PredictLength; ++timeIndex) {
       const Scalar timeStep =
           timeTrajectory[timeIndex + 1] - timeTrajectory[timeIndex];
-      transcription_.approximateIntermediate(
+      transcription_.approximateIntermediateLQ(
           optimalControlProblem_, targetTrajectory_, timeTrajectory[timeIndex],
           stateTrajectory[timeIndex], inputTrajectory[timeIndex], timeStep,
           multiplierTrajectory[timeIndex], modelDataTrajectory[timeIndex]);

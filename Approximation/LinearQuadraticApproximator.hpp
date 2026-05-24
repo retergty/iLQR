@@ -78,15 +78,16 @@ struct LinearQuadraticApproximator {
     modelData.dynamics =
         problem.dynamicsPtr->linearApproximation(time, state, input);
 
-    approximateIntermediateCostLQ(problem, targetTrajectories, time, state,
-                                  input, multipliers, modelData);
+    approximateIntermediateCost(problem, targetTrajectories, time, state, input,
+                                multipliers, modelData);
   }
 
   /**
-   * 计算中间节点的代价与增广拉格朗日二次近似，不计算动力学。
+   * 计算中间节点目标函数的二次近似，不计算动力学。
    *
-   * 该函数用于转录层自行生成连续/离散动力学近似时复用代价逻辑，避免先
-   * 计算连续动力学线性化再被转录层覆盖。
+   * 目标函数包括运行代价、状态代价以及增广拉格朗日项。该函数用于转录层
+   * 自行生成连续/离散动力学近似时复用目标函数近似逻辑，避免先计算连续
+   * 动力学线性化再被转录层覆盖。
    *
    * @param [in] problem 最优控制问题。
    * @param [in] targetTrajectories 参考轨迹。
@@ -96,7 +97,7 @@ struct LinearQuadraticApproximator {
    * @param [in] multipliers 当前中间节点乘子。
    * @param [out] modelData 输出数据模型；仅写入 time 与 cost。
    */
-  static void approximateIntermediateCostLQ(
+  static void approximateIntermediateCost(
       const OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state, const InputVector_t& input,
@@ -136,18 +137,18 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * 计算中间节点的代价与增广拉格朗日二次近似，不计算动力学。
+   * 计算中间节点目标函数的二次近似，不计算动力学。
    *
    * @return 仅包含 time 与 cost 的模型数据。
    */
-  static inline ModelData_t approximateIntermediateCostLQ(
+  static inline ModelData_t approximateIntermediateCost(
       const OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state, const InputVector_t& input,
       const IntermediateMultiplierCollection_t& multipliers) {
     ModelData_t md;
-    approximateIntermediateCostLQ(problem, targetTrajectories, time, state,
-                                  input, multipliers, md);
+    approximateIntermediateCost(problem, targetTrajectories, time, state, input,
+                                multipliers, md);
     return md;
   }
 

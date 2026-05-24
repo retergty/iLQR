@@ -80,6 +80,7 @@ set(ILQR_HEADERS
   OptimalControl/OptimalControlProblem.hpp
   OptimalControl/OptimalControlProblemHelperFunction.hpp
   OptimalControl/PerformanceIndex.hpp
+  OptimalControl/PerformanceIndexEvaluator.hpp
   OptimalControl/PrimalSolution.hpp
   OptimalControl/ProblemMetrics.hpp
   OptimalControl/Reference.hpp

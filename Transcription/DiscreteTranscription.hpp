@@ -51,14 +51,14 @@ class DiscreteTranscription {
    * \f$ \delta x_{k+1}=A_k\delta x_k+B_k\delta u_k \f$。
    * 代价函数近似保持 stage cost 语义，不做 dt 缩放。
    */
-  void approximateIntermediate(
+  void approximateIntermediateLQ(
       const OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, Scalar time,
       const StateVector_t& state, const InputVector_t& input, Scalar timeStep,
       const IntermediateMultiplierCollection_t& multipliers,
       ModelData_t& modelData) const {
     const ModelData_t discreteModelData =
-        Approximator_t::approximateIntermediateCostLQ(
+        Approximator_t::approximateIntermediateCost(
             problem, targetTrajectories, time, state, input, multipliers);
 
     modelData.time = discreteModelData.time;
@@ -70,11 +70,11 @@ class DiscreteTranscription {
   /**
    * @brief 生成终端节点 LQ 近似。
    */
-  void approximateFinal(const OptimalControlProblem_t& problem,
-                        const TargetTrajectories_t& targetTrajectories,
-                        Scalar time, const StateVector_t& state,
-                        const FinalMultiplierCollection_t& multipliers,
-                        ModelData_t& modelData) const {
+  void approximateFinalLQ(const OptimalControlProblem_t& problem,
+                          const TargetTrajectories_t& targetTrajectories,
+                          Scalar time, const StateVector_t& state,
+                          const FinalMultiplierCollection_t& multipliers,
+                          ModelData_t& modelData) const {
     Approximator_t::approximateFinalLQ(problem, targetTrajectories, time, state,
                                        multipliers, modelData);
   }

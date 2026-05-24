@@ -13,6 +13,7 @@
 #include "ModelData.hpp"
 #include "OptimalControlProblem.hpp"
 #include "PerformanceIndex.hpp"
+#include "PerformanceIndexEvaluator.hpp"
 #include "PrimalSolution.hpp"
 #include "ProblemMetrics.hpp"
 #include "QuadraticApproximation.hpp"
@@ -98,6 +99,7 @@ struct iLQRTypes {
   using ProblemMetrics_t =
       ProblemMetrics<Scalar, TranscriptionConfig, ConstraintConfig>;
   using PerformanceIndex_t = PerformanceIndex<Scalar>;
+  using PerformanceIndexEvaluator_t = ::PerformanceIndexEvaluator_t<Descriptor>;
   using IntermediatePerformanceIndexTrajectory_t =
       std::array<PerformanceIndex_t, PredictLength>;
   using IntermediateMultiplierTrajectory_t =

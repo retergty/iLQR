@@ -52,14 +52,14 @@ class ContinuousTranscription {
    * 连续模式下，代价函数近似被解释为 running cost density，因此需要乘以
    * dt；动力学先由连续系统离散化，再转成无仿射缺陷的偏差动力学。
    */
-  void approximateIntermediate(
+  void approximateIntermediateLQ(
       const OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, Scalar time,
       const StateVector_t& state, const InputVector_t& input, Scalar timeStep,
       const IntermediateMultiplierCollection_t& multipliers,
       ModelData_t& modelData) {
     const ModelData_t continuousTimeModelData =
-        Approximator_t::approximateIntermediateCostLQ(
+        Approximator_t::approximateIntermediateCost(
             problem, targetTrajectories, time, state, input, multipliers);
 
     modelData.time = continuousTimeModelData.time;
@@ -74,11 +74,11 @@ class ContinuousTranscription {
    *
    * 终端代价不属于 running cost，不做 dt 缩放。
    */
-  void approximateFinal(const OptimalControlProblem_t& problem,
-                        const TargetTrajectories_t& targetTrajectories,
-                        Scalar time, const StateVector_t& state,
-                        const FinalMultiplierCollection_t& multipliers,
-                        ModelData_t& modelData) const {
+  void approximateFinalLQ(const OptimalControlProblem_t& problem,
+                          const TargetTrajectories_t& targetTrajectories,
+                          Scalar time, const StateVector_t& state,
+                          const FinalMultiplierCollection_t& multipliers,
+                          ModelData_t& modelData) const {
     Approximator_t::approximateFinalLQ(problem, targetTrajectories, time, state,
                                        multipliers, modelData);
   }
