@@ -31,9 +31,11 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
   static constexpr Scalar inputRelativeTolerance = 5e-2;
 
   using Transcription_t =
-      qp_solver::QpTranscriptionConfig_t<Scalar, STATE_DIM, INPUT_DIM, N>;
+      qp_solver::QpContinuousDynamicsTranscriptionConfig_t<Scalar, STATE_DIM,
+                                                           INPUT_DIM, N>;
   using QpProblem_t =
-      qp_solver::QpOptimalControlProblem_t<Scalar, STATE_DIM, INPUT_DIM, N>;
+      qp_solver::QpContinuousDynamicsOptimalControlProblem_t<Scalar, STATE_DIM,
+                                                             INPUT_DIM, N>;
   using ConstraintConfig_t = ConstraintConfig<
       StateConstraintConfig<ConstraintLayout<>>,
       StateInputConstraintConfig<ConstraintLayout<

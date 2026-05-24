@@ -19,11 +19,13 @@ class Ocs2QpSolverTest : public testing::Test {
   static constexpr Scalar dt = 1e-2;
 
   using Problem_t =
-      qp_solver::QpOptimalControlProblem_t<Scalar, STATE_DIM, INPUT_DIM, N>;
+      qp_solver::QpContinuousDynamicsOptimalControlProblem_t<Scalar, STATE_DIM,
+                                                             INPUT_DIM, N>;
   using Trajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
   using Transcription_t =
-      qp_solver::QpTranscriptionConfig_t<Scalar, STATE_DIM, INPUT_DIM, N>;
+      qp_solver::QpContinuousDynamicsTranscriptionConfig_t<Scalar, STATE_DIM,
+                                                           INPUT_DIM, N>;
   using TargetTrajectories_t = TargetTrajectories<Scalar, Transcription_t>;
 
   void checkDeviationDynamics(const Trajectory_t& solution,

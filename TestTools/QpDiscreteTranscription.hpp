@@ -25,20 +25,39 @@
 namespace qp_solver {
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength>
-using QpTranscriptionConfig_t =
-    TranscriptionConfig<Dimensions<XDim, UDim>, Horizon<PredictLength>>;
+using QpContinuousDynamicsTranscriptionConfig_t =
+    TranscriptionConfig<Dimensions<XDim, UDim>, Horizon<PredictLength>,
+                        ContinuousDynamics>;
+
+template <typename Scalar, int XDim, int UDim, size_t PredictLength>
+using QpDiscreteDynamicsTranscriptionConfig_t =
+    TranscriptionConfig<Dimensions<XDim, UDim>, Horizon<PredictLength>,
+                        DiscreteDynamics>;
 
 using QpConstraintConfig_t = ConstraintConfig<>;
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength>
-using QpDescriptor_t =
+using QpContinuousDynamicsDescriptor_t =
     iLQRDescriptor<Scalar,
-                   QpTranscriptionConfig_t<Scalar, XDim, UDim, PredictLength>,
+                   QpContinuousDynamicsTranscriptionConfig_t<Scalar, XDim, UDim,
+                                                             PredictLength>,
                    QpConstraintConfig_t>;
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength>
-using QpOptimalControlProblem_t = typename LinearQuadraticApproximator<
-    QpDescriptor_t<Scalar, XDim, UDim, PredictLength>>::OptimalControlProblem_t;
+using QpDiscreteDynamicsDescriptor_t = iLQRDescriptor<
+    Scalar,
+    QpDiscreteDynamicsTranscriptionConfig_t<Scalar, XDim, UDim, PredictLength>,
+    QpConstraintConfig_t>;
+
+template <typename Scalar, int XDim, int UDim, size_t PredictLength>
+using QpContinuousDynamicsOptimalControlProblem_t =
+    typename LinearQuadraticApproximator<QpContinuousDynamicsDescriptor_t<
+        Scalar, XDim, UDim, PredictLength>>::OptimalControlProblem_t;
+
+template <typename Scalar, int XDim, int UDim, size_t PredictLength>
+using QpDiscreteDynamicsOptimalControlProblem_t =
+    typename LinearQuadraticApproximator<QpDiscreteDynamicsDescriptor_t<
+        Scalar, XDim, UDim, PredictLength>>::OptimalControlProblem_t;
 
 template <typename Scalar>
 using QpIntermediateMultiplierCollection_t = MultiplierCollection<
