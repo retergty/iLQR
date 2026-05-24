@@ -21,6 +21,7 @@ set(TEST_SOURCES
     IntrusiveListTest.cpp
     ApproximationTest.cpp
     OptimalControl/CorrectnessTest.cpp
+    OptimalControl/DiscreteCorrectnessTest.cpp
     PenaltyTest.cpp
     UtilityTest.cpp
     CostTest.cpp
