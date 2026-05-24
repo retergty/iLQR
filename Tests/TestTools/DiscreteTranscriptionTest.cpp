@@ -19,13 +19,11 @@ class DiscreteTranscriptionTest : public testing::Test {
   static constexpr Scalar dt = 1e-2;
 
   using Problem_t =
-      qp_solver::QpOptimalControlProblem_t<Scalar, STATE_DIM, INPUT_DIM, N, 0,
-                                           0, 0, 0, 0, 0>;
+      qp_solver::QpOptimalControlProblem_t<Scalar, STATE_DIM, INPUT_DIM, N>;
   using Trajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
   using Transcription_t =
-      qp_solver::QpTranscriptionConfig_t<Scalar, STATE_DIM, INPUT_DIM, N, 0, 0,
-                                         0, 0, 0, 0>;
+      qp_solver::QpTranscriptionConfig_t<Scalar, STATE_DIM, INPUT_DIM, N>;
   using TargetTrajectories_t = TargetTrajectories<Scalar, Transcription_t>;
   using LinearQuadraticStage_t =
       qp_solver::LinearQuadraticStage<Scalar, STATE_DIM, INPUT_DIM>;
@@ -127,6 +125,35 @@ class DiscreteTranscriptionTest : public testing::Test {
 
 TEST_F(DiscreteTranscriptionTest, unconstrainedLqrHasCorrectSizes) {
   checkSizes(unconstrainedLqr);
+}
+
+TEST_F(DiscreteTranscriptionTest, hardStateInputConstraintIsTranscribed) {
+  static constexpr int CONSTRAINT_DIM = 2;
+  Vector<Scalar, CONSTRAINT_DIM> e;
+  Matrix<Scalar, CONSTRAINT_DIM, STATE_DIM> C;
+  Matrix<Scalar, CONSTRAINT_DIM, INPUT_DIM> D;
+  e << 0.1, -0.2;
+  C << 1.0, 2.0, 3.0, -1.0, 0.5, 0.25;
+  D << 0.75, -0.5, 1.5, 2.0;
+
+  LinearStateInputConstraint<Scalar, STATE_DIM, INPUT_DIM, CONSTRAINT_DIM>
+      constraint(e, C, D);
+  const auto constrainedLqr = qp_solver::getLinearQuadraticApproximation(
+      problem, targetTrajectory, linearization, constraint);
+
+  ASSERT_EQ(constrainedLqr.size(), N + 1);
+  for (size_t k = 0; k < N; ++k) {
+    const auto expected = constraint.getLinearApproximation(
+        linearization.timeTrajectory[k], linearization.stateTrajectory[k],
+        linearization.inputTrajectory[k]);
+    ASSERT_TRUE(constrainedLqr[k].constraints.f.isApprox(expected.f));
+    ASSERT_TRUE(constrainedLqr[k].constraints.dfdx.isApprox(expected.dfdx));
+    ASSERT_TRUE(constrainedLqr[k].constraints.dfdu.isApprox(expected.dfdu));
+  }
+
+  ASSERT_EQ(constrainedLqr[N].constraints.f.rows(), 0);
+  ASSERT_EQ(constrainedLqr[N].constraints.dfdx.rows(), 0);
+  ASSERT_EQ(constrainedLqr[N].constraints.dfdu.rows(), 0);
 }
 
 TEST_F(DiscreteTranscriptionTest, ek2DeviationDynamicsMatchesLinearSystem) {

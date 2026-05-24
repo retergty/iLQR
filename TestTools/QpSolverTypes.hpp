@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "LinearApproximation.hpp"
 #include "QuadraticApproximation.hpp"
-#include "Types.hpp"
 
 namespace qp_solver {
 

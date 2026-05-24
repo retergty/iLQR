@@ -20,7 +20,7 @@ set(TEST_SOURCES
     integration/testSensitivityIntegrator.cpp
     IntrusiveListTest.cpp
     ApproximationTest.cpp
-    #CorrectnessTest.cpp
+    OptimalControl/CorrectnessTest.cpp
     PenaltyTest.cpp
     UtilityTest.cpp
     CostTest.cpp

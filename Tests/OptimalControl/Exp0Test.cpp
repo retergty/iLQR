@@ -67,9 +67,7 @@ class Exp0 : public testing::Test {
   using RolloutSettings_t = RolloutSettings<Scalar>;
   using DDPSettings_t = DDPSettings<Scalar>;
 
-  Exp0()
-      : problem(exp0::createExp0Problem<Scalar, PredictLength>()),
-        initializerPtr(std::make_unique<Initializer_t>()) {
+  Exp0() : initializerPtr(std::make_unique<Initializer_t>()) {
     setConstantReferenceTrajectory();
   }
 
@@ -153,16 +151,14 @@ class Exp0 : public testing::Test {
   }
 
   template <typename Cost, typename FinalCost>
-  std::unique_ptr<Solver_t> createSolver(const DDPSettings_t& ddpSettings,
-                                         exp0::EXP0_Sys1<Scalar>& systemDynamics,
-                                         Cost& cost, FinalCost& finalCost,
-                                         Problem_t& localProblem) const {
+  std::unique_ptr<Solver_t> createSolver(
+      const DDPSettings_t& ddpSettings, exp0::EXP0_Sys1<Scalar>& systemDynamics,
+      Cost& cost, FinalCost& finalCost, Problem_t& localProblem) const {
     localProblem.dynamicsPtr = &systemDynamics;
     localProblem.cost.add(cost);
     localProblem.finalCost.add(finalCost);
-    auto solver =
-        std::make_unique<Solver_t>(ddpSettings, localProblem,
-                                   initializerPtr.get());
+    auto solver = std::make_unique<Solver_t>(ddpSettings, localProblem,
+                                             initializerPtr.get());
     solver->setDesireTrajectory(targetTrajectory.timeTrajectory,
                                 targetTrajectory.stateTrajectory,
                                 targetTrajectory.inputTrajectory);
@@ -184,11 +180,9 @@ class Exp0 : public testing::Test {
   const Scalar finalTime = 2.0;
   const StateVector_t initState = (StateVector_t() << 0.0, 2.0).finished();
 
-  Problem_t& problem;
   TargetTrajectories_t targetTrajectory;
   std::unique_ptr<Initializer_t> initializerPtr;
 };
-
 
 /******************************************************************************************************/
 /******************************************************************************************************/
@@ -204,8 +198,8 @@ TEST_F(Exp0, ddp_feedback_policy) {
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
-  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
-                          localProblem);
+  auto ddp =
+      createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
 
   // run ddp
   EXPECT_NO_THROW(ddp->run(startTime, initState));
@@ -236,8 +230,8 @@ TEST_F(Exp0, ddp_feedforward_policy) {
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
-  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
-                          localProblem);
+  auto ddp =
+      createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
 
   // run ddp
   EXPECT_NO_THROW(ddp->run(startTime, initState));
@@ -271,8 +265,8 @@ TEST_F(Exp0, ddp_moving_horizon) {
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
-  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
-                          localProblem);
+  auto ddp =
+      createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
 
   const auto expectSolutionEndsAt = [&ddp](Scalar expectedFinalTime) {
     const auto& solution = ddp->primalSolution();
@@ -320,8 +314,8 @@ TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
-  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
-                          localProblem);
+  auto ddp =
+      createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
 
   ASSERT_NO_THROW(ddp->run(startTime, initState));
   const auto& ilqrSolution = ddp->primalSolution();
@@ -370,8 +364,8 @@ TEST_F(Exp0, ddp_q_function) {
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
-  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
-                          localProblem);
+  auto ddp =
+      createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
 
   // run ddp
   ddp->run(startTime, initState);
@@ -467,8 +461,8 @@ TEST_P(Exp0Param, ILQR) {
   exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
   exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
   Problem_t localProblem;
-  auto ddp = createSolver(ddpSettings, systemDynamics, cost, finalCost,
-                          localProblem);
+  auto ddp =
+      createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
 
   // run ddp
   EXPECT_NO_THROW(ddp->run(startTime, initState));

@@ -1,168 +1,197 @@
-/******************************************************************************
-Copyright (c) 2017, Farbod Farshidian. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
-
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cstdlib>
-#include <ctime>
 #include <iostream>
+#include <memory>
+#include <vector>
 
+#include "../TestTools/testProblemsGeneration.hpp"
+#include "DefaultInitializer.hpp"
+#include "LinearSystemDynamics.hpp"
+#include "QpDiscreteTranscription.hpp"
+#include "QpSolver.hpp"
+#include "QuadraticPenalty.hpp"
+#include "SensitivityIntegrator.hpp"
+#include "StateInputAugmentedLagrangian.hpp"
 #include "iLQR.hpp"
 
-enum class NumThreads { SINGLE, MULTI };
-enum class Constraining { CONSTARINED, UNCONSTRAINED };
-
-class DDPCorrectness
-    : public testing::TestWithParam<
-          std::tuple<ocs2::search_strategy::Type, Constraining, NumThreads>> {
+class DDPCorrectness : public testing::TestWithParam<unsigned> {
  protected:
+  using Scalar = double;
+  static constexpr int STATE_DIM = 3;
+  static constexpr int INPUT_DIM = 3;
+  static constexpr int CONSTRAINT_DIM = 2;
   static constexpr size_t N = 50;
-  static constexpr size_t STATE_DIM = 3;
-  static constexpr size_t INPUT_DIM = 2;
-  static constexpr ocs2::scalar_t minRelCost = 1e-3;
-  static constexpr ocs2::scalar_t solutionPrecision = 5e-3;
-  static constexpr size_t numStateInputConstraints = 2;
+  static constexpr size_t numRandomCases = 3;
+  static constexpr int maxFeasibilityRetries = 10;
+  static constexpr Scalar timeStep = 1e-2;
+  static constexpr Scalar constraintTolerance = 1e-3;
+  static constexpr Scalar solutionTolerance = 5e-2;
+  static constexpr Scalar inputRelativeTolerance = 5e-2;
+
+  using Transcription_t =
+      qp_solver::QpTranscriptionConfig_t<Scalar, STATE_DIM, INPUT_DIM, N>;
+  using QpProblem_t =
+      qp_solver::QpOptimalControlProblem_t<Scalar, STATE_DIM, INPUT_DIM, N>;
+  using ConstraintConfig_t = ConstraintConfig<
+      StateConstraintConfig<ConstraintLayout<>>,
+      StateInputConstraintConfig<ConstraintLayout<
+          ConstraintGroupLayout<ConstraintTerm<CONSTRAINT_DIM>>,
+          ConstraintGroupLayout<>>>,
+      FinalStateConstraintConfig<ConstraintLayout<>>>;
+  using Descriptor_t =
+      iLQRDescriptor<Scalar, Transcription_t, ConstraintConfig_t>;
+  using Solver_t = iLQR<Descriptor_t>;
+  using AlProblem_t = typename Solver_t::OptimalControlProblem_t;
+  using TargetTrajectories_t = typename Solver_t::TargetTrajectories_t;
+  using QpTrajectory_t =
+      qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
+  using StateVector_t = Vector<Scalar, STATE_DIM>;
+  using InputVector_t = Vector<Scalar, INPUT_DIM>;
+  using Dynamics_t = LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>;
+  using StateInputCost_t =
+      StateInputCost<Scalar, STATE_DIM, INPUT_DIM, static_cast<int>(N + 1)>;
+  using FinalCost_t = StateCost<Scalar, STATE_DIM, static_cast<int>(N + 1)>;
+  using HardConstraint_t =
+      StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM, CONSTRAINT_DIM>;
+  using Penalty_t = QuadraticPenalty<Scalar>;
+  using AugmentedLagrangian_t =
+      StateInputAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM,
+                                    CONSTRAINT_DIM>;
+  using Initializer_t = DefaultInitializer<Scalar, STATE_DIM, INPUT_DIM>;
+
+  struct RandomProblem {
+    std::unique_ptr<Dynamics_t> systemPtr;
+    std::unique_ptr<StateInputCost_t> qpCostPtr;
+    std::unique_ptr<FinalCost_t> qpFinalCostPtr;
+    std::unique_ptr<StateInputCost_t> alCostPtr;
+    std::unique_ptr<FinalCost_t> alFinalCostPtr;
+    std::unique_ptr<HardConstraint_t> hardConstraintPtr;
+    std::unique_ptr<Penalty_t> penaltyPtr;
+    std::unique_ptr<AugmentedLagrangian_t> augmentedLagrangianPtr;
+    std::unique_ptr<QpProblem_t> qpProblemPtr;
+    std::unique_ptr<AlProblem_t> alProblemPtr;
+    TargetTrajectories_t targetTrajectory;
+    QpTrajectory_t nominalTrajectory;
+    QpTrajectory_t qpSolution;
+    StateVector_t initState;
+  };
 
   DDPCorrectness() {
-    srand(0);
-
-    // Try generateing problem
-    for (int retries = 0; !createFeasibleRandomProblem(); retries++) {
-      std::cerr << "Random problem was infeasible, retry ...\n";
-      if (retries > 10) {
-        throw std::runtime_error("Failed generating feasible problem");
-      }
+    std::srand(GetParam());
+    randomProblems.reserve(numRandomCases);
+    for (size_t caseIndex = 0; caseIndex < numRandomCases; ++caseIndex) {
+      randomProblems.emplace_back(createFeasibleRandomProblemWithRetries());
     }
-
-    qpSolution = ocs2::qp_solver::solveLinearQuadraticOptimalControlProblem(
-        *problemPtr, nominalTrajectory, initState);
-    qpCost = getQpCost(qpSolution);
-
-    // system operating points
-    ocs2::vector_array_t inputTrajectoryTemp(N);
-    std::copy(nominalTrajectory.inputTrajectory.begin(),
-              nominalTrajectory.inputTrajectory.end(),
-              inputTrajectoryTemp.begin());
-    inputTrajectoryTemp.push_back(inputTrajectoryTemp.back());
-    operatingPointsPtr.reset(new ocs2::OperatingPoints(
-        nominalTrajectory.timeTrajectory, nominalTrajectory.stateTrajectory,
-        inputTrajectoryTemp));
-
-    // rollout settings
-    const ocs2::rollout::Settings rolloutSettings = []() {
-      ocs2::rollout::Settings rolloutSettings;
-      rolloutSettings.absTolODE = 1e-10;
-      rolloutSettings.relTolODE = 1e-7;
-      rolloutSettings.timeStep = 1e-3;
-      rolloutSettings.maxNumStepsPerSecond = 10000;
-      return rolloutSettings;
-    }();
-
-    // rollout
-    rolloutPtr.reset(
-        new ocs2::TimeTriggeredRollout(*systemPtr, rolloutSettings));
-
-    startTime = nominalTrajectory.timeTrajectory.front();
-    finalTime = nominalTrajectory.timeTrajectory.back();
   }
 
-  bool createFeasibleRandomProblem() {
-    // dynamics
-    systemPtr =
-        ocs2::getOcs2Dynamics(ocs2::getRandomDynamics(STATE_DIM, INPUT_DIM));
-    problemPtr.reset(new ocs2::OptimalControlProblem);
-    problemPtr->dynamicsPtr.reset(systemPtr->clone());
+  std::unique_ptr<RandomProblem> createFeasibleRandomProblemWithRetries() {
+    for (int retries = 0; retries <= maxFeasibilityRetries; ++retries) {
+      auto problem = createFeasibleRandomProblem();
+      if (problem) {
+        return problem;
+      }
+      std::cerr << "Random correctness problem was infeasible, retry ...\n";
+    }
+    throw std::runtime_error("Failed creating feasible correctness problem");
+  }
 
-    // cost
-    problemPtr->costPtr->add(
-        "cost", ocs2::getOcs2Cost(ocs2::getRandomCost(STATE_DIM, INPUT_DIM)));
-    problemPtr->finalCostPtr->add(
-        "finalCost", ocs2::getOcs2StateCost(ocs2::getRandomCost(STATE_DIM, 0)));
-    targetTrajectories =
-        ocs2::TargetTrajectories({0.0}, {ocs2::vector_t::Random(STATE_DIM)},
-                                 {ocs2::vector_t::Random(INPUT_DIM)});
+  std::unique_ptr<RandomProblem> createFeasibleRandomProblem() {
+    auto problem = std::make_unique<RandomProblem>();
 
-    // constraint
-    if (std::get<1>(GetParam()) == Constraining::CONSTARINED) {
-      problemPtr->equalityConstraintPtr->add(
-          "equality", ocs2::getOcs2Constraints(ocs2::getRandomConstraints(
-                          STATE_DIM, INPUT_DIM, numStateInputConstraints)));
+    const auto dynamics =
+        test_tools::getRandomDynamics<Scalar, STATE_DIM, INPUT_DIM>();
+    problem->systemPtr = test_tools::getiLQRDynamics(dynamics);
+
+    const auto runningCost =
+        test_tools::getRandomCost<Scalar, STATE_DIM, INPUT_DIM>();
+    const auto finalCost = test_tools::getRandomCost<Scalar, STATE_DIM, 0>();
+    problem->qpCostPtr =
+        test_tools::getiLQRCost<Scalar, STATE_DIM, INPUT_DIM,
+                                static_cast<int>(N + 1)>(runningCost);
+    problem->qpFinalCostPtr =
+        test_tools::getiLQRStateCost<Scalar, STATE_DIM,
+                                     static_cast<int>(N + 1)>(finalCost);
+    problem->alCostPtr =
+        test_tools::getiLQRCost<Scalar, STATE_DIM, INPUT_DIM,
+                                static_cast<int>(N + 1)>(runningCost);
+    problem->alFinalCostPtr =
+        test_tools::getiLQRStateCost<Scalar, STATE_DIM,
+                                     static_cast<int>(N + 1)>(finalCost);
+
+    const auto hardConstraint =
+        test_tools::getRandomConstraints<Scalar, STATE_DIM, INPUT_DIM,
+                                         CONSTRAINT_DIM>();
+    problem->hardConstraintPtr =
+        test_tools::getiLQRConstraints<Scalar, STATE_DIM, INPUT_DIM,
+                                       CONSTRAINT_DIM>(hardConstraint);
+
+    problem->penaltyPtr = std::make_unique<Penalty_t>(
+        typename Penalty_t::Config{Scalar(1e6), Scalar(1.0)});
+    problem->augmentedLagrangianPtr = std::make_unique<AugmentedLagrangian_t>(
+        problem->hardConstraintPtr.get(), problem->penaltyPtr.get());
+
+    problem->qpProblemPtr = std::make_unique<QpProblem_t>();
+    problem->qpProblemPtr->dynamicsPtr = problem->systemPtr.get();
+    problem->qpProblemPtr->cost.add(*problem->qpCostPtr);
+    problem->qpProblemPtr->finalCost.add(*problem->qpFinalCostPtr);
+
+    problem->alProblemPtr = std::make_unique<AlProblem_t>();
+    problem->alProblemPtr->dynamicsPtr = problem->systemPtr.get();
+    problem->alProblemPtr->cost.add(*problem->alCostPtr);
+    problem->alProblemPtr->finalCost.add(*problem->alFinalCostPtr);
+    problem->alProblemPtr->equalityLagrangian.template set<0>(
+        problem->augmentedLagrangianPtr.get());
+
+    setRandomTargetTrajectory(*problem);
+    setDynamicallyConsistentNominalTrajectory(*problem);
+    problem->initState = StateVector_t::Random();
+
+    const auto lqApproximation = qp_solver::getLinearQuadraticApproximation(
+        *problem->qpProblemPtr, problem->targetTrajectory,
+        problem->nominalTrajectory, *problem->hardConstraintPtr);
+    const StateVector_t dx0 =
+        problem->initState - problem->nominalTrajectory.stateTrajectory.front();
+    const auto denseQp = qp_solver::getDenseQp(lqApproximation, dx0);
+
+    if (!test_tools::isQpFeasible(denseQp.first, denseQp.second)) {
+      return nullptr;
     }
 
-    // system operating points
-    nominalTrajectory =
-        ocs2::qp_solver::getRandomTrajectory(N, STATE_DIM, INPUT_DIM, 1e-3);
-    initState = ocs2::vector_t::Random(STATE_DIM);
+    problem->nominalTrajectory =
+        getFeasibleTrajectory(denseQp.second, problem->nominalTrajectory);
 
-    // get QP
-    problemPtr->targetTrajectoriesPtr = &targetTrajectories;
-    ocs2::ScalarFunctionQuadraticApproximation qpCosts;
-    ocs2::VectorFunctionLinearApproximation qpConstraints;
-    const auto lqApproximation =
-        getLinearQuadraticApproximation(*problemPtr, nominalTrajectory);
-    const ocs2::vector_t dx0 =
-        initState - nominalTrajectory.stateTrajectory.front();
-    std::tie(qpCosts, qpConstraints) = getDenseQp(lqApproximation, dx0);
-
-    // Check feasibility
-    if (!ocs2::qp_solver::isQpFeasible(qpCosts, qpConstraints)) {
-      return false;
+    try {
+      problem->qpSolution = solveHardConstrainedQp(*problem);
+    } catch (const std::runtime_error&) {
+      return nullptr;
     }
-
-    // Correct the nominal trajectory to not violate the constraints.
-    nominalTrajectory = getFeasibleTrajectory(qpConstraints, nominalTrajectory);
-
-    return true;
+    return problem;
   }
 
   /** Modifies given trajectory to satisfy the constraints */
-  ocs2::qp_solver::ContinuousTrajectory getFeasibleTrajectory(
-      const ocs2::VectorFunctionLinearApproximation& qpConstraints,
-      const ocs2::qp_solver::ContinuousTrajectory& trajectory) const {
+  QpTrajectory_t getFeasibleTrajectory(
+      const VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
+                                              Eigen::Dynamic, 0>& qpConstraints,
+      const QpTrajectory_t& trajectory) const {
     const auto& A =
-        qpConstraints.dfdx;  // A w + b = 0,  A must be full row-rank
-                             // such that (A A') is invertible
+        qpConstraints.dfdx;  // A w + b = 0,  A must be full row-rank such that
+                             // (A A') is invertible
     const auto& b =
         qpConstraints.f;  // b = [x0; e[0]; b[0]; ... e[N-1]; b[N-1]; e[N]]
 
     /* Find the trajectory correction w to satisfy the constraint by solving
      *   min  1/2 w' w
      *   s.t. A w + b = 0  */
-    const ocs2::vector_t w =
-        -A.transpose() * (A * A.transpose()).inverse() *
-        b;  // w = [dx[0], du[0], dx[1],  du[1], ..., dx[N]]
+    const Vector<Scalar, Eigen::Dynamic> w =
+        -A.transpose() * (A * A.transpose()).inverse() * b;
 
     // Make trajectory feasible
     auto feasibleTrajectory = trajectory;
-    int nextIndex = 0;
-    const auto N = feasibleTrajectory.inputTrajectory.size();
-    for (int k = 0; k < N; k++) {
+    Eigen::Index nextIndex = 0;
+    const auto numStages = feasibleTrajectory.inputTrajectory.size();
+    for (size_t k = 0; k < numStages; k++) {
       const auto nx = feasibleTrajectory.stateTrajectory[k].size();
       const auto nu = feasibleTrajectory.inputTrajectory[k].size();
       feasibleTrajectory.stateTrajectory[k] +=
@@ -171,180 +200,154 @@ class DDPCorrectness
           w.segment(nextIndex + nx, nu);  // du[k]
       nextIndex += nx + nu;
     }
-    feasibleTrajectory.stateTrajectory[N] += w.segment(
-        nextIndex, feasibleTrajectory.stateTrajectory[N].size());  // dx[N]
+    feasibleTrajectory.stateTrajectory[numStages] += w.segment(
+        nextIndex,
+        feasibleTrajectory.stateTrajectory[numStages].size());  // dx[N]
 
     return feasibleTrajectory;
   }
 
-  ocs2::search_strategy::Type getSearchStrategy() {
-    return std::get<0>(GetParam());
-  }
-
-  size_t getNumThreads() const {
-    const auto n = std::get<2>(GetParam());
-    if (n == NumThreads::SINGLE) {
-      return 1;
-    } else {
-      return 2;
+  void setRandomTargetTrajectory(RandomProblem& problem) {
+    for (size_t k = 0; k < N + 1; ++k) {
+      problem.targetTrajectory.timeTrajectory[k] =
+          static_cast<Scalar>(k) * timeStep;
+      problem.targetTrajectory.stateTrajectory[k] = StateVector_t::Random();
+      problem.targetTrajectory.inputTrajectory[k] = InputVector_t::Random();
     }
   }
 
-  ocs2::ddp::Settings getSettings(ocs2::ddp::Algorithm algorithmType,
-                                  size_t numThreads,
-                                  ocs2::search_strategy::Type strategy,
-                                  bool display = false) const {
-    ocs2::ddp::Settings ddpSettings;
-    ddpSettings.algorithm_ = algorithmType;
-    ddpSettings.displayInfo_ = false;
-    ddpSettings.displayShortSummary_ = display;
-    ddpSettings.absTolODE_ = 1e-10;
-    ddpSettings.relTolODE_ = 1e-7;
-    ddpSettings.maxNumStepsPerSecond_ = 10000;
-    ddpSettings.minRelCost_ = minRelCost;
-    ddpSettings.nThreads_ = numThreads;
-    ddpSettings.maxNumIterations_ =
-        2 + (numThreads -
-             1);  // need an extra iteration for each added time partition
-    ddpSettings.strategy_ = strategy;
-    ddpSettings.lineSearch_.minStepLength = 1e-4;
+  void setDynamicallyConsistentNominalTrajectory(RandomProblem& problem) {
+    EK2DynamicsDiscretizer<Scalar, STATE_DIM, INPUT_DIM> discretizer;
+    problem.nominalTrajectory.stateTrajectory[0] = StateVector_t::Random();
+    for (size_t k = 0; k < N; ++k) {
+      problem.nominalTrajectory.timeTrajectory[k] =
+          static_cast<Scalar>(k) * timeStep;
+      problem.nominalTrajectory.inputTrajectory[k] = InputVector_t::Random();
+      problem.nominalTrajectory.stateTrajectory[k + 1] = discretizer.discretize(
+          *problem.systemPtr, problem.nominalTrajectory.timeTrajectory[k],
+          problem.nominalTrajectory.stateTrajectory[k],
+          problem.nominalTrajectory.inputTrajectory[k], timeStep);
+    }
+    problem.nominalTrajectory.timeTrajectory[N] =
+        static_cast<Scalar>(N) * timeStep;
+  }
+
+  QpTrajectory_t solveHardConstrainedQp(const RandomProblem& problem) const {
+    const auto lqApproximation = qp_solver::getLinearQuadraticApproximation(
+        *problem.qpProblemPtr, problem.targetTrajectory,
+        problem.nominalTrajectory, *problem.hardConstraintPtr);
+    const StateVector_t dx0 =
+        problem.initState - problem.nominalTrajectory.stateTrajectory.front();
+    const auto deltaTrajectories =
+        qp_solver::solveLinearQuadraticProblem(lqApproximation, dx0);
+
+    QpTrajectory_t deltaSolution;
+    deltaSolution.timeTrajectory = problem.nominalTrajectory.timeTrajectory;
+    for (size_t k = 0; k < N + 1; ++k) {
+      deltaSolution.stateTrajectory[k] = deltaTrajectories.first[k];
+    }
+    for (size_t k = 0; k < N; ++k) {
+      deltaSolution.inputTrajectory[k] = deltaTrajectories.second[k];
+    }
+    return problem.nominalTrajectory + deltaSolution;
+  }
+
+  DDPSettings<Scalar> getSettings() const {
+    DDPSettings<Scalar> ddpSettings;
+    ddpSettings.timeStep_ = timeStep;
+    ddpSettings.maxNumIterations_ = 30;
+    ddpSettings.minRelCost_ = 1e-9;
+    ddpSettings.constraintTolerance_ = 1e-6;
+    ddpSettings.strategy_ = SearchStrategyType::LINE_SEARCH;
+    ddpSettings.lineSearch_.minStepLength = 1e-2;
+    ddpSettings.lineSearch_.maxStepLength = 1.0;
+    ddpSettings.lineSearch_.hessianCorrectionMultiple = 1e-6;
     return ddpSettings;
   }
 
-  ocs2::scalar_t getQpCost(
-      const ocs2::qp_solver::ContinuousTrajectory& qpSolution) const {
-    auto costFunc = [this](ocs2::scalar_t t, const ocs2::vector_t& x,
-                           const ocs2::vector_t& u) {
-      return problemPtr->costPtr->getValue(t, x, u, targetTrajectories,
-                                           ocs2::PreComputation());
-    };
-    auto inputTrajectoryTemp = qpSolution.inputTrajectory;
-    inputTrajectoryTemp.emplace_back(inputTrajectoryTemp.back());
-    auto lAccum = ocs2::PerformanceIndicesRollout::rolloutCost(
-        costFunc, qpSolution.timeTrajectory, qpSolution.stateTrajectory,
-        inputTrajectoryTemp);
-
-    return lAccum + problemPtr->finalCostPtr->getValue(
-                        qpSolution.timeTrajectory.back(),
-                        qpSolution.stateTrajectory.back(), targetTrajectories,
-                        ocs2::PreComputation());
+  Scalar maxConstraintViolation(
+      const RandomProblem& problem,
+      const typename Solver_t::PrimalSolution_t& solution) const {
+    Scalar maxViolation = Scalar(0.0);
+    for (size_t k = 0; k < N; ++k) {
+      maxViolation =
+          std::max(maxViolation, problem.hardConstraintPtr
+                                     ->getValue(solution.timeTrajectory_[k],
+                                                solution.stateTrajectory_[k],
+                                                solution.inputTrajectory_[k])
+                                     .template lpNorm<Eigen::Infinity>());
+    }
+    return maxViolation;
   }
 
-  std::string getTestName(const ocs2::ddp::Settings& ddpSettings) const {
-    std::string testName;
-    testName += "Correctness Test { ";
-    testName +=
-        "Algorithm: " + ocs2::ddp::toAlgorithmName(ddpSettings.algorithm_) +
-        ",  ";
-    testName +=
-        "Strategy: " + ocs2::search_strategy::toString(ddpSettings.strategy_) +
-        ",  ";
-    testName += "#threads: " + std::to_string(ddpSettings.nThreads_) + " }";
-    return testName;
+  Scalar maxConstraintViolation(const RandomProblem& problem,
+                                const QpTrajectory_t& solution) const {
+    Scalar maxViolation = Scalar(0.0);
+    for (size_t k = 0; k < N; ++k) {
+      maxViolation =
+          std::max(maxViolation, problem.hardConstraintPtr
+                                     ->getValue(solution.timeTrajectory[k],
+                                                solution.stateTrajectory[k],
+                                                solution.inputTrajectory[k])
+                                     .template lpNorm<Eigen::Infinity>());
+    }
+    return maxViolation;
   }
 
-  void correctnessTest(const ocs2::ddp::Settings& ddpSettings,
-                       const ocs2::PerformanceIndex& performanceIndex,
-                       const ocs2::PrimalSolution& ddpSolution) const {
-    const auto testName = getTestName(ddpSettings);
-    EXPECT_NEAR(performanceIndex.cost, qpCost, 10.0 * minRelCost)
-        << "MESSAGE: " << testName << ": failed in the optimal cost test!";
-    EXPECT_LT(relError(ddpSolution.stateTrajectory_.back(),
-                       qpSolution.stateTrajectory.back()),
-              solutionPrecision)
-        << "MESSAGE: " << testName
-        << ": failed in the optimal final state test!";
-    EXPECT_LT(relError(ddpSolution.inputTrajectory_.front(),
-                       qpSolution.inputTrajectory.front()),
-              solutionPrecision)
-        << "MESSAGE: " << testName
-        << ": failed in the optimal initial input test!";
-  }
-
-  ocs2::scalar_t relError(ocs2::vector_t ddpSol,
-                          const ocs2::vector_t& qpSol) const {
-    return (ddpSol - qpSol).norm() / ddpSol.norm();
-  }
-
-  ocs2::vector_t initState;
-  ocs2::scalar_t startTime;
-  ocs2::scalar_t finalTime;
-
-  ocs2::TargetTrajectories targetTrajectories;
-  std::unique_ptr<ocs2::SystemDynamicsBase> systemPtr;
-  std::unique_ptr<ocs2::OptimalControlProblem> problemPtr;
-  std::unique_ptr<ocs2::OperatingPoints> operatingPointsPtr;
-  ocs2::qp_solver::ContinuousTrajectory nominalTrajectory;
-  std::unique_ptr<ocs2::TimeTriggeredRollout> rolloutPtr;
-
-  ocs2::scalar_t qpCost;
-  ocs2::qp_solver::ContinuousTrajectory qpSolution;
+  std::vector<std::unique_ptr<RandomProblem>> randomProblems;
+  Initializer_t initializer;
 };
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-TEST_P(DDPCorrectness, TestSLQ) {
-  // settings
-  const auto ddpSettings = getSettings(ocs2::ddp::Algorithm::SLQ,
-                                       getNumThreads(), getSearchStrategy());
-
-  // ddp
-  ocs2::SLQ ddp(ddpSettings, *rolloutPtr, *problemPtr, *operatingPointsPtr);
-
-  ddp.getReferenceManager().setTargetTrajectories(targetTrajectories);
-  ddp.run(startTime, initState, finalTime);
-  const auto performanceIndex = ddp.getPerformanceIndeces();
-  const auto solution = ddp.primalSolution(finalTime);
-
-  correctnessTest(ddpSettings, performanceIndex, solution);
+TEST_P(DDPCorrectness, HardQpSolutionSatisfiesLinearConstraints) {
+  for (size_t caseIndex = 0; caseIndex < numRandomCases; ++caseIndex) {
+    const auto& problem = *randomProblems[caseIndex];
+    EXPECT_LT(maxConstraintViolation(problem, problem.qpSolution),
+              constraintTolerance)
+        << "seed: " << GetParam() << ", case index: " << caseIndex;
+  }
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-TEST_P(DDPCorrectness, TestILQR) {
-  // settings
-  const auto ddpSettings = getSettings(ocs2::ddp::Algorithm::ILQR,
-                                       getNumThreads(), getSearchStrategy());
+TEST_P(DDPCorrectness, ILQRWithAugmentedLagrangianMatchesHardQpSolution) {
+  for (size_t caseIndex = 0; caseIndex < numRandomCases; ++caseIndex) {
+    const auto& problem = *randomProblems[caseIndex];
 
-  // ddp
-  ocs2::ILQR ddp(ddpSettings, *rolloutPtr, *problemPtr, *operatingPointsPtr);
+    Solver_t solver(getSettings(), *problem.alProblemPtr, &initializer);
+    solver.setDesireTrajectory(problem.targetTrajectory.timeTrajectory,
+                               problem.targetTrajectory.stateTrajectory,
+                               problem.targetTrajectory.inputTrajectory);
 
-  ddp.getReferenceManager().setTargetTrajectories(targetTrajectories);
-  ddp.run(startTime, initState, finalTime);
-  const auto performanceIndex = ddp.getPerformanceIndeces();
-  const auto solution = ddp.primalSolution(finalTime);
+    ASSERT_NO_THROW(solver.run(Scalar(0.0), problem.initState))
+        << "seed: " << GetParam() << ", case index: " << caseIndex;
+    const auto& solution = solver.primalSolution();
 
-  correctnessTest(ddpSettings, performanceIndex, solution);
+    EXPECT_LT(maxConstraintViolation(problem, solution), constraintTolerance)
+        << "seed: " << GetParam() << ", case index: " << caseIndex;
+    EXPECT_LT((solution.stateTrajectory_.back() -
+               problem.qpSolution.stateTrajectory.back())
+                  .norm(),
+              solutionTolerance)
+        << "seed: " << GetParam() << ", case index: " << caseIndex
+        << ", Hard QP final state: "
+        << problem.qpSolution.stateTrajectory.back().transpose()
+        << ", iLQR final state: "
+        << solution.stateTrajectory_.back().transpose();
+    const Scalar initialInputRelativeError =
+        (solution.inputTrajectory_.front() -
+         problem.qpSolution.inputTrajectory.front())
+            .norm() /
+        std::max(problem.qpSolution.inputTrajectory.front().norm(),
+                 Scalar(1.0));
+    EXPECT_LT(initialInputRelativeError, inputRelativeTolerance)
+        << "seed: " << GetParam() << ", case index: " << caseIndex
+        << ", Hard QP initial input: "
+        << problem.qpSolution.inputTrajectory.front().transpose()
+        << ", iLQR initial input: "
+        << solution.inputTrajectory_.front().transpose();
+  }
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-/* Test name printed in gtest results */
-std::string testName(
-    const testing::TestParamInfo<DDPCorrectness::ParamType>& info) {
-  std::string name;
-  name += ocs2::search_strategy::toString(std::get<0>(info.param)) + "__";
-  name += std::get<1>(info.param) == Constraining::CONSTARINED
-              ? "CONSTARINED"
-              : "UNCONSTRAINED";
-  name += "__";
-  name += std::get<2>(info.param) == NumThreads::SINGLE ? "SINGLE_THREAD"
-                                                        : "MULTI_THREAD";
-  return name;
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-INSTANTIATE_TEST_CASE_P(
-    DDPCorrectnessTestCase, DDPCorrectness,
-    testing::Combine(
-        testing::ValuesIn({ocs2::search_strategy::Type::LINE_SEARCH,
-                           ocs2::search_strategy::Type::LEVENBERG_MARQUARDT}),
-        testing::ValuesIn({Constraining::CONSTARINED,
-                           Constraining::UNCONSTRAINED}),
-        testing::ValuesIn({NumThreads::SINGLE, NumThreads::MULTI})),
-    testName);
+INSTANTIATE_TEST_SUITE_P(
+    RandomSeeds, DDPCorrectness, testing::Values(0U, 1U, 2U),
+    [](const testing::TestParamInfo<DDPCorrectness::ParamType>& info) {
+      return "Seed" + std::to_string(info.param);
+    });
