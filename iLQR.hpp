@@ -312,8 +312,7 @@ class iLQR {
   }
 
   /**
-   * 计算 primalSolution rollout 中每个点的代价、软约束和约束值。
-   * primalSolution rollout。
+   * @brief 计算 rollout 轨迹中每个节点的代价、软约束和约束指标。
    *
    * @param [in] problem 最优控制问题。
    * @param [in] targetTrajectory 参考轨迹。
@@ -345,11 +344,12 @@ class iLQR {
   }
 
   /**
-   * 使用给定控制器正向积分系统动力学。
-   * 使用给定控制策略和初始状态对系统动力学进行积分，
-   * 积分区间为 [initTime, finalTime]。
+   * @brief 使用给定控制器前向展开系统轨迹。
    *
-   * @param [in] rollout 前向积分用的 rollout 对象。
+   * 连续动力学模式下，rollout 会积分系统流映射；离散动力学模式下，
+   * rollout 会逐节点调用离散状态转移。
+   *
+   * @param [in] rollout 前向展开使用的 rollout 对象。
    * @param [in] initTime 初始时间。
    * @param [in] initState 初始状态。
    * @param [in] finalTime 终止时间。
@@ -458,7 +458,9 @@ class iLQR {
     return settings;
   }
 
-  /** 基于优化解初始化名义原始解。
+  /**
+   * @brief 基于上一轮优化解初始化当前名义原始解。
+   *
    * @return 如果 rollout 不完全来自 Initializer，则返回 true。
    */
   bool initializePrimalSolution() {
@@ -476,14 +478,12 @@ class iLQR {
   }
 
   /**
-   * 使用 inputPrimalSolution 中的控制器正向积分系统动力学。
-   * 通常会使用给定控制策略和初始状态，
-   * 在时间区间内积分系统动力学。
-   * [initTime, finalTime]。但如果 inputPrimalSolution 的控制器
-   * 未覆盖区间 [initTime, finalTime]，则使用该控制器直到
-   * 控制器的终止时间。
+   * @brief 使用 inputPrimalSolution 中的控制器前向展开系统轨迹。
    *
-   * @param [in] inputPrimalSolution 其控制器将用于前向积分。
+   * 通常会从当前初始状态展开到 finalTime_。如果 inputPrimalSolution
+   * 的控制器没有覆盖完整区间，则只展开到该控制器可用的终止时间。
+   *
+   * @param [in] inputPrimalSolution 其控制器将用于前向 rollout。
    * @param [out] outputPrimalSolution 得到的原始解（轨迹与控制器）。
    * @return 被覆盖的步数。
    */
@@ -551,15 +551,15 @@ class iLQR {
   }
 
   /**
-   * 围绕名义状态和控制轨迹，将非线性问题近似为线性二次问题。
+   * @brief 围绕名义状态和控制轨迹构造离散 LQ 近似。
+   *
+   * 中间节点由 Transcription 层根据连续/离散动力学模式生成；终端节点仅包含
+   * 终端目标函数和终端约束的二次近似。
+   *
    * 该方法会更新以下变量：
-   * 变量：
-   * 	- 线性化系统模型和约束
-   * 	- 二次化代价函数
-   * 	- 以及以下对象的约束系数
-   * 		- 线性化系统模型
-   * 		- 二次化中间代价函数
-   * 		- 二次化终端代价
+   * - 线性化后的离散动力学模型
+   * - 二次化目标函数
+   * - 增广拉格朗日项产生的约束惩罚近似
    */
   void approximateOptimalControlProblem() {
     approximateIntermediateLQ(nominalDualData_.dualSolution,
@@ -588,7 +588,7 @@ class iLQR {
   }
 
   /**
-   * 计算节点处最优控制问题的 LQ 近似。
+   * @brief 计算所有中间节点处最优控制问题的离散 LQ 近似。
    *
    * @param [in] dualSolution 对偶解。
    * @param [in,out] primalData 原始数据（读轨迹，写 modelDataTrajectory）。

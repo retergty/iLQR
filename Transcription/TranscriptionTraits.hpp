@@ -29,8 +29,7 @@ struct TranscriptionSelector<Descriptor, DiscreteDynamics> {
 /**
  * @brief 给定 descriptor 的转录实现类型。
  *
- * 该别名只做类型选择；具体 ContinuousTranscription / DiscreteTranscription
- * 实现应在使用该别名前由调用方包含。
+ * 该别名按 descriptor 中的 DynamicsMode 在编译期选择具体转录实现。
  */
 template <typename Descriptor>
 using Transcription_t = typename TranscriptionSelector<

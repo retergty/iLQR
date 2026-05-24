@@ -1,7 +1,7 @@
 /**
  * @file RolloutBase.hpp
  * @brief 前向 rollout 基类：在 [initTime, finalTime]
- * 上按给定控制器积分动力学并写入轨迹。
+ * 上按给定控制器展开状态轨迹并写入缓冲区。
  */
 #pragma once
 
@@ -12,14 +12,14 @@
 enum class RootFinderType { ANDERSON_BJORCK, PEGASUS, ILLINOIS, REGULA_FALSI };
 
 /**
- * @brief 前向 rollout 的配置：积分步长、是否在积分后再算控制以构造输入轨迹。
+ * @brief 前向 rollout 的配置：时间步长、是否重建输入轨迹。
  */
 template <typename Scalar>
 struct RolloutSettings {
-  /** @brief 固定步长积分时使用的时间步长。 */
+  /** @brief 固定步长 rollout 使用的时间步长。 */
   Scalar timeStep = 1e-2;
 
-  /** @brief 积分完成后是否再调用控制器以构造输入轨迹。 */
+  /** @brief rollout 时是否写入或重建输入轨迹。 */
   bool reconstructInputTrajectory = true;
 };
 
@@ -45,7 +45,7 @@ struct RolloutTrajectoryPointer {
 
 /**
  * @brief 前向 rollout 抽象基类：用给定控制器与初态在 [initTime, finalTime]
- * 上积分动力学，结果写入 trajectory。
+ * 上生成状态、输入和时间轨迹。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
@@ -65,8 +65,7 @@ class RolloutBase {
   RolloutSettings<Scalar>& settings() { return rolloutSettings_; }
 
   /**
-   * @brief 从 initTime 到 finalTime 用给定控制器前向积分动力学，结果写入
-   * 轨迹。
+   * @brief 从 initTime 到 finalTime 用给定控制器前向展开轨迹。
    * @param [in] initTime 初始时间。
    * @param [in] initState 初始状态。
    * @param [in] finalTime 终止时间。

@@ -151,8 +151,10 @@ TEST(ApproximationTest,
   const auto costApproximation = Approximator::approximateCost(
       problem, targetTrajectory, 0.5, state, input);
   Approximator::IntermediateMultiplierCollection_t multipliers;
-  const auto modelData = Approximator::approximateIntermediateLQ(
+  const auto modelData = Approximator::approximateIntermediateCost(
       problem, targetTrajectory, 0.5, state, input, multipliers);
+  const auto dynamicsApproximation =
+      dynamics.linearApproximation(0.5, state, input);
 
   Eigen::Vector2d expectedDfdx;
   expectedDfdx << 13.5, 37.5;
@@ -171,9 +173,9 @@ TEST(ApproximationTest,
   EXPECT_TRUE(costApproximation.dfduu.isApprox(R, 1e-12));
   EXPECT_TRUE(costApproximation.dfdux.isZero(1e-12));
 
-  EXPECT_TRUE(modelData.dynamics.f.isApprox(expectedDynamics, 1e-12));
-  EXPECT_TRUE(modelData.dynamics.dfdx.isApprox(A, 1e-12));
-  EXPECT_TRUE(modelData.dynamics.dfdu.isApprox(B, 1e-12));
+  EXPECT_TRUE(dynamicsApproximation.f.isApprox(expectedDynamics, 1e-12));
+  EXPECT_TRUE(dynamicsApproximation.dfdx.isApprox(A, 1e-12));
+  EXPECT_TRUE(dynamicsApproximation.dfdu.isApprox(B, 1e-12));
   EXPECT_TRUE(modelData.cost.dfdx.isApprox(expectedDfdx, 1e-12));
   EXPECT_TRUE(modelData.cost.dfdu.isApprox(expectedDfdu, 1e-12));
   EXPECT_TRUE(modelData.cost.dfdxx.isApprox(expectedDfdxx, 1e-12));

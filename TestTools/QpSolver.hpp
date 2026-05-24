@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Eigen/LU>
-#include <algorithm>
 #include <cassert>
 #include <numeric>
 #include <stdexcept>
@@ -9,7 +8,6 @@
 #include <utility>
 
 #include "QpSolverTypes.hpp"
-#include "QpTrajectories.hpp"
 
 namespace qp_solver {
 
@@ -75,7 +73,7 @@ getNumStatesInputsConstraints(
 }
 
 /** 统计 QP 中的决策变量数量。 */
-int getNumDecisionVariables(const std::vector<int>& numStates,
+inline int getNumDecisionVariables(const std::vector<int>& numStates,
                             const std::vector<int>& numInputs) {
   const auto totalNumberOfStates =
       std::accumulate(numStates.begin(), numStates.end(), 0);
@@ -85,7 +83,7 @@ int getNumDecisionVariables(const std::vector<int>& numStates,
 }
 
 /** 统计 QP 中的约束数量。 */
-int getNumConstraints(const std::vector<int>& numStates,
+inline int getNumConstraints(const std::vector<int>& numStates,
                       const std::vector<int>& numConstraints) {
   // 每个阶段约束 x_{k+1} 状态；加上 x_0 约束后，所有状态
   // 都会被精确约束一次。

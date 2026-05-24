@@ -58,31 +58,6 @@ struct LinearQuadraticApproximator {
   using TargetTrajectories_t = typename Traits::TargetTrajectories_t;
 
   /**
-   * 计算约束最优控制问题在以下位置的 LQ 近似：
-   * 给定时间、状态和输入。
-   *
-   * @param [in] problem: 最优控制问题。
-   * @param [in] time: 当前时间。
-   * @param [in] state: 当前状态。
-   * @param [in] input: 当前输入。
-   * @param [in] multipliers: 当前与等式和不等式拉格朗日项关联的乘子。
-   * @param [out] modelData: 输出数据模型。
-   */
-  static void approximateIntermediateLQ(
-      const OptimalControlProblem_t& problem,
-      const TargetTrajectories_t& targetTrajectories, const Scalar time,
-      const StateVector_t& state, const InputVector_t& input,
-      const IntermediateMultiplierCollection_t& multipliers,
-      ModelData_t& modelData) {
-    // 动力学
-    modelData.dynamics =
-        problem.dynamicsPtr->linearApproximation(time, state, input);
-
-    approximateIntermediateCost(problem, targetTrajectories, time, state, input,
-                                multipliers, modelData);
-  }
-
-  /**
    * 计算中间节点目标函数的二次近似，不计算动力学。
    *
    * 目标函数包括运行代价、状态代价以及增广拉格朗日项。该函数用于转录层
@@ -153,30 +128,7 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * 计算约束最优控制问题在以下位置的 LQ 近似：
-   * 给定时间、状态和输入。
-   *
-   * @param [in] problem: 最优控制问题。
-   * @param [in] time: 当前时间。
-   * @param [in] state: 当前状态。
-   * @param [in] input: 当前输入。
-   * @param [in] multipliers: 当前与等式和不等式拉格朗日项关联的乘子。
-   * @return 输出数据模型。
-   */
-  static inline ModelData_t approximateIntermediateLQ(
-      const OptimalControlProblem_t& problem,
-      const TargetTrajectories_t& targetTrajectories, const Scalar time,
-      const StateVector_t& state, const InputVector_t& input,
-      const IntermediateMultiplierCollection_t& multipliers) {
-    ModelData<Scalar, XDim, UDim> md;
-    approximateIntermediateLQ(problem, targetTrajectories, time, state, input,
-                              multipliers, md);
-    return md;
-  }
-
-  /**
-   * 计算约束最优控制问题在以下位置的 LQ 近似：
-   * 终端时刻。
+   * @brief 计算终端节点的目标函数与终端增广拉格朗日二次近似。
    *
    * @param [in] problem: 最优控制问题。
    * @param [in] time: 当前时间。
@@ -194,7 +146,7 @@ struct LinearQuadraticApproximator {
     VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> finalDynamics;
     finalDynamics.setZero();
 
-    // 动力学
+    // 终端节点没有后续动力学，填零以保持 ModelData 结构完整。
     modelData.dynamics = finalDynamics;
 
     // 终端代价
@@ -219,8 +171,7 @@ struct LinearQuadraticApproximator {
   }
 
   /**
-   * 计算约束最优控制问题在以下位置的 LQ 近似：
-   * 终端时刻。
+   * @brief 返回终端节点的目标函数与终端增广拉格朗日二次近似。
    *
    * @param [in] problem: 最优控制问题。
    * @param [in] time: 当前时间。
