@@ -5,9 +5,9 @@
 #pragma once
 
 #include "CostCollection.hpp"
+#include "DynamicsModeTraits.hpp"
 #include "StateAugmentedLagrangianCollection.hpp"
 #include "StateInputAugmentedLagrangianCollection.hpp"
-#include "SystemDynamicsBase.hpp"
 
 /**
  * @brief
@@ -21,6 +21,11 @@ struct OptimalControlProblem {
   static constexpr int XDim = Transcription::XDim;
   static constexpr int UDim = Transcription::UDim;
   static constexpr std::size_t PredictLength = Transcription::PredictLength;
+
+  using DynamicsMode = typename Transcription::DynamicsMode;
+  using DynamicsBase_t =
+      typename DynamicsModeTraits<Scalar, XDim, UDim,
+                                  DynamicsMode>::DynamicsBase_t;
 
   using StateEqLayout = typename ConstraintConfig::StateEqLayout;
   using StateIneqLayout = typename ConstraintConfig::StateIneqLayout;
@@ -80,6 +85,6 @@ struct OptimalControlProblem {
   StateAugmentedLagrangianCollection<Scalar, XDim, FinalStateIneqLayout>
       finalInequalityLagrangian;
 
-  /** @brief 系统动力学指针。 */
-  SystemDynamicsBase<Scalar, XDim, UDim>* dynamicsPtr;
+  /** @brief 系统动力学指针，类型由 Transcription::DynamicsMode 决定。 */
+  DynamicsBase_t* dynamicsPtr{nullptr};
 };

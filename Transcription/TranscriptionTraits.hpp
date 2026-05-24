@@ -4,13 +4,9 @@
  */
 #pragma once
 
+#include "ContinuousTranscription.hpp"
+#include "DiscreteTranscription.hpp"
 #include "iLQRDescriptorTraits.hpp"
-
-template <typename Descriptor>
-class ContinuousTranscription;
-
-template <typename Descriptor>
-class DiscreteTranscription;
 
 /**
  * @brief 按动力学模式选择对应的转录实现。

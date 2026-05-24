@@ -74,7 +74,7 @@ class Ocs2QpSolverTest : public testing::Test {
     R = test_tools::getRandomPositiveDefiniteMatrix<Scalar, INPUT_DIM>();
     QFinal = test_tools::getRandomPositiveDefiniteMatrix<Scalar, STATE_DIM>();
 
-    system = test_tools::getOcs2Dynamics(dynamics);
+    system = test_tools::getiLQRDynamics(dynamics);
     intermediateCost = std::make_unique<
         QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>(Q, R);
     finalCost =

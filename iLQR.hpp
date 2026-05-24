@@ -15,7 +15,6 @@
 #include "OptimalControlProblemHelperFunction.hpp"
 #include "PerformanceIndex.hpp"
 #include "SearchStrategyBase.hpp"
-#include "SensitivityIntegrator.hpp"
 #include "TrapezoidalIntegration.hpp"
 #include "Types.hpp"
 #include "iLQRTypes.hpp"
@@ -51,8 +50,6 @@ class iLQR {
   static constexpr int FinalStateIneqConstrains = Types::FinalStateIneq;
 
   using OptimalControlProblem_t = typename Types::OptimalControlProblem_t;
-  using ControlledSystemBase_t = typename Types::ControlledSystemBase_t;
-  using SystemDynamicsBase_t = typename Types::SystemDynamicsBase_t;
 
   using StateVector_t = typename Types::StateVector_t;
   using InputVector_t = typename Types::InputVector_t;
@@ -75,7 +72,7 @@ class iLQR {
   using InitializerRollout_t = typename Types::InitializerRollout_t;
   using Initializer_t = typename Types::Initializer_t;
 
-  using TimeTriggeredRollout_t = typename Types::TimeTriggeredRollout_t;
+  using Rollout_t = typename Types::Rollout_t;
   using RolloutTrajectoryPointer_t = typename Types::RolloutTrajectoryPointer_t;
 
   using SearchStrategySolution_t = typename Types::SearchStrategySolution_t;
@@ -108,7 +105,7 @@ class iLQR {
   using IntermediatePerformanceIndexTrajectory_t =
       typename Types::IntermediatePerformanceIndexTrajectory_t;
 
-  using EK2DynamicsDiscretizer_t = typename Types::EK2DynamicsDiscretizer_t;
+  using Transcription_t = typename Types::Transcription_t;
 
   using ValueFunctionQuadraticApproximation_t =
       typename Types::ValueFunctionQuadraticApproximation_t;
@@ -334,13 +331,13 @@ class iLQR {
     for (size_t k = 0; k < PredictLength; k++) {
       // 中间时刻代价和约束。
       problemMetrics.intermediates[k] =
-          approximator_.computeIntermediateMetrics(
+          LinearQuadraticApproximator_t::computeIntermediateMetrics(
               problem, targetTrajectory, tTrajectory[k], xTrajectory[k],
               uTrajectory[k], dualSolution.intermediates[k]);
     }
 
     // 终端时刻代价和约束。
-    problemMetrics.final = approximator_.computeFinalMetrics(
+    problemMetrics.final = LinearQuadraticApproximator_t::computeFinalMetrics(
         problem, targetTrajectory, tTrajectory.back(), xTrajectory.back(),
         dualSolution.final);
   }
@@ -578,7 +575,7 @@ class iLQR {
         nominalPrimalData_.primalSolution.stateTrajectory_.back();
     const FinalMultiplierCollection_t& multiplier =
         nominalDualData_.dualSolution.final;
-    modelData = approximator_.approximateFinalLQ(
+    modelData = LinearQuadraticApproximator_t::approximateFinalLQ(
         optimalControlProblem_, targetTrajectory_, time, state, multiplier);
 
     // 修正终端时刻 Hessian。
@@ -609,48 +606,13 @@ class iLQR {
     ModelDataTrajectory_t& modelDataTrajectory = primalData.modelDataTrajectory;
 
     for (size_t timeIndex = 0; timeIndex < PredictLength; ++timeIndex) {
-      // 对给定时间索引进行连续 LQ 近似。
-      ModelData_t continuousTimeModelData =
-          approximator_.approximateIntermediateLQ(
-              optimalControlProblem_, targetTrajectory_,
-              timeTrajectory[timeIndex], stateTrajectory[timeIndex],
-              inputTrajectory[timeIndex], multiplierTrajectory[timeIndex]);
-
       const Scalar timeStep =
           timeTrajectory[timeIndex + 1] - timeTrajectory[timeIndex];
-      discreteLQWorker(*optimalControlProblem_.dynamicsPtr,
-                       timeTrajectory[timeIndex], stateTrajectory[timeIndex],
-                       inputTrajectory[timeIndex], timeStep,
-                       continuousTimeModelData, modelDataTrajectory[timeIndex]);
+      transcription_.approximateIntermediate(
+          optimalControlProblem_, targetTrajectory_, timeTrajectory[timeIndex],
+          stateTrajectory[timeIndex], inputTrajectory[timeIndex], timeStep,
+          multiplierTrajectory[timeIndex], modelDataTrajectory[timeIndex]);
     };
-  }
-
-  /**
-   * 由连续时间 LQ 近似计算离散时间 LQ 近似。
-   * 近似。
-   *
-   * @param [in] system 系统动力学。
-   * @param [in] time 当前时刻 t_k。
-   * @param [in] state 当前状态 x_k。
-   * @param [in] input 当前输入 u_k。
-   * @param [in] timeStep x_k 到 x_{k+1} 的时间步长。
-   * @param [in] continuousTimeModelData 连续时间 LQ 模型数据。
-   * @param [out] modelData 离散化后的模型数据。
-   */
-  void discreteLQWorker(SystemDynamicsBase<Scalar, XDim, UDim>& system,
-                        Scalar time, const StateVector_t& state,
-                        const InputVector_t& input, Scalar timeStep,
-                        const ModelData_t& continuousTimeModelData,
-                        ModelData_t& modelData) {
-    modelData.time = continuousTimeModelData.time;
-
-    // 线性化系统动力学。
-    modelData.dynamics = discretizer_.sensitivityDiscretize(system, time, state,
-                                                            input, timeStep);
-    modelData.dynamics.f.setZero();
-
-    // 代价函数的二次近似。
-    modelData.cost = continuousTimeModelData.cost * timeStep;
   }
 
   /**
@@ -1013,14 +975,13 @@ class iLQR {
   // 保持 public 以支持搜索策略集成和已有外部设置
   // 代码。
   OptimalControlProblem_t& optimalControlProblem_;
-  TimeTriggeredRollout_t rollout_;
+  Rollout_t rollout_;
   InitializerRollout_t initializerRollout_;
 
  private:
   LineSearchStrategy_t lineSearchStrategy_;
 
-  // 供静态 rollout 辅助函数共享的线性二次近似器。
-  inline static LinearQuadraticApproximator_t approximator_{};
+  Transcription_t transcription_;
 
   TargetTrajectories_t targetTrajectory_;
 
@@ -1042,8 +1003,7 @@ class iLQR {
   // 线搜索前由 LQ 解计算出的控制器。
   LinearController_t unoptimizedController_;
 
-  // 线性化离散器和 Riccati 递推工作区。
-  EK2DynamicsDiscretizer_t discretizer_;
+  // Riccati 递推工作区。
   DiscreteTimeRiccatiEquations_t riccatiEquationsSolver_;
   std::array<KmMatrix_t, PredictLength + 1>
       projectedKmTrajectoryStock_;  // 投影反馈。

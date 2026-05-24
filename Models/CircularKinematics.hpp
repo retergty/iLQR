@@ -54,7 +54,7 @@ class CircularKinematicsSystem final
 
   VectorFunctionLinearApproximation<Scalar, STATE_DIM, STATE_DIM, INPUT_DIM>
   linearApproximation(Scalar t, const Vector<Scalar, STATE_DIM>& x,
-                      const Vector<Scalar, INPUT_DIM>& u) {
+                      const Vector<Scalar, INPUT_DIM>& u) override {
     VectorFunctionLinearApproximation<Scalar, STATE_DIM, STATE_DIM, INPUT_DIM>
         dynamics;
     dynamics.f = computeFlowMap(t, x, u);

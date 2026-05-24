@@ -1,10 +1,10 @@
 #pragma once
 #include <array>
 
-#include "ControlledSystemBase.hpp"
 #include "DDPData.hpp"
 #include "DiscreteTimeRiccatiEquations.hpp"
 #include "DualSolution.hpp"
+#include "DynamicsModeTraits.hpp"
 #include "Initializer.hpp"
 #include "InitializerRollout.hpp"
 #include "LinearController.hpp"
@@ -18,9 +18,9 @@
 #include "QuadraticApproximation.hpp"
 #include "RiccatiModification.hpp"
 #include "RolloutBase.hpp"
+#include "RolloutTraits.hpp"
 #include "SearchStrategyBase.hpp"
-#include "SensitivityIntegrator.hpp"
-#include "TimeTriggeredRollout.hpp"
+#include "TranscriptionTraits.hpp"
 #include "iLQRDescriptorTraits.hpp"
 
 template <typename Descriptor>
@@ -31,6 +31,7 @@ struct iLQRTypes {
   using TranscriptionConfig = typename Traits::TranscriptionConfig;
   using Dims = typename Traits::Dims;
   using Horizon = typename Traits::Horizon;
+  using DynamicsMode = typename Traits::DynamicsMode;
   using ConstraintConfig = typename Traits::ConstraintConfig;
 
   static constexpr int XDim = Traits::XDim;
@@ -59,12 +60,14 @@ struct iLQRTypes {
   using InputTrajectory_t = typename Traits::InputTrajectory_t;
   using TargetTrajectories_t = typename Traits::TargetTrajectories_t;
 
-  using ControlledSystemBase_t = ControlledSystemBase<Scalar, XDim, UDim>;
-  using SystemDynamicsBase_t = SystemDynamicsBase<Scalar, XDim, UDim>;
+  using DynamicsBase_t =
+      typename DynamicsModeTraits<Scalar, XDim, UDim,
+                                  DynamicsMode>::DynamicsBase_t;
   using RolloutBase_t = RolloutBase<Scalar, XDim, UDim>;
   using InitializerRollout_t = InitializerRollout<Scalar, XDim, UDim>;
   using Initializer_t = Initializer<Scalar, XDim, UDim>;
-  using TimeTriggeredRollout_t = TimeTriggeredRollout<Scalar, XDim, UDim>;
+  using Rollout_t =
+      typename RolloutModeTraits<Scalar, XDim, UDim, DynamicsMode>::Rollout_t;
   using RolloutTrajectoryPointer_t =
       RolloutTrajectoryPointer<Scalar, XDim, UDim>;
 
@@ -87,6 +90,7 @@ struct iLQRTypes {
   using DualSolution_t = DualSolution<Scalar, Horizon, ConstraintConfig>;
   using DualSolutionRef_t = DualSolutionRef<Scalar, Horizon, ConstraintConfig>;
   using LinearQuadraticApproximator_t = LinearQuadraticApproximator<Descriptor>;
+  using Transcription_t = ::Transcription_t<Descriptor>;
   using PrimalDataContainer_t =
       PrimalDataContainer<Scalar, TranscriptionConfig, ConstraintConfig>;
   using DualDataContainer_t =
@@ -102,7 +106,6 @@ struct iLQRTypes {
   using SearchStrategySolution_t = SearchStrategySolution<Descriptor>;
   using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Descriptor>;
   using SearchStrategyBase_t = SearchStrategyBase<Descriptor>;
-  using EK2DynamicsDiscretizer_t = EK2DynamicsDiscretizer<Scalar, XDim, UDim>;
   using ValueFunctionQuadraticApproximation_t =
       ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
   using ValueFunctionTrajectory_t =
