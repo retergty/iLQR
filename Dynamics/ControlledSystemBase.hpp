@@ -31,7 +31,7 @@ class ControlledSystemBase : public OdeBase<Scalar, XDim> {
    * @return 状态对时间的导数。
    */
   Vector<Scalar, XDim> computeFlowMap(
-      Scalar t, const Vector<Scalar, XDim>& x) const override final {
+      Scalar t, const Vector<Scalar, XDim>& x) override final {
     assert(controllerPtr_ != nullptr);
     const Vector<Scalar, UDim> u = controllerPtr_->computeInput(t, x);
     return computeFlowMap(t, x, u);
@@ -46,7 +46,7 @@ class ControlledSystemBase : public OdeBase<Scalar, XDim> {
    */
   virtual Vector<Scalar, XDim> computeFlowMap(
       Scalar t, const Vector<Scalar, XDim>& x,
-      const Vector<Scalar, UDim>& u) const = 0;
+      const Vector<Scalar, UDim>& u) = 0;
 
   /** @brief 设置控制器指针，用于 rollout 时计算 u。 */
   void setController(ControllerBase<Scalar, XDim, UDim>* controllerPtr) {

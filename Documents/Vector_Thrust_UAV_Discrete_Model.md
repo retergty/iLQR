@@ -27,6 +27,18 @@ $$
 
 表示上一采样时刻的机体系推力。
 
+在每次 MPC 求解开始时，初始增广状态应使用真实上一控制周期的推力：
+
+$$
+X_0 =
+\begin{bmatrix}
+v_0^W \\
+F_{\mathrm{last}}^B
+\end{bmatrix}
+$$
+
+其中 $F_{\mathrm{last}}^B$ 应来自上一周期实际发送或估计得到的机体系推力。若将其随意置零，第一步方向变化代价会失去物理意义。
+
 控制输入定义为当前采样时刻的机体系推力：
 
 $$
@@ -164,16 +176,36 @@ $$
 1 - \cos\theta_k
 $$
 
-作为方向变化代价。若希望近似惩罚角速度，可将采样周期并入权重：
+作为方向变化代价。若希望近似惩罚角速度平方在时间上的积分：
+
+$$
+\int \|\dot{\theta}\|^2 dt
+$$
+
+则离散近似为：
+
+$$
+\left(\frac{\theta_k}{\Delta t}\right)^2 \Delta t
+=
+\frac{\theta_k^2}{\Delta t}
+$$
+
+小角度下有：
+
+$$
+\theta_k^2 \approx 2(1 - \cos\theta_k)
+$$
+
+因此可将采样周期按 $1 / \Delta t$ 并入权重：
 
 $$
 \ell_{\mathrm{angle},k}
 =
 w_{\omega}
-\frac{1 - \cos\theta_k}{\Delta t^2}
+\frac{1 - \cos\theta_k}{\Delta t}
 $$
 
-或者等价地将 $1 / \Delta t^2$ 吸收到权重中：
+如果只将其作为离散 stage cost 的平滑惩罚，也可以直接将采样周期吸收到调参权重中：
 
 $$
 \ell_{\mathrm{angle},k}
@@ -185,7 +217,7 @@ $$
 其中：
 
 $$
-w_{\mathrm{angle}} = \frac{w_{\omega}}{\Delta t^2}
+w_{\mathrm{angle}} = \frac{w_{\omega}}{\Delta t}
 $$
 
 ## 完整离散阶段代价
@@ -246,6 +278,25 @@ Q_f
 \left(v_N^W - v_{\mathrm{ref},N}^W\right)
 $$
 
+如果希望终端时推力也接近稳态或参考推力，可加入可选终端项：
+
+$$
+\frac{1}{2}
+\left(F_{N-1}^B - F_{\mathrm{ref},N}^B\right)^T
+Q_{F,f}
+\left(F_{N-1}^B - F_{\mathrm{ref},N}^B\right)
+$$
+
 ## 备注
 
-当 $\|U_k\|$ 或 $\|F_{k-1}^B\|$ 很小时，推力方向本身物理意义变弱。工程实现中可通过 $\varepsilon$ 保证数值稳定，也可在低推力区间降低或关闭转角速度代价权重。
+当 $\|U_k\|$ 或 $\|F_{k-1}^B\|$ 很小时，推力方向本身物理意义变弱。工程实现中可通过 $\varepsilon$ 保证数值稳定，但仅靠 $\varepsilon$ 不能保证低推力区域的物理合理性。更稳妥的做法是在低推力区间引入门控权重：
+
+$$
+\ell_{\mathrm{angle},k}
+=
+\gamma_k
+w_{\mathrm{angle}}
+\left(1 - \cos\theta_k\right)
+$$
+
+其中 $\gamma_k \in [0, 1]$ 随 $\|U_k\|$ 和 $\|F_{k-1}^B\|$ 变小而降低，必要时可以关闭方向变化代价。

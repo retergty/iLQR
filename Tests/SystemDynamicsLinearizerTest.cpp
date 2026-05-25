@@ -47,7 +47,7 @@ class PendulumSystem final : public SystemDynamics {
   ~PendulumSystem() override = default;
 
   StateVector computeFlowMap(Scalar t, const StateVector& x,
-                             const InputVector& u) const override {
+                             const InputVector& u) override {
     (void)t;
     StateVector dfdt;
     dfdt << x(1), std::sin(x(0)) + 0.1 * u(0);

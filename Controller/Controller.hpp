@@ -33,9 +33,6 @@ class ControllerBase {
   virtual Vector<Scalar, UDim> computeInput(
       Scalar t, const Vector<Scalar, XDim>& x) const = 0;
 
-  /** @brief 按离散时间索引与状态计算控制（用于固定时间网格）。 */
-  virtual Vector<Scalar, UDim> computeInput(
-      size_t time_index, const Vector<Scalar, XDim>& x) const = 0;
   /**
    * @brief 返回控制器类型。
    * @return 控制器类型枚举值。

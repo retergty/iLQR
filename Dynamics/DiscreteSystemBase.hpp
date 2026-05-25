@@ -36,7 +36,7 @@ class DiscreteSystemBase {
   virtual Vector<Scalar, XDim> computeMap(Scalar t,
                                           const Vector<Scalar, XDim>& x,
                                           const Vector<Scalar, UDim>& u,
-                                          Scalar dt) const = 0;
+                                          Scalar dt) = 0;
 
  protected:
   /** @brief 拷贝构造（供子类使用）。 */

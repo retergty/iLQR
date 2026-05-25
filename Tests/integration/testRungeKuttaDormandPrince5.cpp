@@ -16,7 +16,7 @@ using StateVector = Vector<Scalar, XDim>;
 
 class ExponentialOde final : public OdeBase<Scalar, XDim> {
  public:
-  StateVector computeFlowMap(Scalar t, const StateVector& x) const override {
+  StateVector computeFlowMap(Scalar t, const StateVector& x) override {
     (void)t;
     ++evaluationCount_;
     return x;

@@ -28,7 +28,7 @@ class OdeBase {
    * @return 状态对时间的导数。
    */
   virtual Vector<Scalar, XDim> computeFlowMap(
-      Scalar t, const Vector<Scalar, XDim>& x) const = 0;
+      Scalar t, const Vector<Scalar, XDim>& x) = 0;
 };
 
 /**

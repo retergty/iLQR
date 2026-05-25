@@ -27,10 +27,10 @@ class RungeKuttaDormandPrince5Stepper {
    * @param [out] dxdt_out 下一状态的导数。
    * @param [in] computeDxdtOut 是否计算下一状态导数；最后一步可跳过。
    */
-  void doStep(const OdeBase<Scalar, XDim>& system,
-              const Vector<Scalar, XDim>& x0, const Vector<Scalar, XDim>& dxdt,
-              const Scalar t, const Scalar dt, Vector<Scalar, XDim>& x_out,
-              Vector<Scalar, XDim>& dxdt_out, bool computeDxdtOut = true) {
+  void doStep(OdeBase<Scalar, XDim>& system, const Vector<Scalar, XDim>& x0,
+              const Vector<Scalar, XDim>& dxdt, const Scalar t, const Scalar dt,
+              Vector<Scalar, XDim>& x_out, Vector<Scalar, XDim>& dxdt_out,
+              bool computeDxdtOut = true) {
     /* Runge-Kutta Dormand-Prince Butcher 表常数。
      * https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method */
     constexpr Scalar a2 = 1.0 / 5;

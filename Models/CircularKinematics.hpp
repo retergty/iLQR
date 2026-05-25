@@ -46,7 +46,7 @@ class CircularKinematicsSystem final
 
   Vector<Scalar, STATE_DIM> computeFlowMap(
       Scalar t, const Vector<Scalar, STATE_DIM>& x,
-      const Vector<Scalar, INPUT_DIM>& u) const override {
+      const Vector<Scalar, INPUT_DIM>& u) override {
     (void)t;
     (void)x;
     return u;
@@ -64,14 +64,6 @@ class CircularKinematicsSystem final
   }
 };
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-/**
- * 该示例定义了一个最优控制问题，其中运动学建模的
- * 粒子需要以 1[m/s] 速度绕单位圆运动（单位圆定义为约束），
- * 速度要求定义为代价。
- */
 template <typename Scalar, int ArrayLength>
 class CircularKinematicsCost
     : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
@@ -88,22 +80,6 @@ class CircularKinematicsCost
       const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
       const override {
     (void)time;
-    (void)timeTrajectory;
-    (void)stateTrajectoy;
-    (void)inputTrajectory;
-    const Scalar angularVelocityError =
-        state(0) * input(1) - state(1) * input(0) - Scalar(1.0);
-    return Scalar(0.5) * angularVelocityError * angularVelocityError +
-           Scalar(0.005) * input.dot(input);
-  }
-  Scalar getValue(
-      int time_index, const Vector<Scalar, STATE_DIM>& state,
-      const Vector<Scalar, INPUT_DIM>& input,
-      const std::array<Scalar, ArrayLength>& timeTrajectory,
-      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
-      const override {
-    (void)time_index;
     (void)timeTrajectory;
     (void)stateTrajectoy;
     (void)inputTrajectory;

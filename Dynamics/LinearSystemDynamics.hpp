@@ -23,9 +23,8 @@ class LinearSystemDynamics : public SystemDynamicsBase<Scalar, XDim, UDim> {
   ~LinearSystemDynamics() override = default;
 
   /** @brief 计算流映射：\f$ \dot{x} = A x + B u \f$。 */
-  Vector<Scalar, XDim> computeFlowMap(
-      Scalar t, const Vector<Scalar, XDim>& x,
-      const Vector<Scalar, UDim>& u) const override {
+  Vector<Scalar, XDim> computeFlowMap(Scalar t, const Vector<Scalar, XDim>& x,
+                                      const Vector<Scalar, UDim>& u) override {
     (void)t;
     Vector<Scalar, XDim> f = A_ * x;
     f += B_ * u;

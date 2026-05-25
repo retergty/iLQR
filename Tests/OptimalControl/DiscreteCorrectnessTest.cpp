@@ -15,7 +15,6 @@
 #include "TestProblemsGeneration.hpp"
 #include "iLQR.hpp"
 
-
 class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
  protected:
   using Scalar = double;

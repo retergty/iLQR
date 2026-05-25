@@ -83,17 +83,6 @@ class LinearController final : public ControllerBase<Scalar, XDim, UDim> {
     return uff;
   }
 
-  /** @brief 按离散时间索引与状态计算控制（无插值）。 */
-  Vector<Scalar, UDim> computeInput(
-      size_t time_index, const Vector<Scalar, XDim>& x) const override {
-    assert(time_index < ArrayLen);
-    Vector<Scalar, UDim> uff = biasArray_[time_index];
-    const Matrix<Scalar, UDim, XDim>& k = gainArray_[time_index];
-
-    uff += k * x;
-    return uff;
-  }
-
   /** @brief 返回控制器类型 LINEAR。 */
   ControllerType getType() const override { return ControllerType::LINEAR; }
 

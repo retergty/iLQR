@@ -57,7 +57,7 @@ class SystemDynamicsLinearizer final
 
   /** @brief 直接转发到底层非线性系统的流映射。 */
   StateVector_t computeFlowMap(Scalar time, const StateVector_t& state,
-                               const InputVector_t& input) const override {
+                               const InputVector_t& input) override {
     return controlledSystemPtr_->computeFlowMap(time, state, input);
   }
 

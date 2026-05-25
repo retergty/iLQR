@@ -49,7 +49,7 @@ class DiscreteLinearSystemDynamics
   /** @brief 计算离散状态转移：\f$ x_{k+1}=A x_k+B u_k+b \f$。 */
   Vector<Scalar, XDim> computeMap(Scalar t, const Vector<Scalar, XDim>& x,
                                   const Vector<Scalar, UDim>& u,
-                                  Scalar dt) const override {
+                                  Scalar dt) override {
     (void)t;
     (void)dt;
     Vector<Scalar, XDim> nextState = A_ * x;
