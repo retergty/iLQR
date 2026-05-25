@@ -29,7 +29,7 @@
 核心求解器围绕名义轨迹反复执行以下阶段：
 
 1. 根据初始状态和当前控制器生成或更新名义状态、输入和时间轨迹。
-2. 在名义轨迹附近对系统动力学进行线性化，并对代价函数和增广拉格朗日项进行二次近似。
+2. 根据动力学模式将名义轨迹附近的问题转录为离散 LQ 近似，并对目标函数和增广拉格朗日项进行二次近似。
 3. 使用离散时间 Riccati 方程从终端时刻向初始时刻反向递推 value function。
 4. 根据 Riccati 递推结果计算反馈增益和前馈控制修正。
 5. 通过线搜索选择可接受的控制更新步长，并重新 rollout 得到候选轨迹。
@@ -44,29 +44,35 @@
 
 ### 核心求解器与类型系统
 
-`iLQR.hpp` 是主要求解器实现，负责组织名义轨迹初始化、问题近似、Riccati 反向递推、控制器更新、线搜索、性能指标计算和乘子更新等步骤。`iLQR.cpp` 提供最小化入口示例，用于展示求解器的基本构造方式。
+`iLQR/iLQR.hpp` 是主要求解器实现，负责组织名义轨迹初始化、问题近似、Riccati 反向递推、控制器更新、线搜索、性能指标计算和乘子更新等步骤。`iLQR.cpp` 提供最小化入口示例，用于展示求解器的基本构造方式。
 
-`iLQRDescriptor.hpp`、`iLQRDescriptorTraits.hpp` 和 `iLQRTypes.hpp` 构成静态类型描述体系。它们将标量类型、系统维度、预测长度和约束布局转换为统一的轨迹、控制器、乘子、模型数据和求解缓存类型，是项目实现固定尺寸和禁止动态内存分配的重要基础。约束布局采用 `ConstraintGroupLayout<ConstraintTerm<N>...>` 描述：每个 `ConstraintTerm<N>` 表示一个增广拉格朗日项内部的 `N` 维向量约束，同一类约束可以包含多个 term。
+`iLQR/iLQRDescriptor.hpp`、`iLQR/iLQRDescriptorTraits.hpp` 和 `iLQR/iLQRTypes.hpp` 构成静态类型描述体系。它们将标量类型、系统维度、预测长度、动力学模式和约束布局转换为统一的轨迹、控制器、乘子、模型数据和求解缓存类型，是项目实现固定尺寸和禁止动态内存分配的重要基础。`TranscriptionConfig` 支持 `ContinuousDynamics` 与 `DiscreteDynamics` 两种动力学模式，默认使用连续模式；约束布局采用 `ConstraintGroupLayout<ConstraintTerm<N>...>` 描述：每个 `ConstraintTerm<N>` 表示一个增广拉格朗日项内部的 `N` 维向量约束，同一类约束可以包含多个 term。
 
-`DDPSetting.hpp`、`DDPData.hpp` 和 `HessianCorrection.hpp` 提供求解参数、迭代数据和 Hessian 修正逻辑，用于改善 Riccati 递推和控制更新的数值稳定性。
+`iLQR/DDPSetting.hpp`、`iLQR/DDPData.hpp` 和 `iLQR/HessianCorrection.hpp` 提供求解参数、迭代数据和 Hessian 修正逻辑，用于改善 Riccati 递推和控制更新的数值稳定性。求解器构造时需要外部提供 `OptimalControlProblem` 与初始化器对象，相关对象生命周期应长于求解器。
 
 ### 最优控制问题建模
 
-`OptimalControl` 目录定义最优控制问题及其求解状态。`OptimalControlProblem.hpp` 将系统动力学、运行代价、终端代价、参考轨迹和增广拉格朗日约束组织为统一问题对象。`PrimalSolution.hpp` 和 `DualSolution.hpp` 分别表示原始轨迹解与对偶乘子解。
+`OptimalControl` 目录定义最优控制问题本体及辅助函数。`OptimalControlProblem.hpp` 将系统动力学、运行代价、终端代价和增广拉格朗日约束组织为统一问题对象，其中 `dynamicsPtr` 的基类由 `TranscriptionConfig::DynamicsMode` 在编译期决定；`OptimalControlProblemHelperFunction.hpp` 负责对偶解初始化、乘子更新和约束指标同步。
 
-`PerformanceIndex.hpp`、`Metrics.hpp`、`ProblemMetrics.hpp` 和 `LagrangianMetrics.hpp` 用于记录代价、约束违反、merit 指标和拉格朗日项评估结果，为收敛判断和线搜索提供量化依据。
+`ModelData` 目录保存求解流程中的节点模型数据、指标数据和乘子基础类型。`ModelData.hpp` 表示转录后的单节点离散 LQ 数据，`Metrics.hpp` 表示单节点代价、约束和拉格朗日项评估结果，`Multiplier.hpp` 表示增广拉格朗日乘子。
+
+`OptimalControlData` 目录保存最优控制求解过程中的轨迹解、参考轨迹和全局性能数据。`PrimalSolution.hpp` 与 `DualSolution.hpp` 分别表示原始轨迹解与对偶乘子解，`Reference.hpp` 表示参考轨迹，`PerformanceIndex.hpp`、`PerformanceIndexEvaluator.hpp`、`ProblemMetrics.hpp` 和 `LagrangianMetrics.hpp` 用于记录和汇总代价、约束违反、merit 指标和拉格朗日项评估结果，为收敛判断和线搜索提供量化依据。连续模式下 performance 按时间戳做梯形积分，离散模式下按 stage 指标直接求和，以保持与转录层中的代价缩放语义一致。
 
 ### 线性二次近似
 
-`Approximation` 目录负责将非线性最优控制问题转换为局部线性二次子问题。`LinearApproximation.hpp` 和 `QuadraticApproximation.hpp` 定义一阶与二阶近似的数据格式，`LinearQuadraticApproximator.hpp` 在每个时间节点上组合动力学线性化、代价二次化和增广拉格朗日项二次近似，生成 Riccati 递推所需的 `ModelData`。
+`Approximation` 目录负责函数近似格式和目标函数局部二次化。`LinearApproximation.hpp` 和 `QuadraticApproximation.hpp` 定义一阶与二阶近似的数据格式，`LinearQuadraticApproximator.hpp` 负责在给定节点上计算运行代价、状态代价和增广拉格朗日项的二次近似。完整的离散 LQ `ModelData` 由 `Transcription` 层组合目标函数近似与连续/离散动力学近似后生成。
 
-该模块是非线性问题与 LQ 子问题之间的接口，其输出直接决定反馈增益、前馈修正和 value function 递推的计算基础。
+该模块为转录层提供目标函数二次近似，其结果会与离散动力学线性化共同决定反馈增益、前馈修正和 value function 递推的计算基础。
+
+### 转录层
+
+`Transcription` 目录负责将不同动力学模式下的最优控制问题统一转录为 Riccati 递推所需的离散 LQ 节点。`ContinuousTranscription.hpp` 面向连续动力学：通过 `SensitivityIntegrator` 离散化连续线性化结果，并将 running cost 按时间步长缩放。`DiscreteTranscription.hpp` 面向离散动力学：直接调用离散系统的 `deviationLinearApproximation()` 生成偏差动力学，并将中间代价解释为离散 stage cost。`TranscriptionTraits.hpp` 根据 descriptor 中的 `DynamicsMode` 在编译期选择具体转录器。
 
 ### 动力学、Rollout 与积分
 
-`Dynamics` 目录定义受控系统和动力学线性化接口。`ControlledSystemBase.hpp` 提供系统流映射，`SystemDynamicsBase.hpp` 增加线性化接口，`SystemDynamicsLinearizer.hpp` 和 `LinearSystemDynamics.hpp` 分别支持数值线性化和线性系统建模。
+`Dynamics` 目录定义连续和离散动力学接口。`ControlledSystemBase.hpp` 与 `SystemDynamicsBase.hpp` 表达连续时间系统流映射及其线性化，`SystemDynamicsLinearizer.hpp` 和 `LinearSystemDynamics.hpp` 分别支持数值线性化和连续线性系统建模。`DiscreteSystemBase.hpp`、`DiscreteSystemDynamicsBase.hpp` 和 `DiscreteLinearSystemDynamics.hpp` 表达离散状态转移及其线性化。`DynamicsModeTraits.hpp` 根据 `ContinuousDynamics` 或 `DiscreteDynamics` 在编译期选择 `OptimalControlProblem::dynamicsPtr` 的基类类型。
 
-`Rollout` 目录负责前向轨迹展开。`TimeTriggeredRollout.hpp` 根据当前控制器和固定时间步长积分系统状态，并可重建输入轨迹；`InitializerRollout.hpp` 用于在尚无有效控制器时生成初始名义轨迹。
+`Rollout` 目录负责前向轨迹展开。`TimeTriggeredRollout.hpp` 根据当前控制器和固定时间步长积分连续系统状态，并可重建输入轨迹；`DiscreteTimeRollout.hpp` 直接调用离散状态转移逐节点推进状态；`RolloutTraits.hpp` 根据动力学模式在编译期选择 rollout 实现；`InitializerRollout.hpp` 用于在尚无有效控制器时生成初始名义轨迹。
 
 `Integration` 目录提供连续系统积分工具，包括 Runge-Kutta Dormand-Prince 5 阶积分器、梯形积分、灵敏度积分和积分观察器等组件。
 
@@ -98,7 +104,7 @@
 
 `AutomaticDifferentation` 目录当前主要提供有限差分数值求导工具，用于在缺少解析导数时计算动力学或函数的 Jacobian。`Misc` 目录包含线性代数、数值工具和插值等通用辅助函数。`IntrusiveList` 目录提供侵入式链表结构，用于支持无需额外动态分配的容器组织方式。
 
-`TestTools` 目录提供测试辅助工具，包括 QP 离散转录、QP 求解器以及与 OCS2 测试工具相关的对照实现。`Tests` 目录覆盖近似器、动力学、积分器、Riccati 递推、惩罚函数、rollout、线性系统 iLQR 和端到端求解流程，用于验证各模块的数值正确性和集成行为。
+`TestTools` 目录提供测试辅助工具，包括复用主项目转录层的 QP 离散转录、QP 求解器以及与 OCS2 测试工具相关的对照实现。QP 工具提供连续动力学和离散动力学两组显式别名，例如 `QpContinuousDynamicsOptimalControlProblem_t` 与 `QpDiscreteDynamicsOptimalControlProblem_t`。`Tests` 目录覆盖近似器、动力学、积分器、Riccati 递推、惩罚函数、rollout、线性系统 iLQR、连续/离散 correctness 对照和端到端求解流程，用于验证各模块的数值正确性和集成行为。
 
 `CMakeLists.txt` 负责组织项目构建、依赖配置和测试目标。`build` 与 `out` 等目录为本地构建产物，不属于核心源码模块。
 
@@ -138,20 +144,21 @@ ctest --preset gcc-debug
 ./out/build/gcc-debug/Tests/iLQREndToEndTest
 ```
 
-测试用例覆盖了动力学、积分器、rollout、代价函数、Riccati 递推、线性二次近似、惩罚函数和端到端 iLQR 求解过程。使用或修改核心模块后，应优先运行相关测试确认数值行为是否保持一致。
+测试用例覆盖了动力学、连续/离散 rollout、转录层、代价函数、Riccati 递推、线性二次近似、惩罚函数、QP 对照、连续/离散 correctness 和端到端 iLQR 求解过程。使用或修改核心模块后，应优先运行相关测试确认数值行为是否保持一致。
 
 ### 接入求解器
 
 在新的最优控制任务中使用求解器时，通常需要完成以下步骤：
 
 1. 定义问题维度和预测步长，构造 `iLQRDescriptor`。
-2. 提供系统动力学对象，并实现 `SystemDynamicsBase` 所需的流映射和线性化接口。
+2. 提供系统动力学对象。连续系统实现 `SystemDynamicsBase` 所需的流映射和线性化接口；离散系统实现 `DiscreteSystemDynamicsBase` 所需的状态转移和离散线性化接口。
 3. 提供轨迹初始化器，用于生成初始名义轨迹。
 4. 配置 `DDPSettings`，包括时间步长、最大迭代次数、收敛阈值和搜索策略等参数。
-5. 构造 `iLQR<Descriptor>` 求解器，并向 `optimalControlProblem_` 注册代价函数和约束项。
-6. 设置参考时间、状态和输入轨迹。
-7. 调用 `run(initTime, initState)` 执行求解。
-8. 通过 `primalSolution()` 读取优化后的状态轨迹、输入轨迹和线性反馈控制器。
+5. 构造 `OptimalControlProblem`，注册动力学、代价函数和约束项。
+6. 构造 `iLQR<Descriptor>` 求解器。
+7. 设置参考时间、状态和输入轨迹。
+8. 调用 `run(initTime, initState)` 执行求解。
+9. 通过 `primalSolution()` 读取优化后的状态轨迹、输入轨迹和线性反馈控制器。
 
 典型的最小调用形式如下：
 
@@ -161,21 +168,24 @@ using Descriptor =
                    TranscriptionConfig<Dimensions<2, 2>, Horizon<5>>>;
 
 using Solver = iLQR<Descriptor>;
+using Problem = Solver::OptimalControlProblem_t;
 
 LinearSystemDynamics<double, 2, 2> dynamics(A, B);
 DefaultInitializer<double, 2, 2> initializer;
+Problem problem;
+problem.dynamicsPtr = &dynamics;
 
 DDPSettings<double> settings;
 settings.timeStep_ = 0.01;
 settings.maxNumIterations_ = 30;
 settings.strategy_ = SearchStrategyType::LINE_SEARCH;
 
-Solver solver(settings, &dynamics, &initializer);
-
 QuadraticStateInputCost<double, 2, 2, 6> runningCost(Q, R);
 QuadraticStateCost<double, 2, 6> finalCost(Qf);
-solver.optimalControlProblem_.cost.add(runningCost);
-solver.optimalControlProblem_.finalCost.add(finalCost);
+problem.cost.add(runningCost);
+problem.finalCost.add(finalCost);
+
+Solver solver(settings, problem, &initializer);
 
 std::array<double, 6> timeTrajectory;
 std::array<Eigen::Vector2d, 6> stateTrajectory;
@@ -191,11 +201,34 @@ const auto& solution = solver.primalSolution();
 const auto& controller = solution.controller_;
 ```
 
-在该示例中，`Dimensions<2, 2>` 表示状态维度为 2、输入维度为 2，`Horizon<5>` 表示预测区间包含 5 个控制阶段和 6 个时间节点。因此，与轨迹相关的数组长度应为 `PredictLength + 1`。
+在该示例中，`Dimensions<2, 2>` 表示状态维度为 2、输入维度为 2，`Horizon<5>` 表示预测区间包含 5 个控制阶段和 6 个时间节点。因此，与轨迹相关的数组长度应为 `PredictLength + 1`。由于 `TranscriptionConfig` 未显式指定第三个模板参数，该示例默认使用 `ContinuousDynamics`。
+
+若模型本身已经是离散时间系统，可显式选择离散动力学模式：
+
+```cpp
+using DiscreteDescriptor =
+    iLQRDescriptor<double,
+                   TranscriptionConfig<Dimensions<2, 2>,
+                                       Horizon<5>,
+                                       DiscreteDynamics>>;
+
+using DiscreteSolver = iLQR<DiscreteDescriptor>;
+using DiscreteProblem = DiscreteSolver::OptimalControlProblem_t;
+
+DiscreteLinearSystemDynamics<double, 2, 2> discreteDynamics(Ad, Bd);
+DefaultInitializer<double, 2, 2> initializer;
+
+DiscreteProblem problem;
+problem.dynamicsPtr = &discreteDynamics;
+
+DiscreteSolver solver(settings, problem, &initializer);
+```
+
+离散模式下，rollout 使用 `computeMap(t, x, u, dt)` 推进状态，中间代价默认按每步 stage cost 解释，不再自动乘以 `dt`。连续模式下，中间代价按 running cost density 解释，并由连续转录器乘以时间步长。
 
 ### 添加代价与约束
 
-运行代价和终端代价通过 `optimalControlProblem_` 中的代价集合注册。对于二次型跟踪任务，可以使用 `QuadraticStateInputCost` 和 `QuadraticStateCost`；对于更复杂的任务，需要派生相应的代价接口，并提供代价值、一阶导数和二阶导数。
+运行代价和终端代价通过 `OptimalControlProblem` 中的代价集合注册。对于二次型跟踪任务，可以使用 `QuadraticStateInputCost` 和 `QuadraticStateCost`；对于更复杂的任务，需要派生相应的代价接口，并提供代价值、一阶导数和二阶导数。
 
 约束通过增广拉格朗日模块接入。状态约束和状态-输入约束应先实现对应的向量约束接口，再与惩罚函数组合为增广拉格朗日项，最后注册到 `OptimalControlProblem` 中的等式或不等式约束集合。求解器会在局部近似阶段将这些约束项转换为代价函数中的二次近似项，并在迭代过程中更新乘子。
 

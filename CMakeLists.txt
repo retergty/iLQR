@@ -25,11 +25,14 @@ add_executable(iLQR iLQR.cpp
   AutomaticDifferentation/FiniteDifferenceMethods.hpp)
 
 set(ILQR_HEADERS
-  DDPData.hpp
-  DDPSetting.hpp
-  HessianCorrection.hpp
-  iLQR.hpp
   Types.hpp
+  iLQR/DDPData.hpp
+  iLQR/DDPSetting.hpp
+  iLQR/HessianCorrection.hpp
+  iLQR/iLQR.hpp
+  iLQR/iLQRDescriptor.hpp
+  iLQR/iLQRDescriptorTraits.hpp
+  iLQR/iLQRTypes.hpp
   Approximation/ChangeOfInputVariables.hpp
   Approximation/LinearApproximation.hpp
   Approximation/LinearQuadraticApproximator.hpp
@@ -72,18 +75,18 @@ set(ILQR_HEADERS
   Misc/LinearInterpolation.hpp
   Misc/NumericTraits.hpp
   Misc/Numerics.hpp
-  OptimalControl/DualSolution.hpp
-  OptimalControl/LagrangianMetrics.hpp
-  OptimalControl/Metrics.hpp
-  OptimalControl/ModelData.hpp
-  OptimalControl/Multiplier.hpp
+  ModelData/Metrics.hpp
+  ModelData/ModelData.hpp
+  ModelData/Multiplier.hpp
+  OptimalControlData/DualSolution.hpp
+  OptimalControlData/LagrangianMetrics.hpp
+  OptimalControlData/PerformanceIndex.hpp
+  OptimalControlData/PerformanceIndexEvaluator.hpp
+  OptimalControlData/PrimalSolution.hpp
+  OptimalControlData/ProblemMetrics.hpp
+  OptimalControlData/Reference.hpp
   OptimalControl/OptimalControlProblem.hpp
   OptimalControl/OptimalControlProblemHelperFunction.hpp
-  OptimalControl/PerformanceIndex.hpp
-  OptimalControl/PerformanceIndexEvaluator.hpp
-  OptimalControl/PrimalSolution.hpp
-  OptimalControl/ProblemMetrics.hpp
-  OptimalControl/Reference.hpp
   Penalties/AugmentedPenaltyBase.hpp
   Penalties/ModifiedRelaxedBarrierPenalty.hpp
   Penalties/Penalty.hpp
@@ -112,14 +115,11 @@ set(ILQR_HEADERS
   Models/CircularKinematics.hpp
   Models/DoubleIntegratorReachingTask.hpp
   Models/EXP0.hpp
-  iLQRDescriptor.hpp
-  iLQRDescriptorTraits.hpp
-  iLQRTypes.hpp
 )
 
 add_library(iLQR_Include INTERFACE)
 target_sources(iLQR_Include INTERFACE ${ILQR_HEADERS})
-target_include_directories(iLQR_Include INTERFACE Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Transcription Misc Initialization AutomaticDifferentation TestTools Models Transcription ${CMAKE_SOURCE_DIR})
+target_include_directories(iLQR_Include INTERFACE Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Transcription Misc Initialization AutomaticDifferentation TestTools Models Transcription ModelData OptimalControlData iLQR ${CMAKE_SOURCE_DIR})
 target_link_libraries(iLQR_Include INTERFACE Eigen3::Eigen)
 target_compile_options(iLQR_Include INTERFACE
   $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
