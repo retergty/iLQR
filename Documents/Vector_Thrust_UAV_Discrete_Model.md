@@ -220,6 +220,257 @@ $$
 w_{\mathrm{angle}} = \frac{w_{\omega}}{\Delta t}
 $$
 
+## 方向代价的 Gauss-Newton 二次近似
+
+若方向向量严格归一化，即：
+
+$$
+n_k^T n_k = 1
+$$
+
+且：
+
+$$
+n_{k-1}^T n_{k-1} = 1
+$$
+
+则有：
+
+$$
+\frac{1}{2}
+\left\|n_k - n_{k-1}\right\|^2
+=
+1 - n_k^T n_{k-1}
+=
+1 - \cos\theta_k
+$$
+
+因此方向变化代价也可以写成残差平方形式：
+
+$$
+\ell_{\mathrm{angle},k}
+:=
+\frac{1}{2}
+w_{\mathrm{angle}}
+r_k^T r_k
+$$
+
+其中：
+
+$$
+r_k := n_k - n_{k-1}
+$$
+
+由于 $n_k$ 和 $n_{k-1}$ 均由推力向量归一化得到，$r_k$ 对状态与输入是非线性的。严格 Hessian 包含归一化函数的二阶导数。工程实现中可采用 Gauss-Newton 近似，只保留残差一阶导产生的二阶项：
+
+$$
+\ell_z
+=
+w_{\mathrm{angle}}
+J_r^T r_k
+$$
+
+$$
+\ell_{zz}
+\approx
+w_{\mathrm{angle}}
+J_r^T J_r
+$$
+
+其中：
+
+$$
+z :=
+\begin{bmatrix}
+X_k \\
+U_k
+\end{bmatrix}
+$$
+
+$$
+J_r := \frac{\partial r_k}{\partial z}
+$$
+
+对归一化函数：
+
+$$
+n(F)
+:=
+\frac{F}{\sqrt{F^T F + \varepsilon}}
+$$
+
+令：
+
+$$
+s(F) := \sqrt{F^T F + \varepsilon}
+$$
+
+则其一阶导为：
+
+$$
+J_n(F)
+:=
+\frac{\partial n}{\partial F}
+=
+\frac{1}{s(F)} I_3
+-
+\frac{1}{s(F)^3} F F^T
+$$
+
+由于 $F_{k-1}^B$ 位于状态 $X_k$ 的后 3 维，且 $U_k$ 为当前输入，有：
+
+$$
+\frac{\partial r_k}{\partial F_{k-1}^B}
+=
+-J_n(F_{k-1}^B)
+$$
+
+$$
+\frac{\partial r_k}{\partial U_k}
+=
+J_n(U_k)
+$$
+
+因此在状态-输入二次近似中：
+
+$$
+\ell_x
+=
+w_{\mathrm{angle}}
+J_{r,x}^T r_k
+$$
+
+$$
+\ell_u
+=
+w_{\mathrm{angle}}
+J_{r,u}^T r_k
+$$
+
+$$
+\ell_{xx}
+\approx
+w_{\mathrm{angle}}
+J_{r,x}^T J_{r,x}
+$$
+
+$$
+\ell_{uu}
+\approx
+w_{\mathrm{angle}}
+J_{r,u}^T J_{r,u}
+$$
+
+$$
+\ell_{ux}
+\approx
+w_{\mathrm{angle}}
+J_{r,u}^T J_{r,x}
+$$
+
+其中 $J_{r,x}$ 仅在状态中 $F_{k-1}^B$ 对应的列块非零。该 Gauss-Newton Hessian 为半正定，通常比手写完整 Hessian 更适合 iLQR 的 Riccati 递推。
+
+需要注意的是，引入 $\varepsilon$ 后，$n(F)$ 的模长不再严格等于 1。因此：
+
+$$
+\frac{1}{2}
+\left\|n_k - n_{k-1}\right\|^2
+\ne
+1 - n_k^T n_{k-1}
+$$
+
+二者只在推力幅值远大于 $\sqrt{\varepsilon}$ 时近似相等。若希望完全保持原始代价值，可仍使用 $1 - n_k^T n_{k-1}$ 计算 cost；若希望获得更稳定且实现简单的二次近似，可将残差平方形式作为方向平滑项的工程实现形式，并配合低推力门控权重。
+
+## 低推力门控
+
+当 $\|U_k\|$ 或 $\|F_{k-1}^B\|$ 很小时，推力方向本身没有稳定的物理意义。此时即使通过 $\varepsilon$ 避免了除零，方向代价仍可能给优化器施加不合理的惩罚。因此可引入门控权重：
+
+$$
+\gamma_k \in [0, 1]
+$$
+
+并将方向变化代价写成：
+
+$$
+\ell_{\mathrm{angle},k}
+:=
+\gamma_k
+w_{\mathrm{angle}}
+\left(1 - n_k^T n_{k-1}\right)
+$$
+
+若使用残差平方形式，则为：
+
+$$
+\ell_{\mathrm{angle},k}
+:=
+\frac{1}{2}
+\gamma_k
+w_{\mathrm{angle}}
+r_k^T r_k
+$$
+
+其中 $\gamma_k$ 应随当前推力和上一拍推力的幅值降低而减小。一个简单的平滑门控形式为：
+
+$$
+\gamma_k
+:=
+\sigma(\|U_k\|)
+\sigma(\|F_{k-1}^B\|)
+$$
+
+其中：
+
+$$
+\sigma(s)
+:=
+\frac{s^2}{s^2 + F_{\min}^2}
+$$
+
+$F_{\min}$ 表示方向代价开始变得可信的推力尺度。该形式满足：
+
+$$
+\sigma(0) = 0
+$$
+
+且当 $s \gg F_{\min}$ 时：
+
+$$
+\sigma(s) \to 1
+$$
+
+也可以采用硬门控：
+
+$$
+\gamma_k =
+\begin{cases}
+1, & \|U_k\| \ge F_{\min},\ \|F_{k-1}^B\| \ge F_{\min} \\
+0, & \text{otherwise}
+\end{cases}
+$$
+
+但硬门控会使代价在阈值处不连续，通常更推荐平滑门控。
+
+在二次近似实现中，若将 $\gamma_k$ 视为状态和输入的函数，严格导数需要额外包含 $\gamma_k$ 的一阶和二阶导数。工程上更常见的做法是在当前名义点计算 $\gamma_k$，并在该节点的局部二次近似中将其作为常量权重处理：
+
+$$
+\ell_z
+\approx
+\gamma_k
+w_{\mathrm{angle}}
+J_r^T r_k
+$$
+
+$$
+\ell_{zz}
+\approx
+\gamma_k
+w_{\mathrm{angle}}
+J_r^T J_r
+$$
+
+这样可以保持 Gauss-Newton Hessian 的半正定结构，并避免低推力区域的方向代价主导优化。
+
 ## 完整离散阶段代价
 
 最终每个采样节点的离散 stage cost 可写为：
@@ -256,6 +507,8 @@ w_{\mathrm{angle}}
 \right)
 $$
 
+若启用低推力门控，则将最后一项中的 $w_{\mathrm{angle}}$ 替换为 $\gamma_k w_{\mathrm{angle}}$。
+
 预测时域总代价为：
 
 $$
@@ -289,14 +542,4 @@ $$
 
 ## 备注
 
-当 $\|U_k\|$ 或 $\|F_{k-1}^B\|$ 很小时，推力方向本身物理意义变弱。工程实现中可通过 $\varepsilon$ 保证数值稳定，但仅靠 $\varepsilon$ 不能保证低推力区域的物理合理性。更稳妥的做法是在低推力区间引入门控权重：
-
-$$
-\ell_{\mathrm{angle},k}
-=
-\gamma_k
-w_{\mathrm{angle}}
-\left(1 - \cos\theta_k\right)
-$$
-
-其中 $\gamma_k \in [0, 1]$ 随 $\|U_k\|$ 和 $\|F_{k-1}^B\|$ 变小而降低，必要时可以关闭方向变化代价。
+当 $\|U_k\|$ 或 $\|F_{k-1}^B\|$ 很小时，推力方向本身物理意义变弱。工程实现中可通过 $\varepsilon$ 保证数值稳定，但仅靠 $\varepsilon$ 不能保证低推力区域的物理合理性。更稳妥的做法是在低推力区间引入门控权重 $\gamma_k$，必要时降低或关闭方向变化代价。

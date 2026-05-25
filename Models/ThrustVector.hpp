@@ -1,10 +1,10 @@
 #pragma once
 
+#include <cmath>
 #include <limits>
 
 #include "Cost.hpp"
 #include "DiscreteSystemDynamicsBase.hpp"
-#include "LinearApproximation.hpp"
 #include "OptimalControlProblem.hpp"
 #include "QuadraticStateCost.hpp"
 #include "Types.hpp"
@@ -45,12 +45,8 @@ class ThrustVectorDynamicSystem final
       bias.setZero();
       approximation.setZero();
       dt = 0;
-      A(0, 0) = 1;
-      A(1, 1) = 1;
-      A(2, 2) = 1;
-      B(3, 0) = 1;
-      B(4, 1) = 1;
-      B(5, 2) = 1;
+      A.template topLeftCorner<3, 3>().setIdentity();
+      B.template bottomRows<3>().setIdentity();
       approximation.dfdx = A;
     }
     Matrix<Scalar, STATE_DIM, STATE_DIM> A;
@@ -72,17 +68,8 @@ class ThrustVectorDynamicSystem final
 
   void updateCache(const Scalar dt) {
     if (std::abs(cache_.dt - dt) > std::numeric_limits<Scalar>::epsilon()) {
-      cache_.B(0, 0) = rotB2w_(0, 0) / mass_ * dt;
-      cache_.B(0, 1) = rotB2w_(0, 1) / mass_ * dt;
-      cache_.B(0, 2) = rotB2w_(0, 2) / mass_ * dt;
-      cache_.B(1, 0) = rotB2w_(1, 0) / mass_ * dt;
-      cache_.B(1, 1) = rotB2w_(1, 1) / mass_ * dt;
-      cache_.B(1, 2) = rotB2w_(1, 2) / mass_ * dt;
-      cache_.B(2, 0) = rotB2w_(2, 0) / mass_ * dt;
-      cache_.B(2, 1) = rotB2w_(2, 1) / mass_ * dt;
-      cache_.B(2, 2) = rotB2w_(2, 2) / mass_ * dt;
-
-      cache_.bias(2, 0) = -dt * Gravity_Acc;
+      cache_.B.template topRows<3>() = (dt / mass_) * rotB2w_;
+      cache_.bias(2) = -dt * Gravity_Acc;
       cache_.dt = dt;
     }
   }
@@ -114,20 +101,13 @@ class ThrustVectorDynamicSystem final
                                        const Vector<Scalar, INPUT_DIM>& u,
                                        Scalar dt) override {
     (void)t;
-    (void)x;
-    (void)u;
 
     Vector<Scalar, STATE_DIM> next_state;
-    next_state(0) = x(0);
-    next_state(1) = x(1);
-    next_state(2) = x(2);
-    next_state(3) = 0;
-    next_state(4) = 0;
-    next_state(5) = 0;
-
     updateCache(dt);
-
-    next_state += cache_.B * u + cache_.bias;
+    next_state.template head<3>() = x.template head<3>() +
+                                    cache_.B.template topRows<3>() * u +
+                                    cache_.bias.template head<3>();
+    next_state.template tail<3>() = u;
 
     return next_state;
   }
@@ -155,5 +135,80 @@ class ThrustVectorTrackCost final
 
 template <typename Scalar, int ArrayLength>
 class ThrustDirectionChangeCost final
-    : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {};
+    : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
+  /** @brief 获取代价值。 */
+ public:
+  static constexpr Scalar epsilon = 1e-4;
+  static constexpr Scalar Weight = 1;
+
+  ThrustDirectionChangeCost() = default;
+
+  Scalar getValue(
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
+      const override {
+    (void)time;
+    (void)timeTrajectory;
+    (void)inputTrajectory;
+    (void)stateTrajectoy;
+
+    const Vector<Scalar, 3> last_thr{state(3), state(4), state(5)};
+    const Vector<Scalar, 3> thr = input;
+    Vector<Scalar, 3> last_thr_dir =
+        last_thr / std::sqrt(last_thr.dot(last_thr) + epsilon);
+    Vector<Scalar, 3> thr_dir = thr / std::sqrt(thr.dot(thr) + epsilon);
+    const Vector<Scalar, 3> rk = thr_dir - last_thr_dir;
+    return Scalar(0.5) * Weight * rk.dot(rk);
+  }
+
+  /** @brief 获取代价的二次近似（状态-输入）。 */
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
+  getQuadraticApproximation(
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
+      const override {
+    (void)time;
+    (void)timeTrajectory;
+    (void)inputTrajectory;
+    (void)stateTrajectory;
+
+    ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM> ret;
+    ret.setZero();
+
+    const Vector<Scalar, 3> last_thr{state(3), state(4), state(5)};
+    const Vector<Scalar, 3> thr = input;
+    const Scalar last_thr_norm = std::sqrt(last_thr.dot(last_thr) + epsilon);
+    const Scalar thr_norm = std::sqrt(thr.dot(thr) + epsilon);
+    const Vector<Scalar, 3> last_thr_dir = last_thr / last_thr_norm;
+    const Vector<Scalar, 3> thr_dir = thr / thr_norm;
+    const Vector<Scalar, 3> rk = thr_dir - last_thr_dir;
+
+    const Matrix<Scalar, 3, 3> identity = Matrix<Scalar, 3, 3>::Identity();
+    const Matrix<Scalar, 3, 3> last_thr_jacobian =
+        identity / last_thr_norm -
+        (last_thr * last_thr.transpose()) /
+            (last_thr_norm * last_thr_norm * last_thr_norm);
+    const Matrix<Scalar, 3, 3> thr_jacobian =
+        identity / thr_norm -
+        (thr * thr.transpose()) / (thr_norm * thr_norm * thr_norm);
+
+    ret.f = Scalar(0.5) * Weight * rk.dot(rk);
+    ret.dfdx.template segment<3>(3) =
+        -Weight * last_thr_jacobian.transpose() * rk;
+    ret.dfdu = Weight * thr_jacobian.transpose() * rk;
+    ret.dfdxx.template block<3, 3>(3, 3) =
+        Weight * last_thr_jacobian.transpose() * last_thr_jacobian;
+    ret.dfduu = Weight * thr_jacobian.transpose() * thr_jacobian;
+    ret.dfdux.template block<3, 3>(0, 3) =
+        -Weight * thr_jacobian.transpose() * last_thr_jacobian;
+
+    return ret;
+  }
+};
 };  // namespace thrust_vector

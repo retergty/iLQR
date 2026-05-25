@@ -26,7 +26,9 @@ class StateCostCollection {
                       stateTrajectoies) const {
     Scalar cost = 0;
     for (auto it = list_.begin(); it != list_.end(); ++it) {
-      cost += it->getValue(time, state, timeTrajectories, stateTrajectoies);
+      if (it->isActive(time)) {
+        cost += it->getValue(time, state, timeTrajectories, stateTrajectoies);
+      }
     }
     return cost;
   }
@@ -41,8 +43,10 @@ class StateCostCollection {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> cost_appro;
     cost_appro.setZero();
     for (auto it = list_.begin(); it != list_.end(); ++it) {
-      cost_appro += it->getQuadraticApproximation(time, state, timeTrajectories,
-                                                  stateTrajectoies);
+      if (it->isActive(time)) {
+        cost_appro += it->getQuadraticApproximation(
+            time, state, timeTrajectories, stateTrajectoies);
+      }
     }
     return cost_appro;
   }
@@ -80,8 +84,10 @@ class StateInputCostCollection {
       const {
     Scalar cost = 0;
     for (auto it = list_.begin(); it != list_.end(); ++it) {
-      cost += it->getValue(time, state, input, timeTrajectory, stateTrajectoy,
-                           inputTrajectory);
+      if (it->isActive(time)) {
+        cost += it->getValue(time, state, input, timeTrajectory, stateTrajectoy,
+                             inputTrajectory);
+      }
     }
     return cost;
   }
@@ -98,8 +104,11 @@ class StateInputCostCollection {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost_appro;
     cost_appro.setZero();
     for (auto it = list_.begin(); it != list_.end(); ++it) {
-      cost_appro += it->getQuadraticApproximation(
-          time, state, input, timeTrajectory, stateTrajectoy, inputTrajectory);
+      if (it->isActive(time)) {
+        cost_appro +=
+            it->getQuadraticApproximation(time, state, input, timeTrajectory,
+                                          stateTrajectoy, inputTrajectory);
+      }
     }
     return cost_appro;
   }
