@@ -7,8 +7,8 @@
 
 #include "DefaultInitializer.hpp"
 #include "EXP0.hpp"
-#include "Ocs2QpSolver.hpp"
 #include "iLQR.hpp"
+#include "iLQRQpSolver.hpp"
 
 class Exp0 : public testing::Test {
  protected:

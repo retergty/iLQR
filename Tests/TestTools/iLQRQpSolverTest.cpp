@@ -4,12 +4,12 @@
 #include <memory>
 
 #include "LinearSystemDynamics.hpp"
-#include "Ocs2QpSolver.hpp"
 #include "QuadraticStateCost.hpp"
 #include "SensitivityIntegrator.hpp"
 #include "TestProblemsGeneration.hpp"
+#include "iLQRQpSolver.hpp"
 
-class Ocs2QpSolverTest : public testing::Test {
+class iLQRQpSolverTest : public testing::Test {
  protected:
   using Scalar = double;
   static constexpr size_t N = 10;
@@ -65,7 +65,7 @@ class Ocs2QpSolverTest : public testing::Test {
     return trajectory;
   }
 
-  Ocs2QpSolverTest() {
+  iLQRQpSolverTest() {
     srand(0);
 
     const auto dynamics =
@@ -136,15 +136,15 @@ class Ocs2QpSolverTest : public testing::Test {
   Trajectory_t solution;
 };
 
-TEST_F(Ocs2QpSolverTest, initialCondition) {
+TEST_F(iLQRQpSolverTest, initialCondition) {
   ASSERT_TRUE(x0.isApprox(solution.stateTrajectory.front(), precision));
 }
 
-TEST_F(Ocs2QpSolverTest, satisfiesDeviationDynamics) {
+TEST_F(iLQRQpSolverTest, satisfiesDeviationDynamics) {
   checkDeviationDynamics(solution, nominalTrajectory);
 }
 
-TEST_F(Ocs2QpSolverTest, invariantUnderLinearization) {
+TEST_F(iLQRQpSolverTest, invariantUnderLinearization) {
   // 对于具有二次代价的线性系统，绝对解对动态一致的
   // 名义轨迹保持不变。
   const auto linearization1 = getDynamicallyConsistentTrajectory();
@@ -165,7 +165,7 @@ TEST_F(Ocs2QpSolverTest, invariantUnderLinearization) {
   }
 }
 
-TEST_F(Ocs2QpSolverTest, knownSolutionAtOrigin) {
+TEST_F(iLQRQpSolverTest, knownSolutionAtOrigin) {
   // 如果代价的名义轨迹设为零且初始状态为
   // 零，则解也全为零。
   const auto zeroReference = getZeroTrajectory();

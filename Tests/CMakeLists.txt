@@ -30,8 +30,8 @@ set(TEST_SOURCES
     iLQREndToEndTest.cpp
     SystemDynamicsLinearizerTest.cpp
     TestTools/DiscreteTranscriptionTest.cpp
-    TestTools/testQpSolver.cpp
-    TestTools/testOcs2QpSolver.cpp
+    TestTools/iLQRQpSolverTest.cpp
+    TestTools/QpSolverTest.cpp
     OptimalControl/Exp0Test.cpp
     OptimalControl/CircularKinematicsTest.cpp
     OptimalControl/CircularKinematicsSmoothAbsolutePenaltyTest.cpp
