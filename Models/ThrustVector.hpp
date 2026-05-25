@@ -45,6 +45,7 @@ class ThrustVectorDynamicSystem final
       bias.setZero();
       approximation.setZero();
       dt = 0;
+      dirty = true;
       A.template topLeftCorner<3, 3>().setIdentity();
       B.template bottomRows<3>().setIdentity();
       approximation.dfdx = A;
@@ -54,6 +55,7 @@ class ThrustVectorDynamicSystem final
     Vector<Scalar, STATE_DIM> bias;
     LinearApproximation_t approximation;
     Scalar dt;
+    bool dirty;
   };
 
   ThrustVectorDynamicSystem(const Scalar mass) : mass_(mass) {
@@ -63,14 +65,16 @@ class ThrustVectorDynamicSystem final
 
   void updateRotationMatrix(const Matrix<Scalar, 3, 3>& rotation) {
     rotB2w_ = rotation;
-    cache_.dt = 0;
+    cache_.dirty = true;
   }
 
   void updateCache(const Scalar dt) {
-    if (std::abs(cache_.dt - dt) > std::numeric_limits<Scalar>::epsilon()) {
+    if (cache_.dirty ||
+        std::abs(cache_.dt - dt) > std::numeric_limits<Scalar>::epsilon()) {
       cache_.B.template topRows<3>() = (dt / mass_) * rotB2w_;
       cache_.bias(2) = -dt * Gravity_Acc;
       cache_.dt = dt;
+      cache_.dirty = false;
     }
   }
 
@@ -124,9 +128,10 @@ class ThrustVectorTrackCost final
                                      ArrayLength> {
  public:
   ThrustVectorTrackCost(const Matrix<Scalar, STATE_DIM, STATE_DIM>& Q,
-                        const Matrix<Scalar, INPUT_DIM, INPUT_DIM>& R)
-      : QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(Q,
-                                                                           R) {}
+                        const Matrix<Scalar, INPUT_DIM, INPUT_DIM>& R,
+                        int cost_number)
+      : QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(
+            Q, R, cost_number) {}
   ~ThrustVectorTrackCost() override = default;
 
  private:
@@ -141,7 +146,9 @@ class ThrustDirectionChangeCost final
   static constexpr Scalar epsilon = 1e-4;
   static constexpr Scalar Weight = 1;
 
-  ThrustDirectionChangeCost() = default;
+  explicit ThrustDirectionChangeCost(int cost_number = 0)
+      : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number) {
+  }
 
   Scalar getValue(
       Scalar time, const Vector<Scalar, STATE_DIM>& state,
@@ -211,4 +218,4 @@ class ThrustDirectionChangeCost final
     return ret;
   }
 };
-};  // namespace thrust_vector
+}  // namespace thrust_vector

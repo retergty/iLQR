@@ -67,16 +67,25 @@ class QuadraticCostTest : public testing::Test {
 
 TEST_F(QuadraticCostTest, StateInputCostValue) {
   QuadraticStateInputCost<Scalar, XDim, UDim, ArrayLength> costFunction(Q_, R_,
-                                                                        P_);
+                                                                        P_, 0);
 
   const auto cost = costFunction.getValue(t_, x_, u_, timeTrajectory_,
                                           stateTrajectory_, inputTrajectory_);
   EXPECT_NEAR(cost, expectedCost_, kPrecision);
 }
 
+TEST_F(QuadraticCostTest, QuadraticCostsStoreExplicitCostNumber) {
+  QuadraticStateInputCost<Scalar, XDim, UDim, ArrayLength> stateInputCost(
+      Q_, R_, P_, 17);
+  QuadraticStateCost<Scalar, XDim, ArrayLength> stateCost(Qf_, 23);
+
+  EXPECT_EQ(stateInputCost.number, 17);
+  EXPECT_EQ(stateCost.number, 23);
+}
+
 TEST_F(QuadraticCostTest, StateInputCostApproximation) {
   QuadraticStateInputCost<Scalar, XDim, UDim, ArrayLength> costFunction(Q_, R_,
-                                                                        P_);
+                                                                        P_, 0);
 
   const auto approximation = costFunction.getQuadraticApproximation(
       t_, x_, u_, timeTrajectory_, stateTrajectory_, inputTrajectory_);
@@ -94,7 +103,7 @@ TEST_F(QuadraticCostTest, StateInputCostApproximation) {
 }
 
 TEST_F(QuadraticCostTest, StateCostValue) {
-  QuadraticStateCost<Scalar, XDim, ArrayLength> costFunction(Qf_);
+  QuadraticStateCost<Scalar, XDim, ArrayLength> costFunction(Qf_, 0);
 
   const auto cost =
       costFunction.getValue(t_, x_, timeTrajectory_, stateTrajectory_);
@@ -102,7 +111,7 @@ TEST_F(QuadraticCostTest, StateCostValue) {
 }
 
 TEST_F(QuadraticCostTest, StateCostApproximation) {
-  QuadraticStateCost<Scalar, XDim, ArrayLength> costFunction(Qf_);
+  QuadraticStateCost<Scalar, XDim, ArrayLength> costFunction(Qf_, 0);
 
   const auto approximation = costFunction.getQuadraticApproximation(
       t_, x_, timeTrajectory_, stateTrajectory_);

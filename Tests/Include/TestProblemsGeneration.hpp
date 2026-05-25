@@ -60,14 +60,14 @@ getiLQRCost(
     const ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& cost) {
   return std::make_unique<
       QuadraticStateInputCost<Scalar, XDim, UDim, ArrayLen>>(
-      cost.dfdxx, cost.dfduu, cost.dfdux);
+      cost.dfdxx, cost.dfduu, cost.dfdux, 0);
 }
 
 template <typename Scalar, int XDim, int ArrayLen>
 inline std::unique_ptr<StateCost<Scalar, XDim, ArrayLen>> getiLQRStateCost(
     const ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& costFinal) {
   return std::make_unique<QuadraticStateCost<Scalar, XDim, ArrayLen>>(
-      costFinal.dfdxx);
+      costFinal.dfdxx, 0);
 }
 
 template <typename Scalar, int XDim, int UDim>

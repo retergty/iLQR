@@ -20,9 +20,10 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
   /**
    * @brief 用权重矩阵 Q 构造二次代价。
    * @param [in] Q 半正定权重矩阵。
+   * @param [in] cost_number 代价项唯一标识。
    */
-  explicit QuadraticStateCost(const Matrix<Scalar, XDim, XDim>& Q)
-      : StateCost<Scalar, XDim, ArrayLength>(0), Q_(Q) {};
+  QuadraticStateCost(const Matrix<Scalar, XDim, XDim>& Q, int cost_number)
+      : StateCost<Scalar, XDim, ArrayLength>(cost_number), Q_(Q) {};
   ~QuadraticStateCost() override = default;
 
   /** @brief 获取代价值 0.5 * (x-x_ref)' Q (x-x_ref)。 */
@@ -84,20 +85,24 @@ class QuadraticStateInputCost
    * @param [in] Q: \f$ Q \f$
    * @param [in] R: \f$ R \f$
    * @param [in] P: \f$ P \f$
+   * @param [in] cost_number 代价项唯一标识。
    */
   QuadraticStateInputCost(const Matrix<Scalar, XDim, XDim>& Q,
                           const Matrix<Scalar, UDim, UDim>& R,
-                          const Matrix<Scalar, UDim, XDim>& P)
-      : StateInputCost<Scalar, XDim, UDim, ArrayLength>(0),
+                          const Matrix<Scalar, UDim, XDim>& P, int cost_number)
+      : StateInputCost<Scalar, XDim, UDim, ArrayLength>(cost_number),
         Q_(Q),
         R_(R),
         P_(P) {
     has_P_ = true;
   };
 
+  /** 用 Q、R 和代价项编号构造无交叉项的二次状态-输入代价。 */
   QuadraticStateInputCost(const Matrix<Scalar, XDim, XDim>& Q,
-                          const Matrix<Scalar, UDim, UDim>& R)
-      : StateInputCost<Scalar, XDim, UDim, ArrayLength>(0), Q_(Q), R_(R) {
+                          const Matrix<Scalar, UDim, UDim>& R, int cost_number)
+      : StateInputCost<Scalar, XDim, UDim, ArrayLength>(cost_number),
+        Q_(Q),
+        R_(R) {
     P_.setZero();
     has_P_ = false;
   };

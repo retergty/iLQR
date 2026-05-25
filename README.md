@@ -180,8 +180,8 @@ settings.timeStep_ = 0.01;
 settings.maxNumIterations_ = 30;
 settings.strategy_ = SearchStrategyType::LINE_SEARCH;
 
-QuadraticStateInputCost<double, 2, 2, 6> runningCost(Q, R);
-QuadraticStateCost<double, 2, 6> finalCost(Qf);
+QuadraticStateInputCost<double, 2, 2, 6> runningCost(Q, R, 0);
+QuadraticStateCost<double, 2, 6> finalCost(Qf, 0);
 problem.cost.add(runningCost);
 problem.finalCost.add(finalCost);
 

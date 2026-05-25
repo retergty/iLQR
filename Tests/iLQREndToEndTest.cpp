@@ -23,8 +23,9 @@ TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost) {
   Solver::OptimalControlProblem_t problem;
   problem.dynamicsPtr = &dynamics;
   QuadraticStateInputCost<double, 2, 2, 6> runningCost(
-      Eigen::Matrix2d::Identity(), Eigen::Matrix2d::Identity());
-  QuadraticStateCost<double, 2, 6> finalCost(2.0 * Eigen::Matrix2d::Identity());
+      Eigen::Matrix2d::Identity(), Eigen::Matrix2d::Identity(), 0);
+  QuadraticStateCost<double, 2, 6> finalCost(2.0 * Eigen::Matrix2d::Identity(),
+                                             0);
   problem.cost.add(runningCost);
   problem.finalCost.add(finalCost);
   Solver solver(ddp_setting, problem, &initializer);
@@ -57,8 +58,9 @@ TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts) {
   DDPSettings<double> ddp_setting;
 
   QuadraticStateInputCost<double, 2, 2, 3> runningCost(
-      Eigen::Matrix2d::Identity(), Eigen::Matrix2d::Identity());
-  QuadraticStateCost<double, 2, 3> finalCost(2.0 * Eigen::Matrix2d::Identity());
+      Eigen::Matrix2d::Identity(), Eigen::Matrix2d::Identity(), 0);
+  QuadraticStateCost<double, 2, 3> finalCost(2.0 * Eigen::Matrix2d::Identity(),
+                                             0);
   Solver::OptimalControlProblem_t problem;
   problem.dynamicsPtr = &dynamics;
   problem.cost.add(runningCost);

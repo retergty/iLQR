@@ -127,8 +127,8 @@ TEST(ApproximationTest,
   R << 3.0, 0.0, 0.0, 5.0;
   Eigen::Matrix2d QState;
   QState << 7.0, 0.0, 0.0, 11.0;
-  QuadraticStateInputCost<double, 2, 2, 3> stateInputCost(Q, R);
-  QuadraticStateCost<double, 2, 3> stateCost(QState);
+  QuadraticStateInputCost<double, 2, 2, 3> stateInputCost(Q, R, 0);
+  QuadraticStateCost<double, 2, 3> stateCost(QState, 0);
   problem.cost.add(stateInputCost);
   problem.stateCost.add(stateCost);
 
@@ -191,7 +191,7 @@ TEST(ApproximationTest, LinearQuadraticApproximatorComputesFinalCostAndLQ) {
   Approximator::OptimalControlProblem_t problem;
   Eigen::Matrix2d QFinal;
   QFinal << 2.0, 0.0, 0.0, 6.0;
-  QuadraticStateCost<double, 2, 3> finalCost(QFinal);
+  QuadraticStateCost<double, 2, 3> finalCost(QFinal, 0);
   problem.finalCost.add(finalCost);
 
   Approximator::TargetTrajectories_t targetTrajectory;

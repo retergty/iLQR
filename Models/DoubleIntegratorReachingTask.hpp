@@ -180,7 +180,7 @@ createDoubleIntegratorReachingProblem() {
 
   static const StateMatrix_t Q = StateMatrix_t::Zero();
   static const InputMatrix_t R = Scalar(0.1) * InputMatrix_t::Identity();
-  static Cost_t cost(Q, R);
+  static Cost_t cost(Q, R, 0);
 
   static const StateVector_t xGoal =
       (StateVector_t() << Scalar(2.0), Scalar(0.0)).finished();
