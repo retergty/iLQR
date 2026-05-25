@@ -104,7 +104,7 @@
 
 `AutomaticDifferentation` 目录当前主要提供有限差分数值求导工具，用于在缺少解析导数时计算动力学或函数的 Jacobian。`Misc` 目录包含线性代数、数值工具和插值等通用辅助函数。`IntrusiveList` 目录提供侵入式链表结构，用于支持无需额外动态分配的容器组织方式。
 
-`TestTools` 目录提供测试辅助工具，包括复用主项目转录层的 QP 离散转录、QP 求解器以及与 OCS2 测试工具相关的对照实现。QP 工具提供连续动力学和离散动力学两组显式别名，例如 `QpContinuousDynamicsOptimalControlProblem_t` 与 `QpDiscreteDynamicsOptimalControlProblem_t`。`Tests` 目录覆盖近似器、动力学、积分器、Riccati 递推、惩罚函数、rollout、线性系统 iLQR、连续/离散 correctness 对照和端到端求解流程，用于验证各模块的数值正确性和集成行为。
+`Tests/Include` 目录提供测试辅助头文件，包括复用主项目转录层的 QP 离散转录、QP 求解器以及与 OCS2 测试工具相关的对照实现。QP 工具提供连续动力学和离散动力学两组显式别名，例如 `QpContinuousDynamicsOptimalControlProblem_t` 与 `QpDiscreteDynamicsOptimalControlProblem_t`。`Tests` 目录覆盖近似器、动力学、积分器、Riccati 递推、惩罚函数、rollout、线性系统 iLQR、连续/离散 correctness 对照和端到端求解流程，用于验证各模块的数值正确性和集成行为。
 
 `CMakeLists.txt` 负责组织项目构建、依赖配置和测试目标。`build` 与 `out` 等目录为本地构建产物，不属于核心源码模块。
 

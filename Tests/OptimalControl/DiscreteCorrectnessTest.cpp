@@ -6,14 +6,15 @@
 #include <memory>
 #include <vector>
 
-#include "../TestTools/testProblemsGeneration.hpp"
 #include "DefaultInitializer.hpp"
 #include "DiscreteLinearSystemDynamics.hpp"
 #include "QpDiscreteTranscription.hpp"
 #include "QpSolver.hpp"
 #include "QuadraticPenalty.hpp"
 #include "StateInputAugmentedLagrangian.hpp"
+#include "TestProblemsGeneration.hpp"
 #include "iLQR.hpp"
+
 
 class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
  protected:

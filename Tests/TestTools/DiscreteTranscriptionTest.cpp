@@ -8,7 +8,7 @@
 #include "LinearSystemDynamics.hpp"
 #include "QpDiscreteTranscription.hpp"
 #include "QuadraticStateCost.hpp"
-#include "testProblemsGeneration.hpp"
+#include "TestProblemsGeneration.hpp"
 
 class DiscreteTranscriptionTest : public testing::Test {
  protected:

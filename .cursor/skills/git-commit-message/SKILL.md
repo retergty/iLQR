@@ -36,7 +36,7 @@ This repository implements an iLQR optimal control solver with augmented Lagrang
 - Dynamics, rollout, and integration: `Dynamics/`, `Rollout/`, `Integration/`
 - Constraints, penalties, and augmented Lagrangian logic: `Constraint/`, `Penalties/`, `AugmentedLagrangian/`
 - Riccati recursion and search strategy: `RiccatiEquations/`, `SearchStrategy/`
-- Tests and validation tools: `Tests/`, `TestTools/`
+- Tests and validation tools: `Tests/`, `Tests/Include/`
 - Project or algorithm documentation: `README.md`, `Documents/`
 
 ## Output Format

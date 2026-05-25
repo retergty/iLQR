@@ -6,7 +6,6 @@
 #include <memory>
 #include <vector>
 
-#include "../TestTools/testProblemsGeneration.hpp"
 #include "DefaultInitializer.hpp"
 #include "LinearSystemDynamics.hpp"
 #include "QpDiscreteTranscription.hpp"
@@ -14,6 +13,7 @@
 #include "QuadraticPenalty.hpp"
 #include "SensitivityIntegrator.hpp"
 #include "StateInputAugmentedLagrangian.hpp"
+#include "TestProblemsGeneration.hpp"
 #include "iLQR.hpp"
 
 class DDPCorrectness : public testing::TestWithParam<unsigned> {

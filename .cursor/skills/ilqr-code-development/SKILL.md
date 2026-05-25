@@ -36,7 +36,7 @@ This project is an iLQR optimal control implementation derived from OCS2 ideas b
    - Dynamics and rollout: `Dynamics/`, `Rollout/`, `Integration/`
    - Constraints and penalties: `Constraint/`, `AugmentedLagrangian/`, `Penalties/`
    - Riccati recursion: `RiccatiEquations/`
-   - Tests and reference tools: `Tests/`, `TestTools/`
+   - Tests and reference tools: `Tests/`, `Tests/Include/`
 2. Read nearby tests before changing behavior.
 3. Match the local template style and compile-time dimension patterns.
 4. Prefer explicit fixed-size aliases from the existing type system.

@@ -77,7 +77,7 @@ Default to Chinese unless the user asks otherwise. Write like a concise work con
 - Keep the report at a high level. Do not include code snippets, detailed algorithms, function bodies, line-by-line changes, or patch excerpts.
 - Avoid file-by-file narration unless a file represents a major independent deliverable.
 - Do not invent features, fixes, tests, or performance improvements that are not visible in the diff or commit messages.
-- Mention affected modules when useful, such as `OptimalControl/`, `Approximation/`, `AugmentedLagrangian/`, `TestTools/`, or `Documents/`.
+- Mention affected modules when useful, such as `OptimalControl/`, `Approximation/`, `AugmentedLagrangian/`, `Tests/Include/`, or `Documents/`.
 - Distinguish a true bug fix from a refactor or cleanup. Use “修复” only when the diff corrects wrong behavior, build failure, invalid math, unsafe state, or documentation error.
 - If the provided commit is not an ancestor of `HEAD`, still compare trees with `git diff <commit>..HEAD`, but state that the revisions are not in a direct ancestor relationship and that the commit list uses `<commit>..HEAD` reachability semantics.
 - Do not run `git commit`, change files, or modify git history while generating the update summary.

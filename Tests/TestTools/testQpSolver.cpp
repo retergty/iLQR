@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "QpSolver.hpp"
-#include "testProblemsGeneration.hpp"
+#include "TestProblemsGeneration.hpp"
 
 class QpSolverTest : public testing::Test {
  protected:

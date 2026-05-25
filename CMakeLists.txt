@@ -107,11 +107,6 @@ set(ILQR_HEADERS
   Transcription/ContinuousTranscription.hpp
   Transcription/DiscreteTranscription.hpp
   Transcription/TranscriptionTraits.hpp
-  TestTools/QpTrajectories.hpp
-  TestTools/QpSolverTypes.hpp
-  TestTools/QpSolver.hpp
-  TestTools/QpDiscreteTranscription.hpp
-  TestTools/Ocs2QpSolver.hpp
   Models/CircularKinematics.hpp
   Models/DoubleIntegratorReachingTask.hpp
   Models/EXP0.hpp
@@ -119,7 +114,7 @@ set(ILQR_HEADERS
 
 add_library(iLQR_Include INTERFACE)
 target_sources(iLQR_Include INTERFACE ${ILQR_HEADERS})
-target_include_directories(iLQR_Include INTERFACE Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Transcription Misc Initialization AutomaticDifferentation TestTools Models Transcription ModelData OptimalControlData iLQR ${CMAKE_SOURCE_DIR})
+target_include_directories(iLQR_Include INTERFACE Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Transcription Misc Initialization AutomaticDifferentation Models Transcription ModelData OptimalControlData iLQR ${CMAKE_SOURCE_DIR})
 target_link_libraries(iLQR_Include INTERFACE Eigen3::Eigen)
 target_compile_options(iLQR_Include INTERFACE
   $<$<CXX_COMPILER_ID:MSVC>:/utf-8>

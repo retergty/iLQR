@@ -7,7 +7,7 @@
 #include "Ocs2QpSolver.hpp"
 #include "QuadraticStateCost.hpp"
 #include "SensitivityIntegrator.hpp"
-#include "testProblemsGeneration.hpp"
+#include "TestProblemsGeneration.hpp"
 
 class Ocs2QpSolverTest : public testing::Test {
  protected:

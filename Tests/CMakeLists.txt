@@ -51,6 +51,8 @@ foreach(test_source ${TEST_SOURCES})
         GTest::gtest_main
         iLQR_Include
     )
+
+    target_include_directories(${test_name} PRIVATE Include)
     
     # 注册测试
     include(GoogleTest)
