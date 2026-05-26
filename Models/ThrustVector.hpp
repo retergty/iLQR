@@ -139,12 +139,26 @@ class ThrustVectorTrackCost final
 };
 
 template <typename Scalar, int ArrayLength>
+class ThrustVectorTrackFinalCost final
+    : public QuadraticStateCost<Scalar, STATE_DIM, ArrayLength> {
+ public:
+  ThrustVectorTrackFinalCost(const Matrix<Scalar, STATE_DIM, STATE_DIM>& Q,
+                             int cost_number)
+      : QuadraticStateCost<Scalar, STATE_DIM, ArrayLength>(Q, cost_number) {}
+  ~ThrustVectorTrackFinalCost() override = default;
+
+ private:
+  ThrustVectorTrackFinalCost(const ThrustVectorTrackFinalCost& other) = default;
+};
+
+template <typename Scalar, int ArrayLength>
 class ThrustDirectionChangeCost final
     : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
   /** @brief 获取代价值。 */
  public:
   static constexpr Scalar epsilon = 1e-4;
   static constexpr Scalar Weight = 1;
+  static constexpr Scalar MinThrustForDirection = 1e-2;
 
   explicit ThrustDirectionChangeCost(int cost_number = 0)
       : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number) {
@@ -168,7 +182,8 @@ class ThrustDirectionChangeCost final
         last_thr / std::sqrt(last_thr.dot(last_thr) + epsilon);
     Vector<Scalar, 3> thr_dir = thr / std::sqrt(thr.dot(thr) + epsilon);
     const Vector<Scalar, 3> rk = thr_dir - last_thr_dir;
-    return Scalar(0.5) * Weight * rk.dot(rk);
+    const Scalar gate = lowThrustGate(last_thr, thr);
+    return Scalar(0.5) * gate * Weight * rk.dot(rk);
   }
 
   /** @brief 获取代价的二次近似（状态-输入）。 */
@@ -205,17 +220,91 @@ class ThrustDirectionChangeCost final
         identity / thr_norm -
         (thr * thr.transpose()) / (thr_norm * thr_norm * thr_norm);
 
-    ret.f = Scalar(0.5) * Weight * rk.dot(rk);
+    const Scalar gate = lowThrustGate(last_thr, thr);
+    const Scalar effectiveWeight = gate * Weight;
+
+    ret.f = Scalar(0.5) * effectiveWeight * rk.dot(rk);
     ret.dfdx.template segment<3>(3) =
-        -Weight * last_thr_jacobian.transpose() * rk;
-    ret.dfdu = Weight * thr_jacobian.transpose() * rk;
+        -effectiveWeight * last_thr_jacobian.transpose() * rk;
+    ret.dfdu = effectiveWeight * thr_jacobian.transpose() * rk;
     ret.dfdxx.template block<3, 3>(3, 3) =
-        Weight * last_thr_jacobian.transpose() * last_thr_jacobian;
-    ret.dfduu = Weight * thr_jacobian.transpose() * thr_jacobian;
+        effectiveWeight * last_thr_jacobian.transpose() * last_thr_jacobian;
+    ret.dfduu = effectiveWeight * thr_jacobian.transpose() * thr_jacobian;
     ret.dfdux.template block<3, 3>(0, 3) =
-        -Weight * thr_jacobian.transpose() * last_thr_jacobian;
+        -effectiveWeight * thr_jacobian.transpose() * last_thr_jacobian;
 
     return ret;
   }
+
+ private:
+  static Scalar thrustGateSigma(const Vector<Scalar, 3>& thrust) {
+    const Scalar thrustNormSquared = thrust.squaredNorm();
+    const Scalar minThrustSquared =
+        MinThrustForDirection * MinThrustForDirection;
+    return thrustNormSquared / (thrustNormSquared + minThrustSquared);
+  }
+
+  static Scalar lowThrustGate(const Vector<Scalar, 3>& lastThrust,
+                              const Vector<Scalar, 3>& currentThrust) {
+    return thrustGateSigma(lastThrust) * thrustGateSigma(currentThrust);
+  }
 };
+
+template <typename Scalar>
+Matrix<Scalar, STATE_DIM, STATE_DIM> makeDefaultThrustVectorStateWeight() {
+  Matrix<Scalar, STATE_DIM, STATE_DIM> Q;
+  Q.setZero();
+  Q.template topLeftCorner<3, 3>().setIdentity();
+  return Q;
+}
+
+template <typename Scalar>
+Matrix<Scalar, STATE_DIM, STATE_DIM> makeDefaultThrustVectorFinalWeight() {
+  Matrix<Scalar, STATE_DIM, STATE_DIM> Qf;
+  Qf.setZero();
+  Qf.template topLeftCorner<3, 3>() =
+      Scalar(10.0) * Matrix<Scalar, 3, 3>::Identity();
+  return Qf;
+}
+
+template <typename Scalar>
+Matrix<Scalar, INPUT_DIM, INPUT_DIM> makeDefaultThrustVectorInputWeight() {
+  return Scalar(1e-3) * Matrix<Scalar, INPUT_DIM, INPUT_DIM>::Identity();
+}
+
+template <typename Scalar, size_t PredictLength>
+inline ThrustVectorProblem<Scalar, PredictLength>& createThrustVectorProblem(
+    Scalar mass = Scalar(1.0)) {
+  using Problem_t = ThrustVectorProblem<Scalar, PredictLength>;
+  using TrackCost_t =
+      ThrustVectorTrackCost<Scalar, static_cast<int>(PredictLength + 1)>;
+  using DirectionCost_t =
+      ThrustDirectionChangeCost<Scalar, static_cast<int>(PredictLength + 1)>;
+  using FinalCost_t =
+      ThrustVectorTrackFinalCost<Scalar, static_cast<int>(PredictLength + 1)>;
+
+  static ThrustVectorDynamicSystem<Scalar> dynamics(mass);
+  static const Matrix<Scalar, STATE_DIM, STATE_DIM> Q =
+      makeDefaultThrustVectorStateWeight<Scalar>();
+  static const Matrix<Scalar, INPUT_DIM, INPUT_DIM> R =
+      makeDefaultThrustVectorInputWeight<Scalar>();
+  static const Matrix<Scalar, STATE_DIM, STATE_DIM> Qf =
+      makeDefaultThrustVectorFinalWeight<Scalar>();
+
+  static TrackCost_t trackCost(Q, R, 0);
+  static DirectionCost_t directionCost(1);
+  static FinalCost_t finalCost(Qf, 0);
+  static Problem_t problem;
+  static bool initialized = false;
+
+  if (!initialized) {
+    problem.dynamicsPtr = &dynamics;
+    problem.cost.add(trackCost);
+    problem.cost.add(directionCost);
+    problem.finalCost.add(finalCost);
+    initialized = true;
+  }
+
+  return problem;
+}
 }  // namespace thrust_vector

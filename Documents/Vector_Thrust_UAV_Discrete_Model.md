@@ -222,30 +222,7 @@ $$
 
 ## 方向代价的 Gauss-Newton 二次近似
 
-若方向向量严格归一化，即：
-
-$$
-n_k^T n_k = 1
-$$
-
-且：
-
-$$
-n_{k-1}^T n_{k-1} = 1
-$$
-
-则有：
-
-$$
-\frac{1}{2}
-\left\|n_k - n_{k-1}\right\|^2
-=
-1 - n_k^T n_{k-1}
-=
-1 - \cos\theta_k
-$$
-
-因此方向变化代价也可以写成残差平方形式：
+在严格单位方向向量下，方向变化代价可以写成残差平方形式：
 
 $$
 \ell_{\mathrm{angle},k}
@@ -261,23 +238,7 @@ $$
 r_k := n_k - n_{k-1}
 $$
 
-由于 $n_k$ 和 $n_{k-1}$ 均由推力向量归一化得到，$r_k$ 对状态与输入是非线性的。严格 Hessian 包含归一化函数的二阶导数。工程实现中可采用 Gauss-Newton 近似，只保留残差一阶导产生的二阶项：
-
-$$
-\ell_z
-=
-w_{\mathrm{angle}}
-J_r^T r_k
-$$
-
-$$
-\ell_{zz}
-\approx
-w_{\mathrm{angle}}
-J_r^T J_r
-$$
-
-其中：
+为了写出状态-输入二次近似，将优化变量合并记为：
 
 $$
 z :=
@@ -287,9 +248,81 @@ U_k
 \end{bmatrix}
 $$
 
+代价为：
+
+$$
+\ell(z)
+:=
+\frac{1}{2}
+w_{\mathrm{angle}}
+r(z)^T r(z)
+$$
+
+其中：
+
+$$
+r(z) = n(U_k) - n(F_{k-1}^B)
+$$
+
+由于 $n_k$ 和 $n_{k-1}$ 均由推力向量归一化得到，$r_k$ 对状态与输入是非线性的。先对残差平方形式求微分：
+
+$$
+d\ell
+=
+\frac{1}{2}
+w_{\mathrm{angle}}
+d(r^T r)
+=
+w_{\mathrm{angle}}
+r^T dr
+$$
+
+又有：
+
+$$
+dr = J_r dz
+$$
+
+其中：
+
 $$
 J_r := \frac{\partial r_k}{\partial z}
 $$
+
+因此梯度为：
+
+$$
+\ell_z
+=
+w_{\mathrm{angle}}
+J_r^T r_k
+$$
+
+严格 Hessian 实际为：
+
+$$
+\ell_{zz}
+=
+w_{\mathrm{angle}}
+\left(
+J_r^T J_r
++
+\sum_{i=1}^{3}
+r_i
+\frac{\partial^2 r_i}{\partial z^2}
+\right)
+$$
+
+其中第二项来自归一化函数的二阶导数。该项表达式较长，且可能破坏 Hessian 的半正定性。工程实现中可采用 Gauss-Newton 近似，忽略残差加权二阶项，仅保留残差一阶导产生的半正定二阶项：
+
+$$
+\ell_{zz}
+\approx
+w_{\mathrm{angle}}
+J_r^T J_r
+$$
+
+该近似在残差较小时更接近严格 Hessian；即使残差不小，$J_r^T J_r$ 也始终半正定，更利于 iLQR 的 Riccati 递推保持数值稳定。
 
 对归一化函数：
 
@@ -305,7 +338,55 @@ $$
 s(F) := \sqrt{F^T F + \varepsilon}
 $$
 
-则其一阶导为：
+则：
+
+$$
+n(F) = s(F)^{-1} F
+$$
+
+先求 $s(F)$ 的微分：
+
+$$
+ds
+=
+\frac{1}{2}
+\left(F^T F + \varepsilon\right)^{-1/2}
+d(F^T F)
+=
+\frac{F^T dF}{s}
+$$
+
+因此：
+
+$$
+d\left(s^{-1}\right)
+=
+-s^{-2} ds
+=
+-\frac{F^T dF}{s^3}
+$$
+
+对 $n(F)=s^{-1}F$ 求微分：
+
+$$
+dn
+=
+s^{-1} dF
++
+F d\left(s^{-1}\right)
+$$
+
+代入上式：
+
+$$
+dn
+=
+\frac{1}{s} dF
+-
+\frac{F F^T}{s^3} dF
+$$
+
+所以归一化函数的一阶导为：
 
 $$
 J_n(F)
@@ -317,7 +398,60 @@ J_n(F)
 \frac{1}{s(F)^3} F F^T
 $$
 
-由于 $F_{k-1}^B$ 位于状态 $X_k$ 的后 3 维，且 $U_k$ 为当前输入，有：
+现在将状态按本文模型分块：
+
+$$
+X_k =
+\begin{bmatrix}
+v_k^W \\
+F_{k-1}^B
+\end{bmatrix}
+$$
+
+定义选择矩阵 $S_F \in \mathbb{R}^{3 \times 6}$，用于从状态中取出上一拍推力：
+
+$$
+F_{k-1}^B = S_F X_k
+$$
+
+其中：
+
+$$
+S_F =
+\begin{bmatrix}
+0_3 & I_3
+\end{bmatrix}
+$$
+
+残差可写为：
+
+$$
+r_k
+=
+n(U_k)
+-
+n(S_F X_k)
+$$
+
+因此对状态和输入的 Jacobian 分别为：
+
+$$
+J_{r,x}
+:=
+\frac{\partial r_k}{\partial X_k}
+=
+-J_n(F_{k-1}^B) S_F
+$$
+
+$$
+J_{r,u}
+:=
+\frac{\partial r_k}{\partial U_k}
+=
+J_n(U_k)
+$$
+
+等价地，若直接看状态中的推力分量，则有：
 
 $$
 \frac{\partial r_k}{\partial F_{k-1}^B}
@@ -330,6 +464,8 @@ $$
 =
 J_n(U_k)
 $$
+
+且 $J_{r,x}$ 仅在状态后 3 维对应的列块非零。
 
 因此在状态-输入二次近似中：
 
@@ -368,7 +504,72 @@ w_{\mathrm{angle}}
 J_{r,u}^T J_{r,x}
 $$
 
-其中 $J_{r,x}$ 仅在状态中 $F_{k-1}^B$ 对应的列块非零。该 Gauss-Newton Hessian 为半正定，通常比手写完整 Hessian 更适合 iLQR 的 Riccati 递推。
+在当前状态维度为 6、输入维度为 3 的实现中，上述公式对应到矩阵块为：
+
+$$
+\ell_x =
+\begin{bmatrix}
+0_3 \\
+-w_{\mathrm{angle}}
+J_n(F_{k-1}^B)^T r_k
+\end{bmatrix}
+$$
+
+$$
+\ell_u =
+w_{\mathrm{angle}}
+J_n(U_k)^T r_k
+$$
+
+$$
+\ell_{xx}
+\approx
+\begin{bmatrix}
+0_3 & 0_3 \\
+0_3 &
+w_{\mathrm{angle}}
+J_n(F_{k-1}^B)^T
+J_n(F_{k-1}^B)
+\end{bmatrix}
+$$
+
+$$
+\ell_{uu}
+\approx
+w_{\mathrm{angle}}
+J_n(U_k)^T
+J_n(U_k)
+$$
+
+$$
+\ell_{ux}
+\approx
+\begin{bmatrix}
+0_3 &
+-w_{\mathrm{angle}}
+J_n(U_k)^T
+J_n(F_{k-1}^B)
+\end{bmatrix}
+$$
+
+这里 $\ell_{ux}$ 的尺寸为 $3 \times 6$，其左侧对应速度状态的 $3 \times 3$ 块为零，右侧对应上一拍推力状态的 $3 \times 3$ 块为非零。该结构正好对应代码中 `dfdux.block<3, 3>(0, 3)` 的填充方式。
+
+上述 Gauss-Newton Hessian 可写成：
+
+$$
+\ell_{zz}
+\approx
+w_{\mathrm{angle}}
+\begin{bmatrix}
+J_{r,x}^T \\
+J_{r,u}^T
+\end{bmatrix}
+\begin{bmatrix}
+J_{r,x} & J_{r,u}
+\end{bmatrix}
+$$
+
+因此它是半正定矩阵。相比手写完整 Hessian，该近似更容易实现，也更适合 iLQR 反向 Riccati 递推中的局部二次模型。
 
 需要注意的是，引入 $\varepsilon$ 后，$n(F)$ 的模长不再严格等于 1。因此：
 
