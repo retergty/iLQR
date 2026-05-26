@@ -131,7 +131,7 @@ makeStateInputConstraints(
 template <typename Scalar, typename Transcription, typename ConstraintConfig>
 LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>
 approximateStage(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     TrajectoryRef<Scalar, Transcription::XDim, Transcription::UDim> start,
@@ -174,7 +174,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig,
           int CDim>
 LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>
 approximateStage(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     TrajectoryRef<Scalar, Transcription::XDim, Transcription::UDim> start,
@@ -198,7 +198,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig>
 std::vector<
     LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
 getLinearQuadraticApproximation(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>& nominalTrajectory,
@@ -220,7 +220,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig>
 std::vector<
     LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
 getLinearQuadraticApproximation(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
@@ -282,7 +282,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig,
 std::vector<
     LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
 getLinearQuadraticApproximation(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
@@ -342,7 +342,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig>
 std::vector<
     LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
 getLinearQuadraticApproximation(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
@@ -364,7 +364,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig,
 std::vector<
     LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
 getLinearQuadraticApproximation(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
@@ -386,7 +386,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig>
 std::vector<
     LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
 getLinearQuadraticApproximation(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>&
@@ -409,7 +409,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig,
 std::vector<
     LinearQuadraticStage<Scalar, Transcription::XDim, Transcription::UDim>>
 getLinearQuadraticApproximation(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>& nominalTrajectory,

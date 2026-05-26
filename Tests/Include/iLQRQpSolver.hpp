@@ -26,7 +26,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig>
 ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                      Transcription::PredictLength>
 solveLinearQuadraticOptimalControlProblem(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
@@ -76,7 +76,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig>
 ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                      Transcription::PredictLength>
 solveLinearQuadraticOptimalControlProblem(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
@@ -97,7 +97,7 @@ template <typename Scalar, typename Transcription, typename ConstraintConfig>
 ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                      Transcription::PredictLength>
 solveLinearQuadraticOptimalControlProblem(
-    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
+    OptimalControlProblem<Scalar, Transcription, ConstraintConfig>&
         optimalControlProblem,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>& nominalTrajectory,

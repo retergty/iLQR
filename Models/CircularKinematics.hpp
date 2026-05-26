@@ -78,7 +78,7 @@ class CircularKinematicsCost
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
       const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
-      const override {
+      override {
     (void)time;
     (void)timeTrajectory;
     (void)stateTrajectoy;
@@ -95,7 +95,7 @@ class CircularKinematicsCost
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
       const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
-      const override {
+      override {
     (void)time;
     (void)timeTrajectory;
     (void)stateTrajectoy;

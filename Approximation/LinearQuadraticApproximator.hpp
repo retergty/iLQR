@@ -73,7 +73,7 @@ struct LinearQuadraticApproximator {
    * @param [out] modelData 输出数据模型；仅写入 time 与 cost。
    */
   static void approximateIntermediateCost(
-      const OptimalControlProblem_t& problem,
+      OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state, const InputVector_t& input,
       const IntermediateMultiplierCollection_t& multipliers,
@@ -117,7 +117,7 @@ struct LinearQuadraticApproximator {
    * @return 仅包含 time 与 cost 的模型数据。
    */
   static inline ModelData_t approximateIntermediateCost(
-      const OptimalControlProblem_t& problem,
+      OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state, const InputVector_t& input,
       const IntermediateMultiplierCollection_t& multipliers) {
@@ -136,7 +136,7 @@ struct LinearQuadraticApproximator {
    * @param [in] multipliers: 当前与等式和不等式拉格朗日项关联的乘子。
    * @param [out] modelData: 输出数据模型。
    */
-  static void approximateFinalLQ(const OptimalControlProblem_t& problem,
+  static void approximateFinalLQ(OptimalControlProblem_t& problem,
                                  const TargetTrajectories_t& targetTrajectories,
                                  const Scalar time, const StateVector_t& state,
                                  const FinalMultiplierCollection_t& multipliers,
@@ -180,7 +180,7 @@ struct LinearQuadraticApproximator {
    * @return 输出数据模型。
    */
   static inline ModelData_t approximateFinalLQ(
-      const OptimalControlProblem_t& problem,
+      OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state,
       const FinalMultiplierCollection_t& multipliers) {
@@ -194,7 +194,7 @@ struct LinearQuadraticApproximator {
    * 计算中间时刻总代价（即 cost + softConstraints）。
    * 假定预计算请求已经发出。
    */
-  static Scalar computeCost(const OptimalControlProblem_t& problem,
+  static Scalar computeCost(OptimalControlProblem_t& problem,
                             const TargetTrajectories_t& targetTrajectories,
                             const Scalar time, const StateVector_t& state,
                             const InputVector_t& input) {
@@ -221,7 +221,7 @@ struct LinearQuadraticApproximator {
    * 已经发出。
    */
   static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  approximateCost(const OptimalControlProblem_t& problem,
+  approximateCost(OptimalControlProblem_t& problem,
                   const TargetTrajectories_t& targetTrajectories,
                   const Scalar time, const StateVector_t& state,
                   const InputVector_t& input) {
@@ -249,7 +249,7 @@ struct LinearQuadraticApproximator {
    * 计算终端总代价（即 cost + softConstraints）。假定
    * 预计算请求已经发出。
    */
-  static Scalar computeFinalCost(const OptimalControlProblem_t& problem,
+  static Scalar computeFinalCost(OptimalControlProblem_t& problem,
                                  const TargetTrajectories_t& targetTrajectories,
                                  const Scalar time,
                                  const StateVector_t& state) {
@@ -270,7 +270,7 @@ struct LinearQuadraticApproximator {
    * 发出。
    */
   static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  approximateFinalCost(const OptimalControlProblem_t& problem,
+  approximateFinalCost(OptimalControlProblem_t& problem,
                        const TargetTrajectories_t& targetTrajectories,
                        const Scalar time, const StateVector_t& state) {
     const TimeTrajectory_t& targetTimeTrajectories =
@@ -302,7 +302,7 @@ struct LinearQuadraticApproximator {
    * @return 输出 Metrics。
    */
   static IntermediateMetrics_t computeIntermediateMetrics(
-      const OptimalControlProblem_t& problem,
+      OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state, const InputVector_t& input) {
     IntermediateMetrics_t metrics;
@@ -331,7 +331,7 @@ struct LinearQuadraticApproximator {
    * @return 输出 Metrics。
    */
   static IntermediateMetrics_t computeIntermediateMetrics(
-      const OptimalControlProblem_t& problem,
+      OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state, const InputVector_t& input,
       const IntermediateMultiplierCollection_t& multipliers) {
@@ -378,7 +378,7 @@ struct LinearQuadraticApproximator {
    * @return 输出 Metrics。
    */
   static FinalMetrics_t computeFinalMetrics(
-      const OptimalControlProblem_t& problem,
+      OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state) {
     FinalMetrics_t metrics;
@@ -404,7 +404,7 @@ struct LinearQuadraticApproximator {
    * @return 输出 Metrics。
    */
   static FinalMetrics_t computeFinalMetrics(
-      const OptimalControlProblem_t& problem,
+      OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, const Scalar time,
       const StateVector_t& state,
       const FinalMultiplierCollection_t& multipliers) {

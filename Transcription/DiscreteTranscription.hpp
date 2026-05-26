@@ -52,7 +52,7 @@ class DiscreteTranscription {
    * 代价函数近似保持 stage cost 语义，不做 dt 缩放。
    */
   void approximateIntermediateLQ(
-      const OptimalControlProblem_t& problem,
+      OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, Scalar time,
       const StateVector_t& state, const InputVector_t& input, Scalar timeStep,
       const IntermediateMultiplierCollection_t& multipliers,
@@ -70,7 +70,7 @@ class DiscreteTranscription {
   /**
    * @brief 生成终端节点 LQ 近似。
    */
-  void approximateFinalLQ(const OptimalControlProblem_t& problem,
+  void approximateFinalLQ(OptimalControlProblem_t& problem,
                           const TargetTrajectories_t& targetTrajectories,
                           Scalar time, const StateVector_t& state,
                           const FinalMultiplierCollection_t& multipliers,

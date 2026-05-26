@@ -23,7 +23,7 @@ class StateCostCollection {
   Scalar getValue(Scalar time, const Vector<Scalar, XDim>& state,
                   const std::array<Scalar, ArrayLength>& timeTrajectories,
                   const std::array<Vector<Scalar, XDim>, ArrayLength>&
-                      stateTrajectoies) const {
+                      stateTrajectoies) {
     Scalar cost = 0;
     for (auto it = list_.begin(); it != list_.end(); ++it) {
       if (it->isActive(time)) {
@@ -38,8 +38,7 @@ class StateCostCollection {
   getQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectories,
-      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoies)
-      const {
+      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoies) {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> cost_appro;
     cost_appro.setZero();
     for (auto it = list_.begin(); it != list_.end(); ++it) {
@@ -80,8 +79,7 @@ class StateInputCostCollection {
       const Vector<Scalar, UDim>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
-      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory)
-      const {
+      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory) {
     Scalar cost = 0;
     for (auto it = list_.begin(); it != list_.end(); ++it) {
       if (it->isActive(time)) {
@@ -99,8 +97,7 @@ class StateInputCostCollection {
       const Vector<Scalar, UDim>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
-      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory)
-      const {
+      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory) {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost_appro;
     cost_appro.setZero();
     for (auto it = list_.begin(); it != list_.end(); ++it) {

@@ -29,7 +29,7 @@ class iLQRQpSolverTest : public testing::Test {
   using TargetTrajectories_t = TargetTrajectories<Scalar, Transcription_t>;
 
   void checkDeviationDynamics(const Trajectory_t& solution,
-                              const Trajectory_t& nominal) const {
+                              const Trajectory_t& nominal) {
     const auto lqp = qp_solver::getLinearQuadraticApproximation(
         problem, targetTrajectory, nominal);
 

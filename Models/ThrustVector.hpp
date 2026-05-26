@@ -5,8 +5,8 @@
 
 #include "Cost.hpp"
 #include "DiscreteSystemDynamicsBase.hpp"
+#include "LinearInterpolation.hpp"
 #include "OptimalControlProblem.hpp"
-#include "QuadraticStateCost.hpp"
 #include "Types.hpp"
 #include "iLQRDescriptor.hpp"
 /******************************************************************************************************/
@@ -124,31 +124,153 @@ class ThrustVectorDynamicSystem final
 
 template <typename Scalar, int ArrayLength>
 class ThrustVectorTrackCost final
-    : public QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM,
-                                     ArrayLength> {
+    : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
  public:
   ThrustVectorTrackCost(const Matrix<Scalar, STATE_DIM, STATE_DIM>& Q,
                         const Matrix<Scalar, INPUT_DIM, INPUT_DIM>& R,
                         int cost_number)
-      : QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(
-            Q, R, cost_number) {}
+      : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number),
+        Qv_(Q.template topLeftCorner<3, 3>()),
+        R_(R) {
+    approximation_.setZero();
+    approximation_.dfdxx.template topLeftCorner<3, 3>() = Qv_;
+    approximation_.dfduu = R_;
+  }
   ~ThrustVectorTrackCost() override = default;
+
+  Scalar getValue(
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
+      override {
+    const auto indexAlpha =
+        LinearInterpolation::timeSegment(time, timeTrajectory);
+    const Vector<Scalar, 3> velocityDeviation =
+        state.template head<3>() -
+        interpolateVelocityReference(indexAlpha, stateTrajectoy);
+    const Vector<Scalar, INPUT_DIM> inputDeviation =
+        input - interpolateInputReference(indexAlpha, inputTrajectory);
+    const Vector<Scalar, 3> weightedVelocityDeviation = Qv_ * velocityDeviation;
+    const Vector<Scalar, INPUT_DIM> weightedInputDeviation =
+        R_ * inputDeviation;
+
+    return Scalar(0.5) * velocityDeviation.dot(weightedVelocityDeviation) +
+           Scalar(0.5) * inputDeviation.dot(weightedInputDeviation);
+  }
+
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
+  getQuadraticApproximation(
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
+      override {
+    const auto indexAlpha =
+        LinearInterpolation::timeSegment(time, timeTrajectory);
+    const Vector<Scalar, 3> velocityDeviation =
+        state.template head<3>() -
+        interpolateVelocityReference(indexAlpha, stateTrajectoy);
+    const Vector<Scalar, INPUT_DIM> inputDeviation =
+        input - interpolateInputReference(indexAlpha, inputTrajectory);
+    const Vector<Scalar, 3> weightedVelocityDeviation = Qv_ * velocityDeviation;
+    const Vector<Scalar, INPUT_DIM> weightedInputDeviation =
+        R_ * inputDeviation;
+
+    approximation_.f =
+        Scalar(0.5) * velocityDeviation.dot(weightedVelocityDeviation) +
+        Scalar(0.5) * inputDeviation.dot(weightedInputDeviation);
+    approximation_.dfdx.template head<3>() = weightedVelocityDeviation;
+    approximation_.dfdu = weightedInputDeviation;
+    return approximation_;
+  }
 
  private:
   ThrustVectorTrackCost(const ThrustVectorTrackCost& other) = default;
+
+  Vector<Scalar, 3> interpolateVelocityReference(
+      const std::pair<int, Scalar>& indexAlpha,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory)
+      const {
+    return LinearInterpolation::interpolate(
+        indexAlpha, stateTrajectory,
+        [](const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& trajectory,
+           size_t index) -> Vector<Scalar, 3> {
+          return trajectory[index].template head<3>();
+        });
+  }
+
+  Vector<Scalar, INPUT_DIM> interpolateInputReference(
+      const std::pair<int, Scalar>& indexAlpha,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
+      const {
+    return LinearInterpolation::interpolate(indexAlpha, inputTrajectory);
+  }
+
+  Matrix<Scalar, 3, 3> Qv_;
+  Matrix<Scalar, INPUT_DIM, INPUT_DIM> R_;
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
+      approximation_;
 };
 
 template <typename Scalar, int ArrayLength>
 class ThrustVectorTrackFinalCost final
-    : public QuadraticStateCost<Scalar, STATE_DIM, ArrayLength> {
+    : public StateCost<Scalar, STATE_DIM, ArrayLength> {
  public:
   ThrustVectorTrackFinalCost(const Matrix<Scalar, STATE_DIM, STATE_DIM>& Q,
                              int cost_number)
-      : QuadraticStateCost<Scalar, STATE_DIM, ArrayLength>(Q, cost_number) {}
+      : StateCost<Scalar, STATE_DIM, ArrayLength>(cost_number),
+        Qv_(Q.template topLeftCorner<3, 3>()) {
+    approximation_.setZero();
+    approximation_.dfdxx.template topLeftCorner<3, 3>() = Qv_;
+  }
   ~ThrustVectorTrackFinalCost() override = default;
+
+  Scalar getValue(Scalar time, const Vector<Scalar, STATE_DIM>& state,
+                  const std::array<Scalar, ArrayLength>& timeTrajectory,
+                  const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>&
+                      stateTrajectory) override {
+    const Vector<Scalar, 3> velocityDeviation =
+        state.template head<3>() -
+        interpolateVelocityReference(time, timeTrajectory, stateTrajectory);
+    return Scalar(0.5) * velocityDeviation.dot(Qv_ * velocityDeviation);
+  }
+
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0>
+  getQuadraticApproximation(
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory)
+      override {
+    const Vector<Scalar, 3> velocityDeviation =
+        state.template head<3>() -
+        interpolateVelocityReference(time, timeTrajectory, stateTrajectory);
+
+    approximation_.f =
+        Scalar(0.5) * velocityDeviation.dot(Qv_ * velocityDeviation);
+    approximation_.dfdx.template head<3>() = Qv_ * velocityDeviation;
+    return approximation_;
+  }
 
  private:
   ThrustVectorTrackFinalCost(const ThrustVectorTrackFinalCost& other) = default;
+
+  Vector<Scalar, 3> interpolateVelocityReference(
+      Scalar time, const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory)
+      const {
+    return LinearInterpolation::interpolate(
+        time, timeTrajectory, stateTrajectory,
+        [](const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& trajectory,
+           size_t index) -> Vector<Scalar, 3> {
+          return trajectory[index].template head<3>();
+        });
+  }
+
+  Matrix<Scalar, 3, 3> Qv_;
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0> approximation_;
 };
 
 template <typename Scalar, int ArrayLength>
@@ -162,6 +284,7 @@ class ThrustDirectionChangeCost final
 
   explicit ThrustDirectionChangeCost(int cost_number = 0)
       : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number) {
+    approximation_.setZero();
   }
 
   Scalar getValue(
@@ -170,7 +293,7 @@ class ThrustDirectionChangeCost final
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
       const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
-      const override {
+      override {
     (void)time;
     (void)timeTrajectory;
     (void)inputTrajectory;
@@ -194,14 +317,11 @@ class ThrustDirectionChangeCost final
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
       const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
-      const override {
+      override {
     (void)time;
     (void)timeTrajectory;
     (void)inputTrajectory;
     (void)stateTrajectory;
-
-    ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM> ret;
-    ret.setZero();
 
     const Vector<Scalar, 3> last_thr{state(3), state(4), state(5)};
     const Vector<Scalar, 3> thr = input;
@@ -223,17 +343,18 @@ class ThrustDirectionChangeCost final
     const Scalar gate = lowThrustGate(last_thr, thr);
     const Scalar effectiveWeight = gate * Weight;
 
-    ret.f = Scalar(0.5) * effectiveWeight * rk.dot(rk);
-    ret.dfdx.template segment<3>(3) =
+    approximation_.f = Scalar(0.5) * effectiveWeight * rk.dot(rk);
+    approximation_.dfdx.template segment<3>(3) =
         -effectiveWeight * last_thr_jacobian.transpose() * rk;
-    ret.dfdu = effectiveWeight * thr_jacobian.transpose() * rk;
-    ret.dfdxx.template block<3, 3>(3, 3) =
+    approximation_.dfdu = effectiveWeight * thr_jacobian.transpose() * rk;
+    approximation_.dfdxx.template block<3, 3>(3, 3) =
         effectiveWeight * last_thr_jacobian.transpose() * last_thr_jacobian;
-    ret.dfduu = effectiveWeight * thr_jacobian.transpose() * thr_jacobian;
-    ret.dfdux.template block<3, 3>(0, 3) =
+    approximation_.dfduu =
+        effectiveWeight * thr_jacobian.transpose() * thr_jacobian;
+    approximation_.dfdux.template block<3, 3>(0, 3) =
         -effectiveWeight * thr_jacobian.transpose() * last_thr_jacobian;
 
-    return ret;
+    return approximation_;
   }
 
  private:
@@ -248,6 +369,9 @@ class ThrustDirectionChangeCost final
                               const Vector<Scalar, 3>& currentThrust) {
     return thrustGateSigma(lastThrust) * thrustGateSigma(currentThrust);
   }
+
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
+      approximation_;
 };
 
 template <typename Scalar>

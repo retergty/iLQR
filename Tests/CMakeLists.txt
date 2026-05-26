@@ -35,6 +35,7 @@ set(TEST_SOURCES
     OptimalControl/Exp0Test.cpp
     OptimalControl/CircularKinematicsTest.cpp
     OptimalControl/CircularKinematicsSmoothAbsolutePenaltyTest.cpp
+    OptimalControl/ThrustVectorTest.cpp
 )
 
 # 循环添加所有测试
@@ -60,4 +61,17 @@ foreach(test_source ${TEST_SOURCES})
         PROPERTIES
             ENVIRONMENT "TEST_DATA_PATH=${PROJECT_SOURCE_DIR}/test_data"
     )
+endforeach()
+
+# 独立性能测试目标：用于手动 perf/benchmark，不注册到 ctest。
+set(PERF_SOURCES
+    OptimalControl/ThrustVectorPerfTest.cpp
+)
+
+foreach(perf_source ${PERF_SOURCES})
+    get_filename_component(perf_name ${perf_source} NAME_WE)
+
+    add_executable(${perf_name} ${perf_source})
+    target_link_libraries(${perf_name} PRIVATE iLQR_Include)
+    target_include_directories(${perf_name} PRIVATE Include)
 endforeach()

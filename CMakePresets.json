@@ -7,28 +7,6 @@
   },
   "configurePresets": [
     {
-      "name": "ninja-debug",
-      "displayName": "Ninja Debug (Visual Studio)",
-      "description": "Single-config Debug build using Ninja. Recommended for Visual Studio 2026 CMake projects.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-      }
-    },
-    {
-      "name": "ninja-release",
-      "displayName": "Ninja Release (Visual Studio)",
-      "description": "Single-config Release build using Ninja. Recommended for Visual Studio 2026 CMake projects.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-      }
-    },
-    {
       "name": "gcc-debug",
       "displayName": "GCC Debug",
       "description": "Single-config Debug build using Ninja and the GCC toolchain.",
@@ -50,6 +28,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG -g -fno-omit-frame-pointer",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     },
@@ -74,6 +53,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG -g -fno-omit-frame-pointer",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     }

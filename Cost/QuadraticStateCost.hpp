@@ -30,7 +30,7 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
   Scalar getValue(Scalar time, const Vector<Scalar, XDim>& state,
                   const std::array<Scalar, ArrayLength>& timeTrajectory,
                   const std::array<Vector<Scalar, XDim>, ArrayLength>&
-                      stateTrajectoy) const final {
+                      stateTrajectoy) final {
     const Vector<Scalar, XDim> xDeviation =
         getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
     return 0.5 * xDeviation.dot(Q_ * xDeviation);
@@ -43,7 +43,7 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
       Scalar time, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy)
-      const final {
+      final {
     const Vector<Scalar, XDim> xDeviation =
         getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
 
@@ -116,7 +116,7 @@ class QuadraticStateInputCost
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
       const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory)
-      const final {
+      final {
     Vector<Scalar, XDim> stateDeviation =
         getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
     Vector<Scalar, UDim> inputDeviation =
@@ -140,7 +140,7 @@ class QuadraticStateInputCost
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
       const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory)
-      const final {
+      final {
     (void)timeTrajectory;
     Vector<Scalar, XDim> stateDeviation =
         getStateDeviation(time, state, timeTrajectory, stateTrajectoy);

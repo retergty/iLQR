@@ -117,19 +117,10 @@ add_library(iLQR_Include INTERFACE)
 target_sources(iLQR_Include INTERFACE ${ILQR_HEADERS})
 target_include_directories(iLQR_Include INTERFACE Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Transcription Misc Initialization AutomaticDifferentation Models Transcription ModelData OptimalControlData iLQR ${CMAKE_SOURCE_DIR})
 target_link_libraries(iLQR_Include INTERFACE Eigen3::Eigen)
-target_compile_options(iLQR_Include INTERFACE
-  $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
-)
 target_link_libraries(iLQR PUBLIC iLQR_Include)
 
-if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
-  # MSVC-like frontend (e.g. clang-cl).
-  add_compile_options(/W4 /Gy)
-  add_link_options(/OPT:REF /OPT:ICF)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-  add_compile_options(-Wall -Wpedantic -Wextra -ffunction-sections -fdata-sections)
-  add_link_options(-Wl,--gc-sections -Wl,--start-group -Wl,--end-group)
-endif()
+add_compile_options(-Wall -Wpedantic -Wextra -ffunction-sections -fdata-sections)
+add_link_options(-Wl,--gc-sections -Wl,--start-group -Wl,--end-group)
 
 # 启用测试
 enable_testing()

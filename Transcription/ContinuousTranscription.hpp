@@ -53,7 +53,7 @@ class ContinuousTranscription {
    * dt；动力学先由连续系统离散化，再转成无仿射缺陷的偏差动力学。
    */
   void approximateIntermediateLQ(
-      const OptimalControlProblem_t& problem,
+      OptimalControlProblem_t& problem,
       const TargetTrajectories_t& targetTrajectories, Scalar time,
       const StateVector_t& state, const InputVector_t& input, Scalar timeStep,
       const IntermediateMultiplierCollection_t& multipliers,
@@ -74,7 +74,7 @@ class ContinuousTranscription {
    *
    * 终端代价不属于 running cost，不做 dt 缩放。
    */
-  void approximateFinalLQ(const OptimalControlProblem_t& problem,
+  void approximateFinalLQ(OptimalControlProblem_t& problem,
                           const TargetTrajectories_t& targetTrajectories,
                           Scalar time, const StateVector_t& state,
                           const FinalMultiplierCollection_t& multipliers,
