@@ -5,7 +5,8 @@
 #pragma once
 #include <Eigen/Core>
 #include <utility>
-#include <vector>
+
+#include "Matrix.hpp"
 
 /** @brief 固定尺寸矩阵类型别名，基于 Eigen::Matrix。 */
 template <typename Scalar, int Rows, int Cols>

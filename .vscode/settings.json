@@ -88,6 +88,6 @@
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
     "clangd.arguments": [
-            "--compile-commands-dir=out/build/clangd-debug" // 替换为你的编译目录
+        "--compile-commands-dir=${workspaceFolder}/out/build/clang-debug" // 使用当前工作区目录拼接编译目录
     ]
 }

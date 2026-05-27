@@ -26,7 +26,6 @@ add_executable(iLQR iLQR.cpp
 
 set(ILQR_HEADERS
   Types.hpp
-  CholeskyDecomposition.hpp
   iLQR/DDPData.hpp
   iLQR/DDPSetting.hpp
   iLQR/HessianCorrection.hpp
@@ -71,6 +70,28 @@ set(ILQR_HEADERS
   Integration/SensitivityIntegrator.hpp
   Integration/TrapezoidalIntegration.hpp
   IntrusiveList/IntrusiveList.hpp
+  Matrix/AxisAngle.hpp
+  Matrix/Dcm.hpp
+  Matrix/Dcm2.hpp
+  Matrix/Dual.hpp
+  Matrix/Euler.hpp
+  Matrix/LeastSquaresSolver.hpp
+  Matrix/Matrix.hpp
+  Matrix/PseudoInverse.hpp
+  Matrix/Quaternion.hpp
+  Matrix/Scalar.hpp
+  Matrix/Slice.hpp
+  Matrix/SparseVector.hpp
+  Matrix/SquareMatrix.hpp
+  Matrix/Vector.hpp
+  Matrix/Vector2.hpp
+  Matrix/Vector3.hpp
+  Matrix/Vector4.hpp
+  Matrix/filter.hpp
+  Matrix/helper_functions.hpp
+  Matrix/integration.hpp
+  Matrix/math.hpp
+  Matrix/CholeskyDecomposition.hpp
   Misc/LinearInterpolation.hpp
   Misc/NumericTraits.hpp
   Misc/Numerics.hpp
@@ -114,7 +135,7 @@ set(ILQR_HEADERS
 
 add_library(iLQR_Include INTERFACE)
 target_sources(iLQR_Include INTERFACE ${ILQR_HEADERS})
-target_include_directories(iLQR_Include INTERFACE Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Transcription Misc Initialization AutomaticDifferentation Models Transcription ModelData OptimalControlData iLQR ${CMAKE_SOURCE_DIR})
+target_include_directories(iLQR_Include INTERFACE Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Transcription Misc Initialization AutomaticDifferentation Models Transcription ModelData OptimalControlData iLQR Matrix ${CMAKE_SOURCE_DIR})
 target_link_libraries(iLQR_Include INTERFACE Eigen3::Eigen)
 target_link_libraries(iLQR PUBLIC iLQR_Include)
 

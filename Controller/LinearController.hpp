@@ -79,7 +79,7 @@ class LinearController final : public ControllerBase<Scalar, XDim, UDim> {
     const Matrix<Scalar, UDim, XDim> k =
         LinearInterpolation::interpolate(indexAlpha, gainArray_);
 
-    uff.noalias() += k * x;
+    uff += k * x;
     return uff;
   }
 

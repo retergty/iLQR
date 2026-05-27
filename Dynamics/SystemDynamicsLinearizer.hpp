@@ -46,7 +46,7 @@ class SystemDynamicsLinearizer final
   explicit SystemDynamicsLinearizer(
       ControlledSystemBase<Scalar, XDim, UDim>* nonlinearSystemPtr,
       bool doubleSidedDerivative = true, bool isSecondOrderSystem = false,
-      Scalar eps = Eigen::NumTraits<Scalar>::epsilon())
+      Scalar eps = std::numeric_limits<Scalar>::epsilon())
       : SystemDynamicsBase<Scalar, XDim, UDim>(),
         controlledSystemPtr_(nonlinearSystemPtr),
         doubleSidedDerivative_(doubleSidedDerivative),
