@@ -71,7 +71,6 @@ set(ILQR_HEADERS
   Integration/SensitivityIntegrator.hpp
   Integration/TrapezoidalIntegration.hpp
   IntrusiveList/IntrusiveList.hpp
-  Misc/LinearAlgebra.hpp
   Misc/LinearInterpolation.hpp
   Misc/NumericTraits.hpp
   Misc/Numerics.hpp

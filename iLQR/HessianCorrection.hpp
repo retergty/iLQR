@@ -32,16 +32,4 @@ void shiftHessian(HessianCorrectionStrategy strategy,
       break;
     }
   }
-  // case HessianCorrectionStrategy::CHOLESKY_MODIFICATION: {
-  //   LinearAlgebra::makePsdCholesky(matrix, minEigenvalue);
-  //   跳出。
-  // }
-  // case HessianCorrectionStrategy::EIGENVALUE_MODIFICATION: {
-  //   LinearAlgebra::makePsdEigenvalue(matrix, minEigenvalue);
-  //   跳出。
-  // }
-  // case HessianCorrectionStrategy::GERSHGORIN_MODIFICATION: {
-  //   LinearAlgebra::makePsdGershgorin(matrix, minEigenvalue);
-  //   跳出。
-  // }
 }

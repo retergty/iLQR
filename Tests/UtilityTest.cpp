@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
+#include <Eigen/Cholesky>
 #include <array>
 
 #include "CholeskyDecomposition.hpp"
 #include "DefaultInitializer.hpp"
 #include "HessianCorrection.hpp"
-#include "LinearAlgebra.hpp"
 #include "LinearController.hpp"
 #include "Multiplier.hpp"
 #include "Types.hpp"
@@ -21,18 +21,6 @@ TEST(UtilityTest, ShiftHessianAddsOnlyDiagonalShift) {
   Eigen::Matrix2d expected;
   expected << 1.25, 2.0, 3.0, 4.25;
   EXPECT_TRUE(matrix.isApprox(expected, 1e-12));
-}
-
-// 验证返回的 UUT 因子可以重构原矩阵的逆。
-TEST(UtilityTest, ComputeInverseMatrixUUTReconstructsInverse) {
-  Eigen::Matrix2d matrix;
-  matrix << 4.0, 1.0, 1.0, 3.0;
-
-  Eigen::Matrix2d inverseFactor;
-  LinearAlgebra::computeInverseMatrixUUT(matrix, inverseFactor);
-
-  EXPECT_TRUE((inverseFactor * inverseFactor.transpose())
-                  .isApprox(matrix.inverse(), 1e-12));
 }
 
 // 验证自实现 Cholesky 分解支持矩阵右端项求解。
