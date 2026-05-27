@@ -58,15 +58,13 @@ class ContinuousTranscription {
       const StateVector_t& state, const InputVector_t& input, Scalar timeStep,
       const IntermediateMultiplierCollection_t& multipliers,
       ModelData_t& modelData) {
-    const ModelData_t continuousTimeModelData =
-        Approximator_t::approximateIntermediateCost(
-            problem, targetTrajectories, time, state, input, multipliers);
-
-    modelData.time = continuousTimeModelData.time;
+    Approximator_t::approximateIntermediateCost(problem, targetTrajectories,
+                                                time, state, input, multipliers,
+                                                modelData);
     modelData.dynamics = discretizer_.sensitivityDiscretize(
         *problem.dynamicsPtr, time, state, input, timeStep);
     modelData.dynamics.f.setZero();
-    modelData.cost = continuousTimeModelData.cost * timeStep;
+    modelData.cost *= timeStep;
   }
 
   /**
