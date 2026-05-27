@@ -36,12 +36,11 @@ TEST(RiccatiTest, ReducedFormOneStepMatchesScalarReference) {
   Eigen::Matrix<double, 1, 1> SvNext;
   SvNext << 5.0;
   Scalar sNext = 31.0;
-  mod.hamiltonianHessian_ =
-      data.cost.dfduu + data.dynamics.dfdu.transpose() * SmNext *
-                             data.dynamics.dfdu;
+  mod.hamiltonianHessian_ = data.cost.dfduu + data.dynamics.dfdu.transpose() *
+                                                  SmNext * data.dynamics.dfdu;
   ASSERT_TRUE(mod.HmLLT_.Decomposition(mod.hamiltonianHessian_));
 
-  DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati(true);
+  DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati;
 
   Eigen::Matrix<double, 1, 1> Km;
   Eigen::Matrix<double, 1, 1> Lv;
@@ -81,12 +80,11 @@ TEST(RiccatiTest, OneStep_ZeroDynamicsTerminalLike) {
   Eigen::Matrix2d SmNext = Eigen::Matrix2d::Identity();
   Eigen::Vector2d SvNext = Eigen::Vector2d::Zero();
   Scalar sNext = 0;
-  mod.hamiltonianHessian_ =
-      data.cost.dfduu + data.dynamics.dfdu.transpose() * SmNext *
-                             data.dynamics.dfdu;
+  mod.hamiltonianHessian_ = data.cost.dfduu + data.dynamics.dfdu.transpose() *
+                                                  SmNext * data.dynamics.dfdu;
   ASSERT_TRUE(mod.HmLLT_.Decomposition(mod.hamiltonianHessian_));
 
-  DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati(true);
+  DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati;
 
   Eigen::Matrix2d Km;
   Eigen::Vector2d Lv;
@@ -126,12 +124,11 @@ TEST(RiccatiTest, NonReducedFormOneStepMatchesScalarReference) {
   Eigen::Matrix<double, 1, 1> SvNext;
   SvNext << 5.0;
   Scalar sNext = 31.0;
-  mod.hamiltonianHessian_ =
-      data.cost.dfduu + data.dynamics.dfdu.transpose() * SmNext *
-                             data.dynamics.dfdu;
+  mod.hamiltonianHessian_ = data.cost.dfduu + data.dynamics.dfdu.transpose() *
+                                                  SmNext * data.dynamics.dfdu;
   ASSERT_TRUE(mod.HmLLT_.Decomposition(mod.hamiltonianHessian_));
 
-  DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati(false);
+  DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati;
 
   Eigen::Matrix<double, 1, 1> Km;
   Eigen::Matrix<double, 1, 1> Lv;

@@ -1,6 +1,6 @@
 /**
  * @file LinearAlgebra.hpp
- * @brief 线性代数工具：对称正定矩阵的逆的 UUT 分解（用于投影等）。
+ * @brief 线性代数工具：对称正定矩阵的逆的 UUT 分解。
  */
 #pragma once
 

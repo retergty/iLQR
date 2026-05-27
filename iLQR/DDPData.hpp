@@ -56,9 +56,9 @@ struct PrimalDataContainer {
 };
 
 /**
- * @brief 对偶数据容器：存放对偶解、投影模型轨迹、Riccati 修正轨迹与 value
+ * @brief 对偶数据容器：存放对偶解、Riccati 修正轨迹与 value
  * function 轨迹。
- * @note valueFunctionTrajectory 由 (projectedModelData, riccatiModification) 经
+ * @note valueFunctionTrajectory 由模型数据与 riccatiModification 经
  * Riccati 递推得到。
  */
 template <typename Scalar, typename Transcription, typename ConstraintConfig>
@@ -75,8 +75,6 @@ struct DualDataContainer {
       ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;
   // 对偶解
   DualSolution_t dualSolution;
-  // 投影模型数据轨迹。
-  std::array<ModelData_t, PredictLength + 1> projectedModelDataTrajectory;
   // Riccati 修正。
   std::array<RiccatiModification_t, PredictLength + 1>
       riccatiModificationTrajectory;
@@ -87,7 +85,6 @@ struct DualDataContainer {
   /** @brief 与另一容器交换内容。 */
   void swap(DualDataContainer& other) {
     dualSolution.swap(other.dualSolution);
-    projectedModelDataTrajectory.swap(other.projectedModelDataTrajectory);
     riccatiModificationTrajectory.swap(other.riccatiModificationTrajectory);
     valueFunctionTrajectory.swap(other.valueFunctionTrajectory);
   }

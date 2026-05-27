@@ -2,68 +2,12 @@
 
 #include <array>
 
-#include "ChangeOfInputVariables.hpp"
 #include "LinearApproximation.hpp"
 #include "LinearQuadraticApproximator.hpp"
 #include "LinearSystemDynamics.hpp"
 #include "QuadraticApproximation.hpp"
 #include "QuadraticStateCost.hpp"
 #include "iLQRDescriptor.hpp"
-
-// 验证输入变量变换只影响二次近似里与输入相关的项。
-TEST(ApproximationTest,
-     ChangeOfInputVariablesTransformsQuadraticApproximation) {
-  ScalarFunctionQuadraticApproximation<double, 2, 2> approximation;
-  approximation.dfdxx << 13.0, 17.0, 19.0, 23.0;
-  approximation.dfdux << 1.0, 2.0, 3.0, 4.0;
-  approximation.dfduu << 5.0, 1.0, 1.0, 3.0;
-  approximation.dfdx << 29.0, 31.0;
-  approximation.dfdu << 7.0, 11.0;
-  approximation.f = 37.0;
-
-  const auto originalDfdxx = approximation.dfdxx;
-  const auto originalDfdux = approximation.dfdux;
-  const auto originalDfduu = approximation.dfduu;
-  const auto originalDfdx = approximation.dfdx;
-  const auto originalDfdu = approximation.dfdu;
-  const double originalF = approximation.f;
-
-  Eigen::Matrix2d Pu;
-  Pu << 2.0, -1.0, 0.0, 3.0;
-
-  changeOfInputVariables(approximation, Pu);
-
-  EXPECT_TRUE(
-      approximation.dfdux.isApprox(Pu.transpose() * originalDfdux, 1e-12));
-  EXPECT_TRUE(
-      approximation.dfduu.isApprox(Pu.transpose() * originalDfduu * Pu, 1e-12));
-  EXPECT_TRUE(
-      approximation.dfdu.isApprox(Pu.transpose() * originalDfdu, 1e-12));
-  EXPECT_TRUE(approximation.dfdxx.isApprox(originalDfdxx, 1e-12));
-  EXPECT_TRUE(approximation.dfdx.isApprox(originalDfdx, 1e-12));
-  EXPECT_DOUBLE_EQ(approximation.f, originalF);
-}
-
-// 验证输入变量变换只影响线性近似里的输入 Jacobian。
-TEST(ApproximationTest, ChangeOfInputVariablesTransformsLinearApproximation) {
-  VectorFunctionLinearApproximation<double, 2, 2, 2> approximation;
-  approximation.dfdx << 1.0, 2.0, 3.0, 4.0;
-  approximation.dfdu << 5.0, 6.0, 7.0, 8.0;
-  approximation.f << 9.0, 10.0;
-
-  const auto originalDfdx = approximation.dfdx;
-  const auto originalDfdu = approximation.dfdu;
-  const auto originalF = approximation.f;
-
-  Eigen::Matrix2d Pu;
-  Pu << 2.0, -1.0, 0.0, 3.0;
-
-  changeOfInputVariables(approximation, Pu);
-
-  EXPECT_TRUE(approximation.dfdu.isApprox(originalDfdu * Pu, 1e-12));
-  EXPECT_TRUE(approximation.dfdx.isApprox(originalDfdx, 1e-12));
-  EXPECT_TRUE(approximation.f.isApprox(originalF, 1e-12));
-}
 
 // 验证线性近似和二次近似结构体的基础代数运算。
 TEST(ApproximationTest, LinearAndQuadraticApproximationUtilities) {

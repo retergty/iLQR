@@ -1,6 +1,6 @@
 /**
  * @file RiccatiModification.hpp
- * @brief Riccati 方程修正项：哈密顿量 Hessian、约束零空间投影、状态代价修正等。
+ * @brief Riccati 方程修正项：哈密顿量 Hessian、LLT 分解和状态代价修正等。
  */
 #pragma once
 
@@ -9,7 +9,7 @@
 
 /**
  * @brief 单节点 Riccati 修正：时间、状态代价修正 deltaQm、哈密顿量 Hessian
- * Hm
+ * Hm 及其 Cholesky 分解。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
@@ -25,5 +25,6 @@ struct RiccatiModification {
   /** @brief 哈密顿量对控制的 Hessian 矩阵 Hm。 */
   Matrix<Scalar, UDim, UDim> hamiltonianHessian_;
 
+  /** @brief Hm 的 Cholesky 分解，用于求解反馈增益和前馈项。 */
   CholeskyDecomposition<Scalar, UDim> HmLLT_;
 };

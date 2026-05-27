@@ -129,12 +129,12 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
   /**
    * @brief 计算 Riccati 修正：当前实现将 deltaQm 置零并施加 Hessian
    * 修正（shift）。
-   * @param [in] projectedModelData 投影后模型数据（当前未使用）。
+   * @param [in] modelData 当前节点模型数据（当前未使用）。
    * @param [out] deltaQm 输出的 Riccati 修正矩阵（被设为 shift 后的零矩阵）。
    */
-  void computeRiccatiModification(const ModelData_t& projectedModelData,
+  void computeRiccatiModification(const ModelData_t& modelData,
                                   SmMatrix_t& deltaQm) const override {
-    (void)projectedModelData;
+    (void)modelData;
     (void)deltaQm;
     deltaQm.setZero();
     shiftHessian(settings_.hessianCorrectionStrategy, deltaQm,

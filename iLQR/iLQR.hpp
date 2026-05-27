@@ -1,17 +1,15 @@
 /**
  * @file iLQR.hpp
  * @brief 离散时间 iLQR 求解器：在名义轨迹上做 LQ 近似并迭代求解
- * Riccati，支持线搜索与约束投影。
+ * Riccati，支持线搜索。
  */
 #pragma once
 #include <array>
 #include <cassert>
 
-#include "ChangeOfInputVariables.hpp"
 #include "DDPSetting.hpp"
 #include "HessianCorrection.hpp"
 #include "LineSearchStrategy.hpp"
-#include "LinearAlgebra.hpp"
 #include "OptimalControlProblemHelperFunction.hpp"
 #include "PerformanceIndex.hpp"
 #include "SearchStrategyBase.hpp"
@@ -633,62 +631,14 @@ class iLQR {
   }
 
   /**
-   * @brief 由 Hm 的 UUT 分解得到 inv(Hm)，用作约束零空间投影（无约束时即
-   * inv(Hm)）。
-   * @param [in] Hm 哈密顿量对控制的 Hessian（正定）。
-   * @param [out] constraintNullProjector 输出投影矩阵（当前实现为 inv(Hm) 的
-   * UUT 因子）。
-   */
-  void computeProjections(const HmMatrix_t& Hm,
-                          HmMatrix_t& constraintNullProjector) const {
-    // inv(Hm) 的 UUT 分解。
-    HmMatrix_t HmInvUmUmT;
-
-    LinearAlgebra::computeInverseMatrixUUT(Hm, HmInvUmUmT);
-
-    // 计算 DmDagger、DmDaggerTHmDmDaggerUUT 和 HmInverseConstrainedLowRank。
-    constraintNullProjector = HmInvUmUmT;
-  }
-
-  /**
-   * @brief 将 LQ 模型按 u = Pu * tilde{u}
-   * 做变量替换，得到投影后的动力学与代价系数。
-   * @param [in] modelData 原始模型数据。
-   * @param [in] constraintNullProjector 投影矩阵 Pu（约束零空间）。
-   * @param [out] projectedModelData 投影后的模型数据。
-   */
-  void projectLQ(const ModelData_t& modelData,
-                 const HmMatrix_t& constraintNullProjector,
-                 ModelData_t& projectedModelData) const {
-    // 维度和时间。
-    projectedModelData.time = modelData.time;
-
-    // 变量变换 u = Pu * tilde{u}。
-    // Pu = constraintNullProjector;
-
-    // 动力学
-    projectedModelData.dynamics = modelData.dynamics;
-    changeOfInputVariables(projectedModelData.dynamics,
-                           constraintNullProjector);
-
-    // 代价
-    projectedModelData.cost = modelData.cost;
-    changeOfInputVariables(projectedModelData.cost, constraintNullProjector);
-  }
-
-  /**
-   * 执行以下步骤：(1) 计算 Hamiltonian 的 Hessian；
-   * （即 Hm）；(2) 基于 Hm 计算输入-状态等式约束的值域空间和零空间投影；
-   * (3) 基于这两个投影定义投影 LQ 模型；
-   * (4) 最后根据搜索策略定义
+   * @brief 计算 Riccati 递推所需的 Hamiltonian Hessian、LLT 分解和
    * Riccati 方程修正项。
    *
    * @param [in] modelData 当前节点模型数据。
    * @param [in] Sm 下一时刻 Riccati 矩阵。
-   * @param [out] projectedModelData 投影后的模型数据。
    * @param [out] riccatiModification Riccati 修正项。
    */
-  void computeProjectionAndRiccatiModification(
+  void prepareRiccatiModification(
       const ModelData_t& modelData, const SmMatrix_t& Sm,
       RiccatiModification_t& riccatiModification) const {
     // 计算 Hamiltonian 的 Hessian。
@@ -700,14 +650,6 @@ class iLQR {
     riccatiModification.HmLLT_.Decomposition(
         riccatiModification.hamiltonianHessian_);
 
-    // // 计算投影器。
-    // computeProjections(riccatiModification.hamiltonianHessian_,
-    //                    riccatiModification.constraintNullProjector_);
-
-    // // 投影 LQ。
-    // projectLQ(modelData, riccatiModification.constraintNullProjector_,
-    //           projectedModelData);
-
     // 计算 deltaQm、deltaGv、deltaGm。
     lineSearchStrategy_.computeRiccatiModification(
         modelData, riccatiModification.deltaQm_);
@@ -715,7 +657,7 @@ class iLQR {
 
   /**
    * @brief 从终端到初始时刻顺序求解 Riccati 方程，得到 value function 与
-   * 投影 Lv/Km。
+   * Lv/Km。
    * @param [in] finalValueFunction 终端价值函数二次近似（Sm=dfdxx, Sv=dfdx,
    * s=f）。
    * @return 平均时间步长（用于统计）。
@@ -725,20 +667,20 @@ class iLQR {
     const ModelData_t& finalModelData = nominalPrimalData_.modelDataFinalTime;
     RiccatiModification_t& finalRiccatiModification =
         nominalDualData_.riccatiModificationTrajectory.back();
-    LvVector_t& finalProjectedLvFinal = projectedLvTrajectoryStock_.back();
-    KmMatrix_t& finalProjectedKmFinal = projectedKmTrajectoryStock_.back();
+    LvVector_t& finalLvFinal = lvTrajectoryStock_.back();
+    KmMatrix_t& finalKmFinal = kmTrajectoryStock_.back();
 
     SmMatrix_t SmDummy;
     SmDummy.setZero();
 
-    computeProjectionAndRiccatiModification(finalModelData, SmDummy,
-                                            finalRiccatiModification);
+    prepareRiccatiModification(finalModelData, SmDummy,
+                               finalRiccatiModification);
 
-    // 投影前馈。
-    finalProjectedLvFinal = -finalModelData.cost.dfdu;
+    // 前馈。
+    finalLvFinal = -finalModelData.cost.dfdu;
 
-    // 投影反馈。
-    finalProjectedKmFinal = -finalModelData.cost.dfdux;
+    // 反馈。
+    finalKmFinal = -finalModelData.cost.dfdux;
 
     return solveSequentialRiccatiEquationsImpl(finalValueFunction);
   }
@@ -776,8 +718,8 @@ class iLQR {
     int curIndex = PredictLength - 1;
     constexpr int stopIndex = 0;
     while (curIndex >= stopIndex) {
-      LvVector_t& curProjectedLv = projectedLvTrajectoryStock_[curIndex];
-      KmMatrix_t& curProjectedKm = projectedKmTrajectoryStock_[curIndex];
+      LvVector_t& curLv = lvTrajectoryStock_[curIndex];
+      KmMatrix_t& curKm = kmTrajectoryStock_[curIndex];
       RiccatiModification_t& curRiccatiModification =
           nominalDualData_.riccatiModificationTrajectory[curIndex];
       const ModelData_t& curModelData =
@@ -789,13 +731,13 @@ class iLQR {
           nominalDualData_.valueFunctionTrajectory[curIndex].dfdx;
       Scalar& curs = nominalDualData_.valueFunctionTrajectory[curIndex].f;
 
-      computeProjectionAndRiccatiModification(
-          curModelData, valueFunctionNext->dfdxx, curRiccatiModification);
+      prepareRiccatiModification(curModelData, valueFunctionNext->dfdxx,
+                                 curRiccatiModification);
 
       riccatiEquationsSolver_.computeMap(
           curModelData, curRiccatiModification, valueFunctionNext->dfdxx,
-          valueFunctionNext->dfdx, valueFunctionNext->f, curProjectedKm,
-          curProjectedLv, curSm, curSv, curs);
+          valueFunctionNext->dfdx, valueFunctionNext->f, curKm, curLv, curSm,
+          curSv, curs);
       valueFunctionNext = &(nominalDualData_.valueFunctionTrajectory[curIndex]);
 
       --curIndex;
@@ -813,7 +755,7 @@ class iLQR {
         unoptimizedController_.timeStamp_;
 
     for (size_t timeIndex = 0; timeIndex < PredictLength; ++timeIndex) {
-      calculateControllerWorker(timeIndex, nominalPrimalData_, nominalDualData_,
+      calculateControllerWorker(timeIndex, nominalPrimalData_,
                                 unoptimizedController_);
     }
 
@@ -833,18 +775,15 @@ class iLQR {
   }
 
   /**
-   * 使用原始解和对偶解计算 timeIndex 对应的控制器，并写回
-   * dstController。
+   * 使用原始解计算 timeIndex 对应的控制器，并写回 dstController。
    *
    * @param [in] timeIndex 当前时间索引。
    * @param [in] primalData 用于计算控制器的原始数据。
-   * @param [in] dualData 用于计算控制器的对偶数据。
    * @param [out] dstController 输出的控制器（增益、偏置、deltaBias
    * 写入对应索引）。
    */
   void calculateControllerWorker(size_t timeIndex,
                                  const PrimalDataContainer_t& primalData,
-                                 const DualDataContainer_t& dualData,
                                  LinearController_t& dstController) {
     const StateVector_t& nominalState =
         primalData.primalSolution.stateTrajectory_[timeIndex];
@@ -852,15 +791,13 @@ class iLQR {
         primalData.primalSolution.inputTrajectory_[timeIndex];
 
     // 反馈增益。
-    dstController.gainArray_[timeIndex] =
-        projectedKmTrajectoryStock_[timeIndex];
+    dstController.gainArray_[timeIndex] = kmTrajectoryStock_[timeIndex];
 
     // 偏置输入。
     dstController.biasArray_[timeIndex] = nominalInput;
     dstController.biasArray_[timeIndex] -=
         dstController.gainArray_[timeIndex] * nominalState;
-    dstController.deltaBiasArray_[timeIndex] =
-        projectedLvTrajectoryStock_[timeIndex];
+    dstController.deltaBiasArray_[timeIndex] = lvTrajectoryStock_[timeIndex];
   }
 
   /** 基于当前 LQ 解更新优化后的原始解和对偶
@@ -991,10 +928,8 @@ class iLQR {
 
   // Riccati 递推工作区。
   DiscreteTimeRiccatiEquations_t riccatiEquationsSolver_;
-  std::array<KmMatrix_t, PredictLength + 1>
-      projectedKmTrajectoryStock_;  // 投影反馈。
-  std::array<LvVector_t, PredictLength + 1>
-      projectedLvTrajectoryStock_;  // 投影前馈。
+  std::array<KmMatrix_t, PredictLength + 1> kmTrajectoryStock_;  // 反馈。
+  std::array<LvVector_t, PredictLength + 1> lvTrajectoryStock_;  // 前馈。
 
   // 性能和迭代记录。
   PerformanceIndex_t performanceIndex_;

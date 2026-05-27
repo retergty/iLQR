@@ -138,10 +138,10 @@ class SearchStrategyBase {
 
   /**
    * @brief 根据策略计算 Riccati 修正（如代价对状态的二阶修正 deltaQm）。
-   * @param [in] projectedModelData 投影后的模型数据。
+   * @param [in] modelData 当前节点模型数据。
    * @param [out] deltaQm 代价对状态二阶导的 Riccati 修正。
    */
-  virtual void computeRiccatiModification(const ModelData_t& projectedModelData,
+  virtual void computeRiccatiModification(const ModelData_t& modelData,
                                           SmMatrix_t& deltaQm) const = 0;
 
   /**

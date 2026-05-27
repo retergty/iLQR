@@ -34,7 +34,6 @@ set(ILQR_HEADERS
   iLQR/iLQRDescriptor.hpp
   iLQR/iLQRDescriptorTraits.hpp
   iLQR/iLQRTypes.hpp
-  Approximation/ChangeOfInputVariables.hpp
   Approximation/LinearApproximation.hpp
   Approximation/LinearQuadraticApproximator.hpp
   Approximation/QuadraticApproximation.hpp
