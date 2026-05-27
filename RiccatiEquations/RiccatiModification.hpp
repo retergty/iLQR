@@ -4,11 +4,12 @@
  */
 #pragma once
 
+#include "CholeskyDecomposition.hpp"
 #include "Types.hpp"
 
 /**
  * @brief 单节点 Riccati 修正：时间、状态代价修正 deltaQm、哈密顿量 Hessian
- * Hm、约束零空间投影。
+ * Hm
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam UDim 控制维度。
@@ -24,6 +25,5 @@ struct RiccatiModification {
   /** @brief 哈密顿量对控制的 Hessian 矩阵 Hm。 */
   Matrix<Scalar, UDim, UDim> hamiltonianHessian_;
 
-  /** @brief 约束零空间投影矩阵（无约束时为 inv(Hm) 的 UUT 因子）。 */
-  Matrix<Scalar, UDim, UDim> constraintNullProjector_;
+  CholeskyDecomposition<Scalar, UDim> HmLLT_;
 };

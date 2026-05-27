@@ -22,7 +22,7 @@ void computeInverseMatrixUUT(const Matrix<Scalar, Dimisions, Dimisions>& Am,
                              Matrix<Scalar, Dimisions, Dimisions>& AmInvUmUmT) {
   // Am = Lm Lm^T --> inv(Am) = inv(Lm^T) inv(Lm)，其中 Lm^T 为上三角矩阵。
   Eigen::LLT<Matrix<Scalar, Dimisions, Dimisions>> lltOfA(Am);
-  AmInvUmUmT.setIdentity(Am.rows(), Am.cols());  // 用于动态尺寸矩阵。
+  AmInvUmUmT.setIdentity();
   lltOfA.matrixU().solveInPlace(AmInvUmUmT);
 }
 }  // namespace LinearAlgebra

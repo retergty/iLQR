@@ -66,39 +66,34 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
            const DualSolution_t& dualSolution,
            SearchStrategySolutionRef_t& solutionRef) override {
     (void)expectedCost;
-    // 初始化 lineSearchModule 输入。
-    lineSearchInputRef_.timePeriodPtr = &timePeriod;
-    lineSearchInputRef_.initStatePtr = &initState;
-    lineSearchInputRef_.unoptimizedControllerPtr = &unoptimizedController;
-    lineSearchInputRef_.dualSolutionPtr = &dualSolution;
-    bestSolutionRef_ = &solutionRef;
+    const LineSearchInputRef inputRef{&timePeriod, &initState,
+                                      &unoptimizedController, &dualSolution};
 
-    // 以零步长执行一次 rollout。
-    Scalar stepLength = 0.0;
+    SearchStrategySolution_t& baselineSolution = baselineSolutionCache_;
+    SearchStrategySolution_t& candidateSolution = candidateSolutionCache_;
 
-    iLQR_t::incrementController(
-        stepLength, *lineSearchInputRef_.unoptimizedControllerPtr,
-        workerSolutionCache_[0].primalSolution.controller_);
-    iLQR_t::incrementController(
-        stepLength, *lineSearchInputRef_.unoptimizedControllerPtr,
-        workerSolutionCache_[1].primalSolution.controller_);
+    initializeControllerStructure(unoptimizedController,
+                                  baselineSolution.primalSolution.controller_);
+    initializeControllerStructure(unoptimizedController,
+                                  candidateSolution.primalSolution.controller_);
 
-    computeSolution(stepLength, workerSolutionCache_[0]);
-    baselineMerit_ = workerSolutionCache_[0].performanceIndex.merit;
-    unoptimizedControllerUpdateIS_ =
+    // 以零步长真实 rollout 作为 Armijo 基准。
+    computeSolution(inputRef, Scalar(0.0), baselineSolution);
+    const Scalar baselineMerit = baselineSolution.performanceIndex.merit;
+    const Scalar unoptimizedControllerUpdateIS =
         iLQR_t::computeControllerUpdateIS(unoptimizedController);
 
-    // 记录解。
-    bestStepSize_ = stepLength;
-    bestSolutionPtr_ = &workerSolutionCache_[0];
-    workSolutionPtr_ = &workerSolutionCache_[1];
+    const bool acceptedCandidate =
+        lineSearchTask(inputRef, baselineMerit, unoptimizedControllerUpdateIS,
+                       candidateSolution);
+    const SearchStrategySolution_t& selectedSolution =
+        acceptedCandidate ? candidateSolution : baselineSolution;
 
-    lineSearchTask();
-    bestSolutionRef_->primalSolution = bestSolutionPtr_->primalSolution;
-    bestSolutionRef_->dualSolution = dualSolution;
-    bestSolutionRef_->avgTimeStep = bestSolutionPtr_->avgTimeStep;
-    bestSolutionRef_->performanceIndex = bestSolutionPtr_->performanceIndex;
-    bestSolutionRef_->problemMetrics = bestSolutionPtr_->problemMetrics;
+    solutionRef.primalSolution = selectedSolution.primalSolution;
+    solutionRef.dualSolution = dualSolution;
+    solutionRef.avgTimeStep = selectedSolution.avgTimeStep;
+    solutionRef.performanceIndex = selectedSolution.performanceIndex;
+    solutionRef.problemMetrics = selectedSolution.problemMetrics;
     return true;
   }
 
@@ -139,20 +134,11 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
    */
   void computeRiccatiModification(const ModelData_t& projectedModelData,
                                   SmMatrix_t& deltaQm) const override {
-    // const auto &QmProjected = projectedModelData.cost.dfdxx;
-    // const auto &PmProjected = projectedModelData.cost.dfdux;
     (void)projectedModelData;
     (void)deltaQm;
-    // Q_minus_PTRinvP
-    // matrix_t Q_minus_PTRinvP = QmProjected;
-    // Q_minus_PTRinvP.noalias() -= PmProjected.transpose() * PmProjected;
-
-    // deltaQm
-    // deltaQm = Q_minus_PTRinvP;
     deltaQm.setZero();
     shiftHessian(settings_.hessianCorrectionStrategy, deltaQm,
                  settings_.hessianCorrectionMultiple);
-    // deltaQm -= Q_minus_PTRinvP;
   }
 
   /** @brief 对哈密顿量 Hessian 的额外修正；当前实现直接返回 Hm，不做修改。 */
@@ -169,6 +155,12 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
     const LinearController_t* unoptimizedControllerPtr;
     const DualSolution_t* dualSolutionPtr;
   };
+
+  static void initializeControllerStructure(const LinearController_t& source,
+                                            LinearController_t& target) {
+    target.timeStamp_ = source.timeStamp_;
+    target.gainArray_ = source.gainArray_;
+  }
 
   /** 线搜索迭代次数（if 语句顺序很重要）。 */
   constexpr static size_t maxNumOfSearches(
@@ -197,20 +189,20 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
    * @param [out] solution 输出的候选轨迹、metrics、performanceIndex。
    * dualSolution 只作为 metrics 计算输入，不存入候选解。
    */
-  void computeSolution(Scalar stepLength, SearchStrategySolution_t& solution) {
+  void computeSolution(const LineSearchInputRef& inputRef, Scalar stepLength,
+                       SearchStrategySolution_t& solution) {
     // 计算原始解。
-    iLQR_t::changeControllerStepLength(
-        stepLength, *lineSearchInputRef_.unoptimizedControllerPtr,
-        solution.primalSolution.controller_);
+    iLQR_t::changeControllerStepLength(stepLength,
+                                       *inputRef.unoptimizedControllerPtr,
+                                       solution.primalSolution.controller_);
     solution.avgTimeStep = iLQR_t::rolloutTrajectory(
-        ilqr_.rollout_, lineSearchInputRef_.timePeriodPtr->first,
-        *lineSearchInputRef_.initStatePtr,
-        lineSearchInputRef_.timePeriodPtr->second, solution.primalSolution);
+        ilqr_.rollout_, inputRef.timePeriodPtr->first, *inputRef.initStatePtr,
+        inputRef.timePeriodPtr->second, solution.primalSolution);
 
     // 计算问题指标。
     iLQR_t::computeRolloutMetrics(
         ilqr_.optimalControlProblem(), ilqr_.targetTrajectory(),
-        solution.primalSolution, *lineSearchInputRef_.dualSolutionPtr,
+        solution.primalSolution, *inputRef.dualSolutionPtr,
         solution.problemMetrics);
 
     // 计算 performanceIndex。
@@ -220,18 +212,14 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
         ilqr_.calculateRolloutMerit(solution.performanceIndex);
   }
 
-  /** @brief 从最大步长开始按收缩率递减尝试，更新最佳候选解指针。 */
-  void lineSearchTask() {
+  /** @brief 从最大步长开始按收缩率递减尝试，返回是否接受正步长候选。 */
+  bool lineSearchTask(const LineSearchInputRef& inputRef, Scalar baselineMerit,
+                      Scalar unoptimizedControllerUpdateIS,
+                      SearchStrategySolution_t& candidateSolution) {
     Scalar stepLength = settings_.maxStepLength;
     const size_t MaxSearch = maxNumOfSearches(settings_);
     for (size_t alphaExp = 0; alphaExp < MaxSearch; ++alphaExp) {
-      /*
-       * 当学习率小于
-       * 最小学习率时结束此线程任务。这意味着所有线搜索任务
-       * 已经处理完成或正在其他线程中处理。
-       */
-
-      computeSolution(stepLength, *workSolutionPtr_);
+      computeSolution(inputRef, stepLength, candidateSolution);
 
       /*
        * 基于 “Armijo backtracking” 步长选择策略：
@@ -240,35 +228,22 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
        * 搜索。
        */
       const bool armijoCondition =
-          workSolutionPtr_->performanceIndex.merit <
-          (baselineMerit_ - settings_.armijoCoefficient * stepLength *
-                                unoptimizedControllerUpdateIS_);
-      if (armijoCondition && stepLength > bestStepSize_) {  // 保存解。
-        bestStepSize_ = stepLength;
-        std::swap(workSolutionPtr_, bestSolutionPtr_);
-        break;
+          candidateSolution.performanceIndex.merit <
+          (baselineMerit - settings_.armijoCoefficient * stepLength *
+                               unoptimizedControllerUpdateIS);
+      if (armijoCondition) {
+        return true;
       }
 
       stepLength *= settings_.contractionRate;
     }
+    return false;
   }
 
   LineSearchSettings<Scalar> settings_{};
 
   iLQR_t& ilqr_;
 
-  std::array<SearchStrategySolution_t, 2> workerSolutionCache_;
-  SearchStrategySolution_t* bestSolutionPtr_;
-  SearchStrategySolution_t* workSolutionPtr_;
-
-  // 输入。
-  LineSearchInputRef lineSearchInputRef_;
-  // 输出
-  std::atomic<Scalar> bestStepSize_{0.0};
-  SearchStrategySolutionRef_t* bestSolutionRef_;
-
-  // 收敛检查。
-  Scalar baselineMerit_ = 0.0;  // 零学习率 rollout 的 merit。
-  Scalar unoptimizedControllerUpdateIS_ =
-      0.0;  // 控制器更新平方范数的积分（IS）。
+  SearchStrategySolution_t baselineSolutionCache_;
+  SearchStrategySolution_t candidateSolutionCache_;
 };

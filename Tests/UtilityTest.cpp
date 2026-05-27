@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <array>
-#include <tuple>
 
+#include "CholeskyDecomposition.hpp"
 #include "DefaultInitializer.hpp"
 #include "HessianCorrection.hpp"
 #include "LinearAlgebra.hpp"
@@ -33,6 +33,43 @@ TEST(UtilityTest, ComputeInverseMatrixUUTReconstructsInverse) {
 
   EXPECT_TRUE((inverseFactor * inverseFactor.transpose())
                   .isApprox(matrix.inverse(), 1e-12));
+}
+
+// 验证自实现 Cholesky 分解支持矩阵右端项求解。
+TEST(UtilityTest, CholeskyDecompositionSolvesMatrixRightHandSide) {
+  Matrix<double, 3, 3> matrix;
+  matrix << 6.0, 2.0, 1.0, 2.0, 5.0, 2.0, 1.0, 2.0, 4.0;
+  Matrix<double, 3, 2> rhs;
+  rhs << 1.0, 2.0, -3.0, 4.0, 5.0, -6.0;
+
+  CholeskyDecomposition<double, 3> cholesky;
+  ASSERT_TRUE(cholesky.Decomposition(matrix));
+
+  Matrix<double, 3, 2> solution;
+  cholesky.Solve(solution, rhs);
+
+  const Matrix<double, 3, 2> expected = matrix.llt().solve(rhs);
+  EXPECT_TRUE(solution.isApprox(expected, 1e-12));
+}
+
+// 验证 Cholesky 只存下三角时仍能重构 L、L^T 并通过 const 对象求解。
+TEST(UtilityTest, CholeskyDecompositionAccessorsAreConstCorrect) {
+  Matrix<double, 3, 3> matrix;
+  matrix << 6.0, 2.0, 1.0, 2.0, 5.0, 2.0, 1.0, 2.0, 4.0;
+  Vector<double, 3> rhs;
+  rhs << 1.0, -3.0, 5.0;
+
+  CholeskyDecomposition<double, 3> cholesky;
+  ASSERT_TRUE(cholesky.Decomposition(matrix));
+  const CholeskyDecomposition<double, 3>& constCholesky = cholesky;
+
+  const Matrix<double, 3, 3> l = constCholesky.GetMatrixL();
+  const Matrix<double, 3, 3> lt = constCholesky.GetMatrixLT();
+  EXPECT_TRUE((l * lt).isApprox(matrix, 1e-12));
+
+  Vector<double, 3> solution;
+  constCholesky.Solve(solution, rhs);
+  EXPECT_TRUE(solution.isApprox(matrix.llt().solve(rhs), 1e-12));
 }
 
 // 验证 DiagonalMatrix 的左右乘法和稠密矩阵转换结果正确。

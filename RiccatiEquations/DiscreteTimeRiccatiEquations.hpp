@@ -15,7 +15,6 @@
  */
 template <typename Scalar, int XDim, int UDim>
 struct DiscreteTimeRiccatiData {
-  // Vector<Scalar, XDim> Sm_projectedHv_;
   Matrix<Scalar, XDim, XDim> Sm_projectedAm_;
   Matrix<Scalar, XDim, UDim> Sm_projectedBm_;
   Vector<Scalar, XDim> Sv_plus_Sm_projectedHv_;
@@ -47,8 +46,9 @@ class DiscreteTimeRiccatiEquations {
    * @param [in] reducedFormRiccati 若为 true，假设哈密顿量 Hessian
    * 正定，使用简化公式（不显式构造 Hm），计算更高效。
    */
-  explicit DiscreteTimeRiccatiEquations(bool reducedFormRiccati = true)
-      : reducedFormRiccati_(reducedFormRiccati) {};
+  explicit DiscreteTimeRiccatiEquations(bool reducedFormRiccati = true) {
+    (void)reducedFormRiccati;
+  };
 
   /** @brief 析构函数。 */
   ~DiscreteTimeRiccatiEquations() = default;
@@ -67,7 +67,7 @@ class DiscreteTimeRiccatiEquations {
    * @param [out] Sv 当前 Riccati 向量。
    * @param [out] s 当前 Riccati 标量。
    */
-  void computeMap(const ModelData_t& projectedModelData,
+  void computeMap(const ModelData_t& ModelData,
                   const RiccatiModification_t& riccatiModification,
                   const Matrix<Scalar, XDim, XDim>& SmNext,
                   const Vector<Scalar, XDim>& SvNext, const Scalar& sNext,
@@ -75,9 +75,9 @@ class DiscreteTimeRiccatiEquations {
                   Vector<Scalar, UDim>& projectedLv,
                   Matrix<Scalar, XDim, XDim>& Sm, Vector<Scalar, XDim>& Sv,
                   Scalar& s) {
-    computeMapILQR(projectedModelData, riccatiModification, SmNext, SvNext,
-                   sNext, discreteTimeRiccatiData_, projectedKm, projectedLv,
-                   Sm, Sv, s);
+    computeMapILQR(ModelData, riccatiModification, SmNext, SvNext, sNext,
+                   discreteTimeRiccatiData_, projectedKm, projectedLv, Sm, Sv,
+                   s);
   }
 
  private:
@@ -95,7 +95,7 @@ class DiscreteTimeRiccatiEquations {
    * @param [out] Sv 当前 Riccati 向量。
    * @param [out] s 当前 Riccati 标量。
    */
-  void computeMapILQR(const ModelData_t& projectedModelData,
+  void computeMapILQR(const ModelData_t& ModelData,
                       const RiccatiModification_t& riccatiModification,
                       const Matrix<Scalar, XDim, XDim>& SmNext,
                       const Vector<Scalar, XDim>& SvNext, const Scalar& sNext,
@@ -105,102 +105,63 @@ class DiscreteTimeRiccatiEquations {
                       Matrix<Scalar, XDim, XDim>& Sm, Vector<Scalar, XDim>& Sv,
                       Scalar& s) const {
     // 预计算 (1)
-    // dreCache.Sm_projectedHv_ = SmNext * projectedModelData.dynamicsBias;
-    dreCache.Sm_projectedAm_ = SmNext * projectedModelData.dynamics.dfdx;
-    dreCache.Sm_projectedBm_ = SmNext * projectedModelData.dynamics.dfdu;
-    dreCache.Sv_plus_Sm_projectedHv_ = SvNext;  // + dreCache.Sm_projectedHv_;
+    dreCache.Sm_projectedAm_ = SmNext * ModelData.dynamics.dfdx;
+    dreCache.Sm_projectedBm_ = SmNext * ModelData.dynamics.dfdu;
+    dreCache.Sv_plus_Sm_projectedHv_ = SvNext;
 
     // projectedGm = projectedPm + projectedBm^T * Sm * projectedAm
-    dreCache.projectedGm_ = projectedModelData.cost.dfdux;
+    dreCache.projectedGm_ = ModelData.cost.dfdux;
     dreCache.projectedGm_ +=
-        projectedModelData.dynamics.dfdu.transpose() * dreCache.Sm_projectedAm_;
+        ModelData.dynamics.dfdu.transpose() * dreCache.Sm_projectedAm_;
 
     // projectedGv = projectedRv + projectedBm^T * (Sv + Sm * projectedHv)
-    dreCache.projectedGv_ = projectedModelData.cost.dfdu;
-    dreCache.projectedGv_ += projectedModelData.dynamics.dfdu.transpose() *
-                             dreCache.Sv_plus_Sm_projectedHv_;
+    dreCache.projectedGv_ = ModelData.cost.dfdu;
+    dreCache.projectedGv_ +=
+        ModelData.dynamics.dfdu.transpose() * dreCache.Sv_plus_Sm_projectedHv_;
 
-    // 投影反馈。
-    projectedKm = -dreCache.projectedGm_;
-    // 投影前馈。
-    projectedLv = -dreCache.projectedGv_;
+    // 反馈：Km = -Hm^{-1} * Gm。
+    riccatiModification.HmLLT_.template Solve<XDim>(projectedKm,
+                                                    dreCache.projectedGm_);
+    projectedKm = -projectedKm;
+    // 前馈：Lv = -Hm^{-1} * Gv。
+    riccatiModification.HmLLT_.Solve(projectedLv, dreCache.projectedGv_);
+    projectedLv = -projectedLv;
 
     // 预计算 (2)
     dreCache.projectedKm_T_projectedGm_ =
-        projectedKm.transpose() * dreCache.projectedGm_;
-    if (!reducedFormRiccati_) {
-      // projectedHm
-      dreCache.projectedHm_ = projectedModelData.cost.dfduu;
-      dreCache.projectedHm_ += dreCache.Sm_projectedBm_.transpose() *
-                               projectedModelData.dynamics.dfdu;
-
-      dreCache.projectedHm_projectedKm_ = dreCache.projectedHm_ * projectedKm;
-      dreCache.projectedHm_projectedLv_ = dreCache.projectedHm_ * projectedLv;
-    }
+        dreCache.projectedGm_.transpose() * projectedKm;
 
     /*
      * Sm
      */
     // = Qm + deltaQm
-    Sm = projectedModelData.cost.dfdxx + riccatiModification.deltaQm_;
-    // += Am^T * Sm * Am
-    Sm +=
-        dreCache.Sm_projectedAm_.transpose() * projectedModelData.dynamics.dfdx;
-    if (reducedFormRiccati_) {
-      // += Km^T * Gm (in reduced form Km = -Gm so Km^T*Gm = -Gm^T*Gm is
-      // 对称项；OCS2 只添加一次）
-      Sm += dreCache.projectedKm_T_projectedGm_;
-    } else {
-      // += Km^T * Gm + Gm^T * Km
-      Sm += dreCache.projectedKm_T_projectedGm_ +
-            dreCache.projectedKm_T_projectedGm_.transpose();
-      // += Km^T * Hm * Km
-      Sm += projectedKm.transpose() * dreCache.projectedHm_projectedKm_;
-    }
+    Sm = ModelData.cost.dfdxx + riccatiModification.deltaQm_;
+    // += Am^T * Sm * Am, Sm is symmetry
+    Sm += dreCache.Sm_projectedAm_.transpose() * ModelData.dynamics.dfdx;
+    // += Km^T * Gm
+    Sm += dreCache.projectedKm_T_projectedGm_;
 
     /*
      * Sv
      */
     // = Qv
-    Sv = projectedModelData.cost.dfdx;
+    Sv = ModelData.cost.dfdx;
     // += Am^T * (Sv + Sm * Hv)
-    Sv += projectedModelData.dynamics.dfdx.transpose() *
-          dreCache.Sv_plus_Sm_projectedHv_;
-    if (reducedFormRiccati_) {
-      // += Gm^T * Lv
-      Sv += dreCache.projectedGm_.transpose() * projectedLv;
-    } else {
-      // += Gm^T * Lv
-      Sv += dreCache.projectedGm_.transpose() * projectedLv;
-      // += Km^T * Gv
-      Sv += projectedKm.transpose() * dreCache.projectedGv_;
-      // Km^T * Hm * Lv
-      Sv += dreCache.projectedHm_projectedKm_.transpose() * projectedLv;
-    }
+    Sv +=
+        ModelData.dynamics.dfdx.transpose() * dreCache.Sv_plus_Sm_projectedHv_;
+    // += Gm^T * Lv
+    Sv += dreCache.projectedGm_.transpose() * projectedLv;
 
     /*
      * s
      */
     // = s + q
-    s = sNext + projectedModelData.cost.f;
-    // += Hv^T * (Sv + Sm * Hv)
-    // s +=
-    // projectedModelData.dynamicsBias.dot(dreCache.Sv_plus_Sm_projectedHv_);
-    // -= 0.5 Hv^T * Sm * Hv
-    // s -= projectedModelData.dynamicsBias.dot(dreCache.Sm_projectedHv_) / 2;
-    if (reducedFormRiccati_) {
-      // += 0.5 Lv^T Gv
-      s += projectedLv.dot(dreCache.projectedGv_) / 2;
-    } else {
-      // += Lv^T Gv
-      s += projectedLv.dot(dreCache.projectedGv_);
-      // += 0.5 Lv^T Hm Lv
-      s += projectedLv.dot(dreCache.projectedHm_projectedLv_) / 2;
-    }
+    s = sNext + ModelData.cost.f;
+
+    // += 0.5 Lv^T Gv
+    s += projectedLv.dot(dreCache.projectedGv_) / 2;
   }
 
  private:
-  bool reducedFormRiccati_;
-
   DiscreteTimeRiccatiData_t discreteTimeRiccatiData_;
 };

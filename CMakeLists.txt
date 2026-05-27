@@ -26,6 +26,7 @@ add_executable(iLQR iLQR.cpp
 
 set(ILQR_HEADERS
   Types.hpp
+  CholeskyDecomposition.hpp
   iLQR/DDPData.hpp
   iLQR/DDPSetting.hpp
   iLQR/HessianCorrection.hpp

@@ -36,6 +36,10 @@ TEST(RiccatiTest, ReducedFormOneStepMatchesScalarReference) {
   Eigen::Matrix<double, 1, 1> SvNext;
   SvNext << 5.0;
   Scalar sNext = 31.0;
+  mod.hamiltonianHessian_ =
+      data.cost.dfduu + data.dynamics.dfdu.transpose() * SmNext *
+                             data.dynamics.dfdu;
+  ASSERT_TRUE(mod.HmLLT_.Decomposition(mod.hamiltonianHessian_));
 
   DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati(true);
 
@@ -47,11 +51,11 @@ TEST(RiccatiTest, ReducedFormOneStepMatchesScalarReference) {
 
   riccati.computeMap(data, mod, SmNext, SvNext, sNext, Km, Lv, Sm, Sv, s);
 
-  EXPECT_NEAR(Km(0, 0), -14.0, 1e-12);
-  EXPECT_NEAR(Lv(0), -21.5, 1e-12);
-  EXPECT_NEAR(Sm(0, 0), -148.0, 1e-12);
-  EXPECT_NEAR(Sv(0), -274.0, 1e-12);
-  EXPECT_NEAR(s, -177.125, 1e-12);
+  EXPECT_NEAR(Km(0, 0), -56.0 / 55.0, 1e-12);
+  EXPECT_NEAR(Lv(0), -86.0 / 55.0, 1e-12);
+  EXPECT_NEAR(Sm(0, 0), 1856.0 / 55.0, 1e-12);
+  EXPECT_NEAR(Sv(0), 281.0 / 55.0, 1e-12);
+  EXPECT_NEAR(s, 4091.0 / 110.0, 1e-12);
 }
 
 // 验证零动力学情形下单步 Riccati 递推退化为终端代价形式。
@@ -77,6 +81,10 @@ TEST(RiccatiTest, OneStep_ZeroDynamicsTerminalLike) {
   Eigen::Matrix2d SmNext = Eigen::Matrix2d::Identity();
   Eigen::Vector2d SvNext = Eigen::Vector2d::Zero();
   Scalar sNext = 0;
+  mod.hamiltonianHessian_ =
+      data.cost.dfduu + data.dynamics.dfdu.transpose() * SmNext *
+                             data.dynamics.dfdu;
+  ASSERT_TRUE(mod.HmLLT_.Decomposition(mod.hamiltonianHessian_));
 
   DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati(true);
 
@@ -118,6 +126,10 @@ TEST(RiccatiTest, NonReducedFormOneStepMatchesScalarReference) {
   Eigen::Matrix<double, 1, 1> SvNext;
   SvNext << 5.0;
   Scalar sNext = 31.0;
+  mod.hamiltonianHessian_ =
+      data.cost.dfduu + data.dynamics.dfdu.transpose() * SmNext *
+                             data.dynamics.dfdu;
+  ASSERT_TRUE(mod.HmLLT_.Decomposition(mod.hamiltonianHessian_));
 
   DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati(false);
 
@@ -129,11 +141,11 @@ TEST(RiccatiTest, NonReducedFormOneStepMatchesScalarReference) {
 
   riccati.computeMap(data, mod, SmNext, SvNext, sNext, Km, Lv, Sm, Sv, s);
 
-  EXPECT_NEAR(Km(0, 0), -14.0, 1e-12);
-  EXPECT_NEAR(Lv(0), -21.5, 1e-12);
-  EXPECT_NEAR(Sm(0, 0), 2351.0, 1e-12);
-  EXPECT_NEAR(Sv(0), 3563.75, 1e-12);
-  EXPECT_NEAR(s, 2769.71875, 1e-12);
+  EXPECT_NEAR(Km(0, 0), -56.0 / 55.0, 1e-12);
+  EXPECT_NEAR(Lv(0), -86.0 / 55.0, 1e-12);
+  EXPECT_NEAR(Sm(0, 0), 1856.0 / 55.0, 1e-12);
+  EXPECT_NEAR(Sv(0), 281.0 / 55.0, 1e-12);
+  EXPECT_NEAR(s, 4091.0 / 110.0, 1e-12);
 }
 
 int main(int argc, char** argv) {

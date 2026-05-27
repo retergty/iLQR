@@ -690,24 +690,27 @@ class iLQR {
    */
   void computeProjectionAndRiccatiModification(
       const ModelData_t& modelData, const SmMatrix_t& Sm,
-      ModelData_t& projectedModelData,
       RiccatiModification_t& riccatiModification) const {
     // 计算 Hamiltonian 的 Hessian。
     riccatiModification.time_ = modelData.time;
     riccatiModification.hamiltonianHessian_ =
         computeHamiltonianHessian(modelData, Sm);
 
-    // 计算投影器。
-    computeProjections(riccatiModification.hamiltonianHessian_,
-                       riccatiModification.constraintNullProjector_);
+    // 计算Hessian的LLT分解
+    riccatiModification.HmLLT_.Decomposition(
+        riccatiModification.hamiltonianHessian_);
 
-    // 投影 LQ。
-    projectLQ(modelData, riccatiModification.constraintNullProjector_,
-              projectedModelData);
+    // // 计算投影器。
+    // computeProjections(riccatiModification.hamiltonianHessian_,
+    //                    riccatiModification.constraintNullProjector_);
+
+    // // 投影 LQ。
+    // projectLQ(modelData, riccatiModification.constraintNullProjector_,
+    //           projectedModelData);
 
     // 计算 deltaQm、deltaGv、deltaGm。
     lineSearchStrategy_.computeRiccatiModification(
-        projectedModelData, riccatiModification.deltaQm_);
+        modelData, riccatiModification.deltaQm_);
   }
 
   /**
@@ -722,8 +725,6 @@ class iLQR {
     const ModelData_t& finalModelData = nominalPrimalData_.modelDataFinalTime;
     RiccatiModification_t& finalRiccatiModification =
         nominalDualData_.riccatiModificationTrajectory.back();
-    ModelData_t& finalProjectedModelData =
-        nominalDualData_.projectedModelDataTrajectory.back();
     LvVector_t& finalProjectedLvFinal = projectedLvTrajectoryStock_.back();
     KmMatrix_t& finalProjectedKmFinal = projectedKmTrajectoryStock_.back();
 
@@ -731,21 +732,13 @@ class iLQR {
     SmDummy.setZero();
 
     computeProjectionAndRiccatiModification(finalModelData, SmDummy,
-                                            finalProjectedModelData,
                                             finalRiccatiModification);
 
     // 投影前馈。
-    finalProjectedLvFinal = -finalProjectedModelData.cost.dfdu;
-    // 最后一个。
-    // finalProjectedLvFinal -=
-    // finalProjectedModelData.dynamics.dfdu.transpose() *
-    // finalValueFunction.dfdx;
+    finalProjectedLvFinal = -finalModelData.cost.dfdu;
 
     // 投影反馈。
-    finalProjectedKmFinal = -finalProjectedModelData.cost.dfdux;
-    // finalProjectedKmFinal -=
-    // finalProjectedModelData.dynamics.dfdu.transpose() *
-    // finalValueFunction.dfdxx;
+    finalProjectedKmFinal = -finalModelData.cost.dfdux;
 
     return solveSequentialRiccatiEquationsImpl(finalValueFunction);
   }
@@ -785,8 +778,6 @@ class iLQR {
     while (curIndex >= stopIndex) {
       LvVector_t& curProjectedLv = projectedLvTrajectoryStock_[curIndex];
       KmMatrix_t& curProjectedKm = projectedKmTrajectoryStock_[curIndex];
-      ModelData_t& curProjectedModelData =
-          nominalDualData_.projectedModelDataTrajectory[curIndex];
       RiccatiModification_t& curRiccatiModification =
           nominalDualData_.riccatiModificationTrajectory[curIndex];
       const ModelData_t& curModelData =
@@ -799,14 +790,12 @@ class iLQR {
       Scalar& curs = nominalDualData_.valueFunctionTrajectory[curIndex].f;
 
       computeProjectionAndRiccatiModification(
-          curModelData, valueFunctionNext->dfdxx, curProjectedModelData,
-          curRiccatiModification);
+          curModelData, valueFunctionNext->dfdxx, curRiccatiModification);
 
       riccatiEquationsSolver_.computeMap(
-          curProjectedModelData, curRiccatiModification,
-          valueFunctionNext->dfdxx, valueFunctionNext->dfdx,
-          valueFunctionNext->f, curProjectedKm, curProjectedLv, curSm, curSv,
-          curs);
+          curModelData, curRiccatiModification, valueFunctionNext->dfdxx,
+          valueFunctionNext->dfdx, valueFunctionNext->f, curProjectedKm,
+          curProjectedLv, curSm, curSv, curs);
       valueFunctionNext = &(nominalDualData_.valueFunctionTrajectory[curIndex]);
 
       --curIndex;
@@ -862,20 +851,16 @@ class iLQR {
     const InputVector_t& nominalInput =
         primalData.primalSolution.inputTrajectory_[timeIndex];
 
-    const Matrix<Scalar, UDim, UDim>& Qu =
-        dualData.riccatiModificationTrajectory[timeIndex]
-            .constraintNullProjector_;
-
     // 反馈增益。
     dstController.gainArray_[timeIndex] =
-        Qu * projectedKmTrajectoryStock_[timeIndex];
+        projectedKmTrajectoryStock_[timeIndex];
 
     // 偏置输入。
     dstController.biasArray_[timeIndex] = nominalInput;
     dstController.biasArray_[timeIndex] -=
         dstController.gainArray_[timeIndex] * nominalState;
     dstController.deltaBiasArray_[timeIndex] =
-        Qu * projectedLvTrajectoryStock_[timeIndex];
+        projectedLvTrajectoryStock_[timeIndex];
   }
 
   /** 基于当前 LQ 解更新优化后的原始解和对偶
