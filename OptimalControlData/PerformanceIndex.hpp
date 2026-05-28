@@ -5,8 +5,8 @@
  */
 #pragma once
 
-#include "Metrics.hpp"
-#include "Numerics.hpp"
+#include "Misc/Numerics.hpp"
+#include "ModelData/Metrics.hpp"
 
 /**
  * @brief 单次 rollout 的性能指标汇总，用于收敛判断与 merit 计算。

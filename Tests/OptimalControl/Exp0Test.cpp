@@ -5,11 +5,11 @@
 #include <memory>
 #include <string>
 
-#include "DefaultInitializer.hpp"
-#include "EXP0.hpp"
-#include "MatrixEigenConversion.hpp"
-#include "iLQR.hpp"
-#include "iLQRQpSolver.hpp"
+#include "Initialization/DefaultInitializer.hpp"
+#include "Models/EXP0.hpp"
+#include "Tests/Include/MatrixEigenConversion.hpp"
+#include "Tests/Include/iLQRQpSolver.hpp"
+#include "iLQR/iLQR.hpp"
 
 using test_tools::matrix_eigen_conversion::fromEigenVector;
 using test_tools::matrix_eigen_conversion::toEigenVector;

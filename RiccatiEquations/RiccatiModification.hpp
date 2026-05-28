@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include "CholeskyDecomposition.hpp"
+#include "Matrix/CholeskyDecomposition.hpp"
 #include "Types.hpp"
 
 /**

@@ -2,12 +2,12 @@
 
 #include <array>
 
-#include "LinearApproximation.hpp"
-#include "LinearQuadraticApproximator.hpp"
-#include "LinearSystemDynamics.hpp"
-#include "QuadraticApproximation.hpp"
-#include "QuadraticStateCost.hpp"
-#include "iLQRDescriptor.hpp"
+#include "Approximation/LinearApproximation.hpp"
+#include "Approximation/LinearQuadraticApproximator.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
+#include "Cost/QuadraticStateCost.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 // 验证线性近似和二次近似结构体的基础代数运算。
 TEST(ApproximationTest, LinearAndQuadraticApproximationUtilities) {

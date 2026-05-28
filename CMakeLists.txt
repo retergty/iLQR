@@ -7,20 +7,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 project(${PROJECT_NAME} LANGUAGES CXX)
 
-find_package(Eigen3 3.3 CONFIG QUIET)
-if(NOT Eigen3_FOUND)
-  include(FetchContent)
-  FetchContent_Declare(
-    eigen
-    URL "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz"
-  )
-  FetchContent_MakeAvailable(eigen)
-
-  if(NOT TARGET Eigen3::Eigen AND TARGET eigen)
-    add_library(Eigen3::Eigen ALIAS eigen)
-  endif()
-endif()
-
 add_executable(iLQR iLQR.cpp
   AutomaticDifferentation/FiniteDifferenceMethods.hpp)
 
@@ -135,8 +121,7 @@ set(ILQR_HEADERS
 
 add_library(iLQR_Include INTERFACE)
 target_sources(iLQR_Include INTERFACE ${ILQR_HEADERS})
-target_include_directories(iLQR_Include INTERFACE Integration Cost Dynamics Controller Approximation OptimalControl Rollout IntrusiveList AugmentedLagrangian Constraint Penalties RiccatiEquations SearchStrategy Transcription Misc Initialization AutomaticDifferentation Models Transcription ModelData OptimalControlData iLQR Matrix ${CMAKE_SOURCE_DIR})
-target_link_libraries(iLQR_Include INTERFACE Eigen3::Eigen)
+target_include_directories(iLQR_Include INTERFACE ${CMAKE_SOURCE_DIR})
 target_link_libraries(iLQR PUBLIC iLQR_Include)
 
 add_compile_options(-Wall -Wpedantic -Wextra -ffunction-sections -fdata-sections)

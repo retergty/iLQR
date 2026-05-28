@@ -5,8 +5,8 @@
  */
 #pragma once
 
-#include "Initializer.hpp"
-#include "RolloutBase.hpp"
+#include "Initialization/Initializer.hpp"
+#include "Rollout/RolloutBase.hpp"
 
 /**
  * @brief 基于初始化器的 rollout：在 [initTime, finalTime] 上按固定步长调用

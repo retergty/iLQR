@@ -4,8 +4,8 @@
  * 计算状态导数，并绑定控制器。
  */
 #pragma once
-#include "Controller.hpp"
-#include "Integration.hpp"
+#include "Controller/Controller.hpp"
+#include "Integration/Integration.hpp"
 #include "Types.hpp"
 
 /**

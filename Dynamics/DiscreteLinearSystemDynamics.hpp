@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "DiscreteSystemDynamicsBase.hpp"
+#include "Dynamics/DiscreteSystemDynamicsBase.hpp"
 
 /**
  * @brief 线性离散时不变系统动力学。

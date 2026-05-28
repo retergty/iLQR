@@ -4,11 +4,11 @@
  */
 #pragma once
 
-#include "LinearQuadraticApproximator.hpp"
-#include "ModelData.hpp"
-#include "Multiplier.hpp"
-#include "OptimalControlProblem.hpp"
-#include "iLQRDescriptorTraits.hpp"
+#include "Approximation/LinearQuadraticApproximator.hpp"
+#include "ModelData/ModelData.hpp"
+#include "ModelData/Multiplier.hpp"
+#include "OptimalControl/OptimalControlProblem.hpp"
+#include "iLQR/iLQRDescriptorTraits.hpp"
 
 /**
  * @brief 离散时间转录器。

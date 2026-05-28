@@ -3,12 +3,12 @@
 #include <cstdlib>
 #include <memory>
 
-#include "LinearSystemDynamics.hpp"
-#include "MatrixEigenConversion.hpp"
-#include "QuadraticStateCost.hpp"
-#include "SensitivityIntegrator.hpp"
-#include "TestProblemsGeneration.hpp"
-#include "iLQRQpSolver.hpp"
+#include "Cost/QuadraticStateCost.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Integration/SensitivityIntegrator.hpp"
+#include "Tests/Include/MatrixEigenConversion.hpp"
+#include "Tests/Include/TestProblemsGeneration.hpp"
+#include "Tests/Include/iLQRQpSolver.hpp"
 
 using test_tools::matrix_eigen_conversion::fromEigenMatrix;
 using test_tools::matrix_eigen_conversion::fromEigenVector;

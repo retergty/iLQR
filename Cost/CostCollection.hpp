@@ -4,8 +4,8 @@
  */
 #pragma once
 
-#include "Cost.hpp"
-#include "IntrusiveList.hpp"
+#include "Cost/Cost.hpp"
+#include "IntrusiveList/IntrusiveList.hpp"
 
 /**
  * @brief 仅状态代价项集合：对多个 StateCost 求和得到总代价与总二次近似。

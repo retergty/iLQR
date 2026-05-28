@@ -5,10 +5,10 @@
 #pragma once
 #include <array>
 
-#include "LinearInterpolation.hpp"
-#include "Multiplier.hpp"
-#include "Numerics.hpp"
-#include "iLQRDescriptor.hpp"
+#include "Misc/LinearInterpolation.hpp"
+#include "Misc/Numerics.hpp"
+#include "ModelData/Multiplier.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 /**
  * @brief 对偶解：时间序列、终端乘子与各中间时刻乘子集合。

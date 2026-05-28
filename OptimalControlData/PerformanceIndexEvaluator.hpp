@@ -6,9 +6,9 @@
 
 #include <array>
 
-#include "PerformanceIndex.hpp"
-#include "TrapezoidalIntegration.hpp"
-#include "iLQRDescriptorTraits.hpp"
+#include "Integration/TrapezoidalIntegration.hpp"
+#include "OptimalControlData/PerformanceIndex.hpp"
+#include "iLQR/iLQRDescriptorTraits.hpp"
 
 /**
  * @brief PerformanceIndex 汇总器。

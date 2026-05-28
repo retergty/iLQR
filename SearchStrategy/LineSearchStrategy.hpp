@@ -6,9 +6,9 @@
 #pragma once
 #include <utility>
 
-#include "Numerics.hpp"
-#include "SearchStrategyBase.hpp"
-#include "SearchStrategySettings.hpp"
+#include "Misc/Numerics.hpp"
+#include "SearchStrategy/SearchStrategyBase.hpp"
+#include "SearchStrategy/SearchStrategySettings.hpp"
 
 template <typename Descriptor>
 class iLQR;

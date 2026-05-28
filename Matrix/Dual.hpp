@@ -15,8 +15,8 @@
 
 #include <cmath>
 
-#include "Scalar.hpp"
-#include "Vector.hpp"
+#include "Matrix/Scalar.hpp"
+#include "Matrix/Vector.hpp"
 
 namespace matrix {
 

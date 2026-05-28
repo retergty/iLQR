@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include "Initializer.hpp"
+#include "Initialization/Initializer.hpp"
 
 /**
  * @brief 默认初始化器实现：input 置零，nextState = state。

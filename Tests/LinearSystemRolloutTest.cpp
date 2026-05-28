@@ -3,9 +3,9 @@
 #include <array>
 #include <cmath>
 
-#include "LinearController.hpp"
-#include "LinearSystemDynamics.hpp"
-#include "TimeTriggeredRollout.hpp"
+#include "Controller/LinearController.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Rollout/TimeTriggeredRollout.hpp"
 
 // 验证零输入 rollout 与 xdot = x 的解析解一致。
 TEST(LinearSystemRolloutTest, ZeroInputMatchesExponentialSolution) {

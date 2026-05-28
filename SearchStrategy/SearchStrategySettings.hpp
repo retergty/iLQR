@@ -3,7 +3,7 @@
  * @brief 搜索策略参数：DDP 策略类型、线搜索与 Levenberg-Marquardt 设置。
  */
 #pragma once
-#include "HessianCorrection.hpp"
+#include "iLQR/HessianCorrection.hpp"
 
 /**
  * @brief DDP 子问题求解策略枚举：线搜索或 Levenberg-Marquardt。

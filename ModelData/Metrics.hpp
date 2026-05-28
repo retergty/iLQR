@@ -6,9 +6,9 @@
 
 #include <tuple>
 
-#include "LagrangianMetrics.hpp"
+#include "OptimalControlData/LagrangianMetrics.hpp"
 #include "Types.hpp"
-#include "iLQRDescriptor.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 template <typename Scalar, typename GroupLayout>
 struct LagrangianMetricsGroup;

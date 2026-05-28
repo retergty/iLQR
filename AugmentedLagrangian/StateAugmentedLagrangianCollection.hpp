@@ -9,8 +9,8 @@
 #include <tuple>
 #include <utility>
 
-#include "Metrics.hpp"
-#include "StateAugmentedLagrangianInterface.hpp"
+#include "AugmentedLagrangian/StateAugmentedLagrangianInterface.hpp"
+#include "ModelData/Metrics.hpp"
 #include "Types.hpp"
 
 /**

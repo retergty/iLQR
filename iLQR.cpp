@@ -1,7 +1,7 @@
-#include "iLQR.hpp"
+#include "iLQR/iLQR.hpp"
 
-#include "DefaultInitializer.hpp"
-#include "LinearSystemDynamics.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Initialization/DefaultInitializer.hpp"
 
 int main() {
   DefaultInitializer<double, 3, 2> init;

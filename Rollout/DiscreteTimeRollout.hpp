@@ -6,9 +6,9 @@
 
 #include <cassert>
 
-#include "Controller.hpp"
-#include "DiscreteSystemBase.hpp"
-#include "RolloutBase.hpp"
+#include "Controller/Controller.hpp"
+#include "Dynamics/DiscreteSystemBase.hpp"
+#include "Rollout/RolloutBase.hpp"
 
 /**
  * @brief 离散时间前向 rollout：绑定离散系统动力学，用 computeMap()

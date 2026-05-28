@@ -5,7 +5,7 @@
 #pragma once
 #include <array>
 
-#include "LinearInterpolation.hpp"
+#include "Misc/LinearInterpolation.hpp"
 #include "Types.hpp"
 
 /**

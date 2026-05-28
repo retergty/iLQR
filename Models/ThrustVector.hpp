@@ -3,12 +3,12 @@
 #include <cmath>
 #include <limits>
 
-#include "Cost.hpp"
-#include "DiscreteSystemDynamicsBase.hpp"
-#include "LinearInterpolation.hpp"
-#include "OptimalControlProblem.hpp"
+#include "Cost/Cost.hpp"
+#include "Dynamics/DiscreteSystemDynamicsBase.hpp"
+#include "Misc/LinearInterpolation.hpp"
+#include "OptimalControl/OptimalControlProblem.hpp"
 #include "Types.hpp"
-#include "iLQRDescriptor.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/

@@ -2,9 +2,9 @@
 
 #include <array>
 
-#include "Reference.hpp"
+#include "OptimalControlData/Reference.hpp"
 #include "Types.hpp"
-#include "iLQRDescriptor.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 /**
  * @brief iLQR descriptor 的集中视图。

@@ -3,14 +3,14 @@
 #include <Eigen/Cholesky>
 #include <array>
 
-#include "CholeskyDecomposition.hpp"
-#include "DefaultInitializer.hpp"
-#include "HessianCorrection.hpp"
-#include "LinearController.hpp"
-#include "MatrixEigenConversion.hpp"
-#include "Multiplier.hpp"
+#include "Controller/LinearController.hpp"
+#include "Initialization/DefaultInitializer.hpp"
+#include "Matrix/CholeskyDecomposition.hpp"
+#include "ModelData/Multiplier.hpp"
+#include "Tests/Include/MatrixEigenConversion.hpp"
 #include "Types.hpp"
-#include "iLQRDescriptor.hpp"
+#include "iLQR/HessianCorrection.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 using test_tools::matrix_eigen_conversion::toEigenMatrix;
 

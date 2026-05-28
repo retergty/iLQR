@@ -7,7 +7,7 @@
 #include <array>
 #include <cmath>
 
-#include "RungeKuttaDormandPrince5.hpp"
+#include "Integration/RungeKuttaDormandPrince5.hpp"
 
 namespace {
 using Scalar = double;

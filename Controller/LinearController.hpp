@@ -3,8 +3,8 @@
  * @brief 线性控制器：u(t,x) = K(t)*x + uff(t)，支持时间/状态插值。
  */
 #pragma once
-#include "Controller.hpp"
-#include "LinearInterpolation.hpp"
+#include "Controller/Controller.hpp"
+#include "Misc/LinearInterpolation.hpp"
 
 /**
  * @brief 线性控制器，形式为 u[x,t] = k[t]*x + uff[t]，时间戳与增益/偏置为数组。

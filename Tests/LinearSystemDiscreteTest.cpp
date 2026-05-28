@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "LinearSystemDynamics.hpp"
-#include "SensitivityIntegrator.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Integration/SensitivityIntegrator.hpp"
 #include "math.h"
 
 // 验证 EK2 离散化结果与显式 RK2 公式一致。

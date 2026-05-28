@@ -4,7 +4,7 @@
  * x_{k+1}=A*dx+B*du+b，支持欧拉/RK2/RK4。
  */
 #pragma once
-#include "LinearApproximation.hpp"
+#include "Approximation/LinearApproximation.hpp"
 #include "Types.hpp"
 
 template <typename Scalar, int XDim, int UDim>

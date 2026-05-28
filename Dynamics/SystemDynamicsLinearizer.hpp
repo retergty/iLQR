@@ -4,9 +4,9 @@
  */
 #pragma once
 
-#include "ControlledSystemBase.hpp"
-#include "FiniteDifferenceMethods.hpp"
-#include "SystemDynamicsBase.hpp"
+#include "AutomaticDifferentation/FiniteDifferenceMethods.hpp"
+#include "Dynamics/ControlledSystemBase.hpp"
+#include "Dynamics/SystemDynamicsBase.hpp"
 
 /**
  * @brief 系统动力学数值线性化器。

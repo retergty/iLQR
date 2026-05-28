@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "Matrix.hpp"
+#include "Matrix/Matrix.hpp"
 
 namespace matrix {
 

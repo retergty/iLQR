@@ -5,8 +5,8 @@
  */
 #pragma once
 
-#include "ModelData.hpp"
-#include "RiccatiModification.hpp"
+#include "ModelData/ModelData.hpp"
+#include "RiccatiEquations/RiccatiModification.hpp"
 #include "Types.hpp"
 
 /**

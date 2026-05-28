@@ -1,7 +1,7 @@
 #pragma once
 
-#include "LinearApproximation.hpp"
-#include "QuadraticApproximation.hpp"
+#include "Approximation/LinearApproximation.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
 
 namespace qp_solver {
 

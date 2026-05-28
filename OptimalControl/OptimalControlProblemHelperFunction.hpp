@@ -3,11 +3,11 @@
  * @brief 最优控制问题辅助函数：初始化乘子、对偶解及近似等。
  */
 #pragma once
-#include "DualSolution.hpp"
-#include "Metrics.hpp"
-#include "OptimalControlProblem.hpp"
-#include "PrimalSolution.hpp"
-#include "ProblemMetrics.hpp"
+#include "ModelData/Metrics.hpp"
+#include "OptimalControl/OptimalControlProblem.hpp"
+#include "OptimalControlData/DualSolution.hpp"
+#include "OptimalControlData/PrimalSolution.hpp"
+#include "OptimalControlData/ProblemMetrics.hpp"
 
 /**
  * @brief 初始化终端时刻的乘子集合（等式与不等式拉格朗日）。

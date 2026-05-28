@@ -5,13 +5,13 @@
  */
 #pragma once
 
-#include "LinearApproximation.hpp"
-#include "Metrics.hpp"
-#include "ModelData.hpp"
-#include "Multiplier.hpp"
-#include "OptimalControlProblem.hpp"
-#include "QuadraticApproximation.hpp"
-#include "iLQRDescriptorTraits.hpp"
+#include "Approximation/LinearApproximation.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
+#include "ModelData/Metrics.hpp"
+#include "ModelData/ModelData.hpp"
+#include "ModelData/Multiplier.hpp"
+#include "OptimalControl/OptimalControlProblem.hpp"
+#include "iLQR/iLQRDescriptorTraits.hpp"
 
 /**
  * @brief 在给定名义轨迹与对偶解下，对 OCP 做 LQ 近似，填充中间/终端 ModelData

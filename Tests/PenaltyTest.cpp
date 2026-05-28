@@ -2,10 +2,10 @@
 
 #include <cmath>
 
-#include "ModifiedRelaxedBarrierPenalty.hpp"
-#include "Penalty.hpp"
-#include "QuadraticPenalty.hpp"
-#include "SlacknessSquaredHingePenalty.hpp"
+#include "Penalties/ModifiedRelaxedBarrierPenalty.hpp"
+#include "Penalties/Penalty.hpp"
+#include "Penalties/QuadraticPenalty.hpp"
+#include "Penalties/SlacknessSquaredHingePenalty.hpp"
 
 // 验证二次罚函数的取值、导数和乘子更新公式。
 TEST(PenaltyTest, QuadraticPenaltyValueDerivativesAndMultiplierUpdate) {

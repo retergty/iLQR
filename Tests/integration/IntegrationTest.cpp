@@ -8,10 +8,10 @@
 #include <cmath>
 #include <memory>
 
-#include "Integration.hpp"
-#include "LinearController.hpp"
-#include "LinearSystemDynamics.hpp"
-#include "RungeKuttaDormandPrince5.hpp"
+#include "Controller/LinearController.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Integration/Integration.hpp"
+#include "Integration/RungeKuttaDormandPrince5.hpp"
 
 namespace {
 using Scalar = double;

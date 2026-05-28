@@ -12,18 +12,18 @@
 #include <utility>
 #include <vector>
 
-#include "Cost.hpp"
-#include "LinearApproximation.hpp"
-#include "LinearStateConstraint.hpp"
-#include "LinearStateInputConstraint.hpp"
-#include "LinearSystemDynamics.hpp"
-#include "MatrixEigenConversion.hpp"
-#include "QpSolverTypes.hpp"
-#include "QpTrajectories.hpp"
-#include "QuadraticApproximation.hpp"
-#include "QuadraticStateCost.hpp"
-#include "StateConstraint.hpp"
-#include "StateInputConstraint.hpp"
+#include "Approximation/LinearApproximation.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
+#include "Constraint/LinearStateConstraint.hpp"
+#include "Constraint/LinearStateInputConstraint.hpp"
+#include "Constraint/StateConstraint.hpp"
+#include "Constraint/StateInputConstraint.hpp"
+#include "Cost/Cost.hpp"
+#include "Cost/QuadraticStateCost.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Tests/Include/MatrixEigenConversion.hpp"
+#include "Tests/Include/QpSolverTypes.hpp"
+#include "Tests/Include/QpTrajectories.hpp"
 
 namespace test_tools {
 

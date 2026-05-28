@@ -3,12 +3,12 @@
  * @brief 仅状态增广拉格朗日实现：绑定约束与惩罚，提供取值、二次近似与乘子更新。
  */
 #pragma once
-#include "AugmentedPenaltyBase.hpp"
-#include "LagrangianMetrics.hpp"
-#include "MultidimensionalPenalty.hpp"
-#include "QuadraticApproximation.hpp"
-#include "StateAugmentedLagrangianInterface.hpp"
-#include "StateConstraint.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
+#include "AugmentedLagrangian/StateAugmentedLagrangianInterface.hpp"
+#include "Constraint/StateConstraint.hpp"
+#include "OptimalControlData/LagrangianMetrics.hpp"
+#include "Penalties/AugmentedPenaltyBase.hpp"
+#include "Penalties/MultidimensionalPenalty.hpp"
 #include "Types.hpp"
 
 /**

@@ -5,11 +5,11 @@
  */
 #pragma once
 
-#include "DualSolution.hpp"
-#include "ModelData.hpp"
-#include "PrimalSolution.hpp"
-#include "ProblemMetrics.hpp"
-#include "RiccatiModification.hpp"
+#include "ModelData/ModelData.hpp"
+#include "OptimalControlData/DualSolution.hpp"
+#include "OptimalControlData/PrimalSolution.hpp"
+#include "OptimalControlData/ProblemMetrics.hpp"
+#include "RiccatiEquations/RiccatiModification.hpp"
 
 /**
  * @brief 原始数据容器：存放一次 rollout 的轨迹、控制器、中间/终端模型数据与

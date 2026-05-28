@@ -6,9 +6,9 @@
 #include <tuple>
 #include <vector>
 
-#include "MatrixEigenConversion.hpp"
-#include "QpSolver.hpp"
-#include "TestProblemsGeneration.hpp"
+#include "Tests/Include/MatrixEigenConversion.hpp"
+#include "Tests/Include/QpSolver.hpp"
+#include "Tests/Include/TestProblemsGeneration.hpp"
 
 using test_tools::matrix_eigen_conversion::fromEigenMatrix;
 using test_tools::matrix_eigen_conversion::fromEigenVector;

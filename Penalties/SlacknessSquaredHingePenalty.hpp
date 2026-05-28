@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "AugmentedPenaltyBase.hpp"
+#include "Penalties/AugmentedPenaltyBase.hpp"
 
 /**
  * @brief 单不等式约束的 PHR 惩罚实现：乘子更新为 λ_{k+1}=max(λ_k-α*h,

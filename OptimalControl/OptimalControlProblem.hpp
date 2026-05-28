@@ -4,10 +4,10 @@
  */
 #pragma once
 
-#include "CostCollection.hpp"
-#include "DynamicsModeTraits.hpp"
-#include "StateAugmentedLagrangianCollection.hpp"
-#include "StateInputAugmentedLagrangianCollection.hpp"
+#include "AugmentedLagrangian/StateAugmentedLagrangianCollection.hpp"
+#include "AugmentedLagrangian/StateInputAugmentedLagrangianCollection.hpp"
+#include "Cost/CostCollection.hpp"
+#include "Dynamics/DynamicsModeTraits.hpp"
 
 /**
  * @brief

@@ -1,12 +1,12 @@
 #pragma once
-#include "Cost.hpp"
-#include "OptimalControlProblem.hpp"
-#include "QuadraticPenalty.hpp"
-#include "SmoothAbsolutePenalty.hpp"
-#include "StateInputAugmentedLagrangian.hpp"
-#include "StateInputConstraint.hpp"
-#include "SystemDynamicsBase.hpp"
-#include "iLQRDescriptor.hpp"
+#include "AugmentedLagrangian/StateInputAugmentedLagrangian.hpp"
+#include "Constraint/StateInputConstraint.hpp"
+#include "Cost/Cost.hpp"
+#include "Dynamics/SystemDynamicsBase.hpp"
+#include "OptimalControl/OptimalControlProblem.hpp"
+#include "Penalties/QuadraticPenalty.hpp"
+#include "Penalties/SmoothAbsolutePenalty.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 /******************************************************************************************************/
 /******************************************************************************************************/

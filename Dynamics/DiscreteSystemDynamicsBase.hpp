@@ -16,8 +16,8 @@
  */
 #pragma once
 
-#include "DiscreteSystemBase.hpp"
-#include "LinearApproximation.hpp"
+#include "Approximation/LinearApproximation.hpp"
+#include "Dynamics/DiscreteSystemBase.hpp"
 
 /**
  * @brief 离散系统动力学基类：子类需实现离散状态转移及其线性近似。

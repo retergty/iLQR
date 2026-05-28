@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include "Initializer.hpp"
+#include "Initialization/Initializer.hpp"
 
 /**
  * @brief 基于工作点的初始化器：输出恒为给定状态工作点与输入工作点，nextState

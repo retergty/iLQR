@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AugmentedPenaltyBase.hpp"
+#include "Penalties/AugmentedPenaltyBase.hpp"
 
 /**
  * @brief 等式约束 \f$ h = 0 \f$ 的二次增广惩罚项。

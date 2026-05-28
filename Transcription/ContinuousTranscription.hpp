@@ -4,12 +4,12 @@
  */
 #pragma once
 
-#include "LinearQuadraticApproximator.hpp"
-#include "ModelData.hpp"
-#include "Multiplier.hpp"
-#include "OptimalControlProblem.hpp"
-#include "SensitivityIntegrator.hpp"
-#include "iLQRDescriptorTraits.hpp"
+#include "Approximation/LinearQuadraticApproximator.hpp"
+#include "Integration/SensitivityIntegrator.hpp"
+#include "ModelData/ModelData.hpp"
+#include "ModelData/Multiplier.hpp"
+#include "OptimalControl/OptimalControlProblem.hpp"
+#include "iLQR/iLQRDescriptorTraits.hpp"
 
 /**
  * @brief 连续时间转录器。

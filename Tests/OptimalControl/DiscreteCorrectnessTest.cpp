@@ -6,15 +6,15 @@
 #include <memory>
 #include <vector>
 
-#include "DefaultInitializer.hpp"
-#include "DiscreteLinearSystemDynamics.hpp"
-#include "MatrixEigenConversion.hpp"
-#include "QpDiscreteTranscription.hpp"
-#include "QpSolver.hpp"
-#include "QuadraticPenalty.hpp"
-#include "StateInputAugmentedLagrangian.hpp"
-#include "TestProblemsGeneration.hpp"
-#include "iLQR.hpp"
+#include "AugmentedLagrangian/StateInputAugmentedLagrangian.hpp"
+#include "Dynamics/DiscreteLinearSystemDynamics.hpp"
+#include "Initialization/DefaultInitializer.hpp"
+#include "Penalties/QuadraticPenalty.hpp"
+#include "Tests/Include/MatrixEigenConversion.hpp"
+#include "Tests/Include/QpDiscreteTranscription.hpp"
+#include "Tests/Include/QpSolver.hpp"
+#include "Tests/Include/TestProblemsGeneration.hpp"
+#include "iLQR/iLQR.hpp"
 
 using test_tools::matrix_eigen_conversion::fromEigenVector;
 using test_tools::matrix_eigen_conversion::toEigenVector;

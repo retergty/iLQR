@@ -15,8 +15,8 @@
  * 前的常数项处理。
  */
 #pragma once
-#include "ControlledSystemBase.hpp"
-#include "LinearApproximation.hpp"
+#include "Approximation/LinearApproximation.hpp"
+#include "Dynamics/ControlledSystemBase.hpp"
 
 /**
  * @brief 系统动力学与线性化基类：子类需实现 linearApproximation。

@@ -4,8 +4,8 @@
  */
 #pragma once
 
-#include "LinearApproximation.hpp"
-#include "QuadraticApproximation.hpp"
+#include "Approximation/LinearApproximation.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
 
 /**
  * @brief 单节点 LQ 模型数据：时间、动力学线性近似（dfdx, dfdu,

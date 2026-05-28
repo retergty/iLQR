@@ -7,7 +7,7 @@
 
 #include <algorithm>
 
-#include "ControlledSystemBase.hpp"
+#include "Dynamics/ControlledSystemBase.hpp"
 #include "Types.hpp"
 
 /**

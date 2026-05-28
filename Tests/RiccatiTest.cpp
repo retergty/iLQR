@@ -4,11 +4,11 @@
  */
 #include <gtest/gtest.h>
 
-#include "DiscreteTimeRiccatiEquations.hpp"
-#include "LinearApproximation.hpp"
-#include "ModelData.hpp"
-#include "QuadraticApproximation.hpp"
-#include "RiccatiModification.hpp"
+#include "Approximation/LinearApproximation.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
+#include "ModelData/ModelData.hpp"
+#include "RiccatiEquations/DiscreteTimeRiccatiEquations.hpp"
+#include "RiccatiEquations/RiccatiModification.hpp"
 #include "Types.hpp"
 
 // 验证 reduced form 下单步 Riccati 递推与标量参考值一致。

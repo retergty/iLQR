@@ -1,5 +1,5 @@
 #pragma once
-#include "SystemDynamicsBase.hpp"
+#include "Dynamics/SystemDynamicsBase.hpp"
 /**
  * @file LinearSystemDynamics.hpp
  * @brief 线性时不变系统动力学：流映射 \f$ \dot{x} = A x + B u \f$。

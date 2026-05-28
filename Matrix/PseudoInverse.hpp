@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "SquareMatrix.hpp"
-#include "Vector.hpp"
+#include "Matrix/SquareMatrix.hpp"
+#include "Matrix/Vector.hpp"
 
 namespace matrix {
 

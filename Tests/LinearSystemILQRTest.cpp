@@ -2,8 +2,8 @@
 
 #include <array>
 
-#include "LinearSystemDynamics.hpp"
-#include "iLQR.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "iLQR/iLQR.hpp"
 
 // 验证 incrementController 保留时间戳和增益，只更新前馈偏置。
 TEST(LinearSystemILQRTest, IncrementControllerUpdatesOnlyFeedforwardBias) {

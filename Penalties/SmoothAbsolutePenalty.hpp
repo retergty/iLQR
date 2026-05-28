@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "AugmentedPenaltyBase.hpp"
+#include "Penalties/AugmentedPenaltyBase.hpp"
 
 /**
  * @brief 单等式约束的光滑绝对值惩罚实现：p(h)=μ√(h²+δ²)，μ 为尺度、δ

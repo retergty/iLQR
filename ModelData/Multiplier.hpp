@@ -7,9 +7,9 @@
 #include <tuple>
 #include <utility>
 
-#include "LinearInterpolation.hpp"
+#include "Misc/LinearInterpolation.hpp"
 #include "Types.hpp"
-#include "iLQRDescriptor.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 /**
  * @brief 单个增广拉格朗日项的乘子：惩罚缩放与向量拉格朗日乘子。

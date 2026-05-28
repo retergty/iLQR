@@ -2,9 +2,9 @@
 
 #include <tuple>
 
-#include "AugmentedPenaltyBase.hpp"
-#include "LinearApproximation.hpp"
-#include "QuadraticApproximation.hpp"
+#include "Approximation/LinearApproximation.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
+#include "Penalties/AugmentedPenaltyBase.hpp"
 #include "Types.hpp"
 
 /**

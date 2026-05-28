@@ -3,8 +3,8 @@
  * @brief 代价项接口：仅状态代价与状态-输入代价，提供取值与二次近似。
  */
 #pragma once
-#include "IntrusiveList.hpp"
-#include "QuadraticApproximation.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
+#include "IntrusiveList/IntrusiveList.hpp"
 #include "Types.hpp"
 
 /**

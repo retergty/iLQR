@@ -3,8 +3,8 @@
 #include <Eigen/Core>
 #include <cassert>
 
-#include "../../Matrix/Matrix.hpp"
-#include "../../Matrix/Vector.hpp"
+#include "Matrix/Matrix.hpp"
+#include "Matrix/Vector.hpp"
 
 namespace test_tools {
 namespace matrix_eigen_conversion {

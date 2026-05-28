@@ -5,11 +5,11 @@
 #include <memory>
 #include <vector>
 
-#include "LinearSystemDynamics.hpp"
-#include "MatrixEigenConversion.hpp"
-#include "QpDiscreteTranscription.hpp"
-#include "QuadraticStateCost.hpp"
-#include "TestProblemsGeneration.hpp"
+#include "Cost/QuadraticStateCost.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Tests/Include/MatrixEigenConversion.hpp"
+#include "Tests/Include/QpDiscreteTranscription.hpp"
+#include "Tests/Include/TestProblemsGeneration.hpp"
 
 using test_tools::matrix_eigen_conversion::fromEigenVector;
 using test_tools::matrix_eigen_conversion::toEigenMatrix;

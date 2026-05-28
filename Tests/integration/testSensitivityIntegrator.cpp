@@ -6,10 +6,10 @@
 
 #include <array>
 
-#include "LinearController.hpp"
-#include "LinearSystemDynamics.hpp"
-#include "RungeKuttaDormandPrince5.hpp"
-#include "SensitivityIntegrator.hpp"
+#include "Controller/LinearController.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Integration/RungeKuttaDormandPrince5.hpp"
+#include "Integration/SensitivityIntegrator.hpp"
 
 namespace {
 using Scalar = double;

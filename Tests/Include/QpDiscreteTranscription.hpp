@@ -12,16 +12,16 @@
 #include <stdexcept>
 #include <vector>
 
-#include "LinearQuadraticApproximator.hpp"
-#include "MatrixEigenConversion.hpp"
-#include "Multiplier.hpp"
-#include "OptimalControlProblem.hpp"
-#include "QpSolverTypes.hpp"
-#include "QpTrajectories.hpp"
-#include "Reference.hpp"
-#include "StateInputConstraint.hpp"
+#include "Approximation/LinearQuadraticApproximator.hpp"
+#include "Constraint/StateInputConstraint.hpp"
+#include "ModelData/Multiplier.hpp"
+#include "OptimalControl/OptimalControlProblem.hpp"
+#include "OptimalControlData/Reference.hpp"
+#include "Tests/Include/MatrixEigenConversion.hpp"
+#include "Tests/Include/QpSolverTypes.hpp"
+#include "Tests/Include/QpTrajectories.hpp"
 #include "Transcription/TranscriptionTraits.hpp"
-#include "iLQRDescriptor.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 namespace qp_solver {
 

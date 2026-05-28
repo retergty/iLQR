@@ -4,8 +4,8 @@
  */
 #pragma once
 
-#include "Metrics.hpp"
-#include "iLQRDescriptor.hpp"
+#include "ModelData/Metrics.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 /**
  * @brief 整条 rollout 的问题指标容器：终端一点 Metrics + 中间 PredictLength

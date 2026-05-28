@@ -7,7 +7,7 @@
 #include <array>
 #include <cmath>
 
-#include "LinearInterpolation.hpp"
+#include "Misc/LinearInterpolation.hpp"
 #include "Types.hpp"
 
 using namespace LinearInterpolation;

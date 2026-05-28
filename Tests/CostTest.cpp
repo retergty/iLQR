@@ -7,7 +7,7 @@
 
 #include <array>
 
-#include "QuadraticStateCost.hpp"
+#include "Cost/QuadraticStateCost.hpp"
 #include "Types.hpp"
 
 class QuadraticCostTest : public testing::Test {

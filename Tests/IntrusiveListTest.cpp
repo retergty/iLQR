@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "IntrusiveList.hpp"
+#include "IntrusiveList/IntrusiveList.hpp"
 
 namespace {
 struct TestNode : public IntrusiveListNode<TestNode> {

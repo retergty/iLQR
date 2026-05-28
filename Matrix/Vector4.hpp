@@ -41,7 +41,7 @@
 
 #pragma once
 
-#include "Vector.hpp"
+#include "Matrix/Vector.hpp"
 
 namespace matrix {
 

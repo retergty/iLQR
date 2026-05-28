@@ -3,9 +3,9 @@
  * @brief DDP/iLQR 算法参数：迭代数、收敛容差、时间步长、线搜索策略等。
  */
 #pragma once
-#include "Integration.hpp"
-#include "SearchStrategyBase.hpp"
-#include "SearchStrategySettings.hpp"
+#include "Integration/Integration.hpp"
+#include "SearchStrategy/SearchStrategyBase.hpp"
+#include "SearchStrategy/SearchStrategySettings.hpp"
 
 /**
  * @brief DDP

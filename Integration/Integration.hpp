@@ -4,7 +4,7 @@
  * IntegratorBase。
  */
 #pragma once
-#include "Observer.hpp"
+#include "Integration/Observer.hpp"
 #include "Types.hpp"
 
 /**

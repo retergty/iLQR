@@ -4,8 +4,8 @@
  */
 #include <gtest/gtest.h>
 
-#include "LinearController.hpp"
-#include "LinearSystemDynamics.hpp"
+#include "Controller/LinearController.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
 #include "Types.hpp"
 
 // 验证线性系统的流映射返回 Ax + Bu。

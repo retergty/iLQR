@@ -2,11 +2,11 @@
 
 #include <array>
 
-#include "Multiplier.hpp"
-#include "OptimalControlProblem.hpp"
-#include "QpDiscreteTranscription.hpp"
-#include "QpSolver.hpp"
-#include "QpTrajectories.hpp"
+#include "ModelData/Multiplier.hpp"
+#include "OptimalControl/OptimalControlProblem.hpp"
+#include "Tests/Include/QpDiscreteTranscription.hpp"
+#include "Tests/Include/QpSolver.hpp"
+#include "Tests/Include/QpTrajectories.hpp"
 
 namespace qp_solver {
 

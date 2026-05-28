@@ -30,8 +30,8 @@
 
 #include <float.h>  // FLT_EPSILON
 
-#include "Vector3.hpp"
-#include "Vector4.hpp"
+#include "Matrix/Vector3.hpp"
+#include "Matrix/Vector4.hpp"
 
 namespace matrix {
 

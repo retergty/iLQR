@@ -7,7 +7,7 @@
 
 #include <math.h>
 
-#include "AugmentedPenaltyBase.hpp"
+#include "Penalties/AugmentedPenaltyBase.hpp"
 
 /**
  * @brief 单不等式约束的修正松弛障碍惩罚实现：乘子更新

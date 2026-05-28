@@ -1,8 +1,22 @@
-# 查找或下载GoogleTest
+# 查找或下载测试依赖
 include(FetchContent)
+
+find_package(Eigen3 3.3 CONFIG QUIET)
+if(NOT Eigen3_FOUND)
+    FetchContent_Declare(
+        eigen
+        URL "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz"
+    )
+    FetchContent_MakeAvailable(eigen)
+
+    if(NOT TARGET Eigen3::Eigen AND TARGET eigen)
+        add_library(Eigen3::Eigen ALIAS eigen)
+    endif()
+endif()
+
 FetchContent_Declare(
-  googletest
-  URL "https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip"
+    googletest
+    URL "https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip"
 )
 FetchContent_MakeAvailable(googletest)
 
@@ -51,6 +65,7 @@ foreach(test_source ${TEST_SOURCES})
     target_link_libraries(${test_name}
         PRIVATE
         GTest::gtest_main
+        Eigen3::Eigen
         iLQR_Include
     )
 

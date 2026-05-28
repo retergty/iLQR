@@ -5,12 +5,12 @@
  */
 #pragma once
 
-#include "AugmentedPenaltyBase.hpp"
-#include "LagrangianMetrics.hpp"
-#include "MultidimensionalPenalty.hpp"
-#include "QuadraticApproximation.hpp"
-#include "StateInputAugmentedLagrangianInterface.hpp"
-#include "StateInputConstraint.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
+#include "AugmentedLagrangian/StateInputAugmentedLagrangianInterface.hpp"
+#include "Constraint/StateInputConstraint.hpp"
+#include "OptimalControlData/LagrangianMetrics.hpp"
+#include "Penalties/AugmentedPenaltyBase.hpp"
+#include "Penalties/MultidimensionalPenalty.hpp"
 #include "Types.hpp"
 
 /**

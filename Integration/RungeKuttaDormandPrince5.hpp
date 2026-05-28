@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include "Integration.hpp"
+#include "Integration/Integration.hpp"
 
 /**
  * @brief Dormand-Prince 5 阶单步器：给定 (t, x, dxdt) 与步长

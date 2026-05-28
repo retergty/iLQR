@@ -4,9 +4,9 @@
  */
 #pragma once
 
-#include "DiscreteTimeRollout.hpp"
-#include "TimeTriggeredRollout.hpp"
-#include "iLQRDescriptor.hpp"
+#include "Rollout/DiscreteTimeRollout.hpp"
+#include "Rollout/TimeTriggeredRollout.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 /**
  * @brief rollout 模式 traits。

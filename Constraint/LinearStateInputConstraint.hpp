@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StateInputConstraint.hpp"
+#include "Constraint/StateInputConstraint.hpp"
 #include "Types.hpp"
 
 /**

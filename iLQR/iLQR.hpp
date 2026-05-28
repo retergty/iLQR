@@ -7,15 +7,15 @@
 #include <array>
 #include <cassert>
 
-#include "DDPSetting.hpp"
-#include "HessianCorrection.hpp"
-#include "LineSearchStrategy.hpp"
-#include "OptimalControlProblemHelperFunction.hpp"
-#include "PerformanceIndex.hpp"
-#include "SearchStrategyBase.hpp"
-#include "TrapezoidalIntegration.hpp"
+#include "Integration/TrapezoidalIntegration.hpp"
+#include "OptimalControl/OptimalControlProblemHelperFunction.hpp"
+#include "OptimalControlData/PerformanceIndex.hpp"
+#include "SearchStrategy/LineSearchStrategy.hpp"
+#include "SearchStrategy/SearchStrategyBase.hpp"
 #include "Types.hpp"
-#include "iLQRTypes.hpp"
+#include "iLQR/DDPSetting.hpp"
+#include "iLQR/HessianCorrection.hpp"
+#include "iLQR/iLQRTypes.hpp"
 
 /**
  * @brief 迭代线性二次调节器（iLQR）：基于名义轨迹的 LQ 近似与离散时间 Riccati

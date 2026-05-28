@@ -7,8 +7,8 @@
 #include <tuple>
 #include <utility>
 
-#include "MatrixEigenConversion.hpp"
-#include "QpSolverTypes.hpp"
+#include "Tests/Include/MatrixEigenConversion.hpp"
+#include "Tests/Include/QpSolverTypes.hpp"
 
 namespace qp_solver {
 

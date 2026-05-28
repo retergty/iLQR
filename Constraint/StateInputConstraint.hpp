@@ -6,9 +6,9 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "ConstraintOrder.hpp"
-#include "LinearApproximation.hpp"
-#include "QuadraticApproximation.hpp"
+#include "Approximation/LinearApproximation.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
+#include "Constraint/ConstraintOrder.hpp"
 #include "Types.hpp"
 
 /**

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "Matrix.hpp"
-#include "Vector.hpp"
+#include "Matrix/Matrix.hpp"
+#include "Matrix/Vector.hpp"
 
 // 验证自实现 Matrix 支持一维 initializer_list 按行优先初始化。
 TEST(MatrixTest, SupportsFlatInitializerListConstruction) {

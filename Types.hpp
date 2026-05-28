@@ -6,8 +6,8 @@
 #include <Eigen/Core>
 #include <utility>
 
-#include "Matrix.hpp"
-#include "Vector.hpp"
+#include "Matrix/Matrix.hpp"
+#include "Matrix/Vector.hpp"
 
 /** @brief 固定尺寸矩阵类型别名，基于 matrix::Matrix。 */
 template <typename Scalar, int Rows, int Cols>

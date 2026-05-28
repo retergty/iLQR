@@ -5,7 +5,7 @@
 #pragma once
 #include <array>
 
-#include "LinearController.hpp"
+#include "Controller/LinearController.hpp"
 
 /**
  * @brief 原始问题解：一条 rollout 的时间、状态、输入轨迹及对应的线性控制器。

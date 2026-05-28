@@ -2,10 +2,10 @@
 
 #include <cstddef>
 
-#include "LinearSystemDynamics.hpp"
-#include "OptimalControlProblem.hpp"
-#include "QuadraticStateCost.hpp"
-#include "iLQRDescriptor.hpp"
+#include "Cost/QuadraticStateCost.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "OptimalControl/OptimalControlProblem.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 namespace exp0 {
 
@@ -21,8 +21,8 @@ class EXP0_Sys1 final
  public:
   EXP0_Sys1()
       : LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>(
-            Matrix<Scalar, STATE_DIM, STATE_DIM>{
-                {Scalar(0.6), Scalar(1.2)}, {Scalar(-0.8), Scalar(3.4)}},
+            Matrix<Scalar, STATE_DIM, STATE_DIM>{{Scalar(0.6), Scalar(1.2)},
+                                                 {Scalar(-0.8), Scalar(3.4)}},
             Matrix<Scalar, STATE_DIM, INPUT_DIM>{Scalar(1.0), Scalar(1.0)}) {}
   ~EXP0_Sys1() override = default;
 
@@ -39,8 +39,8 @@ class EXP0_Cost final : public QuadraticStateInputCost<Scalar, STATE_DIM,
  public:
   EXP0_Cost()
       : QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(
-            Matrix<Scalar, STATE_DIM, STATE_DIM>{
-                {Scalar(2.0), Scalar(0.0)}, {Scalar(0.0), Scalar(2.0)}},
+            Matrix<Scalar, STATE_DIM, STATE_DIM>{{Scalar(2.0), Scalar(0.0)},
+                                                 {Scalar(0.0), Scalar(2.0)}},
             Matrix<Scalar, INPUT_DIM, INPUT_DIM>::Identity(), 0) {}
   ~EXP0_Cost() override = default;
 

@@ -4,15 +4,15 @@
 #include <cstddef>
 #include <iostream>
 
-#include "DefaultInitializer.hpp"
-#include "LinearStateConstraint.hpp"
-#include "LinearSystemDynamics.hpp"
-#include "OptimalControlProblem.hpp"
-#include "QuadraticPenalty.hpp"
-#include "QuadraticStateCost.hpp"
-#include "StateAugmentedLagrangian.hpp"
+#include "AugmentedLagrangian/StateAugmentedLagrangian.hpp"
+#include "Constraint/LinearStateConstraint.hpp"
+#include "Cost/QuadraticStateCost.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Initialization/DefaultInitializer.hpp"
+#include "OptimalControl/OptimalControlProblem.hpp"
+#include "Penalties/QuadraticPenalty.hpp"
 #include "Types.hpp"
-#include "iLQRDescriptor.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 namespace double_integrator {
 template <typename Scalar, int ArrayLength>

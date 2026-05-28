@@ -4,11 +4,11 @@
  */
 #include <gtest/gtest.h>
 
-#include "DefaultInitializer.hpp"
-#include "LinearSystemDynamics.hpp"
-#include "QuadraticStateCost.hpp"
+#include "Cost/QuadraticStateCost.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Initialization/DefaultInitializer.hpp"
 #include "Types.hpp"
-#include "iLQR.hpp"
+#include "iLQR/iLQR.hpp"
 
 // 验证带二次跟踪代价的问题可以完整运行 iLQR 求解流程。
 TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost) {

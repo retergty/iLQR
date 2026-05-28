@@ -4,9 +4,9 @@
  */
 #pragma once
 
-#include "DiscreteSystemDynamicsBase.hpp"
-#include "SystemDynamicsBase.hpp"
-#include "iLQRDescriptor.hpp"
+#include "Dynamics/DiscreteSystemDynamicsBase.hpp"
+#include "Dynamics/SystemDynamicsBase.hpp"
+#include "iLQR/iLQRDescriptor.hpp"
 
 /**
  * @brief 动力学模式 traits。

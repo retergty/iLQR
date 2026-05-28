@@ -6,9 +6,9 @@
 
 #include <array>
 
-#include "LinearController.hpp"
-#include "LinearSystemDynamics.hpp"
-#include "TimeTriggeredRollout.hpp"
+#include "Controller/LinearController.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Rollout/TimeTriggeredRollout.hpp"
 
 namespace {
 using Scalar = double;

@@ -10,9 +10,9 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "LinearSystemDynamics.hpp"
-#include "SystemDynamicsBase.hpp"
-#include "SystemDynamicsLinearizer.hpp"
+#include "Dynamics/LinearSystemDynamics.hpp"
+#include "Dynamics/SystemDynamicsBase.hpp"
+#include "Dynamics/SystemDynamicsLinearizer.hpp"
 #include "Types.hpp"
 
 namespace {

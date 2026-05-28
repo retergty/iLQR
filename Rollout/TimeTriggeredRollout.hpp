@@ -4,9 +4,9 @@
  * 积分受控动力学并可选地重建输入轨迹。
  */
 #pragma once
-#include "ControlledSystemBase.hpp"
-#include "RolloutBase.hpp"
-#include "RungeKuttaDormandPrince5.hpp"
+#include "Dynamics/ControlledSystemBase.hpp"
+#include "Integration/RungeKuttaDormandPrince5.hpp"
+#include "Rollout/RolloutBase.hpp"
 
 /**
  * @brief 时间触发前向 rollout：绑定受控系统动力学，用 RK45

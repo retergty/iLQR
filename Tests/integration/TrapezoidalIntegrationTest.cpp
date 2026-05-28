@@ -6,7 +6,7 @@
 
 #include <array>
 
-#include "TrapezoidalIntegration.hpp"
+#include "Integration/TrapezoidalIntegration.hpp"
 
 TEST(TrapezoidalIntegrationTest, Rectangle) {
   constexpr double width = 8.0;

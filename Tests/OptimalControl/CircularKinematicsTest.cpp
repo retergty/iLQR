@@ -4,9 +4,9 @@
 #include <string>
 #include <tuple>
 
-#include "CircularKinematics.hpp"
-#include "DefaultInitializer.hpp"
-#include "iLQR.hpp"
+#include "Initialization/DefaultInitializer.hpp"
+#include "Models/CircularKinematics.hpp"
+#include "iLQR/iLQR.hpp"
 
 class CircularKinematicsTest
     : public testing::TestWithParam<std::tuple<

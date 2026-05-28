@@ -4,9 +4,9 @@
 #include <array>
 #include <cmath>
 
-#include "Initializer.hpp"
-#include "ThrustVector.hpp"
-#include "iLQR.hpp"
+#include "Initialization/Initializer.hpp"
+#include "Models/ThrustVector.hpp"
+#include "iLQR/iLQR.hpp"
 
 namespace {
 using Scalar = double;

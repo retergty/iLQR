@@ -4,9 +4,9 @@
  */
 #pragma once
 
-#include "LagrangianMetrics.hpp"
-#include "Multiplier.hpp"
-#include "QuadraticApproximation.hpp"
+#include "Approximation/QuadraticApproximation.hpp"
+#include "ModelData/Multiplier.hpp"
+#include "OptimalControlData/LagrangianMetrics.hpp"
 #include "Types.hpp"
 
 /**

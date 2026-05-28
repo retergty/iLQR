@@ -12,7 +12,7 @@
 #include <cmath>
 #include <cstdio>
 
-#include "helper_functions.hpp"
+#include "Matrix/helper_functions.hpp"
 
 namespace matrix {
 
