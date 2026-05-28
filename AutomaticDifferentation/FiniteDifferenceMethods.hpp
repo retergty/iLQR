@@ -86,8 +86,9 @@ Matrix<Scalar, XDim, XDim> finiteDifferenceDerivativeState(
 
   if (isSecondOrderSystem) {
     // 假定状态向量 = [x, x_dot]。
-    A.topLeftCorner(x.rows() / 2, x.rows() / 2).setZero();
-    A.topRightCorner(x.rows() / 2, x.rows() / 2).setIdentity();
+    constexpr int HalfXDim = XDim / 2;
+    A.template topLeftCorner<HalfXDim, HalfXDim>().setZero();
+    A.template topRightCorner<HalfXDim, HalfXDim>().setIdentity();
   }
   return A;
 }
@@ -124,7 +125,8 @@ Matrix<Scalar, XDim, UDim> finiteDifferenceDerivativeInput(
 
   if (isSecondOrderSystem) {
     // 假定状态向量 = [x, x_dot]。
-    B.topRows(x.rows() / 2).setZero();
+    constexpr int HalfXDim = XDim / 2;
+    B.template topRows<HalfXDim>().setZero();
   }
   return B;
 }

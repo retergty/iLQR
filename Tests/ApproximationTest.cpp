@@ -17,27 +17,25 @@ TEST(ApproximationTest, LinearAndQuadraticApproximationUtilities) {
   EXPECT_DOUBLE_EQ(linear.f, 0.0);
 
   ScalarFunctionLinearApproximation<double, 2, 1> linearIncrement;
-  linearIncrement.dfdx << 1.0, 2.0;
-  linearIncrement.dfdu << 3.0;
+  linearIncrement.dfdx = {1.0, 2.0};
+  linearIncrement.dfdu = {3.0};
   linearIncrement.f = 4.0;
   linear += linearIncrement;
   linear *= 2.0;
 
-  Eigen::Vector2d expectedLinearDfdx;
-  expectedLinearDfdx << 2.0, 4.0;
-  Eigen::Matrix<double, 1, 1> expectedLinearDfdu;
-  expectedLinearDfdu << 6.0;
+  const Vector<double, 2> expectedLinearDfdx{2.0, 4.0};
+  const Vector<double, 1> expectedLinearDfdu{6.0};
   EXPECT_TRUE(linear.dfdx.isApprox(expectedLinearDfdx, 1e-12));
   EXPECT_TRUE(linear.dfdu.isApprox(expectedLinearDfdu, 1e-12));
   EXPECT_DOUBLE_EQ(linear.f, 8.0);
 
   ScalarFunctionQuadraticApproximation<double, 2, 1> quadratic;
   quadratic.setZero();
-  quadratic.dfdxx << 1.0, 2.0, 3.0, 4.0;
-  quadratic.dfdux << 5.0, 6.0;
-  quadratic.dfduu << 7.0;
-  quadratic.dfdx << 8.0, 9.0;
-  quadratic.dfdu << 10.0;
+  quadratic.dfdxx = {{1.0, 2.0}, {3.0, 4.0}};
+  quadratic.dfdux = {5.0, 6.0};
+  quadratic.dfduu = {7.0};
+  quadratic.dfdx = {8.0, 9.0};
+  quadratic.dfdu = {10.0};
   quadratic.f = 11.0;
 
   const auto scaled = 0.5 * quadratic;
@@ -57,20 +55,16 @@ TEST(ApproximationTest,
       iLQRDescriptor<double, TranscriptionConfig<Dimensions<2, 2>, Horizon<2>>>;
   using Approximator = LinearQuadraticApproximator<Descriptor>;
 
-  Eigen::Matrix2d A;
-  A << 1.0, 2.0, 3.0, 4.0;
-  Eigen::Matrix2d B = Eigen::Matrix2d::Identity();
+  Matrix<double, 2, 2> A{{1.0, 2.0}, {3.0, 4.0}};
+  Matrix<double, 2, 2> B = Matrix<double, 2, 2>::Identity();
   LinearSystemDynamics<double, 2, 2> dynamics(A, B);
 
   Approximator::OptimalControlProblem_t problem;
   problem.dynamicsPtr = &dynamics;
 
-  Eigen::Matrix2d Q;
-  Q << 2.0, 0.0, 0.0, 4.0;
-  Eigen::Matrix2d R;
-  R << 3.0, 0.0, 0.0, 5.0;
-  Eigen::Matrix2d QState;
-  QState << 7.0, 0.0, 0.0, 11.0;
+  Matrix<double, 2, 2> Q{{2.0, 0.0}, {0.0, 4.0}};
+  Matrix<double, 2, 2> R{{3.0, 0.0}, {0.0, 5.0}};
+  Matrix<double, 2, 2> QState{{7.0, 0.0}, {0.0, 11.0}};
   QuadraticStateInputCost<double, 2, 2, 3> stateInputCost(Q, R, 0);
   QuadraticStateCost<double, 2, 3> stateCost(QState, 0);
   problem.cost.add(stateInputCost);
@@ -78,17 +72,15 @@ TEST(ApproximationTest,
 
   Approximator::TargetTrajectories_t targetTrajectory;
   targetTrajectory.timeTrajectory = {0.0, 1.0, 2.0};
-  targetTrajectory.stateTrajectory[0] << 0.0, 0.0;
-  targetTrajectory.stateTrajectory[1] << 1.0, 1.0;
-  targetTrajectory.stateTrajectory[2] << 2.0, 2.0;
-  targetTrajectory.inputTrajectory[0] << 0.0, 0.0;
-  targetTrajectory.inputTrajectory[1] << 1.0, -1.0;
-  targetTrajectory.inputTrajectory[2] << 2.0, -2.0;
+  targetTrajectory.stateTrajectory[0] = {0.0, 0.0};
+  targetTrajectory.stateTrajectory[1] = {1.0, 1.0};
+  targetTrajectory.stateTrajectory[2] = {2.0, 2.0};
+  targetTrajectory.inputTrajectory[0] = {0.0, 0.0};
+  targetTrajectory.inputTrajectory[1] = {1.0, -1.0};
+  targetTrajectory.inputTrajectory[2] = {2.0, -2.0};
 
-  Eigen::Vector2d state;
-  state << 2.0, 3.0;
-  Eigen::Vector2d input;
-  input << 4.0, -1.0;
+  Vector<double, 2> state{2.0, 3.0};
+  Vector<double, 2> input{4.0, -1.0};
 
   const double cost =
       Approximator::computeCost(problem, targetTrajectory, 0.5, state, input);
@@ -100,14 +92,10 @@ TEST(ApproximationTest,
   const auto dynamicsApproximation =
       dynamics.linearApproximation(0.5, state, input);
 
-  Eigen::Vector2d expectedDfdx;
-  expectedDfdx << 13.5, 37.5;
-  Eigen::Vector2d expectedDfdu;
-  expectedDfdu << 10.5, -2.5;
-  Eigen::Matrix2d expectedDfdxx;
-  expectedDfdxx << 9.0, 0.0, 0.0, 15.0;
-  Eigen::Vector2d expectedDynamics;
-  expectedDynamics << 12.0, 17.0;
+  const Vector<double, 2> expectedDfdx{13.5, 37.5};
+  const Vector<double, 2> expectedDfdu{10.5, -2.5};
+  const Matrix<double, 2, 2> expectedDfdxx{{9.0, 0.0}, {0.0, 15.0}};
+  const Vector<double, 2> expectedDynamics{12.0, 17.0};
 
   EXPECT_DOUBLE_EQ(cost, 76.0);
   EXPECT_DOUBLE_EQ(costApproximation.f, 76.0);
@@ -133,19 +121,17 @@ TEST(ApproximationTest, LinearQuadraticApproximatorComputesFinalCostAndLQ) {
   using Approximator = LinearQuadraticApproximator<Descriptor>;
 
   Approximator::OptimalControlProblem_t problem;
-  Eigen::Matrix2d QFinal;
-  QFinal << 2.0, 0.0, 0.0, 6.0;
+  Matrix<double, 2, 2> QFinal{{2.0, 0.0}, {0.0, 6.0}};
   QuadraticStateCost<double, 2, 3> finalCost(QFinal, 0);
   problem.finalCost.add(finalCost);
 
   Approximator::TargetTrajectories_t targetTrajectory;
   targetTrajectory.timeTrajectory = {0.0, 1.0, 2.0};
-  targetTrajectory.stateTrajectory[0] << 0.0, 0.0;
-  targetTrajectory.stateTrajectory[1] << 1.0, 1.0;
-  targetTrajectory.stateTrajectory[2] << 2.0, 2.0;
+  targetTrajectory.stateTrajectory[0] = {0.0, 0.0};
+  targetTrajectory.stateTrajectory[1] = {1.0, 1.0};
+  targetTrajectory.stateTrajectory[2] = {2.0, 2.0};
 
-  Eigen::Vector2d state;
-  state << 3.5, -0.5;
+  Vector<double, 2> state{3.5, -0.5};
 
   Approximator::FinalMultiplierCollection_t multipliers;
   const double cost =
@@ -155,8 +141,7 @@ TEST(ApproximationTest, LinearQuadraticApproximatorComputesFinalCostAndLQ) {
   const auto modelData = Approximator::approximateFinalLQ(
       problem, targetTrajectory, 1.5, state, multipliers);
 
-  Eigen::Vector2d expectedDfdx;
-  expectedDfdx << 4.0, -12.0;
+  const Vector<double, 2> expectedDfdx{4.0, -12.0};
 
   EXPECT_DOUBLE_EQ(cost, 16.0);
   EXPECT_DOUBLE_EQ(costApproximation.f, 16.0);

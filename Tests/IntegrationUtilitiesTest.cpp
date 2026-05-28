@@ -19,16 +19,14 @@ TEST(IntegrationUtilitiesTest, TrapezoidalIntegrationScalarNonUniformGrid) {
 // 验证向量梯形积分按分量独立计算。
 TEST(IntegrationUtilitiesTest, TrapezoidalIntegrationVector) {
   std::array<double, 2> times = {0.0, 2.0};
-  std::array<Eigen::Vector2d, 2> values;
-  values[0] << 1.0, -1.0;
-  values[1] << 3.0, 5.0;
+  std::array<Vector<double, 2>, 2> values = {Vector<double, 2>{1.0, -1.0},
+                                             Vector<double, 2>{3.0, 5.0}};
 
-  Eigen::Vector2d initial;
-  initial << 10.0, 20.0;
-  Eigen::Vector2d expected;
-  expected << 14.0, 24.0;
+  const Vector<double, 2> initial{10.0, 20.0};
+  const Vector<double, 2> expected{14.0, 24.0};
 
-  const Eigen::Vector2d result = trapezoidalIntegration(times, values, initial);
+  const Vector<double, 2> result =
+      trapezoidalIntegration(times, values, initial);
 
   EXPECT_TRUE(result.isApprox(expected, 1e-10));
 }
@@ -36,16 +34,14 @@ TEST(IntegrationUtilitiesTest, TrapezoidalIntegrationVector) {
 // 验证 Observer 达到容量后停止写入，并且可通过 clear() 重置。
 TEST(IntegrationUtilitiesTest, ObserverStoresUpToCapacityAndCanClear) {
   std::array<double, 2> times = {};
-  std::array<Eigen::Vector2d, 2> states;
-  states[0].setZero();
-  states[1].setZero();
+  std::array<Vector<double, 2>, 2> states = {Vector<double, 2>::Zero(),
+                                             Vector<double, 2>::Zero()};
 
   Observer<double, 2> observer(2, states.data(), times.data());
 
-  Eigen::Vector2d x0, x1, x2;
-  x0 << 1.0, 2.0;
-  x1 << 3.0, 4.0;
-  x2 << 5.0, 6.0;
+  const Vector<double, 2> x0{1.0, 2.0};
+  const Vector<double, 2> x1{3.0, 4.0};
+  const Vector<double, 2> x2{5.0, 6.0};
 
   observer.observe(x0, 0.0);
   observer.observe(x1, 1.0);

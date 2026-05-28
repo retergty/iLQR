@@ -138,7 +138,7 @@ using Vector = typename ilqr_linalg::VectorSelector<Scalar, Rows>::type;
 
 ### 命名空间前缀替换
 
-将 Eigen 类型迁移到自定义矩阵库时，先把 `Eigen::` 前缀替换为 `matrix::` 前缀，再根据目标类型补全自定义库的类型名与维度。
+将 Eigen 类型迁移到自定义矩阵库时，先把 `Eigen::` 前缀删除，再根据目标类型补全自定义库的类型名与维度。
 
 例如：
 
@@ -150,11 +150,11 @@ Eigen::Matrix<double, 3, 1> b;
 替换为：
 
 ```cpp
-matrix::Matrix<double, 2, 2> A;
-matrix::Vector<double, 3> b;
+Matrix<double, 2, 2> A;
+Vector<double, 3> b;
 ```
 
-注意 `Eigen::Matrix<Scalar, Rows, 1>` 应优先替换成 `matrix::Vector<Scalar, Rows>`，不要保留三模板参数的向量写法。
+注意 `Eigen::Matrix<Scalar, Rows, 1>` 应优先替换成 `Vector<Scalar, Rows>`，不要保留三模板参数的向量写法。
 
 ### `<<` 初始化优先替换为 `initializer_list`
 

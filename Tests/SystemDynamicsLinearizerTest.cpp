@@ -26,10 +26,10 @@ constexpr int kInputDim = 1;
 constexpr double kPi = 3.14159265358979323846;
 
 using Scalar = double;
-using StateVector = Eigen::Vector<Scalar, kStateDim>;
-using InputVector = Eigen::Vector<Scalar, kInputDim>;
-using StateMatrix = Eigen::Matrix<Scalar, kStateDim, kStateDim>;
-using InputMatrix = Eigen::Matrix<Scalar, kStateDim, kInputDim>;
+using StateVector = Vector<Scalar, kStateDim>;
+using InputVector = Vector<Scalar, kInputDim>;
+using StateMatrix = Matrix<Scalar, kStateDim, kStateDim>;
+using InputMatrix = Matrix<Scalar, kStateDim, kInputDim>;
 using LinearApproximation =
     VectorFunctionLinearApproximation<Scalar, kStateDim, kStateDim, kInputDim>;
 using SystemDynamics = SystemDynamicsBase<Scalar, kStateDim, kInputDim>;
@@ -49,9 +49,7 @@ class PendulumSystem final : public SystemDynamics {
   StateVector computeFlowMap(Scalar t, const StateVector& x,
                              const InputVector& u) override {
     (void)t;
-    StateVector dfdt;
-    dfdt << x(1), std::sin(x(0)) + 0.1 * u(0);
-    return dfdt;
+    return StateVector{x(1), std::sin(x(0)) + 0.1 * u(0)};
   }
 
   LinearApproximation linearApproximation(Scalar t, const StateVector& x,
@@ -59,8 +57,8 @@ class PendulumSystem final : public SystemDynamics {
     (void)t;
     LinearApproximation linearDynamics;
     linearDynamics.f = computeFlowMap(t, x, u);
-    linearDynamics.dfdx << 0.0, 1.0, std::cos(x(0)), 0.0;
-    linearDynamics.dfdu << 0.0, 0.1;
+    linearDynamics.dfdx = {{0.0, 1.0}, {std::cos(x(0)), 0.0}};
+    linearDynamics.dfdu = {0.0, 0.1};
     return linearDynamics;
   }
 };
@@ -71,10 +69,8 @@ TEST(testSystemDynamicsLinearizer, testDerivativeChecker) {
   const StateVector state = StateVector::Zero();
   const InputVector input = InputVector::Zero();
 
-  StateMatrix A;
-  InputMatrix B;
-  A << 0.6, 1.2, -0.8, 3.4;
-  B << 1.0, 1.0;
+  StateMatrix A{{0.6, 1.2}, {-0.8, 3.4}};
+  InputMatrix B{1.0, 1.0};
 
   LinearSystem linSys(A, B);
 
@@ -92,10 +88,8 @@ TEST(testSystemDynamicsLinearizer, testLinearSystem) {
   const StateVector state = StateVector::Zero();
   const InputVector input = InputVector::Zero();
 
-  StateMatrix A;
-  InputMatrix B;
-  A << 0.6, 1.2, -0.8, 3.4;
-  B << 1.0, 1.0;
+  StateMatrix A{{0.6, 1.2}, {-0.8, 3.4}};
+  InputMatrix B{1.0, 1.0};
 
   LinearSystem linSys(A, B);
 
@@ -120,7 +114,7 @@ TEST(testSystemDynamicsLinearizer, testPendulum) {
   for (std::size_t i = 0; i < kDivisions; ++i) {
     const Scalar alpha =
         static_cast<Scalar>(i) / static_cast<Scalar>(kDivisions - 1);
-    testStates[i] << alpha * toRads * maxDeg, 0.0;
+    testStates[i] = {alpha * toRads * maxDeg, 0.0};
   }
 
   const InputVector input = InputVector::Random();
@@ -144,9 +138,9 @@ bool derivativeChecker(SystemDynamics& sys1, SystemDynamics& sys2,
   const auto derivatives1 = sys1.linearApproximation(t, x, u);
   const auto derivatives2 = sys2.linearApproximation(t, x, u);
   const Scalar AError =
-      (derivatives1.dfdx - derivatives2.dfdx).lpNorm<Eigen::Infinity>();
+      (derivatives1.dfdx - derivatives2.dfdx).lpNorm<matrix::Infinity>();
   const Scalar BError =
-      (derivatives1.dfdu - derivatives2.dfdu).lpNorm<Eigen::Infinity>();
+      (derivatives1.dfdu - derivatives2.dfdu).lpNorm<matrix::Infinity>();
   return tolerance > std::max(AError, BError);
 }
 

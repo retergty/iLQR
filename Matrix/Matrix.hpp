@@ -11,6 +11,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <initializer_list>
 
@@ -18,6 +19,8 @@
 #include "helper_functions.hpp"
 
 namespace matrix {
+
+constexpr int Infinity = -1;
 
 template <typename Type, int M, int N>
 class Matrix {
@@ -148,6 +151,18 @@ class Matrix {
   static Matrix<Type, M, N> Identity() {
     Matrix<Type, M, N> result;
     result.setIdentity();
+    return result;
+  }
+
+  static Matrix<Type, M, N> Random() {
+    Matrix<Type, M, N> result;
+
+    for (size_t i = 0; i < M; i++) {
+      for (size_t j = 0; j < N; j++) {
+        result(i, j) = Type(2) * Type(std::rand()) / Type(RAND_MAX) - Type(1);
+      }
+    }
+
     return result;
   }
 
@@ -428,9 +443,33 @@ class Matrix {
     return isEqual(*this, other, eps);
   }
 
+  bool isZero(const Type eps = Type(1e-4f)) const {
+    return isApprox(Matrix<Type, M, N>::Zero(), eps);
+  }
+
   bool operator!=(const Matrix<Type, M, N>& other) const {
     const Matrix<Type, M, N>& self = *this;
     return !(self == other);
+  }
+
+  template <int P>
+  Type lpNorm() const {
+    static_assert(P == Infinity,
+                  "Only lpNorm<matrix::Infinity>() is supported.");
+
+    Type max_val(0);
+    const Matrix<Type, M, N>& self = *this;
+
+    for (size_t i = 0; i < M; i++) {
+      for (size_t j = 0; j < N; j++) {
+        const Type abs_val = Type(std::fabs(self(i, j)));
+        if (abs_val > max_val) {
+          max_val = abs_val;
+        }
+      }
+    }
+
+    return max_val;
   }
 
   /**
@@ -524,6 +563,58 @@ class Matrix {
   template <int P, int Q>
   Slice<Type, P, Q, M, N> slice(size_t x0, size_t y0) {
     return {x0, y0, this};
+  }
+
+  template <int R, int C>
+  ConstSlice<Type, R, C, M, N> topLeftCorner() const {
+    static_assert(R <= M, "Corner rows bigger than matrix");
+    static_assert(C <= N, "Corner cols bigger than matrix");
+    return slice<R, C>(0, 0);
+  }
+
+  template <int R, int C>
+  Slice<Type, R, C, M, N> topLeftCorner() {
+    static_assert(R <= M, "Corner rows bigger than matrix");
+    static_assert(C <= N, "Corner cols bigger than matrix");
+    return slice<R, C>(0, 0);
+  }
+
+  template <int R, int C>
+  ConstSlice<Type, R, C, M, N> topRightCorner() const {
+    static_assert(R <= M, "Corner rows bigger than matrix");
+    static_assert(C <= N, "Corner cols bigger than matrix");
+    return slice<R, C>(0, N - C);
+  }
+
+  template <int R, int C>
+  Slice<Type, R, C, M, N> topRightCorner() {
+    static_assert(R <= M, "Corner rows bigger than matrix");
+    static_assert(C <= N, "Corner cols bigger than matrix");
+    return slice<R, C>(0, N - C);
+  }
+
+  template <int R>
+  ConstSlice<Type, R, N, M, N> topRows() const {
+    static_assert(R <= M, "Rows bigger than matrix");
+    return slice<R, N>(0, 0);
+  }
+
+  template <int R>
+  Slice<Type, R, N, M, N> topRows() {
+    static_assert(R <= M, "Rows bigger than matrix");
+    return slice<R, N>(0, 0);
+  }
+
+  template <int R>
+  ConstSlice<Type, R, N, M, N> bottomRows() const {
+    static_assert(R <= M, "Rows bigger than matrix");
+    return slice<R, N>(M - R, 0);
+  }
+
+  template <int R>
+  Slice<Type, R, N, M, N> bottomRows() {
+    static_assert(R <= M, "Rows bigger than matrix");
+    return slice<R, N>(M - R, 0);
   }
 
   ConstSlice<Type, 1, N, M, N> row(size_t i) const { return slice<1, N>(i, 0); }
@@ -621,6 +712,19 @@ class Matrix {
     }
 
     return r;
+  }
+
+  Type squaredNorm() const {
+    Type accum(0);
+    const Matrix<Type, M, N>& self = *this;
+
+    for (size_t i = 0; i < M; i++) {
+      for (size_t j = 0; j < N; j++) {
+        accum += self(i, j) * self(i, j);
+      }
+    }
+
+    return accum;
   }
 
   Type max() const {

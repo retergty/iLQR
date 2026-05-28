@@ -12,6 +12,8 @@
 #include <cmath>
 #include <cstdio>
 
+#include "helper_functions.hpp"
+
 namespace matrix {
 
 template <typename Type, int M, int N>
@@ -141,8 +143,7 @@ class SliceT {
   // allow assigning vectors to a slice that are in the axis
   template <int DUMMY = 1>  // make this a template function since it only
                             // exists for some instantiations
-                            SliceT<MatrixT, Type, 1, Q, M, N>& operator=(
-                                const Vector<Type, Q>& other) {
+  SliceT<MatrixT, Type, 1, Q, M, N>& operator=(const Vector<Type, Q>& other) {
     SliceT<MatrixT, Type, 1, Q, M, N>& self = *this;
 
     for (size_t j = 0; j < Q; j++) {
@@ -246,6 +247,21 @@ class SliceT {
     return operator*=(Type(1) / scalar);
   }
 
+  void setAll(Type val) { (*this) = val; }
+
+  void setZero() { setAll(Type(0)); }
+
+  void setIdentity() {
+    setZero();
+    SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
+
+    const size_t min_i = P > Q ? Q : P;
+
+    for (size_t i = 0; i < min_i; i++) {
+      self(i, i) = Type(1);
+    }
+  }
+
   Matrix<Type, P, Q> operator*(const Type& scalar) const {
     return Matrix<Type, P, Q>{*this} * scalar;
   }
@@ -308,7 +324,23 @@ class SliceT {
     return accum;
   }
 
+  Type squaredNorm() const { return norm_squared(); }
+
   Type norm() const { return std::sqrt(norm_squared()); }
+
+  bool isZero(const Type eps = Type(1e-4f)) const {
+    const SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
+
+    for (size_t i = 0; i < P; i++) {
+      for (size_t j = 0; j < Q; j++) {
+        if (!isEqualF(self(i, j), Type(0), eps)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
 
   bool longerThan(Type testVal) const {
     return norm_squared() > testVal * testVal;

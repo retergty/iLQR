@@ -88,15 +88,13 @@ TEST(PenaltyTest, PenaltyWrapperLinearStateConstraintUsesChainRule) {
 
   ScalarFunctionLinearApproximation<double, 2, 0> constraint;
   constraint.f = 2.0;
-  constraint.dfdx << 1.0, -3.0;
+  constraint.dfdx = {1.0, -3.0};
 
   const auto approximation =
       penalty.getQuadraticApproximation(0.0, constraint, 0.5);
 
-  Eigen::Vector2d expectedDfdx;
-  expectedDfdx << 3.5, -10.5;
-  Eigen::Matrix2d expectedDfdxx;
-  expectedDfdxx << 2.0, -6.0, -6.0, 18.0;
+  const Vector<double, 2> expectedDfdx{3.5, -10.5};
+  const Matrix<double, 2, 2> expectedDfdxx{{2.0, -6.0}, {-6.0, 18.0}};
 
   EXPECT_DOUBLE_EQ(approximation.f, 3.0);
   EXPECT_TRUE(approximation.dfdx.isApprox(expectedDfdx, 1e-12));
@@ -110,22 +108,17 @@ TEST(PenaltyTest, PenaltyWrapperLinearStateInputConstraintUsesChainRule) {
 
   ScalarFunctionLinearApproximation<double, 2, 1> constraint;
   constraint.f = 1.0;
-  constraint.dfdx << 2.0, -1.0;
-  constraint.dfdu << 0.5;
+  constraint.dfdx = {2.0, -1.0};
+  constraint.dfdu = {0.5};
 
   const auto approximation =
       penalty.getQuadraticApproximation(0.0, constraint, 1.5);
 
-  Eigen::Vector2d expectedDfdx;
-  expectedDfdx << 5.0, -2.5;
-  Eigen::Matrix<double, 1, 1> expectedDfdu;
-  expectedDfdu << 1.25;
-  Eigen::Matrix2d expectedDfdxx;
-  expectedDfdxx << 16.0, -8.0, -8.0, 4.0;
-  Eigen::Matrix<double, 1, 2> expectedDfdux;
-  expectedDfdux << 4.0, -2.0;
-  Eigen::Matrix<double, 1, 1> expectedDfduu;
-  expectedDfduu << 1.0;
+  const Vector<double, 2> expectedDfdx{5.0, -2.5};
+  const Vector<double, 1> expectedDfdu{1.25};
+  const Matrix<double, 2, 2> expectedDfdxx{{16.0, -8.0}, {-8.0, 4.0}};
+  const Matrix<double, 1, 2> expectedDfdux{4.0, -2.0};
+  const Matrix<double, 1, 1> expectedDfduu{1.0};
 
   EXPECT_DOUBLE_EQ(approximation.f, 0.5);
   EXPECT_TRUE(approximation.dfdx.isApprox(expectedDfdx, 1e-12));

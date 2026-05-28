@@ -17,26 +17,26 @@ class QuadraticCostTest : public testing::Test {
   static constexpr int UDim = 1;
   static constexpr int ArrayLength = 1;
 
-  using StateMatrix = Eigen::Matrix<Scalar, XDim, XDim>;
-  using InputMatrix = Eigen::Matrix<Scalar, UDim, UDim>;
-  using InputStateMatrix = Eigen::Matrix<Scalar, UDim, XDim>;
-  using StateVector = Eigen::Vector<Scalar, XDim>;
-  using InputVector = Eigen::Vector<Scalar, UDim>;
+  using StateMatrix = Matrix<Scalar, XDim, XDim>;
+  using InputMatrix = Matrix<Scalar, UDim, UDim>;
+  using InputStateMatrix = Matrix<Scalar, UDim, XDim>;
+  using StateVector = Vector<Scalar, XDim>;
+  using InputVector = Vector<Scalar, UDim>;
 
   static constexpr Scalar kPrecision = 1e-12;
 
   QuadraticCostTest() {
-    Q_ << 2.0, 1.0, 1.0, 2.0;
-    Qf_ << 1.0, 0.0, 0.0, 1.0;
-    R_ << 2.0;
-    P_ << 1.0, 1.0;
+    Q_ = {{2.0, 1.0}, {1.0, 2.0}};
+    Qf_ = Matrix<Scalar, XDim, XDim>::Identity();
+    R_ = {2.0};
+    P_ = {1.0, 1.0};
 
     t_ = 0.0;
 
-    xNominal_ << 1.0, -2.0;
-    uNominal_ << 0.5;
-    x_ << 3.0, -1.0;
-    u_ << 2.0;
+    xNominal_ = {1.0, -2.0};
+    uNominal_ = {0.5};
+    x_ = {3.0, -1.0};
+    u_ = {2.0};
 
     timeTrajectory_ = {t_};
     stateTrajectory_ = {xNominal_};

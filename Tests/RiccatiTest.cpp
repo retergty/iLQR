@@ -18,23 +18,21 @@ TEST(RiccatiTest, ReducedFormOneStepMatchesScalarReference) {
   const int UDim = 1;
 
   ModelData<Scalar, XDim, UDim> data;
-  data.dynamics.dfdx << 2.0;
-  data.dynamics.dfdu << 0.5;
+  data.dynamics.dfdx = {2.0};
+  data.dynamics.dfdu = {0.5};
   data.dynamics.f.setZero();
-  data.cost.dfdxx << 7.0;
-  data.cost.dfdux << 11.0;
-  data.cost.dfduu << 13.0;
-  data.cost.dfdx << 17.0;
-  data.cost.dfdu << 19.0;
+  data.cost.dfdxx = {7.0};
+  data.cost.dfdux = {11.0};
+  data.cost.dfduu = {13.0};
+  data.cost.dfdx = {17.0};
+  data.cost.dfdu = {19.0};
   data.cost.f = 23.0;
 
   RiccatiModification<Scalar, XDim, UDim> mod;
-  mod.deltaQm_ << 29.0;
+  mod.deltaQm_ = {29.0};
 
-  Eigen::Matrix<double, 1, 1> SmNext;
-  SmNext << 3.0;
-  Eigen::Matrix<double, 1, 1> SvNext;
-  SvNext << 5.0;
+  Matrix<Scalar, XDim, XDim> SmNext{3.0};
+  Vector<Scalar, XDim> SvNext{5.0};
   Scalar sNext = 31.0;
   mod.hamiltonianHessian_ = data.cost.dfduu + data.dynamics.dfdu.transpose() *
                                                   SmNext * data.dynamics.dfdu;
@@ -42,10 +40,10 @@ TEST(RiccatiTest, ReducedFormOneStepMatchesScalarReference) {
 
   DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati;
 
-  Eigen::Matrix<double, 1, 1> Km;
-  Eigen::Matrix<double, 1, 1> Lv;
-  Eigen::Matrix<double, 1, 1> Sm;
-  Eigen::Matrix<double, 1, 1> Sv;
+  Matrix<Scalar, UDim, XDim> Km;
+  Vector<Scalar, UDim> Lv;
+  Matrix<Scalar, XDim, XDim> Sm;
+  Vector<Scalar, XDim> Sv;
   Scalar s;
 
   riccati.computeMap(data, mod, SmNext, SvNext, sNext, Km, Lv, Sm, Sv, s);
@@ -65,11 +63,11 @@ TEST(RiccatiTest, OneStep_ZeroDynamicsTerminalLike) {
 
   ModelData<Scalar, XDim, UDim> data;
   data.dynamics.dfdx.setZero();
-  data.dynamics.dfdu = Eigen::Matrix2d::Identity();
+  data.dynamics.dfdu = Matrix<Scalar, XDim, UDim>::Identity();
   data.dynamics.f.setZero();
-  data.cost.dfdxx = Eigen::Matrix2d::Identity();
+  data.cost.dfdxx = Matrix<Scalar, XDim, XDim>::Identity();
   data.cost.dfdux.setZero();
-  data.cost.dfduu = Eigen::Matrix2d::Identity();
+  data.cost.dfduu = Matrix<Scalar, UDim, UDim>::Identity();
   data.cost.dfdx.setZero();
   data.cost.dfdu.setZero();
   data.cost.f = 0;
@@ -77,8 +75,8 @@ TEST(RiccatiTest, OneStep_ZeroDynamicsTerminalLike) {
   RiccatiModification<Scalar, XDim, UDim> mod;
   mod.deltaQm_.setZero();
 
-  Eigen::Matrix2d SmNext = Eigen::Matrix2d::Identity();
-  Eigen::Vector2d SvNext = Eigen::Vector2d::Zero();
+  Matrix<Scalar, XDim, XDim> SmNext = Matrix<Scalar, XDim, XDim>::Identity();
+  Vector<Scalar, XDim> SvNext = Vector<Scalar, XDim>::Zero();
   Scalar sNext = 0;
   mod.hamiltonianHessian_ = data.cost.dfduu + data.dynamics.dfdu.transpose() *
                                                   SmNext * data.dynamics.dfdu;
@@ -86,16 +84,16 @@ TEST(RiccatiTest, OneStep_ZeroDynamicsTerminalLike) {
 
   DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati;
 
-  Eigen::Matrix2d Km;
-  Eigen::Vector2d Lv;
-  Eigen::Matrix2d Sm;
-  Eigen::Vector2d Sv;
+  Matrix<Scalar, UDim, XDim> Km;
+  Vector<Scalar, UDim> Lv;
+  Matrix<Scalar, XDim, XDim> Sm;
+  Vector<Scalar, XDim> Sv;
   Scalar s;
 
   riccati.computeMap(data, mod, SmNext, SvNext, sNext, Km, Lv, Sm, Sv, s);
 
-  EXPECT_TRUE(Sm.isApprox(Eigen::Matrix2d::Identity(), 1e-10));
-  EXPECT_TRUE(Sv.isApprox(Eigen::Vector2d::Zero(), 1e-10));
+  EXPECT_TRUE(Sm.isApprox(Matrix<Scalar, XDim, XDim>::Identity(), 1e-10));
+  EXPECT_TRUE(Sv.isApprox(Vector<Scalar, XDim>::Zero(), 1e-10));
   EXPECT_DOUBLE_EQ(s, 0.0);
 }
 
@@ -106,23 +104,21 @@ TEST(RiccatiTest, NonReducedFormOneStepMatchesScalarReference) {
   const int UDim = 1;
 
   ModelData<Scalar, XDim, UDim> data;
-  data.dynamics.dfdx << 2.0;
-  data.dynamics.dfdu << 0.5;
+  data.dynamics.dfdx = {2.0};
+  data.dynamics.dfdu = {0.5};
   data.dynamics.f.setZero();
-  data.cost.dfdxx << 7.0;
-  data.cost.dfdux << 11.0;
-  data.cost.dfduu << 13.0;
-  data.cost.dfdx << 17.0;
-  data.cost.dfdu << 19.0;
+  data.cost.dfdxx = {7.0};
+  data.cost.dfdux = {11.0};
+  data.cost.dfduu = {13.0};
+  data.cost.dfdx = {17.0};
+  data.cost.dfdu = {19.0};
   data.cost.f = 23.0;
 
   RiccatiModification<Scalar, XDim, UDim> mod;
-  mod.deltaQm_ << 29.0;
+  mod.deltaQm_ = {29.0};
 
-  Eigen::Matrix<double, 1, 1> SmNext;
-  SmNext << 3.0;
-  Eigen::Matrix<double, 1, 1> SvNext;
-  SvNext << 5.0;
+  Matrix<Scalar, XDim, XDim> SmNext{3.0};
+  Vector<Scalar, XDim> SvNext{5.0};
   Scalar sNext = 31.0;
   mod.hamiltonianHessian_ = data.cost.dfduu + data.dynamics.dfdu.transpose() *
                                                   SmNext * data.dynamics.dfdu;
@@ -130,10 +126,10 @@ TEST(RiccatiTest, NonReducedFormOneStepMatchesScalarReference) {
 
   DiscreteTimeRiccatiEquations<Scalar, XDim, UDim> riccati;
 
-  Eigen::Matrix<double, 1, 1> Km;
-  Eigen::Matrix<double, 1, 1> Lv;
-  Eigen::Matrix<double, 1, 1> Sm;
-  Eigen::Matrix<double, 1, 1> Sv;
+  Matrix<Scalar, UDim, XDim> Km;
+  Vector<Scalar, UDim> Lv;
+  Matrix<Scalar, XDim, XDim> Sm;
+  Vector<Scalar, XDim> Sv;
   Scalar s;
 
   riccati.computeMap(data, mod, SmNext, SvNext, sNext, Km, Lv, Sm, Sv, s);

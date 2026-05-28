@@ -20,6 +20,7 @@ class Vector : public Matrix<Type, M, 1> {
   using MatrixM1 = Matrix<Type, M, 1>;
   using MatrixM1::MatrixM1;
   using MatrixM1::operator=;
+  using MatrixM1::operator*;
 
   Vector() = default;
 
@@ -77,6 +78,40 @@ class Vector : public Matrix<Type, M, 1> {
     return result;
   }
 
+  static Vector Random() {
+    Vector result;
+
+    for (size_t i = 0; i < M; i++) {
+      result(i) = Type(2) * Type(std::rand()) / Type(RAND_MAX) - Type(1);
+    }
+
+    return result;
+  }
+
+  template <int N>
+  ConstSlice<Type, N, 1, M, 1> head() const {
+    static_assert(N <= M, "Head size bigger than vector");
+    return this->template slice<N, 1>(0, 0);
+  }
+
+  template <int N>
+  Slice<Type, N, 1, M, 1> head() {
+    static_assert(N <= M, "Head size bigger than vector");
+    return this->template slice<N, 1>(0, 0);
+  }
+
+  template <int N>
+  ConstSlice<Type, N, 1, M, 1> tail() const {
+    static_assert(N <= M, "Tail size bigger than vector");
+    return this->template slice<N, 1>(M - N, 0);
+  }
+
+  template <int N>
+  Slice<Type, N, 1, M, 1> tail() {
+    static_assert(N <= M, "Tail size bigger than vector");
+    return this->template slice<N, 1>(M - N, 0);
+  }
+
   inline const Type& operator()(size_t i) const {
     assert(i < M);
 
@@ -102,7 +137,7 @@ class Vector : public Matrix<Type, M, 1> {
     return r;
   }
 
-  inline Type operator*(const MatrixM1& b) const {
+  inline Type operator*(const Vector& b) const {
     const Vector& a(*this);
     return a.dot(b);
   }
@@ -120,6 +155,8 @@ class Vector : public Matrix<Type, M, 1> {
     const Vector& a(*this);
     return a.dot(a);
   }
+
+  Type squaredNorm() const { return norm_squared(); }
 
   inline Type length() const { return norm(); }
 

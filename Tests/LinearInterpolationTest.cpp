@@ -4,11 +4,11 @@
  */
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
 #include <array>
 #include <cmath>
 
 #include "LinearInterpolation.hpp"
+#include "Types.hpp"
 
 using namespace LinearInterpolation;
 
@@ -59,35 +59,31 @@ TEST(LinearInterpolationTest, TimeSegmentOutOfRangeClampsToBoundary) {
 // 验证向量样本在线性插值节点和中点处的结果正确。
 TEST(LinearInterpolationTest, InterpolateVector) {
   std::array<double, 3> times = {0.0, 1.0, 2.0};
-  std::array<Eigen::Vector2d, 3> data;
-  data[0] << 0.0, 0.0;
-  data[1] << 1.0, 2.0;
-  data[2] << 2.0, 4.0;
+  std::array<Vector<double, 2>, 3> data = {Vector<double, 2>{0.0, 0.0},
+                                           Vector<double, 2>{1.0, 2.0},
+                                           Vector<double, 2>{2.0, 4.0}};
 
-  Eigen::Vector2d r0 = interpolate(0.0, times, data);
+  Vector<double, 2> r0 = interpolate(0.0, times, data);
   EXPECT_TRUE(r0.isApprox(data[0], 1e-10));
 
-  Eigen::Vector2d r1 = interpolate(1.0, times, data);
+  Vector<double, 2> r1 = interpolate(1.0, times, data);
   EXPECT_TRUE(r1.isApprox(data[1], 1e-10));
 
-  Eigen::Vector2d r05 = interpolate(0.5, times, data);
-  Eigen::Vector2d expected05;
-  expected05 << 0.5, 1.0;
+  Vector<double, 2> r05 = interpolate(0.5, times, data);
+  const Vector<double, 2> expected05{0.5, 1.0};
   EXPECT_TRUE(r05.isApprox(expected05, 1e-10));
 
-  Eigen::Vector2d r15 = interpolate(1.5, times, data);
-  Eigen::Vector2d expected15;
-  expected15 << 1.5, 3.0;
+  Vector<double, 2> r15 = interpolate(1.5, times, data);
+  const Vector<double, 2> expected15{1.5, 3.0};
   EXPECT_TRUE(r15.isApprox(expected15, 1e-10));
 }
 
 // 验证超出采样范围时插值结果会钳制到边界值。
 TEST(LinearInterpolationTest, InterpolateOutOfRangeClampsToBoundary) {
   std::array<double, 3> times = {0.0, 1.0, 2.0};
-  std::array<Eigen::Vector2d, 3> data;
-  data[0] << -1.0, 2.0;
-  data[1] << 0.0, 4.0;
-  data[2] << 3.0, 8.0;
+  std::array<Vector<double, 2>, 3> data = {Vector<double, 2>{-1.0, 2.0},
+                                           Vector<double, 2>{0.0, 4.0},
+                                           Vector<double, 2>{3.0, 8.0}};
 
   EXPECT_TRUE(interpolate(-10.0, times, data).isApprox(data[0], 1e-10));
   EXPECT_TRUE(interpolate(10.0, times, data).isApprox(data[2], 1e-10));
@@ -96,12 +92,11 @@ TEST(LinearInterpolationTest, InterpolateOutOfRangeClampsToBoundary) {
 // 验证线性插值同样适用于矩阵样本。
 TEST(LinearInterpolationTest, InterpolateMatrix) {
   std::array<double, 2> times = {0.0, 2.0};
-  std::array<Eigen::Matrix2d, 2> data;
-  data[0] << 1.0, 2.0, 3.0, 4.0;
-  data[1] << 5.0, 6.0, 7.0, 8.0;
+  std::array<Matrix<double, 2, 2>, 2> data = {
+      Matrix<double, 2, 2>{{1.0, 2.0}, {3.0, 4.0}},
+      Matrix<double, 2, 2>{{5.0, 6.0}, {7.0, 8.0}}};
 
-  Eigen::Matrix2d expected;
-  expected << 3.0, 4.0, 5.0, 6.0;
+  const Matrix<double, 2, 2> expected{{3.0, 4.0}, {5.0, 6.0}};
 
   EXPECT_TRUE(interpolate(1.0, times, data).isApprox(expected, 1e-10));
 }
@@ -109,10 +104,9 @@ TEST(LinearInterpolationTest, InterpolateMatrix) {
 // 验证只有一个样本点时插值会退化为常值。
 TEST(LinearInterpolationTest, InterpolateSingleElement) {
   std::array<double, 1> times = {0.0};
-  std::array<Eigen::Vector2d, 1> data;
-  data[0] << 3.0, 5.0;
+  std::array<Vector<double, 2>, 1> data = {Vector<double, 2>{3.0, 5.0}};
 
-  Eigen::Vector2d r = interpolate(0.5, times, data);
+  Vector<double, 2> r = interpolate(0.5, times, data);
   EXPECT_TRUE(r.isApprox(data[0], 1e-10));
 }
 
