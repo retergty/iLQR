@@ -18,10 +18,10 @@ constexpr size_t ControllerLen = 2;
 constexpr size_t NumIntervals = 1000;
 constexpr size_t SampleCount = NumIntervals + 1;
 
-using StateVector = Eigen::Vector<Scalar, XDim>;
-using InputVector = Eigen::Vector<Scalar, UDim>;
-using StateMatrix = Eigen::Matrix<Scalar, XDim, XDim>;
-using InputMatrix = Eigen::Matrix<Scalar, XDim, UDim>;
+using StateVector = Vector<Scalar, XDim>;
+using InputVector = Vector<Scalar, UDim>;
+using StateMatrix = Matrix<Scalar, XDim, XDim>;
+using InputMatrix = Matrix<Scalar, XDim, UDim>;
 using Controller = LinearController<Scalar, XDim, UDim, ControllerLen>;
 using System = LinearSystemDynamics<Scalar, XDim, UDim>;
 using Rollout = TimeTriggeredRollout<Scalar, XDim, UDim>;
@@ -33,17 +33,19 @@ TEST(TimeTriggeredRolloutCompatibilityTest,
   constexpr Scalar finalTime = 10.0;
   constexpr Scalar timeStep = 0.01;
 
-  const StateMatrix A = (StateMatrix() << -2.0, -1.0, 1.0, 0.0).finished();
-  const InputMatrix B = (InputMatrix() << 1.0, 0.0).finished();
+  const StateMatrix A{{-2.0, -1.0}, {1.0, 0.0}};
+  const InputMatrix B{1.0, 0.0};
   System systemDynamics(A, B);
 
   const std::array<Scalar, ControllerLen> controllerTime = {initTime,
                                                             finalTime};
-  const std::array<InputVector, ControllerLen> controllerBias = {
-      InputVector::Ones(), InputVector::Ones()};
-  const std::array<Eigen::Matrix<Scalar, UDim, XDim>, ControllerLen>
-      controllerGain = {Eigen::Matrix<Scalar, UDim, XDim>::Zero(),
-                        Eigen::Matrix<Scalar, UDim, XDim>::Zero()};
+  const InputVector unitInput = InputVector::Ones();
+  const std::array<InputVector, ControllerLen> controllerBias = {unitInput,
+                                                                 unitInput};
+  const Matrix<Scalar, UDim, XDim> zeroGain =
+      Matrix<Scalar, UDim, XDim>::Zero();
+  const std::array<Matrix<Scalar, UDim, XDim>, ControllerLen> controllerGain = {
+      zeroGain, zeroGain};
   Controller controller(controllerTime, controllerBias, controllerGain);
 
   Rollout rollout(&systemDynamics, timeStep);

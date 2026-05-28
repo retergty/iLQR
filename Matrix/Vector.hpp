@@ -53,6 +53,30 @@ class Vector : public Matrix<Type, M, 1> {
     }
   }
 
+  static Vector Zero() {
+    Vector result;
+    result.setZero();
+    return result;
+  }
+
+  static Vector Ones() {
+    Vector result;
+    result.setOne();
+    return result;
+  }
+
+  static Vector Constant(Type value) {
+    Vector result;
+    result.setAll(value);
+    return result;
+  }
+
+  static Vector Identity() {
+    Vector result;
+    result.setIdentity();
+    return result;
+  }
+
   inline const Type& operator()(size_t i) const {
     assert(i < M);
 

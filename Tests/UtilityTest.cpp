@@ -107,8 +107,8 @@ TEST(UtilityTest, LinearControllerClearAndSwap) {
   first.timeStamp_[1] = 1.0;
   first.biasArray_[0] = {10.0};
   first.biasArray_[1] = {20.0};
-  first.gainArray_[0].setZero();
-  first.gainArray_[1].setZero();
+  first.gainArray_[0] = Matrix<double, 1, 2>::Zero();
+  first.gainArray_[1] = Matrix<double, 1, 2>::Zero();
 
   LinearController<double, 2, 1, 2> second;
   second.clear();
@@ -148,30 +148,25 @@ TEST(UtilityTest, MultiplierCollectionInterpolationInterpolatesEachCategory) {
   using Collection = MultiplierCollection<double, Layout>;
   std::array<Collection, 2> trajectory;
 
-  std::get<0>(trajectory[0].stateEq.terms) = {
-      1.0, Vector<double, 1>{10.0}};
-  std::get<0>(trajectory[0].stateIneq.terms) = {
-      2.0, Vector<double, 1>{20.0}};
-  std::get<0>(trajectory[0].stateInputEq.terms) = {
-      3.0, Vector<double, 1>{30.0}};
-  std::get<0>(trajectory[0].stateInputIneq.terms) = {
-      4.0, Vector<double, 1>{40.0}};
-  std::get<0>(trajectory[1].stateEq.terms) = {
-      11.0, Vector<double, 1>{110.0}};
-  std::get<0>(trajectory[1].stateIneq.terms) = {
-      12.0, Vector<double, 1>{120.0}};
-  std::get<0>(trajectory[1].stateInputEq.terms) = {
-      13.0, Vector<double, 1>{130.0}};
-  std::get<0>(trajectory[1].stateInputIneq.terms) = {
-      14.0, Vector<double, 1>{140.0}};
+  std::get<0>(trajectory[0].stateEq.terms) = {1.0, Vector<double, 1>{10.0}};
+  std::get<0>(trajectory[0].stateIneq.terms) = {2.0, Vector<double, 1>{20.0}};
+  std::get<0>(trajectory[0].stateInputEq.terms) = {3.0,
+                                                   Vector<double, 1>{30.0}};
+  std::get<0>(trajectory[0].stateInputIneq.terms) = {4.0,
+                                                     Vector<double, 1>{40.0}};
+  std::get<0>(trajectory[1].stateEq.terms) = {11.0, Vector<double, 1>{110.0}};
+  std::get<0>(trajectory[1].stateIneq.terms) = {12.0, Vector<double, 1>{120.0}};
+  std::get<0>(trajectory[1].stateInputEq.terms) = {13.0,
+                                                   Vector<double, 1>{130.0}};
+  std::get<0>(trajectory[1].stateInputIneq.terms) = {14.0,
+                                                     Vector<double, 1>{140.0}};
 
   const Collection interpolated =
       LinearInterpolation::interpolate<double, Layout, 2>({0, 0.25},
                                                           trajectory);
 
   EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateEq.terms).penalty, 8.5);
-  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateEq.terms).lagrangian(0),
-                   85.0);
+  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateEq.terms).lagrangian(0), 85.0);
   EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateIneq.terms).penalty, 9.5);
   EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateIneq.terms).lagrangian(0),
                    95.0);
@@ -180,8 +175,8 @@ TEST(UtilityTest, MultiplierCollectionInterpolationInterpolatesEachCategory) {
                    105.0);
   EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateInputIneq.terms).penalty,
                    11.5);
-  EXPECT_DOUBLE_EQ(
-      std::get<0>(interpolated.stateInputIneq.terms).lagrangian(0), 115.0);
+  EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateInputIneq.terms).lagrangian(0),
+                   115.0);
 }
 
 // 验证默认初始化器保持状态不变并把输入初值清零。
@@ -189,8 +184,7 @@ TEST(UtilityTest, DefaultInitializerKeepsStateAndZerosInput) {
   DefaultInitializer<double, 2, 1> initializer;
   const Vector<double, 2> state{-1.0, 2.0};
   Vector<double, 1> input{9.0};
-  Vector<double, 2> nextState;
-  nextState.setZero();
+  Vector<double, 2> nextState = Vector<double, 2>::Zero();
 
   initializer.compute(0.0, state, 1.0, input, nextState);
 

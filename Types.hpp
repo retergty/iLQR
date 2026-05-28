@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "Matrix.hpp"
+#include "Vector.hpp"
 
 /** @brief 固定尺寸矩阵类型别名，基于 matrix::Matrix。 */
 template <typename Scalar, int Rows, int Cols>

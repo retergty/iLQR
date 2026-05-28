@@ -237,79 +237,19 @@ matrix::Matrix<double, XDim, UDim> B;
 
 如果原类型是 `Eigen::Matrix<Scalar, Rows, 1>`，应展开为 `matrix::Vector<Scalar, Rows>`；如果列数不是 `1`，则展开为 `matrix::Matrix<Scalar, Rows, Cols>`。
 
-### `Constant()` 替换为 `setAll()`
+### 静态工厂函数保留原写法
 
-Eigen 的静态工厂函数 `Constant()` 需要替换为声明对象后调用 `setAll()`。由于当前自定义矩阵库的 `setAll()` 是成员函数且返回 `void`，不应直接写成链式表达式。
-
-例如：
-
-```cpp
-auto v = Eigen::Vector<double, 1>::Constant(10.0);
-```
-
-替换为：
-
-```cpp
-matrix::Vector<double, 1> v;
-v.setAll(10.0);
-```
-
-矩阵同理：
-
-```cpp
-auto W = Eigen::Matrix<double, XDim, XDim>::Constant(weight);
-```
-
-替换为：
-
-```cpp
-matrix::Matrix<double, XDim, XDim> W;
-W.setAll(weight);
-```
-
-如果原代码必须在表达式内直接产生一个值，可用局部 lambda 包装初始化过程：
-
-```cpp
-const auto v = [] {
-  matrix::Vector<double, 1> tmp;
-  tmp.setAll(10.0);
-  return tmp;
-}();
-```
-
-### `Identity()` 替换为 `setIdentity()`
-
-Eigen 的静态工厂函数 `Identity()` 需要替换为声明对象后调用 `setIdentity()`，并补全矩阵模板参数。
+自定义 `matrix::Matrix` 和 `matrix::Vector` 已提供 Eigen 风格的静态工厂函数，迁移时不需要再把 `Zero()`、`Ones()`、`Constant()` 或 `Identity()` 展开成 `setZero()`、`setOne()`、`setAll()`、`setIdentity()`。
 
 例如：
 
 ```cpp
-auto Q = Matrix<Scalar, XDim, XDim>::Identity();
+auto v = matrix::Vector<double, 1>::Constant(10.0);
+auto W = matrix::Matrix<double, XDim, XDim>::Zero();
+auto Q = matrix::Matrix<Scalar, XDim, XDim>::Identity();
 ```
 
-替换为：
-
-```cpp
-matrix::Matrix<Scalar, XDim, XDim> Q;
-Q.setIdentity();
-```
-
-如果原代码已经使用项目级 `Matrix` 别名，可根据迁移范围选择保留别名或显式改成 `matrix::Matrix`。在直接替换 Eigen 代码时，推荐显式写出：
-
-```cpp
-matrix::Matrix<Scalar, XDim, XDim> Q;
-Q.setIdentity();
-```
-
-表达式上下文中同样可使用 lambda：
-
-```cpp
-const auto Q = [] {
-  matrix::Matrix<Scalar, XDim, XDim> tmp;
-  tmp.setIdentity();
-  return tmp;
-}();
-```
+这些写法可直接保留为表达式初始化形式。需要注意的是，类型前缀仍应根据迁移结果从 `Eigen::` 或项目旧别名调整为 `matrix::Matrix` / `matrix::Vector`，并补全固定尺寸模板参数。
 
 ## CMake 建议
 

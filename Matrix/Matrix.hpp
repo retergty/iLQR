@@ -127,6 +127,30 @@ class Matrix {
     }
   }
 
+  static Matrix<Type, M, N> Zero() {
+    Matrix<Type, M, N> result;
+    result.setZero();
+    return result;
+  }
+
+  static Matrix<Type, M, N> Ones() {
+    Matrix<Type, M, N> result;
+    result.setOne();
+    return result;
+  }
+
+  static Matrix<Type, M, N> Constant(Type value) {
+    Matrix<Type, M, N> result;
+    result.setAll(value);
+    return result;
+  }
+
+  static Matrix<Type, M, N> Identity() {
+    Matrix<Type, M, N> result;
+    result.setIdentity();
+    return result;
+  }
+
   /**
    * Accessors/ Assignment etc.
    */
