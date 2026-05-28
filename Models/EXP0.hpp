@@ -21,11 +21,9 @@ class EXP0_Sys1 final
  public:
   EXP0_Sys1()
       : LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>(
-            (Matrix<Scalar, STATE_DIM, STATE_DIM>() << Scalar(0.6), Scalar(1.2),
-             Scalar(-0.8), Scalar(3.4))
-                .finished(),
-            (Matrix<Scalar, STATE_DIM, INPUT_DIM>() << Scalar(1.0), Scalar(1.0))
-                .finished()) {}
+            Matrix<Scalar, STATE_DIM, STATE_DIM>{
+                {Scalar(0.6), Scalar(1.2)}, {Scalar(-0.8), Scalar(3.4)}},
+            Matrix<Scalar, STATE_DIM, INPUT_DIM>{Scalar(1.0), Scalar(1.0)}) {}
   ~EXP0_Sys1() override = default;
 
  private:
@@ -41,9 +39,8 @@ class EXP0_Cost final : public QuadraticStateInputCost<Scalar, STATE_DIM,
  public:
   EXP0_Cost()
       : QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(
-            (Matrix<Scalar, STATE_DIM, STATE_DIM>() << Scalar(2.0), Scalar(0.0),
-             Scalar(0.0), Scalar(2.0))
-                .finished(),
+            Matrix<Scalar, STATE_DIM, STATE_DIM>{
+                {Scalar(2.0), Scalar(0.0)}, {Scalar(0.0), Scalar(2.0)}},
             Matrix<Scalar, INPUT_DIM, INPUT_DIM>::Identity(), 0) {}
   ~EXP0_Cost() override = default;
 
@@ -60,7 +57,7 @@ class EXP0_FinalCost final
  public:
   EXP0_FinalCost()
       : QuadraticStateCost<Scalar, STATE_DIM, ArrayLength>(
-            2 * Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity(), 0) {}
+            Scalar(2) * Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity(), 0) {}
   ~EXP0_FinalCost() override = default;
 
  private:
@@ -72,7 +69,7 @@ class EXP0_FinalCost final
 /******************************************************************************************************/
 template <typename Scalar>
 Vector<Scalar, STATE_DIM> getExp0TargetState() {
-  return (Vector<Scalar, STATE_DIM>() << Scalar(4.0), Scalar(2.0)).finished();
+  return Vector<Scalar, STATE_DIM>{Scalar(4.0), Scalar(2.0)};
 }
 
 template <typename Scalar>

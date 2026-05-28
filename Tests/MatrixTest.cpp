@@ -201,6 +201,59 @@ TEST(MatrixTest, SliceSupportsSetIdentity) {
   EXPECT_TRUE(matrix.isApprox(expected, 1e-12));
 }
 
+// 验证切片可直接与矩阵相乘，不需要先构造临时矩阵。
+TEST(MatrixTest, SliceSupportsMatrixMultiplication) {
+  const matrix::Matrix<double, 4, 3> matrix{
+      {1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}, {10.0, 11.0, 12.0}};
+  const matrix::Vector<double, 3> vector{1.0, 2.0, 3.0};
+
+  const matrix::Matrix<double, 2, 1> product =
+      matrix.template topRows<2>() * vector;
+  const matrix::Vector<double, 2> expected{14.0, 32.0};
+
+  EXPECT_TRUE(product.isApprox(expected, 1e-12));
+}
+
+// 验证切片的非原地加减和标量乘法不依赖临时切片矩阵。
+TEST(MatrixTest, SliceSupportsNonMutatingArithmetic) {
+  matrix::Matrix<double, 2, 4> matrix{{1.0, 2.0, 5.0, 6.0},
+                                      {3.0, 4.0, 7.0, 8.0}};
+  const matrix::Matrix<double, 2, 4>& constMatrix = matrix;
+  const matrix::Matrix<double, 2, 2> rhs{{10.0, 20.0}, {30.0, 40.0}};
+
+  const matrix::Matrix<double, 2, 2> plusMatrix =
+      matrix.template topLeftCorner<2, 2>() + rhs;
+  const matrix::Matrix<double, 2, 2> minusMatrix =
+      matrix.template topLeftCorner<2, 2>() - rhs;
+  const matrix::Matrix<double, 2, 2> plusSlice =
+      matrix.template topLeftCorner<2, 2>() +
+      constMatrix.template topRightCorner<2, 2>();
+  const matrix::Matrix<double, 2, 2> minusSlice =
+      matrix.template topRightCorner<2, 2>() -
+      constMatrix.template topLeftCorner<2, 2>();
+  const matrix::Matrix<double, 2, 2> plusScalar =
+      matrix.template topLeftCorner<2, 2>() + 1.0;
+  const matrix::Matrix<double, 2, 2> minusScalar =
+      matrix.template topLeftCorner<2, 2>() - 1.0;
+  const matrix::Matrix<double, 2, 2> scaled =
+      matrix.template topLeftCorner<2, 2>() * 2.0;
+
+  EXPECT_TRUE(plusMatrix.isApprox(
+      matrix::Matrix<double, 2, 2>{{11.0, 22.0}, {33.0, 44.0}}, 1e-12));
+  EXPECT_TRUE(minusMatrix.isApprox(
+      matrix::Matrix<double, 2, 2>{{-9.0, -18.0}, {-27.0, -36.0}}, 1e-12));
+  EXPECT_TRUE(plusSlice.isApprox(
+      matrix::Matrix<double, 2, 2>{{6.0, 8.0}, {10.0, 12.0}}, 1e-12));
+  EXPECT_TRUE(minusSlice.isApprox(
+      matrix::Matrix<double, 2, 2>{{4.0, 4.0}, {4.0, 4.0}}, 1e-12));
+  EXPECT_TRUE(plusScalar.isApprox(
+      matrix::Matrix<double, 2, 2>{{2.0, 3.0}, {4.0, 5.0}}, 1e-12));
+  EXPECT_TRUE(minusScalar.isApprox(
+      matrix::Matrix<double, 2, 2>{{0.0, 1.0}, {2.0, 3.0}}, 1e-12));
+  EXPECT_TRUE(scaled.isApprox(
+      matrix::Matrix<double, 2, 2>{{2.0, 4.0}, {6.0, 8.0}}, 1e-12));
+}
+
 // 验证 Vector 不隐藏 Matrix 的矩阵乘法重载。
 TEST(MatrixTest, VectorSupportsMatrixMultiplication) {
   const matrix::Vector<double, 2> vector{2.0, 3.0};
@@ -241,6 +294,16 @@ TEST(MatrixTest, SupportsSquaredNorm) {
   EXPECT_DOUBLE_EQ((matrix.template topLeftCorner<1, 2>().squaredNorm()), 5.0);
 }
 
+// 验证 Matrix 支持 Eigen 风格 Frobenius norm()。
+TEST(MatrixTest, MatrixSupportsNorm) {
+  const matrix::Matrix<double, 2, 2> matrix{{1.0, -2.0}, {3.0, -4.0}};
+  const matrix::Vector<double, 2> lhs{3.0, 4.0};
+  const matrix::Vector<double, 2> rhs{1.0, 1.0};
+
+  EXPECT_DOUBLE_EQ(matrix.norm(), std::sqrt(30.0));
+  EXPECT_DOUBLE_EQ((lhs - rhs).norm(), std::sqrt(13.0));
+}
+
 // 验证 Matrix、Vector 和 Slice 支持 Eigen 风格 isZero()。
 TEST(MatrixTest, SupportsIsZero) {
   matrix::Matrix<double, 2, 2> matrix = matrix::Matrix<double, 2, 2>::Zero();
@@ -254,6 +317,29 @@ TEST(MatrixTest, SupportsIsZero) {
   EXPECT_FALSE(vector.isZero(1e-14));
 
   EXPECT_TRUE((matrix.template topLeftCorner<1, 1>().isZero(1e-12)));
+}
+
+// 验证 Matrix 和 Vector 支持 Eigen 风格对象级 swap()。
+TEST(MatrixTest, SupportsObjectSwap) {
+  matrix::Matrix<double, 2, 2> lhs{{1.0, 2.0}, {3.0, 4.0}};
+  matrix::Matrix<double, 2, 2> rhs{{5.0, 6.0}, {7.0, 8.0}};
+
+  lhs.swap(rhs);
+
+  EXPECT_TRUE(lhs.isApprox(matrix::Matrix<double, 2, 2>{{5.0, 6.0}, {7.0, 8.0}},
+                           1e-12));
+  EXPECT_TRUE(rhs.isApprox(matrix::Matrix<double, 2, 2>{{1.0, 2.0}, {3.0, 4.0}},
+                           1e-12));
+
+  matrix::Vector<double, 3> lhsVector{1.0, 2.0, 3.0};
+  matrix::Vector<double, 3> rhsVector{4.0, 5.0, 6.0};
+
+  lhsVector.swap(rhsVector);
+
+  EXPECT_TRUE(
+      lhsVector.isApprox(matrix::Vector<double, 3>{4.0, 5.0, 6.0}, 1e-12));
+  EXPECT_TRUE(
+      rhsVector.isApprox(matrix::Vector<double, 3>{1.0, 2.0, 3.0}, 1e-12));
 }
 
 // 验证自实现 Matrix 提供 Eigen 风格的 isApprox 成员接口。

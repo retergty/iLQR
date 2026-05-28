@@ -115,29 +115,83 @@ class SliceT {
   template <int MM, int NN>
   Matrix<Type, P, Q> operator-(
       const SliceT<const Matrix<Type, MM, NN>, Type, P, Q, MM, NN>& other) {
-    return Matrix<Type, P, Q>{*this} - other;
+    Matrix<Type, P, Q> result;
+    const SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
+
+    for (size_t i = 0; i < P; i++) {
+      for (size_t j = 0; j < Q; j++) {
+        result(i, j) = self(i, j) - other(i, j);
+      }
+    }
+
+    return result;
   }
 
   Matrix<Type, P, Q> operator-(const Matrix<Type, P, Q>& other) {
-    return Matrix<Type, P, Q>{*this} - other;
+    Matrix<Type, P, Q> result;
+    const SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
+
+    for (size_t i = 0; i < P; i++) {
+      for (size_t j = 0; j < Q; j++) {
+        result(i, j) = self(i, j) - other(i, j);
+      }
+    }
+
+    return result;
   }
 
   Matrix<Type, P, Q> operator-(const Type& other) {
-    return Matrix<Type, P, Q>{*this} - other;
+    Matrix<Type, P, Q> result;
+    const SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
+
+    for (size_t i = 0; i < P; i++) {
+      for (size_t j = 0; j < Q; j++) {
+        result(i, j) = self(i, j) - other;
+      }
+    }
+
+    return result;
   }
 
   template <int MM, int NN>
   Matrix<Type, P, Q> operator+(
       const SliceT<const Matrix<Type, MM, NN>, Type, P, Q, MM, NN>& other) {
-    return Matrix<Type, P, Q>{*this} + other;
+    Matrix<Type, P, Q> result;
+    const SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
+
+    for (size_t i = 0; i < P; i++) {
+      for (size_t j = 0; j < Q; j++) {
+        result(i, j) = self(i, j) + other(i, j);
+      }
+    }
+
+    return result;
   }
 
   Matrix<Type, P, Q> operator+(const Matrix<Type, P, Q>& other) {
-    return Matrix<Type, P, Q>{*this} + other;
+    Matrix<Type, P, Q> result;
+    const SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
+
+    for (size_t i = 0; i < P; i++) {
+      for (size_t j = 0; j < Q; j++) {
+        result(i, j) = self(i, j) + other(i, j);
+      }
+    }
+
+    return result;
   }
 
   Matrix<Type, P, Q> operator+(const Type& other) {
-    return Matrix<Type, P, Q>{*this} + other;
+    Matrix<Type, P, Q> result;
+    const SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
+
+    for (size_t i = 0; i < P; i++) {
+      for (size_t j = 0; j < Q; j++) {
+        result(i, j) = self(i, j) + other;
+      }
+    }
+
+    return result;
   }
 
   // allow assigning vectors to a slice that are in the axis
@@ -263,11 +317,36 @@ class SliceT {
   }
 
   Matrix<Type, P, Q> operator*(const Type& scalar) const {
-    return Matrix<Type, P, Q>{*this} * scalar;
+    Matrix<Type, P, Q> result;
+    const SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
+
+    for (size_t i = 0; i < P; i++) {
+      for (size_t j = 0; j < Q; j++) {
+        result(i, j) = self(i, j) * scalar;
+      }
+    }
+
+    return result;
   }
 
   Matrix<Type, P, Q> operator/(const Type& scalar) const {
     return (*this) * (1 / scalar);
+  }
+
+  template <int R>
+  Matrix<Type, P, R> operator*(const Matrix<Type, Q, R>& other) const {
+    Matrix<Type, P, R> result;
+    const SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
+
+    for (size_t i = 0; i < P; i++) {
+      for (size_t k = 0; k < R; k++) {
+        for (size_t j = 0; j < Q; j++) {
+          result(i, k) += self(i, j) * other(j, k);
+        }
+      }
+    }
+
+    return result;
   }
 
   template <int R, int S>

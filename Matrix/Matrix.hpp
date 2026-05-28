@@ -668,6 +668,18 @@ class Matrix {
 
   inline void identity() { setIdentity(); }
 
+  void swap(Matrix<Type, M, N>& other) {
+    Matrix<Type, M, N>& self = *this;
+
+    for (size_t i = 0; i < M; i++) {
+      for (size_t j = 0; j < N; j++) {
+        Type tmp = self(i, j);
+        self(i, j) = other(i, j);
+        other(i, j) = tmp;
+      }
+    }
+  }
+
   inline void swapRows(size_t a, size_t b) {
     assert(a < M);
     assert(b < M);
@@ -726,6 +738,8 @@ class Matrix {
 
     return accum;
   }
+
+  Type norm() const { return Type(std::sqrt(squaredNorm())); }
 
   Type max() const {
     Type max_val = (*this)(0, 0);

@@ -344,14 +344,14 @@ class ThrustDirectionChangeCost final
     const Scalar effectiveWeight = gate * Weight;
 
     approximation_.f = Scalar(0.5) * effectiveWeight * rk.dot(rk);
-    approximation_.dfdx.template segment<3>(3) =
+    approximation_.dfdx.template tail<3>() =
         -effectiveWeight * last_thr_jacobian.transpose() * rk;
     approximation_.dfdu = effectiveWeight * thr_jacobian.transpose() * rk;
-    approximation_.dfdxx.template block<3, 3>(3, 3) =
+    approximation_.dfdxx.template slice<3, 3>(3, 3) =
         effectiveWeight * last_thr_jacobian.transpose() * last_thr_jacobian;
     approximation_.dfduu =
         effectiveWeight * thr_jacobian.transpose() * thr_jacobian;
-    approximation_.dfdux.template block<3, 3>(0, 3) =
+    approximation_.dfdux.template slice<3, 3>(0, 3) =
         -effectiveWeight * thr_jacobian.transpose() * last_thr_jacobian;
 
     return approximation_;

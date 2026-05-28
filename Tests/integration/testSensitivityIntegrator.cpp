@@ -17,20 +17,18 @@ constexpr int XDim = 2;
 constexpr int UDim = 1;
 constexpr size_t ControllerLen = 2;
 
-using StateVector = Eigen::Vector<Scalar, XDim>;
-using InputVector = Eigen::Vector<Scalar, UDim>;
-using StateMatrix = Eigen::Matrix<Scalar, XDim, XDim>;
-using InputMatrix = Eigen::Matrix<Scalar, XDim, UDim>;
+using StateVector = Vector<Scalar, XDim>;
+using InputVector = Vector<Scalar, UDim>;
+using StateMatrix = Matrix<Scalar, XDim, XDim>;
+using InputMatrix = Matrix<Scalar, XDim, UDim>;
 using LinearApproximation =
     VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>;
 using Controller = LinearController<Scalar, XDim, UDim, ControllerLen>;
 using System = LinearSystemDynamics<Scalar, XDim, UDim>;
 
 System makeSystem() {
-  StateMatrix A;
-  A << -2.0, -1.0, 1.0, 0.0;
-  InputMatrix B;
-  B << 1.0, 0.0;
+  StateMatrix A{{-2.0, -1.0}, {1.0, 0.0}};
+  InputMatrix B{1.0, 0.0};
   return System(A, B);
 }
 
@@ -38,9 +36,8 @@ Controller makeConstantController(Scalar t0, Scalar t1,
                                   const InputVector& input) {
   std::array<Scalar, ControllerLen> controllerTime = {t0, t1};
   std::array<InputVector, ControllerLen> controllerBias = {input, input};
-  std::array<Eigen::Matrix<Scalar, UDim, XDim>, ControllerLen> controllerGain =
-      {Eigen::Matrix<Scalar, UDim, XDim>::Zero(),
-       Eigen::Matrix<Scalar, UDim, XDim>::Zero()};
+  std::array<Matrix<Scalar, UDim, XDim>, ControllerLen> controllerGain = {
+      Matrix<Scalar, UDim, XDim>::Zero(), Matrix<Scalar, UDim, XDim>::Zero()};
   return Controller(controllerTime, controllerBias, controllerGain);
 }
 }  // namespace
@@ -51,10 +48,8 @@ TEST(SensitivityIntegratorTest, EulerSensitivityMatchesManualConstruction) {
 
   const Scalar t = 0.5;
   const Scalar dt = 0.1;
-  StateVector x;
-  x << 0.2, -0.4;
-  InputVector u;
-  u << 0.7;
+  const StateVector x{0.2, -0.4};
+  const InputVector u{0.7};
 
   const LinearApproximation k1 = system.linearApproximation(t, x, u);
 
@@ -80,10 +75,8 @@ TEST(SensitivityIntegratorTest, RK2SensitivityMatchesManualConstruction) {
   const Scalar t = 0.5;
   const Scalar dt = 0.1;
   const Scalar dtHalve = dt / 2.0;
-  StateVector x;
-  x << 0.2, -0.4;
-  InputVector u;
-  u << 0.7;
+  const StateVector x{0.2, -0.4};
+  const InputVector u{0.7};
 
   const LinearApproximation k1 = system.linearApproximation(t, x, u);
   const LinearApproximation k2 =
@@ -115,10 +108,8 @@ TEST(SensitivityIntegratorTest, RK4SensitivityMatchesManualConstruction) {
   const Scalar dtHalve = dt / 2.0;
   const Scalar dtThird = dt / 3.0;
   const Scalar dtSixth = dt / 6.0;
-  StateVector x;
-  x << 0.2, -0.4;
-  InputVector u;
-  u << 0.7;
+  const StateVector x{0.2, -0.4};
+  const InputVector u{0.7};
 
   const LinearApproximation k1 = system.linearApproximation(t, x, u);
   const LinearApproximation k2 =
@@ -164,10 +155,8 @@ TEST(SensitivityIntegratorTest,
 
   const Scalar t = 0.5;
   const Scalar dt = 0.01;
-  StateVector x;
-  x << 0.2, -0.4;
-  InputVector u;
-  u << 0.7;
+  const StateVector x{0.2, -0.4};
+  const InputVector u{0.7};
 
   Controller controller = makeConstantController(t, t + dt, u);
   system.setController(&controller);

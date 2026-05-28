@@ -12,7 +12,7 @@
 namespace {
 using Scalar = double;
 constexpr int XDim = 1;
-using StateVector = Eigen::Vector<Scalar, XDim>;
+using StateVector = Vector<Scalar, XDim>;
 
 class ExponentialOde final : public OdeBase<Scalar, XDim> {
  public:
@@ -33,8 +33,7 @@ TEST(RungeKuttaDormandPrince5Test, StepperMatchesExponentialGrowthForOneStep) {
   ExponentialOde system;
   RungeKuttaDormandPrince5Stepper<Scalar, XDim> stepper;
 
-  StateVector x0;
-  x0 << 1.0;
+  const StateVector x0{1.0};
 
   const Scalar t0 = 0.0;
   const Scalar dt = 0.1;
@@ -58,8 +57,7 @@ TEST(RungeKuttaDormandPrince5Test, IntegrateConstMatchesAnalyticSolution) {
   Observer<Scalar, XDim> observer(NumSamples, stateTrajectory.data(),
                                   timeTrajectory.data());
 
-  StateVector x0;
-  x0 << 1.0;
+  const StateVector x0{1.0};
 
   integrator.integrateConst(system, observer, x0, 0.0, 1.0, 0.1);
 
@@ -82,8 +80,7 @@ TEST(RungeKuttaDormandPrince5Test,
   Observer<Scalar, XDim> observer(NumSamples, stateTrajectory.data(),
                                   timeTrajectory.data());
 
-  StateVector x0;
-  x0 << 1.0;
+  const StateVector x0{1.0};
 
   integrator.integrateConst(system, observer, x0, 0.0, 1.0, 0.1);
 
@@ -103,8 +100,7 @@ TEST(RungeKuttaDormandPrince5Test, IntegrateConstSupportsBackwardTime) {
   Observer<Scalar, XDim> forwardObserver(NumSamples, forwardStates.data(),
                                          forwardTimes.data());
 
-  StateVector x0;
-  x0 << 1.0;
+  const StateVector x0{1.0};
 
   integrator.integrateConst(system, forwardObserver, x0, 0.0, 1.0, 0.1);
 

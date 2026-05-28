@@ -52,7 +52,7 @@ class DoubleIntegratorReachingTask {
  protected:
   const Scalar tGoal = 1.0;
   const StateVector_t xInit = StateVector_t::Zero();
-  const StateVector_t xGoal = (StateVector_t() << 2.0, 0.0).finished();
+  const StateVector_t xGoal{Scalar(2.0), Scalar(0.0)};
 
  public:
   class TerminalGoalAugmentedLagrangian final {
@@ -171,19 +171,16 @@ createDoubleIntegratorReachingProblem() {
   using TerminalGoal_t = typename Task_t::TerminalGoalAugmentedLagrangian;
   using Problem_t = DoubleIntegratorReachingProblem<Scalar, PredictLength>;
 
-  static const StateMatrix_t A =
-      (StateMatrix_t() << Scalar(0.0), Scalar(1.0), Scalar(0.0), Scalar(0.0))
-          .finished();
-  static const StateInputMatrix_t B =
-      (StateInputMatrix_t() << Scalar(0.0), Scalar(1.0)).finished();
+  static const StateMatrix_t A{{Scalar(0.0), Scalar(1.0)},
+                               {Scalar(0.0), Scalar(0.0)}};
+  static const StateInputMatrix_t B{Scalar(0.0), Scalar(1.0)};
   static Dynamics_t dynamics(A, B);
 
   static const StateMatrix_t Q = StateMatrix_t::Zero();
   static const InputMatrix_t R = Scalar(0.1) * InputMatrix_t::Identity();
   static Cost_t cost(Q, R, 0);
 
-  static const StateVector_t xGoal =
-      (StateVector_t() << Scalar(2.0), Scalar(0.0)).finished();
+  static const StateVector_t xGoal{Scalar(2.0), Scalar(0.0)};
   static TerminalGoal_t terminalGoal(xGoal);
   static Problem_t problem;
   static bool initialized = false;
