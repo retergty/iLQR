@@ -43,87 +43,54 @@
 
 #include "Vector.hpp"
 
-namespace matrix
-{
+namespace matrix {
 
-template<typename Type>
-class Vector4 : public Vector<Type, 4>
-{
-public:
-	using Matrix41 = Matrix<Type, 4, 1>;
+template <typename Type>
+class Vector4 : public Vector<Type, 4> {
+ public:
+  using Matrix41 = Matrix<Type, 4, 1>;
 
-	Vector4() = default;
+  Vector4() = default;
 
-	Vector4(const Matrix41 &other) :
-		Vector<Type, 4>(other)
-	{
-	}
+  Vector4(const Matrix41& other) : Vector<Type, 4>(other) {}
 
-	explicit Vector4(const Type data_[3]) :
-		Vector<Type, 4>(data_)
-	{
-	}
+  explicit Vector4(const Type data_[3]) : Vector<Type, 4>(data_) {}
 
-	Vector4(Type x1, Type x2, Type x3, Type x4)
-	{
-		Vector4 &v(*this);
-		v(0) = x1;
-		v(1) = x2;
-		v(2) = x3;
-		v(3) = x4;
-	}
+  Vector4(Type x1, Type x2, Type x3, Type x4) {
+    Vector4& v(*this);
+    v(0) = x1;
+    v(1) = x2;
+    v(2) = x3;
+    v(3) = x4;
+  }
 
-	template<size_t P, size_t Q>
-	Vector4(const Slice<Type, 4, 1, P, Q> &slice_in) : Vector<Type, 4>(slice_in)
-	{
-	}
+  template <int P, int Q>
+  Vector4(const Slice<Type, 4, 1, P, Q>& slice_in)
+      : Vector<Type, 4>(slice_in) {}
 
-	template<size_t P, size_t Q>
-	Vector4(const Slice<Type, 1, 4, P, Q> &slice_in) : Vector<Type, 4>(slice_in)
-	{
-	}
+  template <int P, int Q>
+  Vector4(const Slice<Type, 1, 4, P, Q>& slice_in)
+      : Vector<Type, 4>(slice_in) {}
 
-	/**
-	 * Override matrix ops so Vector4 type is returned
-	 */
+  /**
+   * Override matrix ops so Vector4 type is returned
+   */
 
-	Vector4 operator+(Vector4 other) const
-	{
-		return Matrix41::operator+(other);
-	}
+  Vector4 operator+(Vector4 other) const { return Matrix41::operator+(other); }
 
-	Vector4 operator+(Type scalar) const
-	{
-		return Matrix41::operator+(scalar);
-	}
+  Vector4 operator+(Type scalar) const { return Matrix41::operator+(scalar); }
 
-	Vector4 operator-(Vector4 other) const
-	{
-		return Matrix41::operator-(other);
-	}
+  Vector4 operator-(Vector4 other) const { return Matrix41::operator-(other); }
 
-	Vector4 operator-(Type scalar) const
-	{
-		return Matrix41::operator-(scalar);
-	}
+  Vector4 operator-(Type scalar) const { return Matrix41::operator-(scalar); }
 
-	Vector4 operator-() const
-	{
-		return Matrix41::operator-();
-	}
+  Vector4 operator-() const { return Matrix41::operator-(); }
 
-	Vector4 operator*(Type scalar) const
-	{
-		return Matrix41::operator*(scalar);
-	}
+  Vector4 operator*(Type scalar) const { return Matrix41::operator*(scalar); }
 
-	Type operator*(Vector4 b) const
-	{
-		return Vector<Type, 4>::operator*(b);
-	}
-
+  Type operator*(Vector4 b) const { return Vector<Type, 4>::operator*(b); }
 };
 
 using Vector4f = Vector4<float>;
 
-} // namespace matrix
+}  // namespace matrix

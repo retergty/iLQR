@@ -10,179 +10,139 @@
 
 #include "Matrix.hpp"
 
-namespace matrix
-{
+namespace matrix {
 
-template<typename Type, size_t M>
-class Vector : public Matrix<Type, M, 1>
-{
-public:
-	using MatrixM1 = Matrix<Type, M, 1>;
+template <typename Type, int M>
+class Vector : public Matrix<Type, M, 1> {
+  static_assert(M >= 0, "Vector dimension must be non-negative");
 
-	Vector() = default;
+ public:
+  using MatrixM1 = Matrix<Type, M, 1>;
 
-	Vector(const MatrixM1 &other) :
-		MatrixM1(other)
-	{
-	}
+  Vector() = default;
 
-	explicit Vector(const Type data_[M]) :
-		MatrixM1(data_)
-	{
-	}
+  Vector(const MatrixM1& other) : MatrixM1(other) {}
 
-	template<size_t P, size_t Q>
-	Vector(const Slice<Type, M, 1, P, Q> &slice_in) :
-		Matrix<Type, M, 1>(slice_in)
-	{
-	}
+  explicit Vector(const Type data_[M]) : MatrixM1(data_) {}
 
-	template<size_t P, size_t Q, size_t DUMMY = 1>
-	Vector(const Slice<Type, 1, M, P, Q> &slice_in)
-	{
-		Vector &self(*this);
+  template <int P, int Q>
+  Vector(const Slice<Type, M, 1, P, Q>& slice_in)
+      : Matrix<Type, M, 1>(slice_in) {}
 
-		for (size_t i = 0; i < M; i++) {
-			self(i) = slice_in(0, i);
-		}
-	}
+  template <int P, int Q, int DUMMY = 1>
+  Vector(const Slice<Type, 1, M, P, Q>& slice_in) {
+    Vector& self(*this);
 
-	template<size_t P, size_t Q>
-	Vector(const ConstSlice<Type, M, 1, P, Q> &slice_in) :
-		Matrix<Type, M, 1>(slice_in)
-	{
-	}
+    for (size_t i = 0; i < M; i++) {
+      self(i) = slice_in(0, i);
+    }
+  }
 
-	template<size_t P, size_t Q, size_t DUMMY = 1>
-	Vector(const ConstSlice<Type, 1, M, P, Q> &slice_in)
-	{
-		Vector &self(*this);
+  template <int P, int Q>
+  Vector(const ConstSlice<Type, M, 1, P, Q>& slice_in)
+      : Matrix<Type, M, 1>(slice_in) {}
 
-		for (size_t i = 0; i < M; i++) {
-			self(i) = slice_in(0, i);
-		}
-	}
+  template <int P, int Q, int DUMMY = 1>
+  Vector(const ConstSlice<Type, 1, M, P, Q>& slice_in) {
+    Vector& self(*this);
 
-	inline const Type &operator()(size_t i) const
-	{
-		assert(i < M);
+    for (size_t i = 0; i < M; i++) {
+      self(i) = slice_in(0, i);
+    }
+  }
 
-		const MatrixM1 &v = *this;
-		return v(i, 0);
-	}
+  inline const Type& operator()(size_t i) const {
+    assert(i < M);
 
-	inline Type &operator()(size_t i)
-	{
-		assert(i < M);
+    const MatrixM1& v = *this;
+    return v(i, 0);
+  }
 
-		MatrixM1 &v = *this;
-		return v(i, 0);
-	}
+  inline Type& operator()(size_t i) {
+    assert(i < M);
 
-	Type dot(const MatrixM1 &b) const
-	{
-		const Vector &a(*this);
-		Type r(0);
+    MatrixM1& v = *this;
+    return v(i, 0);
+  }
 
-		for (size_t i = 0; i < M; i++) {
-			r += a(i) * b(i, 0);
-		}
+  Type dot(const MatrixM1& b) const {
+    const Vector& a(*this);
+    Type r(0);
 
-		return r;
-	}
+    for (size_t i = 0; i < M; i++) {
+      r += a(i) * b(i, 0);
+    }
 
-	inline Type operator*(const MatrixM1 &b) const
-	{
-		const Vector &a(*this);
-		return a.dot(b);
-	}
+    return r;
+  }
 
-	inline Vector operator*(Type b) const
-	{
-		return Vector(MatrixM1::operator*(b));
-	}
+  inline Type operator*(const MatrixM1& b) const {
+    const Vector& a(*this);
+    return a.dot(b);
+  }
 
-	Type norm() const
-	{
-		const Vector &a(*this);
-		return Type(std::sqrt(a.dot(a)));
-	}
+  inline Vector operator*(Type b) const {
+    return Vector(MatrixM1::operator*(b));
+  }
 
-	Type norm_squared() const
-	{
-		const Vector &a(*this);
-		return a.dot(a);
-	}
+  Type norm() const {
+    const Vector& a(*this);
+    return Type(std::sqrt(a.dot(a)));
+  }
 
-	inline Type length() const
-	{
-		return norm();
-	}
+  Type norm_squared() const {
+    const Vector& a(*this);
+    return a.dot(a);
+  }
 
-	inline void normalize()
-	{
-		(*this) /= norm();
-	}
+  inline Type length() const { return norm(); }
 
-	Vector unit() const
-	{
-		return (*this) / norm();
-	}
+  inline void normalize() { (*this) /= norm(); }
 
-	Vector unit_or_zero(const Type eps = Type(1e-5)) const
-	{
-		const Type n = norm();
+  Vector unit() const { return (*this) / norm(); }
 
-		if (n > eps) {
-			return (*this) / n;
-		}
+  Vector unit_or_zero(const Type eps = Type(1e-5)) const {
+    const Type n = norm();
 
-		return Vector();
-	}
+    if (n > eps) {
+      return (*this) / n;
+    }
 
-	inline Vector normalized() const
-	{
-		return unit();
-	}
+    return Vector();
+  }
 
-	bool longerThan(Type testVal) const
-	{
-		return norm_squared() > testVal * testVal;
-	}
+  inline Vector normalized() const { return unit(); }
 
-	Vector sqrt() const
-	{
-		const Vector &a(*this);
-		Vector r;
+  bool longerThan(Type testVal) const {
+    return norm_squared() > testVal * testVal;
+  }
 
-		for (size_t i = 0; i < M; i++) {
-			r(i) = Type(std::sqrt(a(i)));
-		}
+  Vector sqrt() const {
+    const Vector& a(*this);
+    Vector r;
 
-		return r;
-	}
+    for (size_t i = 0; i < M; i++) {
+      r(i) = Type(std::sqrt(a(i)));
+    }
 
-	void print() const
-	{
-		(*this).transpose().print();
-	}
+    return r;
+  }
 
-	static size_t size()
-	{
-		return M;
-	}
+  void print() const { (*this).transpose().print(); }
+
+  static size_t size() { return M; }
 };
 
-template<typename OStream, typename Type, size_t M>
-OStream &operator<<(OStream &os, const matrix::Vector<Type, M> &vector)
-{
-	os << "\n";
-	// element: tab, point, 8 digits, 4 scientific notation chars; row: newline; string: \0 end
-	static const size_t n = 15 * M * 1 + 1 + 1;
-	char string[n];
-	vector.transpose().write_string(string, n);
-	os << string;
-	return os;
+template <typename OStream, typename Type, int M>
+OStream& operator<<(OStream& os, const matrix::Vector<Type, M>& vector) {
+  os << "\n";
+  // element: tab, point, 8 digits, 4 scientific notation chars; row: newline;
+  // string: \0 end
+  static const size_t n = 15 * M * 1 + 1 + 1;
+  char string[n];
+  vector.transpose().write_string(string, n);
+  os << string;
+  return os;
 }
 
-} // namespace matrix
+}  // namespace matrix

@@ -5,7 +5,6 @@
 #include "Dcm2.hpp"
 #include "Dual.hpp"
 #include "Euler.hpp"
-#include "helper_functions.hpp"
 #include "LeastSquaresSolver.hpp"
 #include "Matrix.hpp"
 #include "PseudoInverse.hpp"
@@ -18,3 +17,4 @@
 #include "Vector2.hpp"
 #include "Vector3.hpp"
 #include "Vector4.hpp"
+#include "helper_functions.hpp"
