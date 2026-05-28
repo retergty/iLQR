@@ -52,10 +52,11 @@ class iLQRQpSolverTest : public testing::Test {
     EK2DynamicsDiscretizer<Scalar, STATE_DIM, INPUT_DIM> discretizer;
     Trajectory_t trajectory;
 
-    trajectory.stateTrajectory[0] = Vector<Scalar, STATE_DIM>::Random();
+    trajectory.stateTrajectory[0] = Eigen::Vector<Scalar, STATE_DIM>::Random();
     for (size_t k = 0; k < N; ++k) {
       trajectory.timeTrajectory[k] = static_cast<Scalar>(k) * dt;
-      trajectory.inputTrajectory[k] = Vector<Scalar, INPUT_DIM>::Random();
+      trajectory.inputTrajectory[k] =
+          Eigen::Vector<Scalar, INPUT_DIM>::Random();
       trajectory.stateTrajectory[k + 1] = discretizer.discretize(
           *system, trajectory.timeTrajectory[k], trajectory.stateTrajectory[k],
           trajectory.inputTrajectory[k], dt);
@@ -92,7 +93,7 @@ class iLQRQpSolverTest : public testing::Test {
         test_tools::getRandomTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>(dt);
     setReferenceTrajectories(referenceTrajectory);
 
-    x0 = Vector<Scalar, STATE_DIM>::Random();
+    x0 = Eigen::Vector<Scalar, STATE_DIM>::Random();
     solution = qp_solver::solveLinearQuadraticOptimalControlProblem(
         problem, targetTrajectory, nominalTrajectory, x0);
   }
@@ -118,11 +119,11 @@ class iLQRQpSolverTest : public testing::Test {
     return trajectory;
   }
 
-  Matrix<Scalar, STATE_DIM, STATE_DIM> A;
-  Matrix<Scalar, STATE_DIM, INPUT_DIM> B;
-  Matrix<Scalar, STATE_DIM, STATE_DIM> Q;
-  Matrix<Scalar, INPUT_DIM, INPUT_DIM> R;
-  Matrix<Scalar, STATE_DIM, STATE_DIM> QFinal;
+  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> A;
+  Eigen::Matrix<Scalar, STATE_DIM, INPUT_DIM> B;
+  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> Q;
+  Eigen::Matrix<Scalar, INPUT_DIM, INPUT_DIM> R;
+  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> QFinal;
 
   std::unique_ptr<LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>> system;
   std::unique_ptr<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>
@@ -132,7 +133,7 @@ class iLQRQpSolverTest : public testing::Test {
   TargetTrajectories_t targetTrajectory;
   Trajectory_t nominalTrajectory;
   Trajectory_t referenceTrajectory;
-  Vector<Scalar, STATE_DIM> x0;
+  Eigen::Vector<Scalar, STATE_DIM> x0;
   Trajectory_t solution;
 };
 
@@ -170,7 +171,8 @@ TEST_F(iLQRQpSolverTest, knownSolutionAtOrigin) {
   // 零，则解也全为零。
   const auto zeroReference = getZeroTrajectory();
   setReferenceTrajectories(zeroReference);
-  const Vector<Scalar, STATE_DIM> zeroX0 = Vector<Scalar, STATE_DIM>::Zero();
+  const Eigen::Vector<Scalar, STATE_DIM> zeroX0 =
+      Eigen::Vector<Scalar, STATE_DIM>::Zero();
 
   // 获取零名义轨迹下的解。
   auto zeroSolution = qp_solver::solveLinearQuadraticOptimalControlProblem(

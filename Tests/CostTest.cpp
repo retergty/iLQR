@@ -17,11 +17,11 @@ class QuadraticCostTest : public testing::Test {
   static constexpr int UDim = 1;
   static constexpr int ArrayLength = 1;
 
-  using StateMatrix = Matrix<Scalar, XDim, XDim>;
-  using InputMatrix = Matrix<Scalar, UDim, UDim>;
-  using InputStateMatrix = Matrix<Scalar, UDim, XDim>;
-  using StateVector = Vector<Scalar, XDim>;
-  using InputVector = Vector<Scalar, UDim>;
+  using StateMatrix = Eigen::Matrix<Scalar, XDim, XDim>;
+  using InputMatrix = Eigen::Matrix<Scalar, UDim, UDim>;
+  using InputStateMatrix = Eigen::Matrix<Scalar, UDim, XDim>;
+  using StateVector = Eigen::Vector<Scalar, XDim>;
+  using InputVector = Eigen::Vector<Scalar, UDim>;
 
   static constexpr Scalar kPrecision = 1e-12;
 

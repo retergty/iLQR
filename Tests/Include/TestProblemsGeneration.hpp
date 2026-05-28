@@ -28,9 +28,9 @@
 namespace test_tools {
 
 template <typename Scalar, int Dim>
-Matrix<Scalar, Dim, Dim> getRandomPositiveDefiniteMatrix() {
-  Matrix<Scalar, Dim, Dim> matrix = Matrix<Scalar, Dim, Dim>::Random();
-  return matrix.transpose() * matrix + Matrix<Scalar, Dim, Dim>::Identity();
+Eigen::Matrix<Scalar, Dim, Dim> getRandomPositiveDefiniteMatrix() {
+  Eigen::Matrix<Scalar, Dim, Dim> matrix = Eigen::Matrix<Scalar, Dim, Dim>::Random();
+  return matrix.transpose() * matrix + Eigen::Matrix<Scalar, Dim, Dim>::Identity();
 }
 
 template <typename Scalar, int XDim, int UDim>
@@ -38,17 +38,17 @@ ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> getRandomCost() {
   static_assert(XDim >= 0, "XDim must be a fixed non-negative dimension.");
   static_assert(UDim >= 0, "UDim must be a fixed non-negative dimension.");
 
-  Matrix<Scalar, XDim + UDim, XDim + UDim> hessian =
-      Matrix<Scalar, XDim + UDim, XDim + UDim>::Random();
+  Eigen::Matrix<Scalar, XDim + UDim, XDim + UDim> hessian =
+      Eigen::Matrix<Scalar, XDim + UDim, XDim + UDim>::Random();
   hessian = hessian.transpose() * hessian;
 
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost;
   cost.dfdxx = hessian.template topLeftCorner<XDim, XDim>();
-  cost.dfdx = Vector<Scalar, XDim>::Random();
+  cost.dfdx = Eigen::Vector<Scalar, XDim>::Random();
   if constexpr (UDim > 0) {
     cost.dfdux = hessian.template bottomLeftCorner<UDim, XDim>();
     cost.dfduu = hessian.template bottomRightCorner<UDim, UDim>();
-    cost.dfdu = Vector<Scalar, UDim>::Random();
+    cost.dfdu = Eigen::Vector<Scalar, UDim>::Random();
   }
   cost.f = std::rand() / static_cast<Scalar>(RAND_MAX);
   return cost;
@@ -77,11 +77,11 @@ getRandomDynamics() {
   static_assert(UDim >= 0, "UDim must be a fixed non-negative dimension.");
 
   VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> dynamics;
-  dynamics.dfdx = Matrix<Scalar, XDim, XDim>::Random();
+  dynamics.dfdx = Eigen::Matrix<Scalar, XDim, XDim>::Random();
   if constexpr (UDim > 0) {
-    dynamics.dfdu = Matrix<Scalar, XDim, UDim>::Random();
+    dynamics.dfdu = Eigen::Matrix<Scalar, XDim, UDim>::Random();
   }
-  dynamics.f = Vector<Scalar, XDim>::Random();
+  dynamics.f = Eigen::Vector<Scalar, XDim>::Random();
   return dynamics;
 }
 
@@ -101,11 +101,11 @@ getRandomConstraints() {
   static_assert(CDim >= 0, "CDim must be a fixed non-negative dimension.");
 
   VectorFunctionLinearApproximation<Scalar, CDim, XDim, UDim> constraints;
-  constraints.dfdx = Matrix<Scalar, CDim, XDim>::Random();
+  constraints.dfdx = Eigen::Matrix<Scalar, CDim, XDim>::Random();
   if constexpr (UDim > 0) {
-    constraints.dfdu = Matrix<Scalar, CDim, UDim>::Random();
+    constraints.dfdu = Eigen::Matrix<Scalar, CDim, UDim>::Random();
   }
-  constraints.f = Vector<Scalar, CDim>::Random();
+  constraints.f = Eigen::Vector<Scalar, CDim>::Random();
   return constraints;
 }
 
@@ -134,10 +134,10 @@ getRandomTrajectory(Scalar dt) {
   qp_solver::ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> trajectory;
   for (size_t k = 0; k < PredictLength + 1; ++k) {
     trajectory.timeTrajectory[k] = static_cast<Scalar>(k) * dt;
-    trajectory.stateTrajectory[k] = Vector<Scalar, XDim>::Random();
+    trajectory.stateTrajectory[k] = Eigen::Vector<Scalar, XDim>::Random();
   }
   for (size_t k = 0; k < PredictLength; ++k) {
-    trajectory.inputTrajectory[k] = Vector<Scalar, UDim>::Random();
+    trajectory.inputTrajectory[k] = Eigen::Vector<Scalar, UDim>::Random();
   }
   return trajectory;
 }
@@ -193,7 +193,7 @@ inline bool isQpFeasible(
   const auto& A = qpConstraints.dfdx;
 
   // 代价必须凸。
-  Eigen::LDLT<Matrix<Scalar, DecisionDim, DecisionDim>> ldlt(H);
+  Eigen::LDLT<Eigen::Matrix<Scalar, DecisionDim, DecisionDim>> ldlt(H);
   if (!(ldlt.vectorD().array() > Scalar(0.0)).all()) {
     std::cerr << "H is not positive definite\n";
     return false;
@@ -204,7 +204,7 @@ inline bool isQpFeasible(
   }
 
   // 约束可行性。
-  Eigen::JacobiSVD<Matrix<Scalar, ConstraintDim, DecisionDim>> svd(A);
+  Eigen::JacobiSVD<Eigen::Matrix<Scalar, ConstraintDim, DecisionDim>> svd(A);
   const auto conditionNumber =
       svd.singularValues()(0) / svd.singularValues().tail(1)(0);
   if (svd.rank() != A.rows()) {

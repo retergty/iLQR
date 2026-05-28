@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 
+#include <cassert>
 #include <cstddef>
 #include <limits>
 
@@ -60,14 +61,19 @@ EigenVector_t<Scalar, Rows> toEigenVector(
   return dst;
 }
 
-template <typename Scalar, int Rows, int Cols, int Options, int MaxRows,
-          int MaxCols>
-matrix::Matrix<Scalar, detail::FixedEigenDim<Rows>::value,
-               detail::FixedEigenDim<Cols>::value>
-fromEigenMatrix(
-    const Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols>& src) {
-  constexpr std::size_t CustomRows = detail::FixedEigenDim<Rows>::value;
-  constexpr std::size_t CustomCols = detail::FixedEigenDim<Cols>::value;
+template <typename Derived>
+matrix::Matrix<typename Derived::Scalar,
+               detail::FixedEigenDim<Derived::RowsAtCompileTime>::value,
+               detail::FixedEigenDim<Derived::ColsAtCompileTime>::value>
+fromEigenMatrix(const Eigen::MatrixBase<Derived>& src) {
+  using Scalar = typename Derived::Scalar;
+  constexpr std::size_t CustomRows =
+      detail::FixedEigenDim<Derived::RowsAtCompileTime>::value;
+  constexpr std::size_t CustomCols =
+      detail::FixedEigenDim<Derived::ColsAtCompileTime>::value;
+
+  assert(src.rows() == static_cast<int>(CustomRows));
+  assert(src.cols() == static_cast<int>(CustomCols));
 
   matrix::Matrix<Scalar, CustomRows, CustomCols> dst;
   for (std::size_t i = 0; i < CustomRows; ++i) {
@@ -78,13 +84,54 @@ fromEigenMatrix(
   return dst;
 }
 
-template <typename Scalar, int Rows, int Options, int MaxRows>
-matrix::Vector<Scalar, detail::FixedEigenDim<Rows>::value> fromEigenVector(
-    const Eigen::Matrix<Scalar, Rows, 1, Options, MaxRows, 1>& src) {
-  constexpr std::size_t CustomRows = detail::FixedEigenDim<Rows>::value;
+template <std::size_t Rows, std::size_t Cols, typename Derived>
+matrix::Matrix<typename Derived::Scalar, Rows, Cols> fromEigenMatrix(
+    const Eigen::MatrixBase<Derived>& src) {
+  using Scalar = typename Derived::Scalar;
+
+  assert(src.rows() == static_cast<int>(Rows));
+  assert(src.cols() == static_cast<int>(Cols));
+
+  matrix::Matrix<Scalar, Rows, Cols> dst;
+  for (std::size_t i = 0; i < Rows; ++i) {
+    for (std::size_t j = 0; j < Cols; ++j) {
+      dst(i, j) = src(static_cast<int>(i), static_cast<int>(j));
+    }
+  }
+  return dst;
+}
+
+template <typename Derived>
+matrix::Vector<typename Derived::Scalar,
+               detail::FixedEigenDim<Derived::RowsAtCompileTime>::value>
+fromEigenVector(const Eigen::MatrixBase<Derived>& src) {
+  static_assert(Derived::ColsAtCompileTime == 1,
+                "fromEigenVector requires a column vector expression.");
+
+  using Scalar = typename Derived::Scalar;
+  constexpr std::size_t CustomRows =
+      detail::FixedEigenDim<Derived::RowsAtCompileTime>::value;
+
+  assert(src.rows() == static_cast<int>(CustomRows));
+  assert(src.cols() == 1);
 
   matrix::Vector<Scalar, CustomRows> dst;
   for (std::size_t i = 0; i < CustomRows; ++i) {
+    dst(i) = src(static_cast<int>(i));
+  }
+  return dst;
+}
+
+template <std::size_t Rows, typename Derived>
+matrix::Vector<typename Derived::Scalar, Rows> fromEigenVector(
+    const Eigen::MatrixBase<Derived>& src) {
+  using Scalar = typename Derived::Scalar;
+
+  assert(src.rows() == static_cast<int>(Rows));
+  assert(src.cols() == 1);
+
+  matrix::Vector<Scalar, Rows> dst;
+  for (std::size_t i = 0; i < Rows; ++i) {
     dst(i) = src(static_cast<int>(i));
   }
   return dst;

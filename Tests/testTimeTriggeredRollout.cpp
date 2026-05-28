@@ -18,10 +18,10 @@ constexpr size_t ControllerLen = 2;
 constexpr size_t NumIntervals = 1000;
 constexpr size_t SampleCount = NumIntervals + 1;
 
-using StateVector = Vector<Scalar, XDim>;
-using InputVector = Vector<Scalar, UDim>;
-using StateMatrix = Matrix<Scalar, XDim, XDim>;
-using InputMatrix = Matrix<Scalar, XDim, UDim>;
+using StateVector = Eigen::Vector<Scalar, XDim>;
+using InputVector = Eigen::Vector<Scalar, UDim>;
+using StateMatrix = Eigen::Matrix<Scalar, XDim, XDim>;
+using InputMatrix = Eigen::Matrix<Scalar, XDim, UDim>;
 using Controller = LinearController<Scalar, XDim, UDim, ControllerLen>;
 using System = LinearSystemDynamics<Scalar, XDim, UDim>;
 using Rollout = TimeTriggeredRollout<Scalar, XDim, UDim>;
@@ -41,8 +41,9 @@ TEST(TimeTriggeredRolloutCompatibilityTest,
                                                             finalTime};
   const std::array<InputVector, ControllerLen> controllerBias = {
       InputVector::Ones(), InputVector::Ones()};
-  const std::array<Matrix<Scalar, UDim, XDim>, ControllerLen> controllerGain = {
-      Matrix<Scalar, UDim, XDim>::Zero(), Matrix<Scalar, UDim, XDim>::Zero()};
+  const std::array<Eigen::Matrix<Scalar, UDim, XDim>, ControllerLen>
+      controllerGain = {Eigen::Matrix<Scalar, UDim, XDim>::Zero(),
+                        Eigen::Matrix<Scalar, UDim, XDim>::Zero()};
   Controller controller(controllerTime, controllerBias, controllerGain);
 
   Rollout rollout(&systemDynamics, timeStep);

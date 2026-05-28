@@ -12,7 +12,7 @@
 namespace {
 using Scalar = double;
 constexpr int XDim = 1;
-using StateVector = Vector<Scalar, XDim>;
+using StateVector = Eigen::Vector<Scalar, XDim>;
 
 class ExponentialOde final : public OdeBase<Scalar, XDim> {
  public:

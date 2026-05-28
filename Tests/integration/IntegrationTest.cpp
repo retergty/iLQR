@@ -17,10 +17,10 @@ using Scalar = double;
 constexpr int XDim = 2;
 constexpr int UDim = 1;
 constexpr size_t ControllerLen = 2;
-using StateVector = Vector<Scalar, XDim>;
-using InputVector = Vector<Scalar, UDim>;
-using StateMatrix = Matrix<Scalar, XDim, XDim>;
-using InputMatrix = Matrix<Scalar, XDim, UDim>;
+using StateVector = Eigen::Vector<Scalar, XDim>;
+using InputVector = Eigen::Vector<Scalar, UDim>;
+using StateMatrix = Eigen::Matrix<Scalar, XDim, XDim>;
+using InputMatrix = Eigen::Matrix<Scalar, XDim, UDim>;
 using Controller = LinearController<Scalar, XDim, UDim, ControllerLen>;
 using System = LinearSystemDynamics<Scalar, XDim, UDim>;
 
@@ -36,8 +36,9 @@ Controller makeConstantController(Scalar t0, Scalar t1,
                                   const InputVector& input) {
   std::array<Scalar, ControllerLen> controllerTime = {t0, t1};
   std::array<InputVector, ControllerLen> controllerBias = {input, input};
-  std::array<Matrix<Scalar, UDim, XDim>, ControllerLen> controllerGain = {
-      Matrix<Scalar, UDim, XDim>::Zero(), Matrix<Scalar, UDim, XDim>::Zero()};
+  std::array<Eigen::Matrix<Scalar, UDim, XDim>, ControllerLen> controllerGain =
+      {Eigen::Matrix<Scalar, UDim, XDim>::Zero(),
+       Eigen::Matrix<Scalar, UDim, XDim>::Zero()};
   return Controller(controllerTime, controllerBias, controllerGain);
 }
 }  // namespace

@@ -107,12 +107,12 @@ class DiscreteTranscriptionTest : public testing::Test {
     ASSERT_EQ(lqr[N].constraints.dfdx.cols(), STATE_DIM);
   }
 
-  Matrix<Scalar, STATE_DIM, STATE_DIM> A;
-  Matrix<Scalar, STATE_DIM, INPUT_DIM> B;
-  Matrix<Scalar, STATE_DIM, STATE_DIM> Q;
-  Matrix<Scalar, STATE_DIM, STATE_DIM> QState;
-  Matrix<Scalar, INPUT_DIM, INPUT_DIM> R;
-  Matrix<Scalar, STATE_DIM, STATE_DIM> QFinal;
+  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> A;
+  Eigen::Matrix<Scalar, STATE_DIM, INPUT_DIM> B;
+  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> Q;
+  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> QState;
+  Eigen::Matrix<Scalar, INPUT_DIM, INPUT_DIM> R;
+  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> QFinal;
 
   std::unique_ptr<LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>> system;
   std::unique_ptr<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>
@@ -131,9 +131,9 @@ TEST_F(DiscreteTranscriptionTest, unconstrainedLqrHasCorrectSizes) {
 
 TEST_F(DiscreteTranscriptionTest, hardStateInputConstraintIsTranscribed) {
   static constexpr int CONSTRAINT_DIM = 2;
-  Vector<Scalar, CONSTRAINT_DIM> e;
-  Matrix<Scalar, CONSTRAINT_DIM, STATE_DIM> C;
-  Matrix<Scalar, CONSTRAINT_DIM, INPUT_DIM> D;
+  Eigen::Vector<Scalar, CONSTRAINT_DIM> e;
+  Eigen::Matrix<Scalar, CONSTRAINT_DIM, STATE_DIM> C;
+  Eigen::Matrix<Scalar, CONSTRAINT_DIM, INPUT_DIM> D;
   e << 0.1, -0.2;
   C << 1.0, 2.0, 3.0, -1.0, 0.5, 0.25;
   D << 0.75, -0.5, 1.5, 2.0;
@@ -159,8 +159,9 @@ TEST_F(DiscreteTranscriptionTest, hardStateInputConstraintIsTranscribed) {
 }
 
 TEST_F(DiscreteTranscriptionTest, ek2DeviationDynamicsMatchesLinearSystem) {
-  const auto expectedA = Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity() +
-                         A * dt + Scalar(0.5) * A * A * dt * dt;
+  const auto expectedA =
+      Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity() + A * dt +
+      Scalar(0.5) * A * A * dt * dt;
   const auto expectedB = B * dt + Scalar(0.5) * A * B * dt * dt;
 
   for (size_t k = 0; k < N; ++k) {

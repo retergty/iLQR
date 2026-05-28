@@ -15,7 +15,7 @@ template <typename Scalar, int XDim, int UDim>
 VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic, Eigen::Dynamic, 0>
 getConstraintMatrices(
     const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
-    const Vector<Scalar, XDim>& dx0, int numConstraints,
+    const Eigen::Vector<Scalar, XDim>& dx0, int numConstraints,
     int numDecisionVariables);
 
 template <typename Scalar, int XDim, int UDim>
@@ -24,17 +24,19 @@ ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> getCostMatrices(
     int numDecisionVariables);
 
 template <typename Scalar>
-std::pair<Vector<Scalar, Eigen::Dynamic>, Vector<Scalar, Eigen::Dynamic>>
+std::pair<Eigen::Vector<Scalar, Eigen::Dynamic>,
+          Eigen::Vector<Scalar, Eigen::Dynamic>>
 solveDenseQp(
     const ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0>& cost,
     const VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
                                             Eigen::Dynamic, 0>& constraints);
 
 template <typename Scalar, int XDim, int UDim>
-std::pair<std::vector<Vector<Scalar, XDim>>, std::vector<Vector<Scalar, UDim>>>
+std::pair<std::vector<Eigen::Vector<Scalar, XDim>>,
+          std::vector<Eigen::Vector<Scalar, UDim>>>
 getStateAndInputTrajectory(const std::vector<int>& numStates,
                            const std::vector<int>& numInputs,
-                           const Vector<Scalar, Eigen::Dynamic>& w);
+                           const Eigen::Vector<Scalar, Eigen::Dynamic>& w);
 
 /**
  * 提取问题的状态、输入维度以及约束数量。
@@ -102,11 +104,12 @@ inline int getNumConstraints(const std::vector<int>& numStates,
  * dx(t), du(t)
  */
 template <typename Scalar, int XDim, int UDim>
-std::pair<std::vector<Vector<Scalar, XDim>>, std::vector<Vector<Scalar, UDim>>>
+std::pair<std::vector<Eigen::Vector<Scalar, XDim>>,
+          std::vector<Eigen::Vector<Scalar, UDim>>>
 solveLinearQuadraticProblem(
     const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>&
         lqApproximation,
-    const Vector<Scalar, XDim>& dx0) {
+    const Eigen::Vector<Scalar, XDim>& dx0) {
   // 提取尺寸
   std::vector<int> numStates;
   std::vector<int> numInputs;
@@ -154,7 +157,7 @@ template <typename Scalar, int XDim, int UDim>
 VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic, Eigen::Dynamic, 0>
 getConstraintMatrices(
     const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
-    const Vector<Scalar, XDim>& dx0, int numConstraints,
+    const Eigen::Vector<Scalar, XDim>& dx0, int numConstraints,
     int numDecisionVariables) {
   if (lqp.empty()) {
     return VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
@@ -174,7 +177,8 @@ getConstraintMatrices(
   // 初始状态约束。
   const int nx_0 = dx0.size();
   A.topLeftCorner(nx_0, nx_0) =
-      -Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Identity(nx_0, nx_0);
+      -Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Identity(nx_0,
+                                                                       nx_0);
   b.topRows(nx_0) = dx0;
 
   int currRow = nx_0;
@@ -201,8 +205,8 @@ getConstraintMatrices(
     A.block(currRow, currCol, nx_Next, nx_k + nu_k + nx_Next)
         << dynamics_k.dfdx,
         dynamics_k.dfdu,
-        -Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Identity(nx_Next,
-                                                                  nx_Next);
+        -Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Identity(
+            nx_Next, nx_Next);
     // 添加 [b]。
     b.segment(currRow, nx_Next) = dynamics_k.f;
 
@@ -296,7 +300,7 @@ std::pair<ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0>,
           VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
                                             Eigen::Dynamic, 0>>
 getDenseQp(const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
-           const Vector<Scalar, XDim>& dx0) {
+           const Eigen::Vector<Scalar, XDim>& dx0) {
   // 提取尺寸
   std::vector<int> numStates;
   std::vector<int> numInputs;
@@ -326,7 +330,8 @@ getDenseQp(const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
  * 变量向量，lambda 是拉格朗日乘子向量。
  */
 template <typename Scalar>
-std::pair<Vector<Scalar, Eigen::Dynamic>, Vector<Scalar, Eigen::Dynamic>>
+std::pair<Eigen::Vector<Scalar, Eigen::Dynamic>,
+          Eigen::Vector<Scalar, Eigen::Dynamic>>
 solveDenseQp(
     const ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0>& cost,
     const VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
@@ -335,10 +340,10 @@ solveDenseQp(
   const int n = constraints.dfdx.cols();
 
   // 组装 KKT 条件。
-  Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> kktMatrix(n + m, n + m);
-  Vector<Scalar, Eigen::Dynamic> kktRhs(n + m);
+  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> kktMatrix(n + m, n + m);
+  Eigen::Vector<Scalar, Eigen::Dynamic> kktRhs(n + m);
   kktMatrix << cost.dfdxx, constraints.dfdx.transpose(), constraints.dfdx,
-      Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(m, m);
+      Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(m, m);
   kktRhs << -cost.dfdx, -constraints.f;
 
   // LU 分解的前提条件，否则解会
@@ -346,7 +351,7 @@ solveDenseQp(
   if (kktMatrix.fullPivLu().rank() != n + m) {
     throw std::runtime_error("KKT matrix is not full rank");
   }
-  Vector<Scalar, Eigen::Dynamic> sol = kktMatrix.lu().solve(kktRhs);
+  Eigen::Vector<Scalar, Eigen::Dynamic> sol = kktMatrix.lu().solve(kktRhs);
   return {sol.head(n), sol.tail(m)};
 }
 /**
@@ -358,16 +363,17 @@ solveDenseQp(
  * @return { state_trajectory, input_trajectory }。
  */
 template <typename Scalar, int XDim, int UDim>
-std::pair<std::vector<Vector<Scalar, XDim>>, std::vector<Vector<Scalar, UDim>>>
+std::pair<std::vector<Eigen::Vector<Scalar, XDim>>,
+          std::vector<Eigen::Vector<Scalar, UDim>>>
 getStateAndInputTrajectory(const std::vector<int>& numStates,
                            const std::vector<int>& numInputs,
-                           const Vector<Scalar, Eigen::Dynamic>& w) {
+                           const Eigen::Vector<Scalar, Eigen::Dynamic>& w) {
   assert(numStates.size() == numInputs.size() + 1);
 
   const int N = numInputs.size();
 
-  std::vector<Vector<Scalar, XDim>> stateTrajectory;
-  std::vector<Vector<Scalar, UDim>> inputTrajectory;
+  std::vector<Eigen::Vector<Scalar, XDim>> stateTrajectory;
+  std::vector<Eigen::Vector<Scalar, UDim>> inputTrajectory;
   stateTrajectory.reserve(N + 1);
   inputTrajectory.reserve(N);
 

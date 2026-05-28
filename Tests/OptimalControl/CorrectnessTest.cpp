@@ -49,8 +49,8 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
   using TargetTrajectories_t = typename Solver_t::TargetTrajectories_t;
   using QpTrajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
-  using StateVector_t = Vector<Scalar, STATE_DIM>;
-  using InputVector_t = Vector<Scalar, INPUT_DIM>;
+  using StateVector_t = Eigen::Vector<Scalar, STATE_DIM>;
+  using InputVector_t = Eigen::Vector<Scalar, INPUT_DIM>;
   using Dynamics_t = LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>;
   using StateInputCost_t =
       StateInputCost<Scalar, STATE_DIM, INPUT_DIM, static_cast<int>(N + 1)>;
@@ -185,7 +185,7 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
     /* 通过求解以下问题寻找满足约束的轨迹修正 w：
      *   min  1/2 w' w。
      *   s.t. A w + b = 0  */
-    const Vector<Scalar, Eigen::Dynamic> w =
+    const Eigen::Vector<Scalar, Eigen::Dynamic> w =
         -A.transpose() * (A * A.transpose()).inverse() * b;
 
     // 使轨迹可行。

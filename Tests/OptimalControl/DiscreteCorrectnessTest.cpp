@@ -48,8 +48,8 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
   using TargetTrajectories_t = typename Solver_t::TargetTrajectories_t;
   using QpTrajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
-  using StateVector_t = Vector<Scalar, STATE_DIM>;
-  using InputVector_t = Vector<Scalar, INPUT_DIM>;
+  using StateVector_t = Eigen::Vector<Scalar, STATE_DIM>;
+  using InputVector_t = Eigen::Vector<Scalar, INPUT_DIM>;
   using Dynamics_t = DiscreteLinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>;
   using StateInputCost_t =
       StateInputCost<Scalar, STATE_DIM, INPUT_DIM, static_cast<int>(N + 1)>;
@@ -103,11 +103,11 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
   std::unique_ptr<RandomProblem> createFeasibleRandomProblem() {
     auto problem = std::make_unique<RandomProblem>();
 
-    Matrix<Scalar, STATE_DIM, STATE_DIM> A =
-        Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity();
-    A += Scalar(0.05) * Matrix<Scalar, STATE_DIM, STATE_DIM>::Random();
-    Matrix<Scalar, STATE_DIM, INPUT_DIM> B =
-        Scalar(0.1) * Matrix<Scalar, STATE_DIM, INPUT_DIM>::Random();
+    Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> A =
+        Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity();
+    A += Scalar(0.05) * Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM>::Random();
+    Eigen::Matrix<Scalar, STATE_DIM, INPUT_DIM> B =
+        Scalar(0.1) * Eigen::Matrix<Scalar, STATE_DIM, INPUT_DIM>::Random();
     problem->systemPtr = std::make_unique<Dynamics_t>(A, B);
 
     const auto runningCost =
@@ -182,7 +182,7 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
       const QpTrajectory_t& trajectory) const {
     const auto& A = qpConstraints.dfdx;
     const auto& b = qpConstraints.f;
-    const Vector<Scalar, Eigen::Dynamic> w =
+    const Eigen::Vector<Scalar, Eigen::Dynamic> w =
         -A.transpose() * (A * A.transpose()).inverse() * b;
 
     auto feasibleTrajectory = trajectory;

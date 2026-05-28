@@ -9,8 +9,8 @@ namespace qp_solver {
 template <typename Scalar, int XDim, int UDim, size_t PredictLength>
 struct ContinuousTrajectory {
   using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
-  using StateTrajectory_t = std::array<Vector<Scalar, XDim>, PredictLength + 1>;
-  using InputTrajectory_t = std::array<Vector<Scalar, UDim>, PredictLength>;
+  using StateTrajectory_t = std::array<Eigen::Vector<Scalar, XDim>, PredictLength + 1>;
+  using InputTrajectory_t = std::array<Eigen::Vector<Scalar, UDim>, PredictLength>;
   /** 时间轨迹，尺寸 N+1。 */
   TimeTrajectory_t timeTrajectory;
   /** 状态向量轨迹，尺寸 N+1。 */
@@ -42,8 +42,8 @@ ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> operator+(
  */
 template <typename Scalar, int XDim, int UDim>
 struct TrajectoryRef {
-  using StateVector_t = Vector<Scalar, XDim>;
-  using InputVector_t = Vector<Scalar, UDim>;
+  using StateVector_t = Eigen::Vector<Scalar, XDim>;
+  using InputVector_t = Eigen::Vector<Scalar, UDim>;
   /** 时间 */
   Scalar t;
   /** 状态 */
@@ -56,7 +56,7 @@ struct TrajectoryRef {
  * 数据。 */
 template <typename Scalar, int XDim>
 struct StateTrajectoryRef {
-  using StateVector_t = Vector<Scalar, XDim>;
+  using StateVector_t = Eigen::Vector<Scalar, XDim>;
   /** 时间 */
   Scalar t;
   /** 状态 */

@@ -26,10 +26,10 @@ constexpr int kInputDim = 1;
 constexpr double kPi = 3.14159265358979323846;
 
 using Scalar = double;
-using StateVector = Vector<Scalar, kStateDim>;
-using InputVector = Vector<Scalar, kInputDim>;
-using StateMatrix = Matrix<Scalar, kStateDim, kStateDim>;
-using InputMatrix = Matrix<Scalar, kStateDim, kInputDim>;
+using StateVector = Eigen::Vector<Scalar, kStateDim>;
+using InputVector = Eigen::Vector<Scalar, kInputDim>;
+using StateMatrix = Eigen::Matrix<Scalar, kStateDim, kStateDim>;
+using InputMatrix = Eigen::Matrix<Scalar, kStateDim, kInputDim>;
 using LinearApproximation =
     VectorFunctionLinearApproximation<Scalar, kStateDim, kStateDim, kInputDim>;
 using SystemDynamics = SystemDynamicsBase<Scalar, kStateDim, kInputDim>;

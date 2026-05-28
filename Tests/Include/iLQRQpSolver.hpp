@@ -31,7 +31,7 @@ solveLinearQuadraticOptimalControlProblem(
     const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>& nominalTrajectory,
-    const Vector<Scalar, Transcription::XDim>& initialState,
+    const Eigen::Vector<Scalar, Transcription::XDim>& initialState,
     const std::array<
         MultiplierCollection<
             Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
@@ -51,7 +51,7 @@ solveLinearQuadraticOptimalControlProblem(
   // 求解更新步
   ContinuousTrajectory<Scalar, XDim, UDim, PredictLength> deltaSolution;
   deltaSolution.timeTrajectory = nominalTrajectory.timeTrajectory;
-  const Vector<Scalar, XDim> dx0 =
+  const Eigen::Vector<Scalar, XDim> dx0 =
       initialState - nominalTrajectory.stateTrajectory.front();
   const auto deltaTrajectories =
       solveLinearQuadraticProblem(lqApproximation, dx0);
@@ -81,7 +81,7 @@ solveLinearQuadraticOptimalControlProblem(
     const TargetTrajectories<Scalar, Transcription>& targetTrajectory,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>& nominalTrajectory,
-    const Vector<Scalar, Transcription::XDim>& initialState) {
+    const Eigen::Vector<Scalar, Transcription::XDim>& initialState) {
   std::array<MultiplierCollection<
                  Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
              Transcription::PredictLength>
@@ -101,7 +101,7 @@ solveLinearQuadraticOptimalControlProblem(
         optimalControlProblem,
     const ContinuousTrajectory<Scalar, Transcription::XDim, Transcription::UDim,
                                Transcription::PredictLength>& nominalTrajectory,
-    const Vector<Scalar, Transcription::XDim>& initialState) {
+    const Eigen::Vector<Scalar, Transcription::XDim>& initialState) {
   std::array<MultiplierCollection<
                  Scalar, IntermediateStageConstraintLayout<ConstraintConfig>>,
              Transcription::PredictLength>

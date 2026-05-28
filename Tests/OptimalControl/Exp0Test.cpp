@@ -33,8 +33,8 @@ class Exp0 : public testing::Test {
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM,
                                       PredictLength>;
   using Initializer_t = DefaultInitializer<Scalar, STATE_DIM, INPUT_DIM>;
-  using StateVector_t = Vector<Scalar, STATE_DIM>;
-  using InputVector_t = Vector<Scalar, INPUT_DIM>;
+  using StateVector_t = Eigen::Vector<Scalar, STATE_DIM>;
+  using InputVector_t = Eigen::Vector<Scalar, INPUT_DIM>;
   using RolloutSettings_t = RolloutSettings<Scalar>;
   using DDPSettings_t = DDPSettings<Scalar>;
 

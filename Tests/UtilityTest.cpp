@@ -25,37 +25,37 @@ TEST(UtilityTest, ShiftHessianAddsOnlyDiagonalShift) {
 
 // 验证自实现 Cholesky 分解支持矩阵右端项求解。
 TEST(UtilityTest, CholeskyDecompositionSolvesMatrixRightHandSide) {
-  Matrix<double, 3, 3> matrix;
+  Eigen::Matrix<double, 3, 3> matrix;
   matrix << 6.0, 2.0, 1.0, 2.0, 5.0, 2.0, 1.0, 2.0, 4.0;
-  Matrix<double, 3, 2> rhs;
+  Eigen::Matrix<double, 3, 2> rhs;
   rhs << 1.0, 2.0, -3.0, 4.0, 5.0, -6.0;
 
   CholeskyDecomposition<double, 3> cholesky;
   ASSERT_TRUE(cholesky.Decomposition(matrix));
 
-  Matrix<double, 3, 2> solution;
+  Eigen::Matrix<double, 3, 2> solution;
   cholesky.Solve(solution, rhs);
 
-  const Matrix<double, 3, 2> expected = matrix.llt().solve(rhs);
+  const Eigen::Matrix<double, 3, 2> expected = matrix.llt().solve(rhs);
   EXPECT_TRUE(solution.isApprox(expected, 1e-12));
 }
 
 // 验证 Cholesky 只存下三角时仍能重构 L、L^T 并通过 const 对象求解。
 TEST(UtilityTest, CholeskyDecompositionAccessorsAreConstCorrect) {
-  Matrix<double, 3, 3> matrix;
+  Eigen::Matrix<double, 3, 3> matrix;
   matrix << 6.0, 2.0, 1.0, 2.0, 5.0, 2.0, 1.0, 2.0, 4.0;
-  Vector<double, 3> rhs;
+  Eigen::Vector<double, 3> rhs;
   rhs << 1.0, -3.0, 5.0;
 
   CholeskyDecomposition<double, 3> cholesky;
   ASSERT_TRUE(cholesky.Decomposition(matrix));
   const CholeskyDecomposition<double, 3>& constCholesky = cholesky;
 
-  const Matrix<double, 3, 3> l = constCholesky.GetMatrixL();
-  const Matrix<double, 3, 3> lt = constCholesky.GetMatrixLT();
+  const Eigen::Matrix<double, 3, 3> l = constCholesky.GetMatrixL();
+  const Eigen::Matrix<double, 3, 3> lt = constCholesky.GetMatrixLT();
   EXPECT_TRUE((l * lt).isApprox(matrix, 1e-12));
 
-  Vector<double, 3> solution;
+  Eigen::Vector<double, 3> solution;
   constCholesky.Solve(solution, rhs);
   EXPECT_TRUE(solution.isApprox(matrix.llt().solve(rhs), 1e-12));
 }
@@ -130,9 +130,9 @@ TEST(UtilityTest, LinearControllerClearAndSwap) {
 TEST(UtilityTest, MultiplierInterpolationInterpolatesAllFields) {
   using Multiplier_t = Multiplier<double, 1>;
   std::array<Multiplier_t, 3> multipliers = {
-      Multiplier_t{1.0, Vector<double, 1>::Constant(10.0)},
-      Multiplier_t{3.0, Vector<double, 1>::Constant(30.0)},
-      Multiplier_t{5.0, Vector<double, 1>::Constant(50.0)},
+      Multiplier_t{1.0, Eigen::Vector<double, 1>::Constant(10.0)},
+      Multiplier_t{3.0, Eigen::Vector<double, 1>::Constant(30.0)},
+      Multiplier_t{5.0, Eigen::Vector<double, 1>::Constant(50.0)},
   };
 
   const auto interpolated =
@@ -151,21 +151,21 @@ TEST(UtilityTest, MultiplierCollectionInterpolationInterpolatesEachCategory) {
   std::array<Collection, 2> trajectory;
 
   std::get<0>(trajectory[0].stateEq.terms) = {
-      1.0, Vector<double, 1>::Constant(10.0)};
+      1.0, Eigen::Vector<double, 1>::Constant(10.0)};
   std::get<0>(trajectory[0].stateIneq.terms) = {
-      2.0, Vector<double, 1>::Constant(20.0)};
+      2.0, Eigen::Vector<double, 1>::Constant(20.0)};
   std::get<0>(trajectory[0].stateInputEq.terms) = {
-      3.0, Vector<double, 1>::Constant(30.0)};
+      3.0, Eigen::Vector<double, 1>::Constant(30.0)};
   std::get<0>(trajectory[0].stateInputIneq.terms) = {
-      4.0, Vector<double, 1>::Constant(40.0)};
+      4.0, Eigen::Vector<double, 1>::Constant(40.0)};
   std::get<0>(trajectory[1].stateEq.terms) = {
-      11.0, Vector<double, 1>::Constant(110.0)};
+      11.0, Eigen::Vector<double, 1>::Constant(110.0)};
   std::get<0>(trajectory[1].stateIneq.terms) = {
-      12.0, Vector<double, 1>::Constant(120.0)};
+      12.0, Eigen::Vector<double, 1>::Constant(120.0)};
   std::get<0>(trajectory[1].stateInputEq.terms) = {
-      13.0, Vector<double, 1>::Constant(130.0)};
+      13.0, Eigen::Vector<double, 1>::Constant(130.0)};
   std::get<0>(trajectory[1].stateInputIneq.terms) = {
-      14.0, Vector<double, 1>::Constant(140.0)};
+      14.0, Eigen::Vector<double, 1>::Constant(140.0)};
 
   const Collection interpolated =
       LinearInterpolation::interpolate<double, Layout, 2>({0, 0.25},
