@@ -44,9 +44,11 @@
 
 ### 核心求解器与类型系统
 
-`iLQR/iLQR.hpp` 是主要求解器实现，负责组织名义轨迹初始化、问题近似、Riccati 反向递推、控制器更新、线搜索、性能指标计算和乘子更新等步骤。`iLQR.cpp` 提供最小化入口示例，用于展示求解器的基本构造方式。
+`iLQRCore.hpp` 是库用户推荐包含的公共聚合头，集中导出求解器、描述符、动力学、代价、约束、惩罚和基础线性代数类型。`iLQR/iLQR.hpp` 是主要求解器实现，负责组织名义轨迹初始化、问题近似、Riccati 反向递推、控制器更新、线搜索、性能指标计算和乘子更新等步骤。
 
 `iLQR/iLQRDescriptor.hpp`、`iLQR/iLQRDescriptorTraits.hpp` 和 `iLQR/iLQRTypes.hpp` 构成静态类型描述体系。它们将标量类型、系统维度、预测长度、动力学模式和约束布局转换为统一的轨迹、控制器、乘子、模型数据和求解缓存类型，是项目实现固定尺寸和禁止动态内存分配的重要基础。`TranscriptionConfig` 支持 `ContinuousDynamics` 与 `DiscreteDynamics` 两种动力学模式，默认使用连续模式；约束布局采用 `ConstraintGroupLayout<ConstraintTerm<N>...>` 描述：每个 `ConstraintTerm<N>` 表示一个增广拉格朗日项内部的 `N` 维向量约束，同一类约束可以包含多个 term。
+
+`Matrix/Types.hpp` 提供核心线性代数入口，将项目内使用的 `Matrix<Scalar, Rows, Cols>` 和 `Vector<Scalar, Rows>` 别名绑定到自定义固定尺寸矩阵库。核心代码不再通过公共头依赖 Eigen，测试侧需要 Eigen 对照能力时通过 `Tests/Include` 中的转换工具接入。
 
 `iLQR/DDPSetting.hpp`、`iLQR/DDPData.hpp` 和 `iLQR/HessianCorrection.hpp` 提供求解参数、迭代数据和 Hessian 修正逻辑，用于改善 Riccati 递推和控制更新的数值稳定性。求解器构造时需要外部提供 `OptimalControlProblem` 与初始化器对象，相关对象生命周期应长于求解器。
 
@@ -114,6 +116,12 @@
 
 项目使用 CMake 组织构建，要求 CMake 版本不低于 3.20，并使用 C++17 标准。核心库通过 `iLQR::iLQR` 接口目标暴露，使用方可包含根目录聚合头 `iLQRCore.hpp`。核心代码不依赖 Eigen3；测试和 QP 对照工具依赖 Eigen3 与 GoogleTest，测试构建流程会按需查找或获取这些依赖。
 
+外部 CMake 工程接入时，推荐链接命名空间目标：
+
+```cmake
+target_link_libraries(your_target PRIVATE iLQR::iLQR)
+```
+
 推荐使用仓库中的 CMake Preset 进行构建。以 GCC Debug 配置为例：
 
 ```bash
@@ -163,45 +171,63 @@ ctest --preset gcc-debug
 典型的最小调用形式如下：
 
 ```cpp
+#include "iLQRCore.hpp"
+
+#include <array>
+#include <cstddef>
+
+using Scalar = double;
+static constexpr int XDim = 2;
+static constexpr int UDim = 2;
+static constexpr std::size_t PredictLength = 5;
+
 using Descriptor =
-    iLQRDescriptor<double,
-                   TranscriptionConfig<Dimensions<2, 2>, Horizon<5>>>;
+    iLQRDescriptor<Scalar,
+                   TranscriptionConfig<Dimensions<XDim, UDim>,
+                                       Horizon<PredictLength>>>;
 
 using Solver = iLQR<Descriptor>;
 using Problem = Solver::OptimalControlProblem_t;
 
-LinearSystemDynamics<double, 2, 2> dynamics(A, B);
-DefaultInitializer<double, 2, 2> initializer;
+const Matrix<Scalar, XDim, XDim> A = Matrix<Scalar, XDim, XDim>::Identity();
+const Matrix<Scalar, XDim, UDim> B = Matrix<Scalar, XDim, UDim>::Identity();
+LinearSystemDynamics<Scalar, XDim, UDim> dynamics(A, B);
+DefaultInitializer<Scalar, XDim, UDim> initializer;
 Problem problem;
 problem.dynamicsPtr = &dynamics;
 
-DDPSettings<double> settings;
+DDPSettings<Scalar> settings;
 settings.timeStep_ = 0.01;
 settings.maxNumIterations_ = 30;
 settings.strategy_ = SearchStrategyType::LINE_SEARCH;
 
-QuadraticStateInputCost<double, 2, 2, 6> runningCost(Q, R, 0);
-QuadraticStateCost<double, 2, 6> finalCost(Qf, 0);
+const Matrix<Scalar, XDim, XDim> Q = Matrix<Scalar, XDim, XDim>::Identity();
+const Matrix<Scalar, UDim, UDim> R = Matrix<Scalar, UDim, UDim>::Identity();
+const Matrix<Scalar, XDim, XDim> Qf =
+    Scalar(10.0) * Matrix<Scalar, XDim, XDim>::Identity();
+QuadraticStateInputCost<Scalar, XDim, UDim, PredictLength + 1> runningCost(
+    Q, R, 0);
+QuadraticStateCost<Scalar, XDim, PredictLength + 1> finalCost(Qf, 0);
 problem.cost.add(runningCost);
 problem.finalCost.add(finalCost);
 
 Solver solver(settings, problem, &initializer);
 
-std::array<double, 6> timeTrajectory;
-std::array<Eigen::Vector2d, 6> stateTrajectory;
-std::array<Eigen::Vector2d, 6> inputTrajectory;
+std::array<Scalar, PredictLength + 1> timeTrajectory{};
+std::array<Vector<Scalar, XDim>, PredictLength + 1> stateTrajectory{};
+std::array<Vector<Scalar, UDim>, PredictLength + 1> inputTrajectory{};
 
 // 填充参考轨迹后写入求解器。
 solver.setDesireTrajectory(timeTrajectory, stateTrajectory, inputTrajectory);
 
-Eigen::Vector2d initState;
+Vector<Scalar, XDim> initState = Vector<Scalar, XDim>::Zero();
 solver.run(0.0, initState);
 
 const auto& solution = solver.primalSolution();
 const auto& controller = solution.controller_;
 ```
 
-在该示例中，`Dimensions<2, 2>` 表示状态维度为 2、输入维度为 2，`Horizon<5>` 表示预测区间包含 5 个控制阶段和 6 个时间节点。因此，与轨迹相关的数组长度应为 `PredictLength + 1`。由于 `TranscriptionConfig` 未显式指定第三个模板参数，该示例默认使用 `ContinuousDynamics`。
+在该示例中，`Dimensions<XDim, UDim>` 表示状态维度和输入维度，`Horizon<PredictLength>` 表示预测区间包含 `PredictLength` 个控制阶段和 `PredictLength + 1` 个时间节点。因此，与参考轨迹相关的数组长度应为 `PredictLength + 1`。由于 `TranscriptionConfig` 未显式指定第三个模板参数，该示例默认使用 `ContinuousDynamics`。
 
 若模型本身已经是离散时间系统，可显式选择离散动力学模式：
 
@@ -275,7 +301,7 @@ problem.finalCost.add(finalCost);
 
 ### 内存约束
 
-使用或扩展本项目时，应保持问题规模在编译期确定。新增模块应优先使用固定尺寸 Eigen 类型、`std::array` 和预分配缓存，避免在核心求解流程中引入动态内存分配。
+使用或扩展本项目时，应保持问题规模在编译期确定。新增模块应优先使用固定尺寸 `Matrix` / `Vector`、`std::array` 和预分配缓存，避免在核心求解流程中引入动态内存分配。
 
 ### 注释与文档约定
 
