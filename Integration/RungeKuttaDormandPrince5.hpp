@@ -103,7 +103,7 @@ class RungeKuttaDormandPrince5Stepper {
         x_err.array() /
         (absTol + relTol * (x_old.array().abs() +
                             std::abs(dt) * dxdt_old.array().abs()));
-    return err.template lpNorm<Eigen::Infinity>();
+    return err.template lpNorm<matrix::Infinity>();
   }
 
   /** Runge-Kutta 步中的中间导数。 */

@@ -2,8 +2,8 @@
 
 #include <array>
 
+#include "Matrix/Types.hpp"
 #include "OptimalControlData/Reference.hpp"
-#include "Types.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
 
 /**

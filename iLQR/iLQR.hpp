@@ -8,11 +8,11 @@
 #include <cassert>
 
 #include "Integration/TrapezoidalIntegration.hpp"
+#include "Matrix/Types.hpp"
 #include "OptimalControl/OptimalControlProblemHelperFunction.hpp"
 #include "OptimalControlData/PerformanceIndex.hpp"
 #include "SearchStrategy/LineSearchStrategy.hpp"
 #include "SearchStrategy/SearchStrategyBase.hpp"
-#include "Types.hpp"
 #include "iLQR/DDPSetting.hpp"
 #include "iLQR/HessianCorrection.hpp"
 #include "iLQR/iLQRTypes.hpp"

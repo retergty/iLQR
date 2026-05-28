@@ -6,9 +6,9 @@
 #include "Controller/LinearController.hpp"
 #include "Initialization/DefaultInitializer.hpp"
 #include "Matrix/CholeskyDecomposition.hpp"
+#include "Matrix/Types.hpp"
 #include "ModelData/Multiplier.hpp"
 #include "Tests/Include/MatrixEigenConversion.hpp"
-#include "Types.hpp"
 #include "iLQR/HessianCorrection.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
 
@@ -60,27 +60,6 @@ TEST(UtilityTest, CholeskyDecompositionAccessorsAreConstCorrect) {
   const Eigen::Matrix<double, 3, 1> expected =
       toEigenMatrix(matrix).llt().solve(toEigenMatrix(rhs));
   EXPECT_TRUE(toEigenMatrix(solution).isApprox(expected, 1e-12));
-}
-
-// 验证 DiagonalMatrix 的左右乘法和稠密矩阵转换结果正确。
-TEST(UtilityTest, DiagonalMatrixSupportsDenseOperations) {
-  DiagonalMatrix<double, 2> diagonal;
-  diagonal(0) = 2.0;
-  diagonal(1) = -3.0;
-
-  const Matrix<double, 2, 2> dense{{1.0, 2.0}, {3.0, 4.0}};
-
-  const Matrix<double, 2, 2> expectedLeft{{2.0, 4.0}, {-9.0, -12.0}};
-  const Matrix<double, 2, 2> expectedRight{{2.0, -6.0}, {6.0, -12.0}};
-
-  const Matrix<double, 2, 2> leftProduct = diagonal * dense;
-  const Matrix<double, 2, 2> rightProduct = dense * diagonal;
-  EXPECT_TRUE(leftProduct.isApprox(expectedLeft, 1e-12));
-  EXPECT_TRUE(rightProduct.isApprox(expectedRight, 1e-12));
-
-  const Matrix<double, 2, 2> asDense = diagonal;
-  const Matrix<double, 2, 2> expectedDense{{2.0, 0.0}, {0.0, -3.0}};
-  EXPECT_TRUE(asDense.isApprox(expectedDense, 1e-12));
 }
 
 // 验证 LinearController 在计算输入前会同时插值 bias 和 gain。

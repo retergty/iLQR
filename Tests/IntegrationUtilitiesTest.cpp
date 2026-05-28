@@ -4,7 +4,7 @@
 
 #include "Integration/Observer.hpp"
 #include "Integration/TrapezoidalIntegration.hpp"
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 // 验证非均匀时间网格上的标量梯形积分结果正确。
 TEST(IntegrationUtilitiesTest, TrapezoidalIntegrationScalarNonUniformGrid) {

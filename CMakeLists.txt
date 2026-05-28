@@ -1,134 +1,25 @@
 
 cmake_minimum_required(VERSION 3.20)
 
-set(PROJECT_NAME "tesetCPP")
+set(PROJECT_NAME "iLQR")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 project(${PROJECT_NAME} LANGUAGES CXX)
 
-add_executable(iLQR iLQR.cpp
-  AutomaticDifferentation/FiniteDifferenceMethods.hpp)
+add_library(iLQR INTERFACE)
+add_library(iLQR::iLQR ALIAS iLQR)
 
-set(ILQR_HEADERS
-  Types.hpp
-  iLQR/DDPData.hpp
-  iLQR/DDPSetting.hpp
-  iLQR/HessianCorrection.hpp
-  iLQR/iLQR.hpp
-  iLQR/iLQRDescriptor.hpp
-  iLQR/iLQRDescriptorTraits.hpp
-  iLQR/iLQRTypes.hpp
-  Approximation/LinearApproximation.hpp
-  Approximation/LinearQuadraticApproximator.hpp
-  Approximation/QuadraticApproximation.hpp
-  AugmentedLagrangian/StateAugmentedLagrangian.hpp
-  AugmentedLagrangian/StateAugmentedLagrangianCollection.hpp
-  AugmentedLagrangian/StateAugmentedLagrangianInterface.hpp
-  AugmentedLagrangian/StateInputAugmentedLagrangian.hpp
-  AugmentedLagrangian/StateInputAugmentedLagrangianCollection.hpp
-  AugmentedLagrangian/StateInputAugmentedLagrangianInterface.hpp
-  AutomaticDifferentation/FiniteDifferenceMethods.hpp
-  Constraint/ConstraintOrder.hpp
-  Constraint/StateConstraint.hpp
-  Constraint/StateInputConstraint.hpp
-  Constraint/LinearStateInputConstraint.hpp
-  Constraint/LinearStateConstraint.hpp
-  Controller/Controller.hpp
-  Controller/LinearController.hpp
-  Cost/Cost.hpp
-  Cost/CostCollection.hpp
-  Cost/QuadraticStateCost.hpp
-  Dynamics/ControlledSystemBase.hpp
-  Dynamics/DiscreteLinearSystemDynamics.hpp
-  Dynamics/DiscreteSystemBase.hpp
-  Dynamics/DiscreteSystemDynamicsBase.hpp
-  Dynamics/DynamicsModeTraits.hpp
-  Dynamics/LinearSystemDynamics.hpp
-  Dynamics/SystemDynamicsBase.hpp
-  Dynamics/SystemDynamicsLinearizer.hpp
-  Initialization/DefaultInitializer.hpp
-  Initialization/Initializer.hpp
-  Initialization/OperatingPoints.hpp
-  Integration/Integration.hpp
-  Integration/Observer.hpp
-  Integration/RungeKuttaDormandPrince5.hpp
-  Integration/SensitivityIntegrator.hpp
-  Integration/TrapezoidalIntegration.hpp
-  IntrusiveList/IntrusiveList.hpp
-  Matrix/AxisAngle.hpp
-  Matrix/Dcm.hpp
-  Matrix/Dcm2.hpp
-  Matrix/Dual.hpp
-  Matrix/Euler.hpp
-  Matrix/LeastSquaresSolver.hpp
-  Matrix/Matrix.hpp
-  Matrix/PseudoInverse.hpp
-  Matrix/Quaternion.hpp
-  Matrix/Scalar.hpp
-  Matrix/Slice.hpp
-  Matrix/SparseVector.hpp
-  Matrix/SquareMatrix.hpp
-  Matrix/Vector.hpp
-  Matrix/Vector2.hpp
-  Matrix/Vector3.hpp
-  Matrix/Vector4.hpp
-  Matrix/filter.hpp
-  Matrix/helper_functions.hpp
-  Matrix/integration.hpp
-  Matrix/math.hpp
-  Matrix/CholeskyDecomposition.hpp
-  Misc/LinearInterpolation.hpp
-  Misc/NumericTraits.hpp
-  Misc/Numerics.hpp
-  ModelData/Metrics.hpp
-  ModelData/ModelData.hpp
-  ModelData/Multiplier.hpp
-  OptimalControlData/DualSolution.hpp
-  OptimalControlData/LagrangianMetrics.hpp
-  OptimalControlData/PerformanceIndex.hpp
-  OptimalControlData/PerformanceIndexEvaluator.hpp
-  OptimalControlData/PrimalSolution.hpp
-  OptimalControlData/ProblemMetrics.hpp
-  OptimalControlData/Reference.hpp
-  OptimalControl/OptimalControlProblem.hpp
-  OptimalControl/OptimalControlProblemHelperFunction.hpp
-  Penalties/AugmentedPenaltyBase.hpp
-  Penalties/ModifiedRelaxedBarrierPenalty.hpp
-  Penalties/Penalty.hpp
-  Penalties/QuadraticPenalty.hpp
-  Penalties/SlacknessSquaredHingePenalty.hpp
-  Penalties/SmoothAbsolutePenalty.hpp
-  Penalties/MultidimensionalPenalty.hpp
-  RiccatiEquations/DiscreteTimeRiccatiEquations.hpp
-  RiccatiEquations/RiccatiModification.hpp
-  Rollout/DiscreteTimeRollout.hpp
-  Rollout/InitializerRollout.hpp
-  Rollout/RolloutBase.hpp
-  Rollout/RolloutTraits.hpp
-  Rollout/TimeTriggeredRollout.hpp
-  SearchStrategy/LineSearchStrategy.hpp
-  SearchStrategy/SearchStrategyBase.hpp
-  SearchStrategy/SearchStrategySettings.hpp
-  Transcription/ContinuousTranscription.hpp
-  Transcription/DiscreteTranscription.hpp
-  Transcription/TranscriptionTraits.hpp
-  Models/CircularKinematics.hpp
-  Models/DoubleIntegratorReachingTask.hpp
-  Models/EXP0.hpp
-  Models/ThrustVector.hpp
+target_include_directories(iLQR INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include>
 )
-
-add_library(iLQR_Include INTERFACE)
-target_sources(iLQR_Include INTERFACE ${ILQR_HEADERS})
-target_include_directories(iLQR_Include INTERFACE ${CMAKE_SOURCE_DIR})
-target_link_libraries(iLQR PUBLIC iLQR_Include)
-
+target_compile_features(iLQR INTERFACE cxx_std_17)
 add_compile_options(-Wall -Wpedantic -Wextra -ffunction-sections -fdata-sections)
 add_link_options(-Wl,--gc-sections -Wl,--start-group -Wl,--end-group)
 
-# 启用测试
-enable_testing()
-
-# 添加测试子目录
-add_subdirectory(Tests)
+# 使用 CMake 标准 BUILD_TESTING 选项控制是否构建测试。
+include(CTest)
+if(BUILD_TESTING)
+  add_subdirectory(Tests)
+endif()

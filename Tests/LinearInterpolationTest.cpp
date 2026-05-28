@@ -7,8 +7,8 @@
 #include <array>
 #include <cmath>
 
+#include "Matrix/Types.hpp"
 #include "Misc/LinearInterpolation.hpp"
-#include "Types.hpp"
 
 using namespace LinearInterpolation;
 

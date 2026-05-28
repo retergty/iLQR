@@ -9,9 +9,9 @@
 #include "Cost/QuadraticStateCost.hpp"
 #include "Dynamics/LinearSystemDynamics.hpp"
 #include "Initialization/DefaultInitializer.hpp"
+#include "Matrix/Types.hpp"
 #include "OptimalControl/OptimalControlProblem.hpp"
 #include "Penalties/QuadraticPenalty.hpp"
-#include "Types.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
 
 namespace double_integrator {

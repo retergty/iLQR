@@ -5,7 +5,7 @@
  */
 #pragma once
 #include "Approximation/LinearApproximation.hpp"
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 template <typename Scalar, int XDim, int UDim>
 class SystemDynamicsBase;

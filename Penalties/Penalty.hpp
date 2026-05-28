@@ -4,8 +4,8 @@
 
 #include "Approximation/LinearApproximation.hpp"
 #include "Approximation/QuadraticApproximation.hpp"
+#include "Matrix/Types.hpp"
 #include "Penalties/AugmentedPenaltyBase.hpp"
-#include "Types.hpp"
 
 /**
  * @file Penalty.hpp

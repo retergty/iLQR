@@ -112,7 +112,7 @@
 
 ### 构建项目
 
-项目使用 CMake 组织构建，要求 CMake 版本不低于 3.20，并使用 C++17 标准。项目依赖 Eigen3；如果系统中未找到 Eigen3，构建脚本会通过 `FetchContent` 获取 Eigen。测试部分依赖 GoogleTest，同样由测试构建流程自动获取。
+项目使用 CMake 组织构建，要求 CMake 版本不低于 3.20，并使用 C++17 标准。核心库通过 `iLQR::iLQR` 接口目标暴露，使用方可包含根目录聚合头 `iLQRCore.hpp`。核心代码不依赖 Eigen3；测试和 QP 对照工具依赖 Eigen3 与 GoogleTest，测试构建流程会按需查找或获取这些依赖。
 
 推荐使用仓库中的 CMake Preset 进行构建。以 GCC Debug 配置为例：
 
@@ -128,7 +128,7 @@ cmake --preset gcc-release
 cmake --build --preset gcc-release
 ```
 
-构建完成后，生成文件位于 `out/build/<preset-name>` 目录中。主示例目标为 `iLQR`，测试目标由 `Tests/CMakeLists.txt` 自动生成。
+构建完成后，生成文件位于 `out/build/<preset-name>` 目录中。测试目标由 `Tests/CMakeLists.txt` 自动生成，可通过 CMake 标准选项 `BUILD_TESTING` 控制是否构建测试。
 
 ### 运行测试
 

@@ -7,7 +7,7 @@
 
 #include "Approximation/LinearApproximation.hpp"
 #include "Approximation/QuadraticApproximation.hpp"
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 /**
  * @brief

@@ -8,7 +8,7 @@
 #include <array>
 
 #include "Cost/QuadraticStateCost.hpp"
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 class QuadraticCostTest : public testing::Test {
  protected:

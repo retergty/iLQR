@@ -5,9 +5,9 @@
  */
 #pragma once
 
+#include "Matrix/Types.hpp"
 #include "ModelData/ModelData.hpp"
 #include "RiccatiEquations/RiccatiModification.hpp"
-#include "Types.hpp"
 
 /**
  * @brief 离散时间 Riccati 单步递推的中间缓存（Sm*Am, Gm, Gv 等）。

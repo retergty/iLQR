@@ -4,7 +4,7 @@
  * f）。
  */
 #pragma once
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 /**
  * @brief 标量函数线性近似：f(x,u) = dfdx' dx + dfdu' du + f。

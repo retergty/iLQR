@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 /**
  * @brief Hessian 矩阵修正策略枚举（当前支持对角平移 DIAGONAL_SHIFT）。

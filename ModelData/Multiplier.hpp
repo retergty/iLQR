@@ -7,8 +7,8 @@
 #include <tuple>
 #include <utility>
 
+#include "Matrix/Types.hpp"
 #include "Misc/LinearInterpolation.hpp"
-#include "Types.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
 
 /**

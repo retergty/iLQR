@@ -5,9 +5,9 @@
 
 #include "Cost/Cost.hpp"
 #include "Dynamics/DiscreteSystemDynamicsBase.hpp"
+#include "Matrix/Types.hpp"
 #include "Misc/LinearInterpolation.hpp"
 #include "OptimalControl/OptimalControlProblem.hpp"
-#include "Types.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
 /******************************************************************************************************/
 /******************************************************************************************************/

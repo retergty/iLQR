@@ -66,7 +66,7 @@ foreach(test_source ${TEST_SOURCES})
         PRIVATE
         GTest::gtest_main
         Eigen3::Eigen
-        iLQR_Include
+        iLQR::iLQR
     )
 
     target_include_directories(${test_name} PRIVATE Include)
@@ -88,6 +88,6 @@ foreach(perf_source ${PERF_SOURCES})
     get_filename_component(perf_name ${perf_source} NAME_WE)
 
     add_executable(${perf_name} ${perf_source})
-    target_link_libraries(${perf_name} PRIVATE iLQR_Include)
+    target_link_libraries(${perf_name} PRIVATE iLQR::iLQR)
     target_include_directories(${perf_name} PRIVATE Include)
 endforeach()

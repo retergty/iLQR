@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 /**
  * @brief 离散系统基类：子类实现

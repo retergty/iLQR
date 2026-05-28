@@ -13,7 +13,7 @@
 #include "Dynamics/LinearSystemDynamics.hpp"
 #include "Dynamics/SystemDynamicsBase.hpp"
 #include "Dynamics/SystemDynamicsLinearizer.hpp"
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 namespace {
 

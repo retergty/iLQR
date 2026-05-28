@@ -6,8 +6,8 @@
 
 #include <tuple>
 
+#include "Matrix/Types.hpp"
 #include "OptimalControlData/LagrangianMetrics.hpp"
-#include "Types.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
 
 template <typename Scalar, typename GroupLayout>

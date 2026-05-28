@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 /**
  * @brief 求解器在无控制器可用时使用的初始化器接口；简单实现见

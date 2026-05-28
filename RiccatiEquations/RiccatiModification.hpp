@@ -5,7 +5,7 @@
 #pragma once
 
 #include "Matrix/CholeskyDecomposition.hpp"
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 /**
  * @brief 单节点 Riccati 修正：时间、状态代价修正 deltaQm、哈密顿量 Hessian

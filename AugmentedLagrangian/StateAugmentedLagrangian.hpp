@@ -6,10 +6,10 @@
 #include "Approximation/QuadraticApproximation.hpp"
 #include "AugmentedLagrangian/StateAugmentedLagrangianInterface.hpp"
 #include "Constraint/StateConstraint.hpp"
+#include "Matrix/Types.hpp"
 #include "OptimalControlData/LagrangianMetrics.hpp"
 #include "Penalties/AugmentedPenaltyBase.hpp"
 #include "Penalties/MultidimensionalPenalty.hpp"
-#include "Types.hpp"
 
 /**
  * @brief 仅状态约束的增广拉格朗日惩罚实现：委托约束与 Penalty

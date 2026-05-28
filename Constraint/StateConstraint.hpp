@@ -10,7 +10,7 @@
 #include "Approximation/LinearApproximation.hpp"
 #include "Approximation/QuadraticApproximation.hpp"
 #include "Constraint/ConstraintOrder.hpp"
-#include "Types.hpp"
+#include "Matrix/Types.hpp"
 
 /**
  * @brief

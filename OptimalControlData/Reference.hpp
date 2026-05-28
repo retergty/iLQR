@@ -5,8 +5,8 @@
 #pragma once
 #include <array>
 
+#include "Matrix/Types.hpp"
 #include "Misc/LinearInterpolation.hpp"
-#include "Types.hpp"
 
 /**
  * @brief
