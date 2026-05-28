@@ -9,8 +9,10 @@ namespace qp_solver {
 template <typename Scalar, int XDim, int UDim, size_t PredictLength>
 struct ContinuousTrajectory {
   using TimeTrajectory_t = std::array<Scalar, PredictLength + 1>;
-  using StateTrajectory_t = std::array<Eigen::Vector<Scalar, XDim>, PredictLength + 1>;
-  using InputTrajectory_t = std::array<Eigen::Vector<Scalar, UDim>, PredictLength>;
+  using StateTrajectory_t =
+      std::array<Eigen::Vector<Scalar, XDim>, PredictLength + 1>;
+  using InputTrajectory_t =
+      std::array<Eigen::Vector<Scalar, UDim>, PredictLength>;
   /** 时间轨迹，尺寸 N+1。 */
   TimeTrajectory_t timeTrajectory;
   /** 状态向量轨迹，尺寸 N+1。 */

@@ -20,10 +20,10 @@ class StateCostCollection {
   virtual ~StateCostCollection() = default;
 
   /** @brief 获取仅状态总代价值。 */
-  Scalar getValue(Scalar time, const Vector<Scalar, XDim>& state,
-                  const std::array<Scalar, ArrayLength>& timeTrajectories,
-                  const std::array<Vector<Scalar, XDim>, ArrayLength>&
-                      stateTrajectoies) {
+  Scalar getValue(
+      Scalar time, const Vector<Scalar, XDim>& state,
+      const std::array<Scalar, ArrayLength>& timeTrajectories,
+      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoies) {
     Scalar cost = 0;
     for (auto it = list_.begin(); it != list_.end(); ++it) {
       if (it->isActive(time)) {

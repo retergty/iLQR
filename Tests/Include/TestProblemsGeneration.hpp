@@ -29,8 +29,10 @@ namespace test_tools {
 
 template <typename Scalar, int Dim>
 Eigen::Matrix<Scalar, Dim, Dim> getRandomPositiveDefiniteMatrix() {
-  Eigen::Matrix<Scalar, Dim, Dim> matrix = Eigen::Matrix<Scalar, Dim, Dim>::Random();
-  return matrix.transpose() * matrix + Eigen::Matrix<Scalar, Dim, Dim>::Identity();
+  Eigen::Matrix<Scalar, Dim, Dim> matrix =
+      Eigen::Matrix<Scalar, Dim, Dim>::Random();
+  return matrix.transpose() * matrix +
+         Eigen::Matrix<Scalar, Dim, Dim>::Identity();
 }
 
 template <typename Scalar, int XDim, int UDim>

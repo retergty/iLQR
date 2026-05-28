@@ -28,18 +28,17 @@ class StateCost
   }
 
   /** @brief 获取代价值。 */
-  virtual Scalar getValue(Scalar time, const Vector<Scalar, XDim>& state,
-                          const std::array<Scalar, ArrayLength>& timeTrajectory,
-                          const std::array<Vector<Scalar, XDim>, ArrayLength>&
-                              stateTrajectoy) = 0;
+  virtual Scalar getValue(
+      Scalar time, const Vector<Scalar, XDim>& state,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy) = 0;
 
   /** @brief 获取代价的二次近似（仅状态）。 */
   virtual ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
   getQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
-      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy)
-      = 0;
+      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy) = 0;
 
   /** @brief 代价项唯一标识号。 */
   int number;
@@ -75,8 +74,7 @@ class StateInputCost : public IntrusiveListNode<
       const Vector<Scalar, UDim>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
-      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory)
-      = 0;
+      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory) = 0;
 
   /** @brief 获取代价的二次近似（状态-输入）。 */
   virtual ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
@@ -85,8 +83,7 @@ class StateInputCost : public IntrusiveListNode<
       const Vector<Scalar, UDim>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
-      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory)
-      = 0;
+      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory) = 0;
 
   // 标识状态-输入代价，必须唯一。
   int number;
