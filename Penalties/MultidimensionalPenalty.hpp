@@ -67,7 +67,7 @@ class MultidimensionalPenalty final {
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) =
         getPenaltyValue1stDev2ndDev(t, h.f, l);
     const Matrix<Scalar, CDim, XDim> penaltySecondDev_dhdx =
-        penaltySecondDerivative.asDiagonal() * h.dfdx;
+        scaleRows(penaltySecondDerivative, h.dfdx);
 
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
         penaltyApproximation;
@@ -80,7 +80,7 @@ class MultidimensionalPenalty final {
       penaltyApproximation.dfdu = h.dfdu.transpose() * penaltyDerivative;
       penaltyApproximation.dfdux = h.dfdu.transpose() * penaltySecondDev_dhdx;
       penaltyApproximation.dfduu =
-          h.dfdu.transpose() * penaltySecondDerivative.asDiagonal() * h.dfdu;
+          h.dfdu.transpose() * scaleRows(penaltySecondDerivative, h.dfdu);
     }
 
     return penaltyApproximation;
@@ -103,7 +103,7 @@ class MultidimensionalPenalty final {
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) =
         getPenaltyValue1stDev2ndDev(t, h.f, l);
     const Matrix<Scalar, CDim, XDim> penaltySecondDev_dhdx =
-        penaltySecondDerivative.asDiagonal() * h.dfdx;
+        scaleRows(penaltySecondDerivative, h.dfdx);
 
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
         penaltyApproximation;
@@ -120,7 +120,7 @@ class MultidimensionalPenalty final {
       penaltyApproximation.dfdu = h.dfdu.transpose() * penaltyDerivative;
       penaltyApproximation.dfdux = h.dfdu.transpose() * penaltySecondDev_dhdx;
       penaltyApproximation.dfduu =
-          h.dfdu.transpose() * penaltySecondDerivative.asDiagonal() * h.dfdu;
+          h.dfdu.transpose() * scaleRows(penaltySecondDerivative, h.dfdu);
       for (int i = 0; i < CDim; ++i) {
         penaltyApproximation.dfduu += penaltyDerivative(i) * h.dfduu[i];
         penaltyApproximation.dfdux += penaltyDerivative(i) * h.dfdux[i];
@@ -162,6 +162,19 @@ class MultidimensionalPenalty final {
   }
 
  private:
+  template <int Cols>
+  Matrix<Scalar, CDim, Cols> scaleRows(
+      const Vector<Scalar, CDim>& diagonal,
+      const Matrix<Scalar, CDim, Cols>& matrix) const {
+    Matrix<Scalar, CDim, Cols> result;
+    for (int i = 0; i < CDim; ++i) {
+      for (int j = 0; j < Cols; ++j) {
+        result(i, j) = diagonal(i) * matrix(i, j);
+      }
+    }
+    return result;
+  }
+
   std::tuple<Scalar, Vector<Scalar, CDim>, Vector<Scalar, CDim>>
   getPenaltyValue1stDev2ndDev(Scalar t, const Vector<Scalar, CDim>& h,
                               const Vector<Scalar, CDim>& l) const {

@@ -12,8 +12,8 @@
 
 // 验证带二次跟踪代价的问题可以完整运行 iLQR 求解流程。
 TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost) {
-  Eigen::Matrix2d A = Eigen::Matrix2d::Identity();
-  Eigen::Matrix2d B = Eigen::Matrix2d::Identity();
+  Matrix<double, 2, 2> A = Matrix<double, 2, 2>::Identity();
+  Matrix<double, 2, 2> B = Matrix<double, 2, 2>::Identity();
   LinearSystemDynamics<double, 2, 2> dynamics(A, B);
   DefaultInitializer<double, 2, 2> initializer;
   DDPSettings<double> ddp_setting;
@@ -23,15 +23,15 @@ TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost) {
   Solver::OptimalControlProblem_t problem;
   problem.dynamicsPtr = &dynamics;
   QuadraticStateInputCost<double, 2, 2, 6> runningCost(
-      Eigen::Matrix2d::Identity(), Eigen::Matrix2d::Identity(), 0);
-  QuadraticStateCost<double, 2, 6> finalCost(2.0 * Eigen::Matrix2d::Identity(),
-                                             0);
+      Matrix<double, 2, 2>::Identity(), Matrix<double, 2, 2>::Identity(), 0);
+  QuadraticStateCost<double, 2, 6> finalCost(
+      2.0 * Matrix<double, 2, 2>::Identity(), 0);
   problem.cost.add(runningCost);
   problem.finalCost.add(finalCost);
   Solver solver(ddp_setting, problem, &initializer);
 
   std::array<double, 6> timeTraj;
-  std::array<Eigen::Vector2d, 6> stateTraj, inputTraj;
+  std::array<Vector<double, 2>, 6> stateTraj, inputTraj;
   for (size_t i = 0; i < 6; ++i) {
     timeTraj[i] = static_cast<double>(i);
     stateTraj[i].setZero();
@@ -39,8 +39,7 @@ TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost) {
   }
   solver.setDesireTrajectory(timeTraj, stateTraj, inputTraj);
 
-  Eigen::Vector2d initState;
-  initState << 1.0, 0.5;
+  const Vector<double, 2> initState{1.0, 0.5};
 
   EXPECT_NO_THROW(solver.run(0.0, initState));
 }
@@ -51,16 +50,16 @@ TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts) {
       iLQRDescriptor<double, TranscriptionConfig<Dimensions<2, 2>, Horizon<2>>>;
   using Solver = iLQR<Descriptor>;
 
-  Eigen::Matrix2d A = Eigen::Matrix2d::Zero();
-  Eigen::Matrix2d B = Eigen::Matrix2d::Identity();
+  Matrix<double, 2, 2> A = Matrix<double, 2, 2>::Zero();
+  Matrix<double, 2, 2> B = Matrix<double, 2, 2>::Identity();
   LinearSystemDynamics<double, 2, 2> dynamics(A, B);
   DefaultInitializer<double, 2, 2> initializer;
   DDPSettings<double> ddp_setting;
 
   QuadraticStateInputCost<double, 2, 2, 3> runningCost(
-      Eigen::Matrix2d::Identity(), Eigen::Matrix2d::Identity(), 0);
-  QuadraticStateCost<double, 2, 3> finalCost(2.0 * Eigen::Matrix2d::Identity(),
-                                             0);
+      Matrix<double, 2, 2>::Identity(), Matrix<double, 2, 2>::Identity(), 0);
+  QuadraticStateCost<double, 2, 3> finalCost(
+      2.0 * Matrix<double, 2, 2>::Identity(), 0);
   Solver::OptimalControlProblem_t problem;
   problem.dynamicsPtr = &dynamics;
   problem.cost.add(runningCost);
@@ -68,7 +67,7 @@ TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts) {
   Solver solver(ddp_setting, problem, &initializer);
 
   std::array<double, 3> timeTraj = {0.0, 1.0, 2.0};
-  std::array<Eigen::Vector2d, 3> stateTraj, inputTraj;
+  std::array<Vector<double, 2>, 3> stateTraj, inputTraj;
   for (size_t i = 0; i < 3; ++i) {
     stateTraj[i].setZero();
     inputTraj[i].setZero();
@@ -77,12 +76,12 @@ TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts) {
 
   Solver::PrimalSolution_t primalSolution;
   primalSolution.timeTrajectory_ = timeTraj;
-  primalSolution.stateTrajectory_[0] << 1.0, 0.0;
-  primalSolution.stateTrajectory_[1] << 2.0, 0.0;
-  primalSolution.stateTrajectory_[2] << 3.0, 0.0;
-  primalSolution.inputTrajectory_[0] << 1.0, 0.0;
-  primalSolution.inputTrajectory_[1] << 0.0, 2.0;
-  primalSolution.inputTrajectory_[2].setZero();
+  primalSolution.stateTrajectory_[0] = {1.0, 0.0};
+  primalSolution.stateTrajectory_[1] = {2.0, 0.0};
+  primalSolution.stateTrajectory_[2] = {3.0, 0.0};
+  primalSolution.inputTrajectory_[0] = {1.0, 0.0};
+  primalSolution.inputTrajectory_[1] = {0.0, 2.0};
+  primalSolution.inputTrajectory_[2] = Vector<double, 2>::Zero();
 
   Solver::DualSolution_t cachedDualSolution;
   cachedDualSolution.clear();

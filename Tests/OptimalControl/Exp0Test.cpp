@@ -7,8 +7,12 @@
 
 #include "DefaultInitializer.hpp"
 #include "EXP0.hpp"
+#include "MatrixEigenConversion.hpp"
 #include "iLQR.hpp"
 #include "iLQRQpSolver.hpp"
+
+using test_tools::matrix_eigen_conversion::fromEigenVector;
+using test_tools::matrix_eigen_conversion::toEigenVector;
 
 class Exp0 : public testing::Test {
  protected:
@@ -33,8 +37,8 @@ class Exp0 : public testing::Test {
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM,
                                       PredictLength>;
   using Initializer_t = DefaultInitializer<Scalar, STATE_DIM, INPUT_DIM>;
-  using StateVector_t = Eigen::Vector<Scalar, STATE_DIM>;
-  using InputVector_t = Eigen::Vector<Scalar, INPUT_DIM>;
+  using StateVector_t = typename Solver_t::StateVector_t;
+  using InputVector_t = typename Solver_t::InputVector_t;
   using RolloutSettings_t = RolloutSettings<Scalar>;
   using DDPSettings_t = DDPSettings<Scalar>;
 
@@ -85,10 +89,12 @@ class Exp0 : public testing::Test {
     QpTrajectory_t trajectory;
     for (size_t k = 0; k < PredictLength + 1; ++k) {
       trajectory.timeTrajectory[k] = solution.timeTrajectory_[k];
-      trajectory.stateTrajectory[k] = solution.stateTrajectory_[k];
+      trajectory.stateTrajectory[k] =
+          toEigenVector(solution.stateTrajectory_[k]);
     }
     for (size_t k = 0; k < PredictLength; ++k) {
-      trajectory.inputTrajectory[k] = solution.inputTrajectory_[k];
+      trajectory.inputTrajectory[k] =
+          toEigenVector(solution.inputTrajectory_[k]);
     }
     return trajectory;
   }
@@ -97,13 +103,15 @@ class Exp0 : public testing::Test {
     PrimalSolution_t solution;
     for (size_t k = 0; k < PredictLength + 1; ++k) {
       solution.timeTrajectory_[k] = trajectory.timeTrajectory[k];
-      solution.stateTrajectory_[k] = trajectory.stateTrajectory[k];
+      solution.stateTrajectory_[k] =
+          fromEigenVector(trajectory.stateTrajectory[k]);
     }
     for (size_t k = 0; k < PredictLength; ++k) {
-      solution.inputTrajectory_[k] = trajectory.inputTrajectory[k];
+      solution.inputTrajectory_[k] =
+          fromEigenVector(trajectory.inputTrajectory[k]);
     }
     solution.inputTrajectory_[PredictLength] =
-        trajectory.inputTrajectory[PredictLength - 1];
+        fromEigenVector(trajectory.inputTrajectory[PredictLength - 1]);
     return solution;
   }
 
@@ -149,7 +157,7 @@ class Exp0 : public testing::Test {
 
   const Scalar startTime = 0.0;
   const Scalar finalTime = 2.0;
-  const StateVector_t initState = (StateVector_t() << 0.0, 2.0).finished();
+  const StateVector_t initState{0.0, 2.0};
 
   TargetTrajectories_t targetTrajectory;
   std::unique_ptr<Initializer_t> initializerPtr;
@@ -214,7 +222,7 @@ TEST_F(Exp0, ddp_feedforward_policy) {
   EXPECT_EQ(ctrl.getType(), ControllerType::LINEAR)
       << "MESSAGE: iLQR solution does not contain a controller with "
          "feedforward terms!";
-  EXPECT_TRUE(ctrl.biasArray_.back().allFinite())
+  EXPECT_TRUE(ctrl.biasArray_.back().isAllFinite())
       << "MESSAGE: iLQR feedforward policy contains invalid values!";
   EXPECT_DOUBLE_EQ(ctrl.timeStamp_.back(), finalTime)
       << "MESSAGE: iLQR failed in policy final time of controller!";
@@ -294,7 +302,7 @@ TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
 
   const auto qpSolution = qp_solver::solveLinearQuadraticOptimalControlProblem(
       ddp->optimalControlProblem(), targetTrajectory,
-      toQpTrajectory(ilqrSolution), initState);
+      toQpTrajectory(ilqrSolution), toEigenVector(initState));
   const auto qpPrimalSolution = toPrimalSolution(qpSolution);
   const auto qpPerformance =
       getPerformanceIndex(ddp->optimalControlProblem(), qpPrimalSolution);
@@ -302,20 +310,20 @@ TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
   EXPECT_NEAR(qpPerformance.cost, ilqrPerformance.cost, 1e-1)
       << "QP cost: " << qpPerformance.cost
       << ", iLQR cost: " << ilqrPerformance.cost;
-  EXPECT_LT(
-      (qpSolution.stateTrajectory.back() - ilqrSolution.stateTrajectory_.back())
-          .norm(),
-      1e-1)
+  EXPECT_LT((qpSolution.stateTrajectory.back() -
+             toEigenVector(ilqrSolution.stateTrajectory_.back()))
+                .norm(),
+            1e-1)
       << "QP final state: " << qpSolution.stateTrajectory.back().transpose()
       << ", iLQR final state: "
-      << ilqrSolution.stateTrajectory_.back().transpose();
+      << toEigenVector(ilqrSolution.stateTrajectory_.back()).transpose();
   EXPECT_LT((qpSolution.inputTrajectory.front() -
-             ilqrSolution.inputTrajectory_.front())
+             toEigenVector(ilqrSolution.inputTrajectory_.front()))
                 .norm(),
             1e-1)
       << "QP initial input: " << qpSolution.inputTrajectory.front().transpose()
       << ", iLQR initial input: "
-      << ilqrSolution.inputTrajectory_.front().transpose();
+      << toEigenVector(ilqrSolution.inputTrajectory_.front()).transpose();
 }
 
 /******************************************************************************************************/
@@ -359,7 +367,7 @@ TEST_F(Exp0, ddp_q_function) {
   EXPECT_TRUE(dQdu1a.isZero(precision))
       << "MESSAGE for test 1a: Derivative of Q function w.r.t. to u is not "
          "zero: "
-      << dQdu1a.transpose();
+      << dQdu1a(0);
 
   // 在不同状态处评估 Q 函数（但使用反馈策略）。
   // 期望结果：true，因为对线性系统，LQ 近似
@@ -372,7 +380,7 @@ TEST_F(Exp0, ddp_q_function) {
   EXPECT_TRUE(dQdu1b.isZero(precision))
       << "MESSAGE for test 1b: Derivative of Q function w.r.t. to u is not "
          "zero: "
-      << dQdu1b.transpose();
+      << dQdu1b(0);
 
   // 在不同输入处评估 Q 函数。
   // 期望结果：false，因为对线性系统，LQ 近似
@@ -384,7 +392,7 @@ TEST_F(Exp0, ddp_q_function) {
                                qFunction.dfdu;
   EXPECT_FALSE(dQdu1c.isZero(precision))
       << "MESSAGE for test 1c: Derivative of Q function w.r.t. to u is zero: "
-      << dQdu1c.transpose();
+      << dQdu1c(0);
 
   // 获取不同状态处的 Q 函数（但使用反馈策略）。
   // 期望结果：true，因为对线性系统，线性反馈
@@ -395,7 +403,7 @@ TEST_F(Exp0, ddp_q_function) {
   const InputVector_t dQdu2 = qFunction.dfdu;
   EXPECT_TRUE(dQdu2.isZero(precision)) << "MESSAGE for test 2: Derivative of Q "
                                           "function w.r.t. to u is not zero: "
-                                       << dQdu2.transpose();
+                                       << dQdu2(0);
 
   // 获取不同输入处的 Q 函数。
   // 期望结果：false，因为随机输入不是最优。
@@ -405,7 +413,7 @@ TEST_F(Exp0, ddp_q_function) {
   const InputVector_t dQdu3 = qFunction.dfdu;
   EXPECT_FALSE(dQdu3.isZero(precision))
       << "MESSAGE for test 3: Derivative of Q function w.r.t. to u is zero: "
-      << dQdu3.transpose();
+      << dQdu3(0);
 }
 
 /******************************************************************************************************/

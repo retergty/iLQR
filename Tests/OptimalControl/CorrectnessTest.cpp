@@ -8,6 +8,7 @@
 
 #include "DefaultInitializer.hpp"
 #include "LinearSystemDynamics.hpp"
+#include "MatrixEigenConversion.hpp"
 #include "QpDiscreteTranscription.hpp"
 #include "QpSolver.hpp"
 #include "QuadraticPenalty.hpp"
@@ -15,6 +16,9 @@
 #include "StateInputAugmentedLagrangian.hpp"
 #include "TestProblemsGeneration.hpp"
 #include "iLQR.hpp"
+
+using test_tools::matrix_eigen_conversion::fromEigenVector;
+using test_tools::matrix_eigen_conversion::toEigenVector;
 
 class DDPCorrectness : public testing::TestWithParam<unsigned> {
  protected:
@@ -49,8 +53,8 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
   using TargetTrajectories_t = typename Solver_t::TargetTrajectories_t;
   using QpTrajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
-  using StateVector_t = Eigen::Vector<Scalar, STATE_DIM>;
-  using InputVector_t = Eigen::Vector<Scalar, INPUT_DIM>;
+  using StateVector_t = typename Solver_t::StateVector_t;
+  using InputVector_t = typename Solver_t::InputVector_t;
   using Dynamics_t = LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>;
   using StateInputCost_t =
       StateInputCost<Scalar, STATE_DIM, INPUT_DIM, static_cast<int>(N + 1)>;
@@ -153,8 +157,9 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
     const auto lqApproximation = qp_solver::getLinearQuadraticApproximation(
         *problem->qpProblemPtr, problem->targetTrajectory,
         problem->nominalTrajectory, *problem->hardConstraintPtr);
-    const StateVector_t dx0 =
-        problem->initState - problem->nominalTrajectory.stateTrajectory.front();
+    const Eigen::Vector<Scalar, STATE_DIM> dx0 =
+        toEigenVector(problem->initState) -
+        problem->nominalTrajectory.stateTrajectory.front();
     const auto denseQp = qp_solver::getDenseQp(lqApproximation, dx0);
 
     if (!test_tools::isQpFeasible(denseQp.first, denseQp.second)) {
@@ -174,8 +179,7 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
 
   /** 修改给定轨迹以满足约束。 */
   QpTrajectory_t getFeasibleTrajectory(
-      const VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
-                                              Eigen::Dynamic, 0>& qpConstraints,
+      const qp_solver::QpDenseConstraintApproximation<Scalar>& qpConstraints,
       const QpTrajectory_t& trajectory) const {
     const auto& A = qpConstraints.dfdx;  // A w + b = 0，A 必须行满秩，使得
                                          // (A A') 可逆。
@@ -213,21 +217,28 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
       problem.targetTrajectory.timeTrajectory[k] =
           static_cast<Scalar>(k) * timeStep;
       problem.targetTrajectory.stateTrajectory[k] = StateVector_t::Random();
+      // The target input array has N+1 slots to match the solver trajectory
+      // convention, even though the QP trajectory uses only N inputs.
       problem.targetTrajectory.inputTrajectory[k] = InputVector_t::Random();
     }
   }
 
   void setDynamicallyConsistentNominalTrajectory(RandomProblem& problem) {
     EK2DynamicsDiscretizer<Scalar, STATE_DIM, INPUT_DIM> discretizer;
-    problem.nominalTrajectory.stateTrajectory[0] = StateVector_t::Random();
+    problem.nominalTrajectory.stateTrajectory[0] =
+        toEigenVector(StateVector_t::Random());
     for (size_t k = 0; k < N; ++k) {
       problem.nominalTrajectory.timeTrajectory[k] =
           static_cast<Scalar>(k) * timeStep;
-      problem.nominalTrajectory.inputTrajectory[k] = InputVector_t::Random();
-      problem.nominalTrajectory.stateTrajectory[k + 1] = discretizer.discretize(
+      problem.nominalTrajectory.inputTrajectory[k] =
+          toEigenVector(InputVector_t::Random());
+      const auto nextState = discretizer.discretize(
           *problem.systemPtr, problem.nominalTrajectory.timeTrajectory[k],
-          problem.nominalTrajectory.stateTrajectory[k],
-          problem.nominalTrajectory.inputTrajectory[k], timeStep);
+          fromEigenVector(problem.nominalTrajectory.stateTrajectory[k]),
+          fromEigenVector(problem.nominalTrajectory.inputTrajectory[k]),
+          timeStep);
+      problem.nominalTrajectory.stateTrajectory[k + 1] =
+          toEigenVector(nextState);
     }
     problem.nominalTrajectory.timeTrajectory[N] =
         static_cast<Scalar>(N) * timeStep;
@@ -237,8 +248,9 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
     const auto lqApproximation = qp_solver::getLinearQuadraticApproximation(
         *problem.qpProblemPtr, problem.targetTrajectory,
         problem.nominalTrajectory, *problem.hardConstraintPtr);
-    const StateVector_t dx0 =
-        problem.initState - problem.nominalTrajectory.stateTrajectory.front();
+    const Eigen::Vector<Scalar, STATE_DIM> dx0 =
+        toEigenVector(problem.initState) -
+        problem.nominalTrajectory.stateTrajectory.front();
     const auto deltaTrajectories =
         qp_solver::solveLinearQuadraticProblem(lqApproximation, dx0);
 
@@ -276,7 +288,7 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
                                      ->getValue(solution.timeTrajectory_[k],
                                                 solution.stateTrajectory_[k],
                                                 solution.inputTrajectory_[k])
-                                     .template lpNorm<Eigen::Infinity>());
+                                     .template lpNorm<matrix::Infinity>());
     }
     return maxViolation;
   }
@@ -286,11 +298,12 @@ class DDPCorrectness : public testing::TestWithParam<unsigned> {
     Scalar maxViolation = Scalar(0.0);
     for (size_t k = 0; k < N; ++k) {
       maxViolation =
-          std::max(maxViolation, problem.hardConstraintPtr
-                                     ->getValue(solution.timeTrajectory[k],
-                                                solution.stateTrajectory[k],
-                                                solution.inputTrajectory[k])
-                                     .template lpNorm<Eigen::Infinity>());
+          std::max(maxViolation,
+                   problem.hardConstraintPtr
+                       ->getValue(solution.timeTrajectory[k],
+                                  fromEigenVector(solution.stateTrajectory[k]),
+                                  fromEigenVector(solution.inputTrajectory[k]))
+                       .template lpNorm<matrix::Infinity>());
     }
     return maxViolation;
   }
@@ -323,7 +336,7 @@ TEST_P(DDPCorrectness, ILQRWithAugmentedLagrangianMatchesHardQpSolution) {
 
     EXPECT_LT(maxConstraintViolation(problem, solution), constraintTolerance)
         << "seed: " << GetParam() << ", case index: " << caseIndex;
-    EXPECT_LT((solution.stateTrajectory_.back() -
+    EXPECT_LT((toEigenVector(solution.stateTrajectory_.back()) -
                problem.qpSolution.stateTrajectory.back())
                   .norm(),
               solutionTolerance)
@@ -331,9 +344,9 @@ TEST_P(DDPCorrectness, ILQRWithAugmentedLagrangianMatchesHardQpSolution) {
         << ", Hard QP final state: "
         << problem.qpSolution.stateTrajectory.back().transpose()
         << ", iLQR final state: "
-        << solution.stateTrajectory_.back().transpose();
+        << toEigenVector(solution.stateTrajectory_.back()).transpose();
     const Scalar initialInputRelativeError =
-        (solution.inputTrajectory_.front() -
+        (toEigenVector(solution.inputTrajectory_.front()) -
          problem.qpSolution.inputTrajectory.front())
             .norm() /
         std::max(problem.qpSolution.inputTrajectory.front().norm(),
@@ -343,7 +356,7 @@ TEST_P(DDPCorrectness, ILQRWithAugmentedLagrangianMatchesHardQpSolution) {
         << ", Hard QP initial input: "
         << problem.qpSolution.inputTrajectory.front().transpose()
         << ", iLQR initial input: "
-        << solution.inputTrajectory_.front().transpose();
+        << toEigenVector(solution.inputTrajectory_.front()).transpose();
   }
 }
 

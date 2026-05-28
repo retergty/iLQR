@@ -26,6 +26,10 @@ using TimeTrajectory = typename Solver::TimeTrajectory_t;
 using StateTrajectory = typename Solver::StateTrajectory_t;
 using InputTrajectory = typename Solver::InputTrajectory_t;
 
+InputVector hoverInput() {
+  return InputVector{Scalar(0.0), Scalar(0.0), Mass * Gravity};
+}
+
 class HoverInitializer final
     : public Initializer<Scalar, thrust_vector::STATE_DIM,
                          thrust_vector::INPUT_DIM> {
@@ -35,7 +39,7 @@ class HoverInitializer final
                StateVector& nextState) override {
     (void)time;
     const Scalar dt = nextTime - time;
-    input << Scalar(0.0), Scalar(0.0), Mass * Gravity;
+    input = hoverInput();
 
     nextState.template head<3>() = state.template head<3>();
     nextState(2) += dt * (input(2) / Mass - Gravity);
@@ -53,9 +57,8 @@ void configureVelocityReference(const Scalar initTime,
     stateTrajectory[i].setZero();
     stateTrajectory[i].template head<3>() =
         velocityReference.template head<3>();
-    stateTrajectory[i].template tail<3>() =
-        (InputVector() << Scalar(0.0), Scalar(0.0), Mass * Gravity).finished();
-    inputTrajectory[i] << Scalar(0.0), Scalar(0.0), Mass * Gravity;
+    stateTrajectory[i].template tail<3>() = hoverInput();
+    inputTrajectory[i] = hoverInput();
   }
 }
 
@@ -93,8 +96,7 @@ int main() {
 
   StateVector currentState;
   currentState.setZero();
-  currentState.template tail<3>() =
-      (InputVector() << Scalar(0.0), Scalar(0.0), Mass * Gravity).finished();
+  currentState.template tail<3>() = hoverInput();
 
   StateVector velocityReference;
   velocityReference.setZero();

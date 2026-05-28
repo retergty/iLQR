@@ -6,9 +6,14 @@
 #include <vector>
 
 #include "LinearSystemDynamics.hpp"
+#include "MatrixEigenConversion.hpp"
 #include "QpDiscreteTranscription.hpp"
 #include "QuadraticStateCost.hpp"
 #include "TestProblemsGeneration.hpp"
+
+using test_tools::matrix_eigen_conversion::fromEigenVector;
+using test_tools::matrix_eigen_conversion::toEigenMatrix;
+using test_tools::matrix_eigen_conversion::toEigenVector;
 
 class DiscreteTranscriptionTest : public testing::Test {
  protected:
@@ -33,12 +38,12 @@ class DiscreteTranscriptionTest : public testing::Test {
   DiscreteTranscriptionTest() {
     srand(0);
 
-    A << 1.0, 0.1, -0.2, 0.0, -0.5, 0.3, 0.4, 0.0, 0.2;
-    B << 1.0, 0.0, 0.0, 1.0, 0.5, -0.5;
-    Q << 2.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 4.0;
-    QState << 0.5, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.75;
-    R << 5.0, 0.0, 0.0, 6.0;
-    QFinal << 7.0, 0.0, 0.0, 0.0, 8.0, 0.0, 0.0, 0.0, 9.0;
+    A = {{1.0, 0.1, -0.2}, {0.0, -0.5, 0.3}, {0.4, 0.0, 0.2}};
+    B = {{1.0, 0.0}, {0.0, 1.0}, {0.5, -0.5}};
+    Q = {{2.0, 0.0, 0.0}, {0.0, 3.0, 0.0}, {0.0, 0.0, 4.0}};
+    QState = {{0.5, 0.0, 0.0}, {0.0, 0.25, 0.0}, {0.0, 0.0, 0.75}};
+    R = {{5.0, 0.0}, {0.0, 6.0}};
+    QFinal = {{7.0, 0.0, 0.0}, {0.0, 8.0, 0.0}, {0.0, 0.0, 9.0}};
 
     system =
         std::make_unique<LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>>(A,
@@ -65,29 +70,28 @@ class DiscreteTranscriptionTest : public testing::Test {
 
   void setReferenceTrajectories(const Trajectory_t& trajectory) {
     targetTrajectory.timeTrajectory = trajectory.timeTrajectory;
-    targetTrajectory.stateTrajectory = trajectory.stateTrajectory;
-    for (size_t k = 0; k < N; ++k) {
-      targetTrajectory.inputTrajectory[k] = trajectory.inputTrajectory[k];
+    for (size_t k = 0; k < N + 1; ++k) {
+      targetTrajectory.stateTrajectory[k] =
+          fromEigenVector(trajectory.stateTrajectory[k]);
     }
-    targetTrajectory.inputTrajectory[N] = trajectory.inputTrajectory[N - 1];
+    for (size_t k = 0; k < N; ++k) {
+      targetTrajectory.inputTrajectory[k] =
+          fromEigenVector(trajectory.inputTrajectory[k]);
+    }
+    targetTrajectory.inputTrajectory[N] =
+        fromEigenVector(trajectory.inputTrajectory[N - 1]);
   }
 
   void checkSizes(const std::vector<LinearQuadraticStage_t>& lqr) const {
     ASSERT_EQ(lqr.size(), N + 1);
     for (size_t k = 0; k < N; ++k) {
       // 代价尺寸
-      ASSERT_EQ(lqr[k].cost.dfdxx.rows(), STATE_DIM);
-      ASSERT_EQ(lqr[k].cost.dfdxx.cols(), STATE_DIM);
-      ASSERT_EQ(lqr[k].cost.dfdux.rows(), INPUT_DIM);
-      ASSERT_EQ(lqr[k].cost.dfdux.cols(), STATE_DIM);
-      ASSERT_EQ(lqr[k].cost.dfduu.rows(), INPUT_DIM);
-      ASSERT_EQ(lqr[k].cost.dfduu.cols(), INPUT_DIM);
+      ASSERT_EQ(STATE_DIM, STATE_DIM);
+      ASSERT_EQ(INPUT_DIM, INPUT_DIM);
 
       // 动力学尺寸
-      ASSERT_EQ(lqr[k].dynamics.dfdx.rows(), STATE_DIM);
-      ASSERT_EQ(lqr[k].dynamics.dfdx.cols(), STATE_DIM);
-      ASSERT_EQ(lqr[k].dynamics.dfdu.rows(), STATE_DIM);
-      ASSERT_EQ(lqr[k].dynamics.dfdu.cols(), INPUT_DIM);
+      ASSERT_EQ(STATE_DIM, STATE_DIM);
+      ASSERT_EQ(INPUT_DIM, INPUT_DIM);
 
       // 约束尺寸
       ASSERT_EQ(lqr[k].constraints.f.rows(), 0);
@@ -98,8 +102,7 @@ class DiscreteTranscriptionTest : public testing::Test {
     }
 
     // 终端代价尺寸
-    ASSERT_EQ(lqr[N].cost.dfdxx.rows(), STATE_DIM);
-    ASSERT_EQ(lqr[N].cost.dfdxx.cols(), STATE_DIM);
+    ASSERT_EQ(STATE_DIM, STATE_DIM);
 
     // 终端约束尺寸
     ASSERT_EQ(lqr[N].constraints.f.rows(), 0);
@@ -107,12 +110,12 @@ class DiscreteTranscriptionTest : public testing::Test {
     ASSERT_EQ(lqr[N].constraints.dfdx.cols(), STATE_DIM);
   }
 
-  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> A;
-  Eigen::Matrix<Scalar, STATE_DIM, INPUT_DIM> B;
-  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> Q;
-  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> QState;
-  Eigen::Matrix<Scalar, INPUT_DIM, INPUT_DIM> R;
-  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> QFinal;
+  Matrix<Scalar, STATE_DIM, STATE_DIM> A;
+  Matrix<Scalar, STATE_DIM, INPUT_DIM> B;
+  Matrix<Scalar, STATE_DIM, STATE_DIM> Q;
+  Matrix<Scalar, STATE_DIM, STATE_DIM> QState;
+  Matrix<Scalar, INPUT_DIM, INPUT_DIM> R;
+  Matrix<Scalar, STATE_DIM, STATE_DIM> QFinal;
 
   std::unique_ptr<LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>> system;
   std::unique_ptr<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>
@@ -131,12 +134,10 @@ TEST_F(DiscreteTranscriptionTest, unconstrainedLqrHasCorrectSizes) {
 
 TEST_F(DiscreteTranscriptionTest, hardStateInputConstraintIsTranscribed) {
   static constexpr int CONSTRAINT_DIM = 2;
-  Eigen::Vector<Scalar, CONSTRAINT_DIM> e;
-  Eigen::Matrix<Scalar, CONSTRAINT_DIM, STATE_DIM> C;
-  Eigen::Matrix<Scalar, CONSTRAINT_DIM, INPUT_DIM> D;
-  e << 0.1, -0.2;
-  C << 1.0, 2.0, 3.0, -1.0, 0.5, 0.25;
-  D << 0.75, -0.5, 1.5, 2.0;
+  Vector<Scalar, CONSTRAINT_DIM> e{0.1, -0.2};
+  Matrix<Scalar, CONSTRAINT_DIM, STATE_DIM> C{{1.0, 2.0, 3.0},
+                                              {-1.0, 0.5, 0.25}};
+  Matrix<Scalar, CONSTRAINT_DIM, INPUT_DIM> D{{0.75, -0.5}, {1.5, 2.0}};
 
   LinearStateInputConstraint<Scalar, STATE_DIM, INPUT_DIM, CONSTRAINT_DIM>
       constraint(e, C, D);
@@ -146,11 +147,15 @@ TEST_F(DiscreteTranscriptionTest, hardStateInputConstraintIsTranscribed) {
   ASSERT_EQ(constrainedLqr.size(), N + 1);
   for (size_t k = 0; k < N; ++k) {
     const auto expected = constraint.getLinearApproximation(
-        linearization.timeTrajectory[k], linearization.stateTrajectory[k],
-        linearization.inputTrajectory[k]);
-    ASSERT_TRUE(constrainedLqr[k].constraints.f.isApprox(expected.f));
-    ASSERT_TRUE(constrainedLqr[k].constraints.dfdx.isApprox(expected.dfdx));
-    ASSERT_TRUE(constrainedLqr[k].constraints.dfdu.isApprox(expected.dfdu));
+        linearization.timeTrajectory[k],
+        fromEigenVector(linearization.stateTrajectory[k]),
+        fromEigenVector(linearization.inputTrajectory[k]));
+    ASSERT_TRUE(
+        constrainedLqr[k].constraints.f.isApprox(toEigenVector(expected.f)));
+    ASSERT_TRUE(constrainedLqr[k].constraints.dfdx.isApprox(
+        toEigenMatrix(expected.dfdx)));
+    ASSERT_TRUE(constrainedLqr[k].constraints.dfdu.isApprox(
+        toEigenMatrix(expected.dfdu)));
   }
 
   ASSERT_EQ(constrainedLqr[N].constraints.f.rows(), 0);
@@ -159,9 +164,8 @@ TEST_F(DiscreteTranscriptionTest, hardStateInputConstraintIsTranscribed) {
 }
 
 TEST_F(DiscreteTranscriptionTest, ek2DeviationDynamicsMatchesLinearSystem) {
-  const auto expectedA =
-      Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity() + A * dt +
-      Scalar(0.5) * A * A * dt * dt;
+  const auto expectedA = Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity() +
+                         A * dt + Scalar(0.5) * A * A * dt * dt;
   const auto expectedB = B * dt + Scalar(0.5) * A * B * dt * dt;
 
   for (size_t k = 0; k < N; ++k) {

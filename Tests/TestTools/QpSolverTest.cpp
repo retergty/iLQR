@@ -6,8 +6,12 @@
 #include <tuple>
 #include <vector>
 
+#include "MatrixEigenConversion.hpp"
 #include "QpSolver.hpp"
 #include "TestProblemsGeneration.hpp"
+
+using test_tools::matrix_eigen_conversion::fromEigenMatrix;
+using test_tools::matrix_eigen_conversion::fromEigenVector;
 
 class QpSolverTest : public testing::Test {
  protected:
@@ -20,11 +24,9 @@ class QpSolverTest : public testing::Test {
   static constexpr int numConstraints = (N_ + 1) * nx_ + (N_ + 1) * nc_;
   using LinearQuadraticStage_t =
       qp_solver::LinearQuadraticStage<Scalar, nx_, nu_>;
-  using CostApproximation_t =
-      ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0>;
+  using CostApproximation_t = qp_solver::QpCostApproximation<Scalar>;
   using ConstraintApproximation_t =
-      VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic, Eigen::Dynamic,
-                                        0>;
+      qp_solver::QpDenseConstraintApproximation<Scalar>;
 
   QpSolverTest() {
     srand(0);
@@ -39,18 +41,21 @@ class QpSolverTest : public testing::Test {
 
   static LinearQuadraticStage_t generateRandomStage() {
     LinearQuadraticStage_t stage;
-    stage.cost.dfdxx =
-        test_tools::getRandomPositiveDefiniteMatrix<Scalar, nx_>();
-    stage.cost.dfduu =
-        test_tools::getRandomPositiveDefiniteMatrix<Scalar, nu_>();
-    stage.cost.dfdux = Eigen::Matrix<Scalar, nu_, nx_>::Random();
-    stage.cost.dfdx = Eigen::Vector<Scalar, nx_>::Random();
-    stage.cost.dfdu = Eigen::Vector<Scalar, nu_>::Random();
+    stage.cost.dfdxx = fromEigenMatrix(
+        test_tools::getRandomPositiveDefiniteMatrix<Scalar, nx_>());
+    stage.cost.dfduu = fromEigenMatrix(
+        test_tools::getRandomPositiveDefiniteMatrix<Scalar, nu_>());
+    stage.cost.dfdux =
+        fromEigenMatrix(Eigen::Matrix<Scalar, nu_, nx_>::Random());
+    stage.cost.dfdx = fromEigenVector(Eigen::Vector<Scalar, nx_>::Random());
+    stage.cost.dfdu = fromEigenVector(Eigen::Vector<Scalar, nu_>::Random());
     stage.cost.f = std::rand() / static_cast<Scalar>(RAND_MAX);
 
-    stage.dynamics.dfdx = Eigen::Matrix<Scalar, nx_, nx_>::Random();
-    stage.dynamics.dfdu = Eigen::Matrix<Scalar, nx_, nu_>::Random();
-    stage.dynamics.f = Eigen::Vector<Scalar, nx_>::Random();
+    stage.dynamics.dfdx =
+        fromEigenMatrix(Eigen::Matrix<Scalar, nx_, nx_>::Random());
+    stage.dynamics.dfdu =
+        fromEigenMatrix(Eigen::Matrix<Scalar, nx_, nu_>::Random());
+    stage.dynamics.f = fromEigenVector(Eigen::Vector<Scalar, nx_>::Random());
 
     stage.constraints.f = Eigen::Vector<Scalar, Eigen::Dynamic>::Random(nc_);
     stage.constraints.dfdx =
@@ -63,9 +68,9 @@ class QpSolverTest : public testing::Test {
   static LinearQuadraticStage_t generateRandomTerminalStage() {
     LinearQuadraticStage_t stage;
     stage.cost.setZero();
-    stage.cost.dfdxx =
-        test_tools::getRandomPositiveDefiniteMatrix<Scalar, nx_>();
-    stage.cost.dfdx = Eigen::Vector<Scalar, nx_>::Random();
+    stage.cost.dfdxx = fromEigenMatrix(
+        test_tools::getRandomPositiveDefiniteMatrix<Scalar, nx_>());
+    stage.cost.dfdx = fromEigenVector(Eigen::Vector<Scalar, nx_>::Random());
     stage.cost.f = std::rand() / static_cast<Scalar>(RAND_MAX);
 
     stage.dynamics.setZero();

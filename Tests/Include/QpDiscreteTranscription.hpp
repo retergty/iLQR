@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "LinearQuadraticApproximator.hpp"
+#include "MatrixEigenConversion.hpp"
 #include "Multiplier.hpp"
 #include "OptimalControlProblem.hpp"
 #include "QpSolverTypes.hpp"
@@ -23,6 +24,10 @@
 #include "iLQRDescriptor.hpp"
 
 namespace qp_solver {
+
+using test_tools::matrix_eigen_conversion::fromEigenVector;
+using test_tools::matrix_eigen_conversion::toEigenMatrix;
+using test_tools::matrix_eigen_conversion::toEigenVector;
 
 template <typename Scalar, int XDim, int UDim, size_t PredictLength>
 using QpContinuousDynamicsTranscriptionConfig_t =
@@ -102,13 +107,18 @@ TargetTrajectories<Scalar, Transcription> toTargetTrajectories(
                                Transcription::PredictLength>& trajectory) {
   TargetTrajectories<Scalar, Transcription> targetTrajectory;
   targetTrajectory.timeTrajectory = trajectory.timeTrajectory;
-  targetTrajectory.stateTrajectory = trajectory.stateTrajectory;
+  for (size_t k = 0; k < Transcription::PredictLength + 1; ++k) {
+    targetTrajectory.stateTrajectory[k] =
+        fromEigenVector(trajectory.stateTrajectory[k]);
+  }
   for (size_t k = 0; k < Transcription::PredictLength; ++k) {
-    targetTrajectory.inputTrajectory[k] = trajectory.inputTrajectory[k];
+    targetTrajectory.inputTrajectory[k] =
+        fromEigenVector(trajectory.inputTrajectory[k]);
   }
   if constexpr (Transcription::PredictLength > 0) {
     targetTrajectory.inputTrajectory[Transcription::PredictLength] =
-        trajectory.inputTrajectory[Transcription::PredictLength - 1];
+        fromEigenVector(
+            trajectory.inputTrajectory[Transcription::PredictLength - 1]);
   }
   return targetTrajectory;
 }
@@ -118,13 +128,15 @@ typename LinearQuadraticStage<Scalar, XDim, UDim>::ConstraintApproximation_t
 makeStateInputConstraints(
     const StateInputConstraint<Scalar, XDim, UDim, CDim>& constraint,
     TrajectoryRef<Scalar, XDim, UDim> start) {
+  const auto state = fromEigenVector(start.x);
+  const auto input = fromEigenVector(start.u);
   const auto linearConstraint =
-      constraint.getLinearApproximation(start.t, start.x, start.u);
+      constraint.getLinearApproximation(start.t, state, input);
   typename LinearQuadraticStage<Scalar, XDim, UDim>::ConstraintApproximation_t
       constraints;
-  constraints.f = linearConstraint.f;
-  constraints.dfdx = linearConstraint.dfdx;
-  constraints.dfdu = linearConstraint.dfdu;
+  constraints.f = toEigenVector(linearConstraint.f);
+  constraints.dfdx = toEigenMatrix(linearConstraint.dfdx);
+  constraints.dfdu = toEigenMatrix(linearConstraint.dfdu);
   return constraints;
 }
 
@@ -156,9 +168,11 @@ approximateStage(
   const Scalar dt = end.t - start.t;
   TranscriptionImpl_t transcription;
   ModelData_t modelData;
-  transcription.approximateIntermediateLQ(optimalControlProblem,
-                                          targetTrajectory, start.t, start.x,
-                                          start.u, dt, multipliers, modelData);
+  const auto startState = fromEigenVector(start.x);
+  const auto startInput = fromEigenVector(start.u);
+  transcription.approximateIntermediateLQ(
+      optimalControlProblem, targetTrajectory, start.t, startState, startInput,
+      dt, multipliers, modelData);
 
   lqStage.cost = modelData.cost;
   lqStage.dynamics = modelData.dynamics;
@@ -268,8 +282,10 @@ getLinearQuadraticApproximation(
 
   TranscriptionImpl_t transcription;
   ModelData_t modelData;
+  const auto finalState = fromEigenVector(x[N]);
   transcription.approximateFinalLQ(optimalControlProblem, targetTrajectory,
-                                   t[N], x[N], finalMultipliers, modelData);
+                                   t[N], finalState, finalMultipliers,
+                                   modelData);
   lqp.emplace_back(std::move(modelData.cost),
                    makeZeroDynamics<Scalar, XDim, UDim>(),
                    makeZeroConstraints<Scalar, XDim, UDim>());
@@ -329,8 +345,10 @@ getLinearQuadraticApproximation(
 
   TranscriptionImpl_t transcription;
   ModelData_t modelData;
+  const auto finalState = fromEigenVector(x[N]);
   transcription.approximateFinalLQ(optimalControlProblem, targetTrajectory,
-                                   t[N], x[N], finalMultipliers, modelData);
+                                   t[N], finalState, finalMultipliers,
+                                   modelData);
   lqp.emplace_back(std::move(modelData.cost),
                    makeZeroDynamics<Scalar, XDim, UDim>(),
                    makeZeroConstraints<Scalar, XDim, UDim>());

@@ -126,7 +126,7 @@ class CircularKinematicsTest
   }
 
   const Scalar startTime = 0.0;
-  const StateVector_t initState = (StateVector_t() << 1.0, 0.0).finished();
+  const StateVector_t initState{1.0, 0.0};
 
   TargetTrajectories_t targetTrajectory;
   Initializer_t initializer;

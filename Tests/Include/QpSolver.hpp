@@ -7,29 +7,30 @@
 #include <tuple>
 #include <utility>
 
+#include "MatrixEigenConversion.hpp"
 #include "QpSolverTypes.hpp"
 
 namespace qp_solver {
 
+using test_tools::matrix_eigen_conversion::toEigenMatrix;
+using test_tools::matrix_eigen_conversion::toEigenVector;
+
 template <typename Scalar, int XDim, int UDim>
-VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic, Eigen::Dynamic, 0>
-getConstraintMatrices(
+QpDenseConstraintApproximation<Scalar> getConstraintMatrices(
     const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
     const Eigen::Vector<Scalar, XDim>& dx0, int numConstraints,
     int numDecisionVariables);
 
 template <typename Scalar, int XDim, int UDim>
-ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> getCostMatrices(
+QpCostApproximation<Scalar> getCostMatrices(
     const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
     int numDecisionVariables);
 
 template <typename Scalar>
 std::pair<Eigen::Vector<Scalar, Eigen::Dynamic>,
           Eigen::Vector<Scalar, Eigen::Dynamic>>
-solveDenseQp(
-    const ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0>& cost,
-    const VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, 0>& constraints);
+solveDenseQp(const QpCostApproximation<Scalar>& cost,
+             const QpDenseConstraintApproximation<Scalar>& constraints);
 
 template <typename Scalar, int XDim, int UDim>
 std::pair<std::vector<Eigen::Vector<Scalar, XDim>>,
@@ -62,12 +63,12 @@ getNumStatesInputsConstraints(
   numConstraints.reserve(N + 1);
 
   for (int k = 0; k < N; ++k) {
-    numStates.push_back(linearQuadraticApproximation[k].dynamics.dfdx.cols());
-    numInputs.push_back(linearQuadraticApproximation[k].dynamics.dfdu.cols());
+    numStates.push_back(XDim);
+    numInputs.push_back(UDim);
     numConstraints.push_back(
         linearQuadraticApproximation[k].constraints.f.size());
   }
-  numStates.push_back(linearQuadraticApproximation[N - 1].dynamics.dfdx.rows());
+  numStates.push_back(XDim);
   numConstraints.push_back(
       linearQuadraticApproximation[N].constraints.f.size());
 
@@ -154,21 +155,18 @@ solveLinearQuadraticProblem(
  * @return w 上的线性约束，其中 w 是决策变量向量。
  */
 template <typename Scalar, int XDim, int UDim>
-VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic, Eigen::Dynamic, 0>
-getConstraintMatrices(
+QpDenseConstraintApproximation<Scalar> getConstraintMatrices(
     const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
     const Eigen::Vector<Scalar, XDim>& dx0, int numConstraints,
     int numDecisionVariables) {
   if (lqp.empty()) {
-    return VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
-                                             Eigen::Dynamic, 0>();
+    return QpDenseConstraintApproximation<Scalar>();
   }
 
   const int N = lqp.size() - 1;
 
   // 预分配完整约束矩阵。
-  VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic, Eigen::Dynamic, 0>
-      constraints;
+  QpDenseConstraintApproximation<Scalar> constraints;
   auto& A = constraints.dfdx;
   auto& b = constraints.f;
   A.setZero(numConstraints, numDecisionVariables);
@@ -186,9 +184,9 @@ getConstraintMatrices(
   for (int k = 0; k < N; ++k) {
     const auto& dynamics_k = lqp[k].dynamics;
     const auto& constraints_k = lqp[k].constraints;
-    const int nu_k = dynamics_k.dfdu.cols();
-    const int nx_k = dynamics_k.dfdx.cols();
-    const int nx_Next = dynamics_k.dfdx.rows();
+    constexpr int nu_k = UDim;
+    constexpr int nx_k = XDim;
+    constexpr int nx_Next = XDim;
     const int nc_k = constraints_k.f.size();
 
     if (nc_k > 0) {
@@ -203,12 +201,12 @@ getConstraintMatrices(
 
     // 添加 [A, B, -I]。
     A.block(currRow, currCol, nx_Next, nx_k + nu_k + nx_Next)
-        << dynamics_k.dfdx,
-        dynamics_k.dfdu,
+        << toEigenMatrix(dynamics_k.dfdx),
+        toEigenMatrix(dynamics_k.dfdu),
         -Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Identity(
             nx_Next, nx_Next);
     // 添加 [b]。
-    b.segment(currRow, nx_Next) = dynamics_k.f;
+    b.segment(currRow, nx_Next) = toEigenVector(dynamics_k.f);
 
     currRow += nx_Next;
     currCol += nx_k + nu_k;
@@ -242,17 +240,17 @@ getConstraintMatrices(
  * 变量。
  */
 template <typename Scalar, int XDim, int UDim>
-ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> getCostMatrices(
+QpCostApproximation<Scalar> getCostMatrices(
     const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
     int numDecisionVariables) {
   if (lqp.empty()) {
-    return ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0>();
+    return QpCostApproximation<Scalar>();
   }
 
   const int N = lqp.size() - 1;
 
   // 预分配完整代价矩阵。
-  ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> qpCost;
+  QpCostApproximation<Scalar> qpCost;
   auto& H = qpCost.dfdxx;
   auto& g = qpCost.dfdx;
   auto& c = qpCost.f;
@@ -263,15 +261,18 @@ ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> getCostMatrices(
   int currRow = 0;
   for (int k = 0; k < N; ++k) {
     const auto& cost_k = lqp[k].cost;
-    const int nx_k = cost_k.dfdux.cols();
-    const int nu_k = cost_k.dfdux.rows();
+    constexpr int nx_k = XDim;
+    constexpr int nu_k = UDim;
 
     // 添加 [ Q, P'。
     //       P, R ]
-    H.block(currRow, currRow, nx_k + nu_k, nx_k + nu_k) << cost_k.dfdxx,
-        cost_k.dfdux.transpose(), cost_k.dfdux, cost_k.dfduu;
+    H.block(currRow, currRow, nx_k + nu_k, nx_k + nu_k)
+        << toEigenMatrix(cost_k.dfdxx),
+        toEigenMatrix(cost_k.dfdux).transpose(), toEigenMatrix(cost_k.dfdux),
+        toEigenMatrix(cost_k.dfduu);
     // 添加 [ q, r]。
-    g.segment(currRow, nx_k + nu_k) << cost_k.dfdx, cost_k.dfdu;
+    g.segment(currRow, nx_k + nu_k) << toEigenVector(cost_k.dfdx),
+        toEigenVector(cost_k.dfdu);
     // 添加名义代价。
     c += cost_k.f;
 
@@ -280,9 +281,9 @@ ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> getCostMatrices(
 
   // 终端代价。
   const auto& cost_N = lqp[N].cost;
-  const int nx_N = cost_N.dfdx.size();
-  H.block(currRow, currRow, nx_N, nx_N) << cost_N.dfdxx;
-  g.segment(currRow, nx_N) << cost_N.dfdx;
+  constexpr int nx_N = XDim;
+  H.block(currRow, currRow, nx_N, nx_N) << toEigenMatrix(cost_N.dfdxx);
+  g.segment(currRow, nx_N) << toEigenVector(cost_N.dfdx);
   c += cost_N.f;
 
   return qpCost;
@@ -296,9 +297,7 @@ ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0> getCostMatrices(
  * @return { 代价矩阵, 约束矩阵 }。
  */
 template <typename Scalar, int XDim, int UDim>
-std::pair<ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0>,
-          VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, 0>>
+std::pair<QpCostApproximation<Scalar>, QpDenseConstraintApproximation<Scalar>>
 getDenseQp(const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
            const Eigen::Vector<Scalar, XDim>& dx0) {
   // 提取尺寸
@@ -332,10 +331,8 @@ getDenseQp(const std::vector<LinearQuadraticStage<Scalar, XDim, UDim>>& lqp,
 template <typename Scalar>
 std::pair<Eigen::Vector<Scalar, Eigen::Dynamic>,
           Eigen::Vector<Scalar, Eigen::Dynamic>>
-solveDenseQp(
-    const ScalarFunctionQuadraticApproximation<Scalar, Eigen::Dynamic, 0>& cost,
-    const VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, 0>& constraints) {
+solveDenseQp(const QpCostApproximation<Scalar>& cost,
+             const QpDenseConstraintApproximation<Scalar>& constraints) {
   const int m = constraints.dfdx.rows();
   const int n = constraints.dfdx.cols();
 

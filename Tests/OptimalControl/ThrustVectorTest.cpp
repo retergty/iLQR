@@ -26,6 +26,10 @@ using TimeTrajectory = typename Solver::TimeTrajectory_t;
 using StateTrajectory = typename Solver::StateTrajectory_t;
 using InputTrajectory = typename Solver::InputTrajectory_t;
 
+InputVector hoverInput() {
+  return InputVector{Scalar(0.0), Scalar(0.0), Mass * Gravity};
+}
+
 class HoverInitializer final
     : public Initializer<Scalar, thrust_vector::STATE_DIM,
                          thrust_vector::INPUT_DIM> {
@@ -35,7 +39,7 @@ class HoverInitializer final
                StateVector& nextState) override {
     (void)time;
     const Scalar dt = nextTime - time;
-    input << Scalar(0.0), Scalar(0.0), Mass * Gravity;
+    input = hoverInput();
 
     nextState.template head<3>() = state.template head<3>();
     nextState(2) += dt * (input(2) / Mass - Gravity);
@@ -53,9 +57,8 @@ void configureVelocityReference(const Scalar initTime,
     stateTrajectory[i].setZero();
     stateTrajectory[i].template head<3>() =
         velocityReference.template head<3>();
-    stateTrajectory[i].template tail<3>() =
-        (InputVector() << Scalar(0.0), Scalar(0.0), Mass * Gravity).finished();
-    inputTrajectory[i] << Scalar(0.0), Scalar(0.0), Mass * Gravity;
+    stateTrajectory[i].template tail<3>() = hoverInput();
+    inputTrajectory[i] = hoverInput();
   }
 }
 
@@ -72,11 +75,12 @@ void runOneMpcCycle(Solver& solver, Solver::OptimalControlProblem_t& problem,
   ASSERT_NO_THROW(solver.run(currentTime, currentState));
   const InputVector firstInput = solver.primalSolution().inputTrajectory_[0];
 
-  EXPECT_TRUE(firstInput.allFinite());
+  EXPECT_TRUE(firstInput.isAllFinite());
   currentState = problem.dynamicsPtr->computeMap(currentTime, currentState,
                                                  firstInput, TimeStep);
-  EXPECT_TRUE(currentState.allFinite());
-  EXPECT_TRUE(currentState.template tail<3>().isApprox(firstInput, 1e-10));
+  EXPECT_TRUE(currentState.isAllFinite());
+  const InputVector currentThrust = currentState.template tail<3>();
+  EXPECT_TRUE(currentThrust.isApprox(firstInput, 1e-10));
 
   currentTime += TimeStep;
 }
@@ -102,8 +106,7 @@ TEST(ThrustVectorMpcTest, RecedingHorizonOptimizationReducesVelocityError) {
 
   StateVector currentState;
   currentState.setZero();
-  currentState.template tail<3>() =
-      (InputVector() << Scalar(0.0), Scalar(0.0), Mass * Gravity).finished();
+  currentState.template tail<3>() = hoverInput();
 
   StateVector velocityReference;
   velocityReference.setZero();
@@ -139,8 +142,7 @@ TEST(ThrustVectorMpcTest, TracksAndMaintainsVelocityReference) {
 
   StateVector currentState;
   currentState.setZero();
-  currentState.template tail<3>() =
-      (InputVector() << Scalar(0.0), Scalar(0.0), Mass * Gravity).finished();
+  currentState.template tail<3>() = hoverInput();
 
   StateVector velocityReference;
   velocityReference.setZero();

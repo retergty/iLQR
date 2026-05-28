@@ -10,8 +10,8 @@ int main() {
       iLQRDescriptor<double,
                      TranscriptionConfig<Dimensions<3, 2>, Horizon<10>>>;
   using Solver = iLQR<Descriptor>;
-  Eigen::Matrix<double, 3, 3> A = Eigen::Matrix<double, 3, 3>::Zero();
-  Eigen::Matrix<double, 3, 2> B = Eigen::Matrix<double, 3, 2>::Zero();
+  Matrix<double, 3, 3> A = Matrix<double, 3, 3>::Zero();
+  Matrix<double, 3, 2> B = Matrix<double, 3, 2>::Zero();
   LinearSystemDynamics<double, 3, 2> dynamics(A, B);
   Solver::OptimalControlProblem_t problem;
   problem.dynamicsPtr = &dynamics;

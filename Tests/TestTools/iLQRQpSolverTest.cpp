@@ -4,10 +4,16 @@
 #include <memory>
 
 #include "LinearSystemDynamics.hpp"
+#include "MatrixEigenConversion.hpp"
 #include "QuadraticStateCost.hpp"
 #include "SensitivityIntegrator.hpp"
 #include "TestProblemsGeneration.hpp"
 #include "iLQRQpSolver.hpp"
+
+using test_tools::matrix_eigen_conversion::fromEigenMatrix;
+using test_tools::matrix_eigen_conversion::fromEigenVector;
+using test_tools::matrix_eigen_conversion::toEigenMatrix;
+using test_tools::matrix_eigen_conversion::toEigenVector;
 
 class iLQRQpSolverTest : public testing::Test {
  protected:
@@ -40,8 +46,9 @@ class iLQRQpSolverTest : public testing::Test {
     for (size_t k = 0; k < N; ++k) {
       const auto dx = solution.stateTrajectory[k] - nominal.stateTrajectory[k];
       const auto du = solution.inputTrajectory[k] - nominal.inputTrajectory[k];
-      const auto expectedNextDx = lqp[k].dynamics.dfdx * dx +
-                                  lqp[k].dynamics.dfdu * du + lqp[k].dynamics.f;
+      const auto expectedNextDx = toEigenMatrix(lqp[k].dynamics.dfdx) * dx +
+                                  toEigenMatrix(lqp[k].dynamics.dfdu) * du +
+                                  toEigenVector(lqp[k].dynamics.f);
       const auto nextDx =
           solution.stateTrajectory[k + 1] - nominal.stateTrajectory[k + 1];
       ASSERT_TRUE(expectedNextDx.isApprox(nextDx, precision));
@@ -57,9 +64,11 @@ class iLQRQpSolverTest : public testing::Test {
       trajectory.timeTrajectory[k] = static_cast<Scalar>(k) * dt;
       trajectory.inputTrajectory[k] =
           Eigen::Vector<Scalar, INPUT_DIM>::Random();
-      trajectory.stateTrajectory[k + 1] = discretizer.discretize(
-          *system, trajectory.timeTrajectory[k], trajectory.stateTrajectory[k],
-          trajectory.inputTrajectory[k], dt);
+      const auto nextState = discretizer.discretize(
+          *system, trajectory.timeTrajectory[k],
+          fromEigenVector(trajectory.stateTrajectory[k]),
+          fromEigenVector(trajectory.inputTrajectory[k]), dt);
+      trajectory.stateTrajectory[k + 1] = toEigenVector(nextState);
     }
     trajectory.timeTrajectory[N] = static_cast<Scalar>(N) * dt;
 
@@ -73,9 +82,12 @@ class iLQRQpSolverTest : public testing::Test {
         test_tools::getRandomDynamics<Scalar, STATE_DIM, INPUT_DIM>();
     A = dynamics.dfdx;
     B = dynamics.dfdu;
-    Q = test_tools::getRandomPositiveDefiniteMatrix<Scalar, STATE_DIM>();
-    R = test_tools::getRandomPositiveDefiniteMatrix<Scalar, INPUT_DIM>();
-    QFinal = test_tools::getRandomPositiveDefiniteMatrix<Scalar, STATE_DIM>();
+    Q = fromEigenMatrix(
+        test_tools::getRandomPositiveDefiniteMatrix<Scalar, STATE_DIM>());
+    R = fromEigenMatrix(
+        test_tools::getRandomPositiveDefiniteMatrix<Scalar, INPUT_DIM>());
+    QFinal = fromEigenMatrix(
+        test_tools::getRandomPositiveDefiniteMatrix<Scalar, STATE_DIM>());
 
     system = test_tools::getiLQRDynamics(dynamics);
     intermediateCost = std::make_unique<
@@ -100,11 +112,16 @@ class iLQRQpSolverTest : public testing::Test {
 
   void setReferenceTrajectories(const Trajectory_t& trajectory) {
     targetTrajectory.timeTrajectory = trajectory.timeTrajectory;
-    targetTrajectory.stateTrajectory = trajectory.stateTrajectory;
-    for (size_t k = 0; k < N; ++k) {
-      targetTrajectory.inputTrajectory[k] = trajectory.inputTrajectory[k];
+    for (size_t k = 0; k < N + 1; ++k) {
+      targetTrajectory.stateTrajectory[k] =
+          fromEigenVector(trajectory.stateTrajectory[k]);
     }
-    targetTrajectory.inputTrajectory[N] = trajectory.inputTrajectory[N - 1];
+    for (size_t k = 0; k < N; ++k) {
+      targetTrajectory.inputTrajectory[k] =
+          fromEigenVector(trajectory.inputTrajectory[k]);
+    }
+    targetTrajectory.inputTrajectory[N] =
+        fromEigenVector(trajectory.inputTrajectory[N - 1]);
   }
 
   static Trajectory_t getZeroTrajectory() {
@@ -119,11 +136,11 @@ class iLQRQpSolverTest : public testing::Test {
     return trajectory;
   }
 
-  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> A;
-  Eigen::Matrix<Scalar, STATE_DIM, INPUT_DIM> B;
-  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> Q;
-  Eigen::Matrix<Scalar, INPUT_DIM, INPUT_DIM> R;
-  Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> QFinal;
+  Matrix<Scalar, STATE_DIM, STATE_DIM> A;
+  Matrix<Scalar, STATE_DIM, INPUT_DIM> B;
+  Matrix<Scalar, STATE_DIM, STATE_DIM> Q;
+  Matrix<Scalar, INPUT_DIM, INPUT_DIM> R;
+  Matrix<Scalar, STATE_DIM, STATE_DIM> QFinal;
 
   std::unique_ptr<LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>> system;
   std::unique_ptr<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>

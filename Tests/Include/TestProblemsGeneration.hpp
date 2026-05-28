@@ -17,15 +17,20 @@
 #include "LinearStateConstraint.hpp"
 #include "LinearStateInputConstraint.hpp"
 #include "LinearSystemDynamics.hpp"
+#include "MatrixEigenConversion.hpp"
 #include "QpSolverTypes.hpp"
 #include "QpTrajectories.hpp"
 #include "QuadraticApproximation.hpp"
 #include "QuadraticStateCost.hpp"
 #include "StateConstraint.hpp"
 #include "StateInputConstraint.hpp"
-#include "Types.hpp"
 
 namespace test_tools {
+
+using matrix_eigen_conversion::fromEigenMatrix;
+using matrix_eigen_conversion::fromEigenVector;
+using matrix_eigen_conversion::toEigenMatrix;
+using matrix_eigen_conversion::toEigenVector;
 
 template <typename Scalar, int Dim>
 Eigen::Matrix<Scalar, Dim, Dim> getRandomPositiveDefiniteMatrix() {
@@ -45,12 +50,14 @@ ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> getRandomCost() {
   hessian = hessian.transpose() * hessian;
 
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost;
-  cost.dfdxx = hessian.template topLeftCorner<XDim, XDim>();
-  cost.dfdx = Eigen::Vector<Scalar, XDim>::Random();
+  cost.dfdxx = fromEigenMatrix(hessian.template topLeftCorner<XDim, XDim>());
+  cost.dfdx = fromEigenVector(Eigen::Vector<Scalar, XDim>::Random());
   if constexpr (UDim > 0) {
-    cost.dfdux = hessian.template bottomLeftCorner<UDim, XDim>();
-    cost.dfduu = hessian.template bottomRightCorner<UDim, UDim>();
-    cost.dfdu = Eigen::Vector<Scalar, UDim>::Random();
+    cost.dfdux =
+        fromEigenMatrix(hessian.template bottomLeftCorner<UDim, XDim>());
+    cost.dfduu =
+        fromEigenMatrix(hessian.template bottomRightCorner<UDim, UDim>());
+    cost.dfdu = fromEigenVector(Eigen::Vector<Scalar, UDim>::Random());
   }
   cost.f = std::rand() / static_cast<Scalar>(RAND_MAX);
   return cost;
@@ -79,11 +86,12 @@ getRandomDynamics() {
   static_assert(UDim >= 0, "UDim must be a fixed non-negative dimension.");
 
   VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> dynamics;
-  dynamics.dfdx = Eigen::Matrix<Scalar, XDim, XDim>::Random();
+  dynamics.dfdx = fromEigenMatrix(Eigen::Matrix<Scalar, XDim, XDim>::Random());
   if constexpr (UDim > 0) {
-    dynamics.dfdu = Eigen::Matrix<Scalar, XDim, UDim>::Random();
+    dynamics.dfdu =
+        fromEigenMatrix(Eigen::Matrix<Scalar, XDim, UDim>::Random());
   }
-  dynamics.f = Eigen::Vector<Scalar, XDim>::Random();
+  dynamics.f = fromEigenVector(Eigen::Vector<Scalar, XDim>::Random());
   return dynamics;
 }
 
@@ -103,11 +111,13 @@ getRandomConstraints() {
   static_assert(CDim >= 0, "CDim must be a fixed non-negative dimension.");
 
   VectorFunctionLinearApproximation<Scalar, CDim, XDim, UDim> constraints;
-  constraints.dfdx = Eigen::Matrix<Scalar, CDim, XDim>::Random();
+  constraints.dfdx =
+      fromEigenMatrix(Eigen::Matrix<Scalar, CDim, XDim>::Random());
   if constexpr (UDim > 0) {
-    constraints.dfdu = Eigen::Matrix<Scalar, CDim, UDim>::Random();
+    constraints.dfdu =
+        fromEigenMatrix(Eigen::Matrix<Scalar, CDim, UDim>::Random());
   }
-  constraints.f = Eigen::Vector<Scalar, CDim>::Random();
+  constraints.f = fromEigenVector(Eigen::Vector<Scalar, CDim>::Random());
   return constraints;
 }
 
@@ -158,10 +168,10 @@ generateRandomLqProblem(int N) {
     const auto constraints = getRandomConstraints<Scalar, XDim, UDim, CDim>();
     stage.cost = getRandomCost<Scalar, XDim, UDim>();
     stage.dynamics = getRandomDynamics<Scalar, XDim, UDim>();
-    stage.constraints.f = constraints.f;
-    stage.constraints.dfdx = constraints.dfdx;
+    stage.constraints.f = toEigenVector(constraints.f);
+    stage.constraints.dfdx = toEigenMatrix(constraints.dfdx);
     if constexpr (UDim > 0) {
-      stage.constraints.dfdu = constraints.dfdu;
+      stage.constraints.dfdu = toEigenMatrix(constraints.dfdu);
     }
     lqProblem.emplace_back(std::move(stage));
   }
@@ -175,27 +185,25 @@ generateRandomLqProblem(int N) {
   terminalStage.cost.dfdx = terminalCost.dfdx;
   terminalStage.cost.f = terminalCost.f;
   terminalStage.dynamics.setZero();
-  terminalStage.constraints.f = terminalConstraints.f;
-  terminalStage.constraints.dfdx = terminalConstraints.dfdx;
+  terminalStage.constraints.f = toEigenVector(terminalConstraints.f);
+  terminalStage.constraints.dfdx = toEigenMatrix(terminalConstraints.dfdx);
   if constexpr (UDim > 0) {
-    terminalStage.constraints.dfdu = terminalConstraints.dfdu;
+    terminalStage.constraints.dfdu = toEigenMatrix(terminalConstraints.dfdu);
   }
   lqProblem.emplace_back(std::move(terminalStage));
 
   return lqProblem;
 }
 
-/** 检查 QP 可行性和数值条件。 */
-template <typename Scalar, int DecisionDim, int ConstraintDim>
+/** 检查动态 QP 可行性和数值条件。 */
+template <typename Scalar>
 inline bool isQpFeasible(
-    const ScalarFunctionQuadraticApproximation<Scalar, DecisionDim, 0>& qpCost,
-    const VectorFunctionLinearApproximation<Scalar, ConstraintDim, DecisionDim,
-                                            0>& qpConstraints) {
+    const qp_solver::QpCostApproximation<Scalar>& qpCost,
+    const qp_solver::QpDenseConstraintApproximation<Scalar>& qpConstraints) {
   const auto& H = qpCost.dfdxx;
   const auto& A = qpConstraints.dfdx;
 
-  // 代价必须凸。
-  Eigen::LDLT<Eigen::Matrix<Scalar, DecisionDim, DecisionDim>> ldlt(H);
+  Eigen::LDLT<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>> ldlt(H);
   if (!(ldlt.vectorD().array() > Scalar(0.0)).all()) {
     std::cerr << "H is not positive definite\n";
     return false;
@@ -205,8 +213,8 @@ inline bool isQpFeasible(
     return true;
   }
 
-  // 约束可行性。
-  Eigen::JacobiSVD<Eigen::Matrix<Scalar, ConstraintDim, DecisionDim>> svd(A);
+  Eigen::JacobiSVD<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>> svd(
+      A);
   const auto conditionNumber =
       svd.singularValues()(0) / svd.singularValues().tail(1)(0);
   if (svd.rank() != A.rows()) {

@@ -8,12 +8,16 @@
 
 #include "DefaultInitializer.hpp"
 #include "DiscreteLinearSystemDynamics.hpp"
+#include "MatrixEigenConversion.hpp"
 #include "QpDiscreteTranscription.hpp"
 #include "QpSolver.hpp"
 #include "QuadraticPenalty.hpp"
 #include "StateInputAugmentedLagrangian.hpp"
 #include "TestProblemsGeneration.hpp"
 #include "iLQR.hpp"
+
+using test_tools::matrix_eigen_conversion::fromEigenVector;
+using test_tools::matrix_eigen_conversion::toEigenVector;
 
 class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
  protected:
@@ -48,8 +52,8 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
   using TargetTrajectories_t = typename Solver_t::TargetTrajectories_t;
   using QpTrajectory_t =
       qp_solver::ContinuousTrajectory<Scalar, STATE_DIM, INPUT_DIM, N>;
-  using StateVector_t = Eigen::Vector<Scalar, STATE_DIM>;
-  using InputVector_t = Eigen::Vector<Scalar, INPUT_DIM>;
+  using StateVector_t = typename Solver_t::StateVector_t;
+  using InputVector_t = typename Solver_t::InputVector_t;
   using Dynamics_t = DiscreteLinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>;
   using StateInputCost_t =
       StateInputCost<Scalar, STATE_DIM, INPUT_DIM, static_cast<int>(N + 1)>;
@@ -103,11 +107,11 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
   std::unique_ptr<RandomProblem> createFeasibleRandomProblem() {
     auto problem = std::make_unique<RandomProblem>();
 
-    Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM> A =
-        Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity();
-    A += Scalar(0.05) * Eigen::Matrix<Scalar, STATE_DIM, STATE_DIM>::Random();
-    Eigen::Matrix<Scalar, STATE_DIM, INPUT_DIM> B =
-        Scalar(0.1) * Eigen::Matrix<Scalar, STATE_DIM, INPUT_DIM>::Random();
+    Matrix<Scalar, STATE_DIM, STATE_DIM> A =
+        Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity();
+    A += Scalar(0.05) * Matrix<Scalar, STATE_DIM, STATE_DIM>::Random();
+    Matrix<Scalar, STATE_DIM, INPUT_DIM> B =
+        Scalar(0.1) * Matrix<Scalar, STATE_DIM, INPUT_DIM>::Random();
     problem->systemPtr = std::make_unique<Dynamics_t>(A, B);
 
     const auto runningCost =
@@ -157,8 +161,9 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
     const auto lqApproximation = qp_solver::getLinearQuadraticApproximation(
         *problem->qpProblemPtr, problem->targetTrajectory,
         problem->nominalTrajectory, *problem->hardConstraintPtr);
-    const StateVector_t dx0 =
-        problem->initState - problem->nominalTrajectory.stateTrajectory.front();
+    const Eigen::Vector<Scalar, STATE_DIM> dx0 =
+        toEigenVector(problem->initState) -
+        problem->nominalTrajectory.stateTrajectory.front();
     const auto denseQp = qp_solver::getDenseQp(lqApproximation, dx0);
 
     if (!test_tools::isQpFeasible(denseQp.first, denseQp.second)) {
@@ -177,8 +182,7 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
   }
 
   QpTrajectory_t getFeasibleTrajectory(
-      const VectorFunctionLinearApproximation<Scalar, Eigen::Dynamic,
-                                              Eigen::Dynamic, 0>& qpConstraints,
+      const qp_solver::QpDenseConstraintApproximation<Scalar>& qpConstraints,
       const QpTrajectory_t& trajectory) const {
     const auto& A = qpConstraints.dfdx;
     const auto& b = qpConstraints.f;
@@ -210,16 +214,20 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
   }
 
   void setDynamicallyConsistentNominalTrajectory(RandomProblem& problem) {
-    problem.nominalTrajectory.stateTrajectory[0] = StateVector_t::Random();
+    problem.nominalTrajectory.stateTrajectory[0] =
+        toEigenVector(StateVector_t::Random());
     for (size_t k = 0; k < N; ++k) {
       problem.nominalTrajectory.timeTrajectory[k] =
           static_cast<Scalar>(k) * timeStep;
-      problem.nominalTrajectory.inputTrajectory[k] = InputVector_t::Random();
+      problem.nominalTrajectory.inputTrajectory[k] =
+          toEigenVector(InputVector_t::Random());
+      const auto nextState = problem.systemPtr->computeMap(
+          problem.nominalTrajectory.timeTrajectory[k],
+          fromEigenVector(problem.nominalTrajectory.stateTrajectory[k]),
+          fromEigenVector(problem.nominalTrajectory.inputTrajectory[k]),
+          timeStep);
       problem.nominalTrajectory.stateTrajectory[k + 1] =
-          problem.systemPtr->computeMap(
-              problem.nominalTrajectory.timeTrajectory[k],
-              problem.nominalTrajectory.stateTrajectory[k],
-              problem.nominalTrajectory.inputTrajectory[k], timeStep);
+          toEigenVector(nextState);
     }
     problem.nominalTrajectory.timeTrajectory[N] =
         static_cast<Scalar>(N) * timeStep;
@@ -229,8 +237,9 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
     const auto lqApproximation = qp_solver::getLinearQuadraticApproximation(
         *problem.qpProblemPtr, problem.targetTrajectory,
         problem.nominalTrajectory, *problem.hardConstraintPtr);
-    const StateVector_t dx0 =
-        problem.initState - problem.nominalTrajectory.stateTrajectory.front();
+    const Eigen::Vector<Scalar, STATE_DIM> dx0 =
+        toEigenVector(problem.initState) -
+        problem.nominalTrajectory.stateTrajectory.front();
     const auto deltaTrajectories =
         qp_solver::solveLinearQuadraticProblem(lqApproximation, dx0);
 
@@ -268,7 +277,7 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
                                      ->getValue(solution.timeTrajectory_[k],
                                                 solution.stateTrajectory_[k],
                                                 solution.inputTrajectory_[k])
-                                     .template lpNorm<Eigen::Infinity>());
+                                     .template lpNorm<matrix::Infinity>());
     }
     return maxViolation;
   }
@@ -278,11 +287,12 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
     Scalar maxViolation = Scalar(0.0);
     for (size_t k = 0; k < N; ++k) {
       maxViolation =
-          std::max(maxViolation, problem.hardConstraintPtr
-                                     ->getValue(solution.timeTrajectory[k],
-                                                solution.stateTrajectory[k],
-                                                solution.inputTrajectory[k])
-                                     .template lpNorm<Eigen::Infinity>());
+          std::max(maxViolation,
+                   problem.hardConstraintPtr
+                       ->getValue(solution.timeTrajectory[k],
+                                  fromEigenVector(solution.stateTrajectory[k]),
+                                  fromEigenVector(solution.inputTrajectory[k]))
+                       .template lpNorm<matrix::Infinity>());
     }
     return maxViolation;
   }
@@ -316,13 +326,13 @@ TEST_P(DiscreteDDPCorrectness,
 
     EXPECT_LT(maxConstraintViolation(problem, solution), constraintTolerance)
         << "seed: " << GetParam() << ", case index: " << caseIndex;
-    EXPECT_LT((solution.stateTrajectory_.back() -
+    EXPECT_LT((toEigenVector(solution.stateTrajectory_.back()) -
                problem.qpSolution.stateTrajectory.back())
                   .norm(),
               solutionTolerance)
         << "seed: " << GetParam() << ", case index: " << caseIndex;
     const Scalar initialInputRelativeError =
-        (solution.inputTrajectory_.front() -
+        (toEigenVector(solution.inputTrajectory_.front()) -
          problem.qpSolution.inputTrajectory.front())
             .norm() /
         std::max(problem.qpSolution.inputTrajectory.front().norm(),
