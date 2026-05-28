@@ -18,6 +18,8 @@ class Vector : public Matrix<Type, M, 1> {
 
  public:
   using MatrixM1 = Matrix<Type, M, 1>;
+  using MatrixM1::MatrixM1;
+  using MatrixM1::operator=;
 
   Vector() = default;
 

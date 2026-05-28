@@ -132,161 +132,184 @@ using Vector = typename ilqr_linalg::VectorSelector<Scalar, Rows>::type;
 - 测试侧如需 `Eigen::Dynamic`，可在启用兼容宏时继续落到 Eigen 动态矩阵。
 - 若需要快速回退，可通过 `ILQR_LINALG_BACKEND_EIGEN` 临时恢复 Eigen 后端。
 
-## 自定义矩阵需要补充的最小接口
+## Eigen 代码替换方法
 
-为了减少非 `Tests` 源码改动，自定义矩阵建议补齐一组 Eigen-like API。
+本章用于指导将固定尺寸 Eigen 写法改成自定义矩阵库写法。替换时应优先保留原变量名和矩阵维度，并显式补全 `matrix::Matrix` 或 `matrix::Vector` 的模板参数。
 
-### 矩阵接口
+### 命名空间前缀替换
 
-```cpp
-static Matrix Zero();
-static Matrix Ones();
-static Matrix Constant(Type value);
-static Matrix Identity();
+将 Eigen 类型迁移到自定义矩阵库时，先把 `Eigen::` 前缀替换为 `matrix::` 前缀，再根据目标类型补全自定义库的类型名与维度。
 
-constexpr static size_t rows();
-constexpr static size_t cols();
-constexpr static size_t size();
-
-bool isApprox(const Matrix& rhs, Type eps = Type(1e-8)) const;
-bool isZero(Type eps = Type(1e-8)) const;
-void setConstant(Type value);
-
-template <size_t R, size_t C>
-auto topLeftCorner();
-
-template <size_t R>
-auto topRows();
-
-template <size_t R>
-auto bottomRows();
-```
-
-这些接口可以直接复用已有的 `setZero()`、`setIdentity()`、`setAll()`、`slice<P, Q>()` 等实现。
-
-### 向量接口
+例如：
 
 ```cpp
-Type squaredNorm() const;
-
-template <size_t N>
-auto head();
-
-template <size_t N>
-auto tail();
+Eigen::Matrix<double, 2, 2> A;
+Eigen::Matrix<double, 3, 1> b;
 ```
 
-`squaredNorm()` 可直接委托给已有的 `norm_squared()`。
-
-## Eigen 兼容层建议
-
-在 `ILQR_ENABLE_EIGEN_COMPAT` 打开时，固定尺寸自定义矩阵支持从 Eigen 固定尺寸对象构造与赋值。
-
-建议形式：
+替换为：
 
 ```cpp
-#if defined(ILQR_ENABLE_EIGEN_COMPAT)
-template <typename Derived>
-Matrix(const Eigen::MatrixBase<Derived>& other) {
-  static_assert(Derived::RowsAtCompileTime == M ||
-                Derived::RowsAtCompileTime == Eigen::Dynamic);
-  static_assert(Derived::ColsAtCompileTime == N ||
-                Derived::ColsAtCompileTime == Eigen::Dynamic);
-
-  for (size_t i = 0; i < M; ++i) {
-    for (size_t j = 0; j < N; ++j) {
-      (*this)(i, j) = other(static_cast<int>(i), static_cast<int>(j));
-    }
-  }
-}
-
-template <typename Derived>
-Matrix& operator=(const Eigen::MatrixBase<Derived>& other);
-
-operator Eigen::Matrix<Type, M, N>() const;
-#endif
+matrix::Matrix<double, 2, 2> A;
+matrix::Vector<double, 3> b;
 ```
 
-注意事项：
+注意 `Eigen::Matrix<Scalar, Rows, 1>` 应优先替换成 `matrix::Vector<Scalar, Rows>`，不要保留三模板参数的向量写法。
 
-- 兼容层只建议用于测试、过渡或验证，不应成为核心求解路径的常态依赖。
-- 生产构建默认不定义 `ILQR_ENABLE_EIGEN_COMPAT`，避免核心代码重新依赖 Eigen。
-- 动态尺寸仍交给 Eigen，不建议在当前阶段给自定义矩阵库加入动态尺寸能力。
+### `<<` 初始化优先替换为 `initializer_list`
 
-## 非 `Tests` 源码需要替换的 Eigen 写法
+Eigen 的逗号初始化依赖 `operator<<` 重载，自定义矩阵库不使用该写法。迁移时应优先改成 `initializer_list` 构造或赋值，并保持原来的行优先顺序；如果目标位置无法使用 `initializer_list`，再展开为逐元素赋值。
 
-核心源码中应优先消除以下 Eigen 专属写法：
-
-### `iLQR/HessianCorrection.hpp`
-
-将：
+例如：
 
 ```cpp
-matrix.diagonal().array() += minEigenvalue;
+Eigen::Matrix2d matrix;
+matrix << 1.0, 2.0, 3.0, 4.0;
 ```
 
-改为显式循环：
+优先替换为：
 
 ```cpp
-for (int i = 0; i < Dimisions; ++i) {
-  matrix(i, i) += minEigenvalue;
-}
+matrix::Matrix<double, 2, 2> matrix{1.0, 2.0, 3.0, 4.0};
 ```
 
-### `Dynamics/SystemDynamicsLinearizer.hpp`
-
-将：
+也可以使用二维列表表达行列结构：
 
 ```cpp
-Eigen::NumTraits<Scalar>::epsilon()
+matrix::Matrix<double, 2, 2> matrix{{1.0, 2.0}, {3.0, 4.0}};
 ```
 
-改为：
+如果对象已经存在，可使用 `initializer_list` 赋值：
 
 ```cpp
-std::numeric_limits<Scalar>::epsilon()
+matrix = {1.0, 2.0, 3.0, 4.0};
 ```
 
-并引入：
+如果当前位置无法使用 `initializer_list`，再展开为逐元素赋值：
 
 ```cpp
-#include <limits>
+matrix(0, 0) = 1.0;
+matrix(0, 1) = 2.0;
+matrix(1, 0) = 3.0;
+matrix(1, 1) = 4.0;
 ```
 
-### `Integration/RungeKuttaDormandPrince5.hpp`
-
-将 `.array()` 与 `lpNorm<Eigen::Infinity>()` 替换为逐元素计算：
+向量同样优先使用 `initializer_list`：
 
 ```cpp
-Scalar maxError = Scalar(0);
-for (int i = 0; i < XDim; ++i) {
-  const Scalar scale =
-      absTol + relTol * (std::abs(x_old(i)) +
-                         std::abs(dt) * std::abs(dxdt_old(i)));
-  maxError = std::max(maxError, std::abs(x_err(i) / scale));
-}
-return maxError;
+Eigen::Vector3d v;
+v << 1.0, 2.0, 3.0;
 ```
 
-### `Controller/LinearController.hpp`
-
-将：
+优先替换为：
 
 ```cpp
-uff.noalias() += k * x;
+matrix::Vector<double, 3> v{1.0, 2.0, 3.0};
 ```
 
-改为：
+无法使用 `initializer_list` 时再逐项赋值：
 
 ```cpp
-uff += k * x;
+v(0) = 1.0;
+v(1) = 2.0;
+v(2) = 3.0;
 ```
 
-### `Models/ThrustVector.hpp`
+### 固定尺寸别名手动展开
 
-如果自定义矩阵补齐了 `head`、`tail`、`topRows`、`bottomRows`、`topLeftCorner`，这里可以保持大部分现有写法。
+Eigen 的便捷别名需要手动展开为自定义矩阵类型，避免迁移后继续依赖 Eigen 类型定义。
 
-如果不补 Eigen-like API，则统一改成已有 `slice<P, Q>()` 风格。
+常见替换如下：
+
+```cpp
+Eigen::Matrix2d matrix;
+Eigen::Vector2d x;
+Eigen::Matrix<double, XDim, UDim> B;
+```
+
+替换为：
+
+```cpp
+matrix::Matrix<double, 2, 2> matrix;
+matrix::Vector<double, 2> x;
+matrix::Matrix<double, XDim, UDim> B;
+```
+
+如果原类型是 `Eigen::Matrix<Scalar, Rows, 1>`，应展开为 `matrix::Vector<Scalar, Rows>`；如果列数不是 `1`，则展开为 `matrix::Matrix<Scalar, Rows, Cols>`。
+
+### `Constant()` 替换为 `setAll()`
+
+Eigen 的静态工厂函数 `Constant()` 需要替换为声明对象后调用 `setAll()`。由于当前自定义矩阵库的 `setAll()` 是成员函数且返回 `void`，不应直接写成链式表达式。
+
+例如：
+
+```cpp
+auto v = Eigen::Vector<double, 1>::Constant(10.0);
+```
+
+替换为：
+
+```cpp
+matrix::Vector<double, 1> v;
+v.setAll(10.0);
+```
+
+矩阵同理：
+
+```cpp
+auto W = Eigen::Matrix<double, XDim, XDim>::Constant(weight);
+```
+
+替换为：
+
+```cpp
+matrix::Matrix<double, XDim, XDim> W;
+W.setAll(weight);
+```
+
+如果原代码必须在表达式内直接产生一个值，可用局部 lambda 包装初始化过程：
+
+```cpp
+const auto v = [] {
+  matrix::Vector<double, 1> tmp;
+  tmp.setAll(10.0);
+  return tmp;
+}();
+```
+
+### `Identity()` 替换为 `setIdentity()`
+
+Eigen 的静态工厂函数 `Identity()` 需要替换为声明对象后调用 `setIdentity()`，并补全矩阵模板参数。
+
+例如：
+
+```cpp
+auto Q = Matrix<Scalar, XDim, XDim>::Identity();
+```
+
+替换为：
+
+```cpp
+matrix::Matrix<Scalar, XDim, XDim> Q;
+Q.setIdentity();
+```
+
+如果原代码已经使用项目级 `Matrix` 别名，可根据迁移范围选择保留别名或显式改成 `matrix::Matrix`。在直接替换 Eigen 代码时，推荐显式写出：
+
+```cpp
+matrix::Matrix<Scalar, XDim, XDim> Q;
+Q.setIdentity();
+```
+
+表达式上下文中同样可使用 lambda：
+
+```cpp
+const auto Q = [] {
+  matrix::Matrix<Scalar, XDim, XDim> tmp;
+  tmp.setIdentity();
+  return tmp;
+}();
+```
 
 ## CMake 建议
 

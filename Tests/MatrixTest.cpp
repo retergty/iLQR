@@ -42,6 +42,26 @@ TEST(MatrixTest, SupportsInitializerListAssignment) {
   EXPECT_DOUBLE_EQ(matrix(1, 1), 12.0);
 }
 
+// 验证 Vector 转发 Matrix 的 initializer_list 构造能力。
+TEST(MatrixTest, VectorSupportsInitializerListConstruction) {
+  const matrix::Vector<double, 3> vector{1.0, 2.0, 3.0};
+
+  EXPECT_DOUBLE_EQ(vector(0), 1.0);
+  EXPECT_DOUBLE_EQ(vector(1), 2.0);
+  EXPECT_DOUBLE_EQ(vector(2), 3.0);
+}
+
+// 验证 Vector 转发 Matrix 的 initializer_list 赋值能力。
+TEST(MatrixTest, VectorSupportsInitializerListAssignment) {
+  matrix::Vector<double, 3> vector;
+
+  vector = {4.0, 5.0, 6.0};
+
+  EXPECT_DOUBLE_EQ(vector(0), 4.0);
+  EXPECT_DOUBLE_EQ(vector(1), 5.0);
+  EXPECT_DOUBLE_EQ(vector(2), 6.0);
+}
+
 // 验证自实现 Matrix 提供 Eigen 风格的 isApprox 成员接口。
 TEST(MatrixTest, SupportsIsApprox) {
   const matrix::Matrix<double, 2, 2> lhs{{1.0, 2.0}, {3.0, 4.0}};

@@ -28,7 +28,9 @@ void shiftHessian(HessianCorrectionStrategy strategy,
                   Scalar minEigenvalue = 1e-6) {
   switch (strategy) {
     case HessianCorrectionStrategy::DIAGONAL_SHIFT: {
-      matrix.diagonal().array() += minEigenvalue;
+      for (int i = 0; i < Dimisions; ++i) {
+        matrix(i, i) += minEigenvalue;
+      }
       break;
     }
   }

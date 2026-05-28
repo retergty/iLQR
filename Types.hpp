@@ -8,13 +8,13 @@
 
 #include "Matrix.hpp"
 
-/** @brief 固定尺寸矩阵类型别名，基于 Eigen::Matrix。 */
+/** @brief 固定尺寸矩阵类型别名，基于 matrix::Matrix。 */
 template <typename Scalar, int Rows, int Cols>
-using Matrix = Eigen::Matrix<Scalar, Rows, Cols>;
+using Matrix = matrix::Matrix<Scalar, Rows, Cols>;
 
 /** @brief 固定尺寸列向量类型别名，基于 Eigen::Matrix<Scalar, Rows, 1>。 */
 template <typename Scalar, int Rows>
-using Vector = Eigen::Matrix<Scalar, Rows, 1>;
+using Vector = matrix::Vector<Scalar, Rows>;
 
 /**
  * @brief 固定维数对角矩阵，仅存储对角线元素，支持与方阵/向量的运算。

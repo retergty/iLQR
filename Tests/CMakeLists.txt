@@ -22,6 +22,7 @@ set(TEST_SOURCES
     ApproximationTest.cpp
     OptimalControl/CorrectnessTest.cpp
     OptimalControl/DiscreteCorrectnessTest.cpp
+    MatrixTest.cpp
     PenaltyTest.cpp
     UtilityTest.cpp
     CostTest.cpp
