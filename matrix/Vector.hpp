@@ -45,6 +45,50 @@ class Vector : public Matrix<Type, M, 1> {
   Vector(const ConstSlice<Type, M, 1, P, Q>& slice_in)
       : Matrix<Type, M, 1>(slice_in) {}
 
+  template <int P, int Q>
+  Vector& operator=(const Slice<Type, M, 1, P, Q>& slice_in) {
+    Vector& self(*this);
+
+    for (size_t i = 0; i < M; i++) {
+      self(i) = slice_in(i, 0);
+    }
+
+    return self;
+  }
+
+  template <int P, int Q>
+  Vector& operator=(const ConstSlice<Type, M, 1, P, Q>& slice_in) {
+    Vector& self(*this);
+
+    for (size_t i = 0; i < M; i++) {
+      self(i) = slice_in(i, 0);
+    }
+
+    return self;
+  }
+
+  template <int P, int Q, int DUMMY = 1>
+  Vector& operator=(const Slice<Type, 1, M, P, Q>& slice_in) {
+    Vector& self(*this);
+
+    for (size_t i = 0; i < M; i++) {
+      self(i) = slice_in(0, i);
+    }
+
+    return self;
+  }
+
+  template <int P, int Q, int DUMMY = 1>
+  Vector& operator=(const ConstSlice<Type, 1, M, P, Q>& slice_in) {
+    Vector& self(*this);
+
+    for (size_t i = 0; i < M; i++) {
+      self(i) = slice_in(0, i);
+    }
+
+    return self;
+  }
+
   template <int P, int Q, int DUMMY = 1>
   Vector(const ConstSlice<Type, 1, M, P, Q>& slice_in) {
     Vector& self(*this);

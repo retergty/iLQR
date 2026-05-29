@@ -155,6 +155,31 @@ TEST(MatrixTest, VectorSupportsHeadAndTail) {
   EXPECT_TRUE(tail.isApprox(matrix::Vector<double, 2>{40.0, 50.0}, 1e-12));
 }
 
+// 验证 Vector 可以直接接收矩阵行/列切片赋值，避免切片到 Vector/Matrix
+// 的隐式转换二义性。
+TEST(MatrixTest, VectorSupportsRowAndColumnSliceAssignment) {
+  matrix::Matrix<double, 3, 2> matrix{{1.0, 2.0}, {3.0, 4.0}, {5.0, 6.0}};
+
+  matrix::Vector<double, 3> writableColumn;
+  writableColumn = matrix.col(1);
+  EXPECT_TRUE(
+      writableColumn.isApprox(matrix::Vector<double, 3>{2.0, 4.0, 6.0}, 1e-12));
+
+  const matrix::Matrix<double, 3, 2>& constMatrix = matrix;
+  matrix::Vector<double, 3> constColumn;
+  constColumn = constMatrix.col(0);
+  EXPECT_TRUE(
+      constColumn.isApprox(matrix::Vector<double, 3>{1.0, 3.0, 5.0}, 1e-12));
+
+  matrix::Vector<double, 2> writableRow;
+  writableRow = matrix.row(2);
+  EXPECT_TRUE(writableRow.isApprox(matrix::Vector<double, 2>{5.0, 6.0}, 1e-12));
+
+  matrix::Vector<double, 2> constRow;
+  constRow = constMatrix.row(0);
+  EXPECT_TRUE(constRow.isApprox(matrix::Vector<double, 2>{1.0, 2.0}, 1e-12));
+}
+
 // 验证 Matrix 提供 Eigen 风格的固定尺寸块包装函数。
 TEST(MatrixTest, MatrixSupportsFixedSizeBlockWrappers) {
   matrix::Matrix<double, 4, 4> matrix = matrix::Matrix<double, 4, 4>::Zero();
