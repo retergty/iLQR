@@ -22,6 +22,8 @@ struct SearchStrategyBaseSettings {
   bool debugPrintRollout = false;
   /** @brief 基于代价最小相对变化的终止条件阈值。 */
   Scalar minRelCost{1e-3};
+  /** @brief 计算代价相对变化时使用的最小归一化参考量。 */
+  Scalar costNormalizationBase{1.0};
 };
 
 /**

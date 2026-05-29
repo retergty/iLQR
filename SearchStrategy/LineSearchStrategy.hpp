@@ -4,6 +4,7 @@
  * 回溯，选取最大可接受步长并更新优化解。
  */
 #pragma once
+#include <algorithm>
 #include <utility>
 
 #include "Misc/Numerics.hpp"
@@ -119,8 +120,11 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
         previousPerformanceIndex.cost +
         previousPerformanceIndex.equalityLagrangian +
         previousPerformanceIndex.inequalityLagrangian;
-    const Scalar relCost = std::abs(currentTotalCost - previousTotalCost);
-    const bool isCostFunctionConverged = relCost <= settings_.minRelCost;
+    const Scalar absCostChange = std::abs(currentTotalCost - previousTotalCost);
+    const Scalar costReference =
+        std::max(settings_.costNormalizationBase, std::abs(previousTotalCost));
+    const Scalar relCostChange = absCostChange / costReference;
+    const bool isCostFunctionConverged = relCostChange <= settings_.minRelCost;
     const bool isOptimizationConverged = isCostFunctionConverged;
 
     return isOptimizationConverged;
