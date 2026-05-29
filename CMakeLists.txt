@@ -19,6 +19,7 @@ endif()
 
 option(ILQR_BUILD_TESTING "Build iLQR tests" ${ILQR_IS_TOP_LEVEL})
 option(ILQR_ENABLE_DEV_OPTIONS "Enable iLQR development compile/link options" ${ILQR_IS_TOP_LEVEL})
+set(ILQR_MATRIX_TARGET "" CACHE STRING "External Matrix target used by iLQR")
 if(ILQR_IS_TOP_LEVEL)
   set(ILQR_FORCE_OPTIMIZATION_DEFAULT OFF)
 else()
@@ -29,6 +30,26 @@ option(ILQR_FORCE_OPTIMIZATION "Force optimized code generation for targets cons
 add_library(iLQR INTERFACE)
 add_library(iLQR::iLQR ALIAS iLQR)
 
+if(ILQR_MATRIX_TARGET)
+  if(NOT TARGET "${ILQR_MATRIX_TARGET}")
+    message(FATAL_ERROR "ILQR_MATRIX_TARGET='${ILQR_MATRIX_TARGET}' is not a CMake target.")
+  endif()
+
+  target_include_directories(iLQR BEFORE INTERFACE
+    $<TARGET_PROPERTY:${ILQR_MATRIX_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
+  )
+  target_link_libraries(iLQR INTERFACE "${ILQR_MATRIX_TARGET}")
+else()
+  add_library(iLQRMatrix INTERFACE)
+  add_library(iLQR::Matrix ALIAS iLQRMatrix)
+
+  target_include_directories(iLQRMatrix INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+  target_link_libraries(iLQR INTERFACE iLQR::Matrix)
+endif()
+
 target_include_directories(iLQR INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>
@@ -37,7 +58,7 @@ target_compile_features(iLQR INTERFACE cxx_std_17)
 
 if(ILQR_FORCE_OPTIMIZATION)
   target_compile_options(iLQR INTERFACE
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-O3>
+    -O3
   )
   target_compile_definitions(iLQR INTERFACE NDEBUG)
 endif()
@@ -47,16 +68,16 @@ add_library(iLQR::Options ALIAS iLQROptions)
 
 if(ILQR_ENABLE_DEV_OPTIONS)
   target_compile_options(iLQROptions INTERFACE
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall>
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wpedantic>
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wextra>
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-ffunction-sections>
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-fdata-sections>
+    -Wall
+    -Wpedantic
+    -Wextra
+    -ffunction-sections
+    -fdata-sections
   )
   target_link_options(iLQROptions INTERFACE
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wl,--gc-sections>
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wl,--start-group>
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wl,--end-group>
+    -Wl,--gc-sections
+    -Wl,--start-group
+    -Wl,--end-group
   )
 endif()
 

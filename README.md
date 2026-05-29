@@ -122,6 +122,18 @@
 target_link_libraries(your_target PRIVATE iLQR::iLQR)
 ```
 
+默认情况下，`iLQR::iLQR` 使用仓库内置的 `matrix/` 固定尺寸矩阵实现。如果上层工程已经提供兼容的 Matrix 库，可以通过 `ILQR_MATRIX_TARGET` 注入外部 target：
+
+```cmake
+add_library(ProjectMatrix INTERFACE)
+target_include_directories(ProjectMatrix INTERFACE path/to/matrix/include)
+
+set(ILQR_MATRIX_TARGET ProjectMatrix CACHE STRING "" FORCE)
+add_subdirectory(path/to/iLQR)
+```
+
+外部 Matrix target 需要提供与本项目兼容的头文件路径，例如 `matrix/Matrix.hpp` 和 `matrix/Vector.hpp`。`iLQR/LinearAlgebraTypes.hpp` 只负责把 iLQR 使用的 `Matrix` / `Vector` 别名绑定到这些底层矩阵类型。
+
 推荐使用仓库中的 CMake Preset 进行构建。以 GCC Debug 配置为例：
 
 ```bash

@@ -46,9 +46,10 @@ class iLQRQpSolverTest : public testing::Test {
     for (size_t k = 0; k < N; ++k) {
       const auto dx = solution.stateTrajectory[k] - nominal.stateTrajectory[k];
       const auto du = solution.inputTrajectory[k] - nominal.inputTrajectory[k];
-      const auto expectedNextDx = toEigenMatrix(lqp[k].dynamics.dfdx) * dx +
-                                  toEigenMatrix(lqp[k].dynamics.dfdu) * du +
-                                  toEigenVector(lqp[k].dynamics.f);
+      const Eigen::Vector<Scalar, STATE_DIM> expectedNextDx =
+          toEigenMatrix(lqp[k].dynamics.dfdx) * dx +
+          toEigenMatrix(lqp[k].dynamics.dfdu) * du +
+          toEigenVector(lqp[k].dynamics.f);
       const auto nextDx =
           solution.stateTrajectory[k + 1] - nominal.stateTrajectory[k + 1];
       ASSERT_TRUE(expectedNextDx.isApprox(nextDx, precision));
