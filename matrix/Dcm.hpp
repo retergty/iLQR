@@ -15,8 +15,8 @@
 
 #pragma once
 
-#include "Matrix/SquareMatrix.hpp"
-#include "Matrix/Vector3.hpp"
+#include "matrix/SquareMatrix.hpp"
+#include "matrix/Vector3.hpp"
 
 namespace matrix {
 

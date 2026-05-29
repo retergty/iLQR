@@ -32,87 +32,65 @@
  ****************************************************************************/
 
 /**
- * @file Dcm2.hpp
+ * @file Vector4.hpp
  *
- * A givens rotation matrix 2x2.
- * All rotations and axis systems follow the right-hand rule.
- *
- * This library uses the convention that premultiplying a two dimensional
- * vector represented in coordinate system 1 will apply a rotation from
- * coordinate system 1 to coordinate system 2 to the vector. Likewise, a matrix
- * instance of this class also represents a coordinate transformation from frame
- * 2 to frame 1.
+ * 4D vector class.
  *
  * @author Matthias Grob <maetugr@gmail.com>
  */
 
 #pragma once
 
-#include "Matrix/SquareMatrix.hpp"
-#include "Matrix/Vector2.hpp"
+#include "matrix/Vector.hpp"
 
 namespace matrix {
 
 template <typename Type>
-class Dcm2 : public SquareMatrix<Type, 2> {
+class Vector4 : public Vector<Type, 4> {
  public:
-  /**
-   * Standard constructor
-   *
-   * Initializes to identity
-   */
-  Dcm2() : SquareMatrix<Type, 2>(eye<Type, 2>()) {}
+  using Matrix41 = Matrix<Type, 4, 1>;
 
-  /**
-   * Constructor from array
-   *
-   * @param _data pointer to array
-   */
-  explicit Dcm2(const Type data_[2][2]) : SquareMatrix<Type, 2>(data_) {}
+  Vector4() = default;
 
-  /**
-   * Constructor from array
-   *
-   * @param _data pointer to array
-   */
-  explicit Dcm2(const Type data_[4]) : SquareMatrix<Type, 2>(data_) {}
+  Vector4(const Matrix41& other) : Vector<Type, 4>(other) {}
 
-  /**
-   * Copy constructor
-   *
-   * @param other Matrix22 to set dcm to
-   */
-  Dcm2(const Matrix<Type, 2, 2>& other) : SquareMatrix<Type, 2>(other) {}
+  explicit Vector4(const Type data_[3]) : Vector<Type, 4>(data_) {}
 
-  /**
-   * Constructor from an angle
-   *
-   * This sets the transformation matrix from frame 2 to frame 1 where the
-   * rotation from frame 1 to frame 2 is described by an angle in radians.
-   *
-   * @param angle from frame 1 to frame 2 in radians
-   */
-  Dcm2(const Type angle) {
-    Dcm2& dcm = *this;
-    Type sin_angle = std::sin(angle);
-    Type cos_angle = std::cos(angle);
-
-    dcm(0, 0) = cos_angle;
-    dcm(0, 1) = -sin_angle;
-    dcm(1, 0) = sin_angle;
-    dcm(1, 1) = cos_angle;
+  Vector4(Type x1, Type x2, Type x3, Type x4) {
+    Vector4& v(*this);
+    v(0) = x1;
+    v(1) = x2;
+    v(2) = x3;
+    v(3) = x4;
   }
 
-  void renormalize() {
-    // renormalize rows
-    for (size_t r = 0; r < 2; r++) {
-      Vector2<Type> rvec(Matrix<Type, 1, 2>(this->row(r)).transpose());
-      this->row(r) = rvec.normalized();
-    }
-  }
+  template <int P, int Q>
+  Vector4(const Slice<Type, 4, 1, P, Q>& slice_in)
+      : Vector<Type, 4>(slice_in) {}
+
+  template <int P, int Q>
+  Vector4(const Slice<Type, 1, 4, P, Q>& slice_in)
+      : Vector<Type, 4>(slice_in) {}
+
+  /**
+   * Override matrix ops so Vector4 type is returned
+   */
+
+  Vector4 operator+(Vector4 other) const { return Matrix41::operator+(other); }
+
+  Vector4 operator+(Type scalar) const { return Matrix41::operator+(scalar); }
+
+  Vector4 operator-(Vector4 other) const { return Matrix41::operator-(other); }
+
+  Vector4 operator-(Type scalar) const { return Matrix41::operator-(scalar); }
+
+  Vector4 operator-() const { return Matrix41::operator-(); }
+
+  Vector4 operator*(Type scalar) const { return Matrix41::operator*(scalar); }
+
+  Type operator*(Vector4 b) const { return Vector<Type, 4>::operator*(b); }
 };
 
-using Dcm2f = Dcm2<float>;
-using Dcm2d = Dcm2<double>;
+using Vector4f = Vector4<float>;
 
 }  // namespace matrix

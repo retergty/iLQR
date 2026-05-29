@@ -3,7 +3,7 @@
  * @brief 拉格朗日指标：单个增广拉格朗日项的惩罚值与约束违反值。
  */
 #pragma once
-#include "Matrix/Types.hpp"
+#include "matrix/Types.hpp"
 
 /**
  * @brief 单个增广拉格朗日项的指标：惩罚值与约束违反值。

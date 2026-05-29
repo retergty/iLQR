@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Matrix/Vector3.hpp"
+#include "matrix/Vector3.hpp"
 
 namespace matrix {
 

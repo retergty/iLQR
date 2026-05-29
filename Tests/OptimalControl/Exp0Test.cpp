@@ -5,8 +5,8 @@
 #include <memory>
 #include <string>
 
+#include "ExampleModels/EXP0.hpp"
 #include "Initialization/DefaultInitializer.hpp"
-#include "Models/EXP0.hpp"
 #include "Tests/Include/MatrixEigenConversion.hpp"
 #include "Tests/Include/iLQRQpSolver.hpp"
 #include "iLQR/iLQR.hpp"

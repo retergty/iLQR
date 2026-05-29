@@ -10,7 +10,7 @@
 
 #include <float.h>  // FLT_EPSILON
 
-#include "Matrix/Slice.hpp"
+#include "matrix/Slice.hpp"
 
 namespace matrix {
 

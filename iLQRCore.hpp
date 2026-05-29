@@ -15,7 +15,6 @@
 #include "Dynamics/SystemDynamicsBase.hpp"              // IWYU pragma: export
 #include "Initialization/DefaultInitializer.hpp"        // IWYU pragma: export
 #include "Initialization/Initializer.hpp"               // IWYU pragma: export
-#include "Matrix/Types.hpp"                             // IWYU pragma: export
 #include "OptimalControl/OptimalControlProblem.hpp"     // IWYU pragma: export
 #include "Penalties/ModifiedRelaxedBarrierPenalty.hpp"  // IWYU pragma: export
 #include "Penalties/QuadraticPenalty.hpp"               // IWYU pragma: export
@@ -24,3 +23,4 @@
 #include "iLQR/DDPSetting.hpp"                          // IWYU pragma: export
 #include "iLQR/iLQR.hpp"                                // IWYU pragma: export
 #include "iLQR/iLQRDescriptor.hpp"                      // IWYU pragma: export
+#include "matrix/Types.hpp"                             // IWYU pragma: export

@@ -2,8 +2,8 @@
 
 #include <cmath>
 
+#include "ExampleModels/CircularKinematics.hpp"
 #include "Initialization/DefaultInitializer.hpp"
-#include "Models/CircularKinematics.hpp"
 #include "iLQR/iLQR.hpp"
 
 class CircularKinematicsSmoothAbsolutePenaltyTest : public testing::Test {

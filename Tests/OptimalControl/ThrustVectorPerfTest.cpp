@@ -3,8 +3,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "ExampleModels/ThrustVector.hpp"
 #include "Initialization/Initializer.hpp"
-#include "Models/ThrustVector.hpp"
 #include "iLQR/iLQR.hpp"
 
 namespace {

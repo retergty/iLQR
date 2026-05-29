@@ -1,4 +1,4 @@
-#include "Matrix/Types.hpp"
+#include "matrix/Types.hpp"
 #pragma once
 // Options 1: solving continuing Problem
 template <typename Scalar, int DIMISIONS>

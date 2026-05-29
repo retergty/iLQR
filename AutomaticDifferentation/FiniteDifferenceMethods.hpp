@@ -8,7 +8,7 @@
 #include <algorithm>
 
 #include "Dynamics/ControlledSystemBase.hpp"
-#include "Matrix/Types.hpp"
+#include "matrix/Types.hpp"
 
 /**
  * @brief 用有限差分计算向量函数对变量的 Jacobian。

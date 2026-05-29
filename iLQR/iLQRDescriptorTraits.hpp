@@ -2,9 +2,9 @@
 
 #include <array>
 
-#include "Matrix/Types.hpp"
 #include "OptimalControlData/Reference.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
+#include "matrix/Types.hpp"
 
 /**
  * @brief iLQR descriptor 的集中视图。

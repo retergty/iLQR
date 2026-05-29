@@ -8,7 +8,6 @@
 #include <cassert>
 
 #include "Integration/TrapezoidalIntegration.hpp"
-#include "Matrix/Types.hpp"
 #include "OptimalControl/OptimalControlProblemHelperFunction.hpp"
 #include "OptimalControlData/PerformanceIndex.hpp"
 #include "SearchStrategy/LineSearchStrategy.hpp"
@@ -16,6 +15,7 @@
 #include "iLQR/DDPSetting.hpp"
 #include "iLQR/HessianCorrection.hpp"
 #include "iLQR/iLQRTypes.hpp"
+#include "matrix/Types.hpp"
 
 /**
  * @brief 迭代线性二次调节器（iLQR）：基于名义轨迹的 LQ 近似与离散时间 Riccati

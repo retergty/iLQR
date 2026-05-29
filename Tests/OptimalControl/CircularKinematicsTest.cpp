@@ -4,8 +4,8 @@
 #include <string>
 #include <tuple>
 
+#include "ExampleModels/CircularKinematics.hpp"
 #include "Initialization/DefaultInitializer.hpp"
-#include "Models/CircularKinematics.hpp"
 #include "iLQR/iLQR.hpp"
 
 class CircularKinematicsTest

@@ -7,8 +7,8 @@
 #include "Cost/QuadraticStateCost.hpp"
 #include "Dynamics/LinearSystemDynamics.hpp"
 #include "Initialization/DefaultInitializer.hpp"
-#include "Matrix/Types.hpp"
 #include "iLQR/iLQR.hpp"
+#include "matrix/Types.hpp"
 
 // 验证带二次跟踪代价的问题可以完整运行 iLQR 求解流程。
 TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost) {

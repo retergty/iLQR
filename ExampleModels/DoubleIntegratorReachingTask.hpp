@@ -9,10 +9,10 @@
 #include "Cost/QuadraticStateCost.hpp"
 #include "Dynamics/LinearSystemDynamics.hpp"
 #include "Initialization/DefaultInitializer.hpp"
-#include "Matrix/Types.hpp"
 #include "OptimalControl/OptimalControlProblem.hpp"
 #include "Penalties/QuadraticPenalty.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
+#include "matrix/Types.hpp"
 
 namespace double_integrator {
 template <typename Scalar, int ArrayLength>

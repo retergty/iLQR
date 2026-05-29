@@ -15,8 +15,8 @@
 #include <cstring>
 #include <initializer_list>
 
-#include "Matrix/Slice.hpp"
-#include "Matrix/helper_functions.hpp"
+#include "matrix/Slice.hpp"
+#include "matrix/helper_functions.hpp"
 
 namespace matrix {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Matrix/Vector.hpp"
+#include "matrix/Vector.hpp"
 
 namespace matrix {
 

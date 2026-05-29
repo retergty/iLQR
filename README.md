@@ -48,7 +48,7 @@
 
 `iLQR/iLQRDescriptor.hpp`、`iLQR/iLQRDescriptorTraits.hpp` 和 `iLQR/iLQRTypes.hpp` 构成静态类型描述体系。它们将标量类型、系统维度、预测长度、动力学模式和约束布局转换为统一的轨迹、控制器、乘子、模型数据和求解缓存类型，是项目实现固定尺寸和禁止动态内存分配的重要基础。`TranscriptionConfig` 支持 `ContinuousDynamics` 与 `DiscreteDynamics` 两种动力学模式，默认使用连续模式；约束布局采用 `ConstraintGroupLayout<ConstraintTerm<N>...>` 描述：每个 `ConstraintTerm<N>` 表示一个增广拉格朗日项内部的 `N` 维向量约束，同一类约束可以包含多个 term。
 
-`Matrix/Types.hpp` 提供核心线性代数入口，将项目内使用的 `Matrix<Scalar, Rows, Cols>` 和 `Vector<Scalar, Rows>` 别名绑定到自定义固定尺寸矩阵库。核心代码不再通过公共头依赖 Eigen，测试侧需要 Eigen 对照能力时通过 `Tests/Include` 中的转换工具接入。
+`matrix/Types.hpp` 提供核心线性代数入口，将项目内使用的 `Matrix<Scalar, Rows, Cols>` 和 `Vector<Scalar, Rows>` 别名绑定到自定义固定尺寸矩阵库。核心代码不再通过公共头依赖 Eigen，测试侧需要 Eigen 对照能力时通过 `Tests/Include` 中的转换工具接入。
 
 `iLQR/DDPSetting.hpp`、`iLQR/DDPData.hpp` 和 `iLQR/HessianCorrection.hpp` 提供求解参数、迭代数据和 Hessian 修正逻辑，用于改善 Riccati 递推和控制更新的数值稳定性。求解器构造时需要外部提供 `OptimalControlProblem` 与初始化器对象，相关对象生命周期应长于求解器。
 
@@ -102,7 +102,7 @@
 
 ### 模型、工具与测试
 
-`Models` 目录包含用于验证和演示的任务模型，例如双积分器到达任务、圆形运动学模型和实验性模型。这些模型将动力学、代价和约束组合起来，用于端到端验证求解器行为。
+`ExampleModels` 目录包含用于验证和演示的任务模型，例如双积分器到达任务、圆形运动学模型和实验性模型。这些模型将动力学、代价和约束组合起来，用于端到端验证求解器行为。
 
 `AutomaticDifferentation` 目录当前主要提供有限差分数值求导工具，用于在缺少解析导数时计算动力学或函数的 Jacobian。`Misc` 目录包含线性代数、数值工具和插值等通用辅助函数。`IntrusiveList` 目录提供侵入式链表结构，用于支持无需额外动态分配的容器组织方式。
 

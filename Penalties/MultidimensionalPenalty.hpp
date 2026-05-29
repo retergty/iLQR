@@ -5,8 +5,8 @@
 
 #include "Approximation/LinearApproximation.hpp"
 #include "Approximation/QuadraticApproximation.hpp"
-#include "Matrix/Types.hpp"
 #include "Penalties/AugmentedPenaltyBase.hpp"
+#include "matrix/Types.hpp"
 
 /**
  * @brief 多维约束惩罚封装。

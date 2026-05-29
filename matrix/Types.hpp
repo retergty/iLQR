@@ -1,11 +1,11 @@
 /**
- * @file Matrix/Types.hpp
+ * @file matrix/Types.hpp
  * @brief 基础固定尺寸矩阵与向量类型别名。
  */
 #pragma once
 
-#include "Matrix/Matrix.hpp"
-#include "Matrix/Vector.hpp"
+#include "matrix/Matrix.hpp"
+#include "matrix/Vector.hpp"
 
 /** @brief 固定尺寸矩阵类型别名，基于 matrix::Matrix。 */
 template <typename Scalar, int Rows, int Cols>

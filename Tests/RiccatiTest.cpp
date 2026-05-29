@@ -6,10 +6,10 @@
 
 #include "Approximation/LinearApproximation.hpp"
 #include "Approximation/QuadraticApproximation.hpp"
-#include "Matrix/Types.hpp"
 #include "ModelData/ModelData.hpp"
 #include "RiccatiEquations/DiscreteTimeRiccatiEquations.hpp"
 #include "RiccatiEquations/RiccatiModification.hpp"
+#include "matrix/Types.hpp"
 
 // 验证 reduced form 下单步 Riccati 递推与标量参考值一致。
 TEST(RiccatiTest, ReducedFormOneStepMatchesScalarReference) {

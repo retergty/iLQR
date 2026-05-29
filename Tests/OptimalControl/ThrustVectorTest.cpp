@@ -4,8 +4,8 @@
 #include <array>
 #include <cmath>
 
+#include "ExampleModels/ThrustVector.hpp"
 #include "Initialization/Initializer.hpp"
-#include "Models/ThrustVector.hpp"
 #include "iLQR/iLQR.hpp"
 
 namespace {

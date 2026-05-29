@@ -6,7 +6,7 @@
 #pragma once
 #include <array>
 
-#include "Matrix/Types.hpp"
+#include "matrix/Types.hpp"
 
 /**
  * @brief 标量函数二次近似：f = 1/2 dx' dfdxx dx + du' dfdux dx + 1/2 du' dfduu

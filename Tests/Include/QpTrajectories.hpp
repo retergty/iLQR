@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Matrix/Types.hpp"
+#include "matrix/Types.hpp"
 
 namespace qp_solver {
 
