@@ -27,7 +27,7 @@ using StateTrajectory = typename Solver::StateTrajectory_t;
 using InputTrajectory = typename Solver::InputTrajectory_t;
 
 InputVector hoverInput() {
-  return InputVector{Scalar(0.0), Scalar(0.0), Mass * Gravity};
+  return InputVector{Scalar(0.0), Scalar(0.0), -Mass * Gravity};
 }
 
 class HoverInitializer final
@@ -42,7 +42,7 @@ class HoverInitializer final
     input = hoverInput();
 
     nextState.template head<3>() = state.template head<3>();
-    nextState(2) += dt * (input(2) / Mass - Gravity);
+    nextState(2) += dt * (input(2) / Mass + Gravity);
     nextState.template tail<3>() = input;
   }
 };

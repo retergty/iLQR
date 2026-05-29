@@ -27,7 +27,7 @@ using StateTrajectory = typename Solver::StateTrajectory_t;
 using InputTrajectory = typename Solver::InputTrajectory_t;
 
 InputVector hoverInput() {
-  return InputVector{Scalar(0.0), Scalar(0.0), Mass * Gravity};
+  return InputVector{Scalar(0.0), Scalar(0.0), -Mass * Gravity};
 }
 
 class HoverInitializer final
@@ -42,7 +42,7 @@ class HoverInitializer final
     input = hoverInput();
 
     nextState.template head<3>() = state.template head<3>();
-    nextState(2) += dt * (input(2) / Mass - Gravity);
+    nextState(2) += dt * (input(2) / Mass + Gravity);
     nextState.template tail<3>() = input;
   }
 };
@@ -91,6 +91,23 @@ Scalar velocityError(const StateVector& state,
       .norm();
 }
 }  // namespace
+
+TEST(ThrustVectorDynamicsTest, GravityAcceleratesPositiveDownAxis) {
+  thrust_vector::ThrustVectorDynamicSystem<Scalar> dynamics(Mass);
+
+  StateVector state;
+  state.setZero();
+  InputVector input;
+  input.setZero();
+
+  const StateVector nextState =
+      dynamics.computeMap(Scalar(0.0), state, input, TimeStep);
+
+  EXPECT_NEAR(nextState(2), TimeStep * Gravity, Scalar(1e-12));
+  EXPECT_NEAR(nextState(3), input(0), Scalar(1e-12));
+  EXPECT_NEAR(nextState(4), input(1), Scalar(1e-12));
+  EXPECT_NEAR(nextState(5), input(2), Scalar(1e-12));
+}
 
 TEST(ThrustVectorMpcTest, RecedingHorizonOptimizationReducesVelocityError) {
   auto& problem =

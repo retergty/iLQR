@@ -15,7 +15,7 @@
 /**
  * 该示例定义了一个最优控制问题，其中运动学建模的
  * 是一个矢量推力无人机，状态空间是6维
- * 全局坐标系三轴速度+上一拍机体系推力，输入是3维机体系推力
+ * NED 全局坐标系三轴速度+上一拍机体系推力，输入是3维机体系推力
  * 同时添加余弦相似度的代价函数
  */
 
@@ -72,7 +72,7 @@ class ThrustVectorDynamicSystem final
     if (cache_.dirty ||
         std::abs(cache_.dt - dt) > std::numeric_limits<Scalar>::epsilon()) {
       cache_.B.template topRows<3>() = (dt / mass_) * rotB2w_;
-      cache_.bias(2) = -dt * Gravity_Acc;
+      cache_.bias(2) = dt * Gravity_Acc;
       cache_.dt = dt;
       cache_.dirty = false;
     }

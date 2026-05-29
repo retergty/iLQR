@@ -2,12 +2,12 @@
 
 ## 状态与输入
 
-考虑姿态在预测时域内已知且近似不变的矢量无人机平动模型。采用全局坐标系速度与上一拍机体系推力构成增广状态：
+考虑姿态在预测时域内已知且近似不变的矢量无人机平动模型。采用 NED 全局坐标系速度与上一拍机体系推力构成增广状态：
 
 $$
 X_k =
 \begin{bmatrix}
-v_k^W \\
+v_k^N \\
 F_{k-1}^B
 \end{bmatrix}
 \in \mathbb{R}^6
@@ -16,10 +16,10 @@ $$
 其中：
 
 $$
-v_k^W \in \mathbb{R}^3
+v_k^N \in \mathbb{R}^3
 $$
 
-表示全局坐标系下的速度，且：
+表示 NED 全局坐标系下的速度，且：
 
 $$
 F_{k-1}^B \in \mathbb{R}^3
@@ -32,7 +32,7 @@ $$
 $$
 X_0 =
 \begin{bmatrix}
-v_0^W \\
+v_0^N \\
 F_{\mathrm{last}}^B
 \end{bmatrix}
 $$
@@ -50,10 +50,10 @@ $$
 设：
 
 $$
-R_B^W
+R_B^N
 $$
 
-表示机体系到全局坐标系的旋转矩阵，预测时域内认为常量；$m$ 为质量，$\Delta t$ 为采样周期，$g e_3$ 为全局坐标系下的重力加速度方向项。
+表示机体系到 NED 全局坐标系的旋转矩阵，预测时域内认为常量；$m$ 为质量，$\Delta t$ 为采样周期，$g e_3$ 为 NED 全局坐标系下沿 Down 轴正方向的重力加速度项。
 
 离散动力学为：
 
@@ -63,7 +63,7 @@ X_{k+1}
 f_d(X_k, U_k)
 =
 \begin{bmatrix}
-v_k^W + \Delta t \left(\frac{1}{m} R_B^W U_k - g e_3\right) \\
+v_k^N + \Delta t \left(\frac{1}{m} R_B^N U_k + g e_3\right) \\
 U_k
 \end{bmatrix}
 $$
@@ -89,7 +89,7 @@ $$
 $$
 B_d =
 \begin{bmatrix}
-\frac{\Delta t}{m} R_B^W \\
+\frac{\Delta t}{m} R_B^N \\
 I_3
 \end{bmatrix}
 $$
@@ -97,7 +97,7 @@ $$
 $$
 c_d =
 \begin{bmatrix}
--\Delta t \, g e_3 \\
+\Delta t \, g e_3 \\
 0_3
 \end{bmatrix}
 $$
@@ -115,7 +115,7 @@ $$
 令参考速度为：
 
 $$
-v_{\mathrm{ref},k}^W
+v_{\mathrm{ref},k}^N
 $$
 
 参考推力为：
@@ -130,9 +130,9 @@ $$
 \ell_{\mathrm{track},k}
 =
 \frac{1}{2}
-\left(v_k^W - v_{\mathrm{ref},k}^W\right)^T
+\left(v_k^N - v_{\mathrm{ref},k}^N\right)^T
 Q_v
-\left(v_k^W - v_{\mathrm{ref},k}^W\right)
+\left(v_k^N - v_{\mathrm{ref},k}^N\right)
 +
 \frac{1}{2}
 \left(U_k - F_{\mathrm{ref},k}^B\right)^T
@@ -403,7 +403,7 @@ $$
 $$
 X_k =
 \begin{bmatrix}
-v_k^W \\
+v_k^N \\
 F_{k-1}^B
 \end{bmatrix}
 $$
@@ -690,9 +690,9 @@ $$
 \ell_k(X_k, U_k)
 =
 \frac{1}{2}
-\left(v_k^W - v_{\mathrm{ref},k}^W\right)^T
+\left(v_k^N - v_{\mathrm{ref},k}^N\right)^T
 Q_v
-\left(v_k^W - v_{\mathrm{ref},k}^W\right)
+\left(v_k^N - v_{\mathrm{ref},k}^N\right)
 +
 \frac{1}{2}
 \left(U_k - F_{\mathrm{ref},k}^B\right)^T
@@ -727,9 +727,9 @@ $$
 \ell_f(X_N)
 =
 \frac{1}{2}
-\left(v_N^W - v_{\mathrm{ref},N}^W\right)^T
+\left(v_N^N - v_{\mathrm{ref},N}^N\right)^T
 Q_f
-\left(v_N^W - v_{\mathrm{ref},N}^W\right)
+\left(v_N^N - v_{\mathrm{ref},N}^N\right)
 $$
 
 如果希望终端时推力也接近稳态或参考推力，可加入可选终端项：
