@@ -1,6 +1,5 @@
 #pragma once
 
-#include "matrix/CholeskyDecomposition.hpp"
 #include "matrix/AxisAngle.hpp"
 #include "matrix/Dcm.hpp"
 #include "matrix/Dcm2.hpp"
