@@ -1,12 +1,13 @@
-#include "iLQR/LinearAlgebraTypes.hpp"
 #pragma once
+#include "Matrix.hpp"
+#include "Vector.hpp"
 // Options 1: solving continuing Problem
 template <typename Scalar, int DIMISIONS>
 class CholeskyDecomposition {
  public:
   CholeskyDecomposition() = default;
   ~CholeskyDecomposition() = default;
-  bool Decomposition(const Matrix<Scalar, DIMISIONS, DIMISIONS>& A) {
+  bool Decomposition(const matrix::Matrix<Scalar, DIMISIONS, DIMISIONS>& A) {
     mat_ = A;
     constexpr int n = DIMISIONS;
 
@@ -26,8 +27,9 @@ class CholeskyDecomposition {
     return true;
   }
   /* Solve L * y = b */
-  inline void ForwardElimination(Vector<Scalar, DIMISIONS>& y,
-                                 const Vector<Scalar, DIMISIONS>& b) const {
+  inline void ForwardElimination(
+      matrix::Vector<Scalar, DIMISIONS>& y,
+      const matrix::Vector<Scalar, DIMISIONS>& b) const {
     constexpr int n = DIMISIONS;
 
     y(0) = b(0) / mat_(0, 0);
@@ -40,8 +42,8 @@ class CholeskyDecomposition {
   /* Solve L * Y = B */
   template <int RHS_DIMISIONS>
   inline void ForwardElimination(
-      Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& Y,
-      const Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& B) const {
+      matrix::Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& Y,
+      const matrix::Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& B) const {
     constexpr int n = DIMISIONS;
 
     for (int col = 0; col < RHS_DIMISIONS; ++col) {
@@ -62,8 +64,9 @@ class CholeskyDecomposition {
     }
   }
   /* Solve L^T * x = y */
-  inline void BackwardElimination(Vector<Scalar, DIMISIONS>& x,
-                                  const Vector<Scalar, DIMISIONS>& y) const {
+  inline void BackwardElimination(
+      matrix::Vector<Scalar, DIMISIONS>& x,
+      const matrix::Vector<Scalar, DIMISIONS>& y) const {
     constexpr int n = DIMISIONS;
 
     x(n - 1) = y(n - 1) / mat_(n - 1, n - 1);
@@ -76,8 +79,8 @@ class CholeskyDecomposition {
   /* Solve L^T * X = Y */
   template <int RHS_DIMISIONS>
   inline void BackwardElimination(
-      Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& X,
-      const Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& Y) const {
+      matrix::Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& X,
+      const matrix::Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& Y) const {
     constexpr int n = DIMISIONS;
 
     for (int col = 0; col < RHS_DIMISIONS; ++col) {
@@ -98,9 +101,9 @@ class CholeskyDecomposition {
     }
   }
   // solve L*L^T*x = b
-  void Solve(Vector<Scalar, DIMISIONS>& x,
-             const Vector<Scalar, DIMISIONS>& b) const {
-    Vector<Scalar, DIMISIONS> y;
+  void Solve(matrix::Vector<Scalar, DIMISIONS>& x,
+             const matrix::Vector<Scalar, DIMISIONS>& b) const {
+    matrix::Vector<Scalar, DIMISIONS> y;
 
     /* Solve L * y = b */
     ForwardElimination(y, b);
@@ -109,9 +112,9 @@ class CholeskyDecomposition {
   }
   // solve L*L^T*X = B
   template <int RHS_DIMISIONS>
-  void Solve(Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& X,
-             const Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& B) const {
-    Matrix<Scalar, DIMISIONS, RHS_DIMISIONS> Y;
+  void Solve(matrix::Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& X,
+             const matrix::Matrix<Scalar, DIMISIONS, RHS_DIMISIONS>& B) const {
+    matrix::Matrix<Scalar, DIMISIONS, RHS_DIMISIONS> Y;
 
     /* Solve L * Y = B */
     ForwardElimination(Y, B);
@@ -119,8 +122,8 @@ class CholeskyDecomposition {
     BackwardElimination(X, Y);
   }
 
-  Matrix<Scalar, DIMISIONS, DIMISIONS> GetDecompositionResult() const {
-    Matrix<Scalar, DIMISIONS, DIMISIONS> result;
+  matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> GetDecompositionResult() const {
+    matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> result;
     for (int i = 0; i < DIMISIONS; ++i) {
       result(i, i) = mat_(i, i);
       for (int j = 0; j < i; ++j) {
@@ -131,8 +134,8 @@ class CholeskyDecomposition {
     return result;
   }
 
-  Matrix<Scalar, DIMISIONS, DIMISIONS> GetMatrixL() const {
-    Matrix<Scalar, DIMISIONS, DIMISIONS> L;
+  matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> GetMatrixL() const {
+    matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> L;
 
     for (int i = 0; i < DIMISIONS; ++i) {
       for (int j = 0; j <= i; ++j) {
@@ -144,8 +147,8 @@ class CholeskyDecomposition {
     }
     return L;
   }
-  Matrix<Scalar, DIMISIONS, DIMISIONS> GetMatrixLT() const {
-    Matrix<Scalar, DIMISIONS, DIMISIONS> LT;
+  matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> GetMatrixLT() const {
+    matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> LT;
 
     for (int i = 0; i < DIMISIONS; ++i) {
       for (int j = 0; j < i; ++j) {
@@ -157,10 +160,10 @@ class CholeskyDecomposition {
     }
     return LT;
   }
-  Matrix<Scalar, DIMISIONS, DIMISIONS> InverseL() const {
-    Matrix<Scalar, DIMISIONS, DIMISIONS> inv_L;
-    Vector<Scalar, DIMISIONS> y;
-    Vector<Scalar, DIMISIONS> b;
+  matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> InverseL() const {
+    matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> inv_L;
+    matrix::Vector<Scalar, DIMISIONS> y;
+    matrix::Vector<Scalar, DIMISIONS> b;
     b.setZero();
     // L^-1
     for (int i = 0; i < DIMISIONS; ++i) {
@@ -171,12 +174,12 @@ class CholeskyDecomposition {
     }
     return inv_L;
   }
-  Matrix<Scalar, DIMISIONS, DIMISIONS> Inverse() const {
-    Matrix<Scalar, DIMISIONS, DIMISIONS> inv_L = InverseL();
+  matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> Inverse() const {
+    matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> inv_L = InverseL();
 
-    Matrix<Scalar, DIMISIONS, DIMISIONS> inv;
-    Vector<Scalar, DIMISIONS> x;
-    Vector<Scalar, DIMISIONS> y;
+    matrix::Matrix<Scalar, DIMISIONS, DIMISIONS> inv;
+    matrix::Vector<Scalar, DIMISIONS> x;
+    matrix::Vector<Scalar, DIMISIONS> y;
     // L^T*X=Y
     for (int i = 0; i < DIMISIONS; ++i) {
       y = inv_L.col(i);
@@ -188,5 +191,6 @@ class CholeskyDecomposition {
   }
 
  private:
-  Matrix<Scalar, DIMISIONS, DIMISIONS> mat_;  // L*L^T decompsition result
+  matrix::Matrix<Scalar, DIMISIONS, DIMISIONS>
+      mat_;  // L*L^T decompsition result
 };
