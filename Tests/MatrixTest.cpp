@@ -2,6 +2,7 @@
 
 #include "matrix/Matrix.hpp"
 #include "matrix/Vector.hpp"
+#include "matrix/Vector3.hpp"
 
 // 验证自实现 Matrix 支持一维 initializer_list 按行优先初始化。
 TEST(MatrixTest, SupportsFlatInitializerListConstruction) {
@@ -94,6 +95,26 @@ TEST(MatrixTest, VectorSupportsInitializerListAssignment) {
   EXPECT_DOUBLE_EQ(vector(0), 4.0);
   EXPECT_DOUBLE_EQ(vector(1), 5.0);
   EXPECT_DOUBLE_EQ(vector(2), 6.0);
+}
+
+// 验证固定尺寸 Vector 支持显式跨标量类型构造。
+TEST(MatrixTest, VectorSupportsExplicitScalarConversionConstruction) {
+  const matrix::Vector<float, 3> source{1.25f, -2.5f, 3.75f};
+
+  const matrix::Vector<double, 3> converted(source);
+
+  EXPECT_TRUE(
+      converted.isApprox(matrix::Vector<double, 3>{1.25, -2.5, 3.75}, 1e-12));
+}
+
+// 验证 Vector3f 可以显式构造成 Vector3d，兼容 PX4 中的 Vector3d(Vector3f)
+// 写法。
+TEST(MatrixTest, Vector3SupportsExplicitScalarConversionConstruction) {
+  const matrix::Vector3f source{1.25f, -2.5f, 3.75f};
+
+  const matrix::Vector3d converted(source);
+
+  EXPECT_TRUE(converted.isApprox(matrix::Vector3d{1.25, -2.5, 3.75}, 1e-12));
 }
 
 // 验证 Vector 提供返回 Vector 类型的静态工厂函数。
