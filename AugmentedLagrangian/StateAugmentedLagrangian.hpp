@@ -9,7 +9,7 @@
 #include "OptimalControlData/LagrangianMetrics.hpp"
 #include "Penalties/AugmentedPenaltyBase.hpp"
 #include "Penalties/MultidimensionalPenalty.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief 仅状态约束的增广拉格朗日惩罚实现：委托约束与 Penalty

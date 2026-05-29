@@ -48,7 +48,7 @@
 
 `iLQR/iLQRDescriptor.hpp`、`iLQR/iLQRDescriptorTraits.hpp` 和 `iLQR/iLQRTypes.hpp` 构成静态类型描述体系。它们将标量类型、系统维度、预测长度、动力学模式和约束布局转换为统一的轨迹、控制器、乘子、模型数据和求解缓存类型，是项目实现固定尺寸和禁止动态内存分配的重要基础。`TranscriptionConfig` 支持 `ContinuousDynamics` 与 `DiscreteDynamics` 两种动力学模式，默认使用连续模式；约束布局采用 `ConstraintGroupLayout<ConstraintTerm<N>...>` 描述：每个 `ConstraintTerm<N>` 表示一个增广拉格朗日项内部的 `N` 维向量约束，同一类约束可以包含多个 term。
 
-`matrix/Types.hpp` 提供核心线性代数入口，将项目内使用的 `Matrix<Scalar, Rows, Cols>` 和 `Vector<Scalar, Rows>` 别名绑定到自定义固定尺寸矩阵库。核心代码不再通过公共头依赖 Eigen，测试侧需要 Eigen 对照能力时通过 `Tests/Include` 中的转换工具接入。
+`iLQR/LinearAlgebraTypes.hpp` 提供核心线性代数入口，将项目内使用的 `Matrix<Scalar, Rows, Cols>` 和 `Vector<Scalar, Rows>` 别名绑定到自定义固定尺寸矩阵库。核心代码不再通过公共头依赖 Eigen，测试侧需要 Eigen 对照能力时通过 `Tests/Include` 中的转换工具接入。
 
 `iLQR/DDPSetting.hpp`、`iLQR/DDPData.hpp` 和 `iLQR/HessianCorrection.hpp` 提供求解参数、迭代数据和 Hessian 修正逻辑，用于改善 Riccati 递推和控制更新的数值稳定性。求解器构造时需要外部提供 `OptimalControlProblem` 与初始化器对象，相关对象生命周期应长于求解器。
 
@@ -136,7 +136,7 @@ cmake --preset gcc-release
 cmake --build --preset gcc-release
 ```
 
-构建完成后，生成文件位于 `out/build/<preset-name>` 目录中。测试目标由 `Tests/CMakeLists.txt` 自动生成，可通过 CMake 标准选项 `BUILD_TESTING` 控制是否构建测试。
+构建完成后，生成文件位于 `out/build/<preset-name>` 目录中。测试目标由 `Tests/CMakeLists.txt` 自动生成，并通过 `ILQR_BUILD_TESTING` 控制是否参与构建：独立构建本项目时默认开启，作为 `add_subdirectory()` 子项目集成时默认关闭。开启测试后仍遵循 CMake 标准 `BUILD_TESTING` 选项。开发用编译和链接选项通过 `ILQR_ENABLE_DEV_OPTIONS` 控制，默认仅在独立构建时开启，并由测试目标显式链接 `iLQR::Options` 使用，避免影响父项目目标。性能敏感的核心模板代码可通过 `ILQR_FORCE_OPTIMIZATION` 向消费目标传播 `-O3` 和 `NDEBUG`：独立构建本项目时默认关闭以便运行调试测试，作为 `add_subdirectory()` 子项目集成时默认开启，防止上层工程误用 Debug 配置导致 iLQR 运行性能异常；如需逐步调试核心代码，可显式配置 `-DILQR_FORCE_OPTIMIZATION=OFF`。
 
 ### 运行测试
 

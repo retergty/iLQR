@@ -11,7 +11,7 @@
 
 #include "AugmentedLagrangian/StateAugmentedLagrangianInterface.hpp"
 #include "ModelData/Metrics.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief 仅状态增广拉格朗日惩罚项集合：对多个不同维度的

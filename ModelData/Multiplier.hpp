@@ -8,8 +8,8 @@
 #include <utility>
 
 #include "Misc/LinearInterpolation.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
-#include "matrix/Types.hpp"
 
 /**
  * @brief 单个增广拉格朗日项的乘子：惩罚缩放与向量拉格朗日乘子。

@@ -1,4 +1,4 @@
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 #pragma once
 // Options 1: solving continuing Problem
 template <typename Scalar, int DIMISIONS>

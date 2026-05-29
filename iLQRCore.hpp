@@ -21,6 +21,6 @@
 #include "Penalties/SlacknessSquaredHingePenalty.hpp"   // IWYU pragma: export
 #include "Penalties/SmoothAbsolutePenalty.hpp"          // IWYU pragma: export
 #include "iLQR/DDPSetting.hpp"                          // IWYU pragma: export
+#include "iLQR/LinearAlgebraTypes.hpp"                  // IWYU pragma: export
 #include "iLQR/iLQR.hpp"                                // IWYU pragma: export
 #include "iLQR/iLQRDescriptor.hpp"                      // IWYU pragma: export
-#include "matrix/Types.hpp"                             // IWYU pragma: export

@@ -6,7 +6,7 @@
 #include <array>
 
 #include "Misc/LinearInterpolation.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief

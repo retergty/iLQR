@@ -7,8 +7,8 @@
 #include <tuple>
 
 #include "OptimalControlData/LagrangianMetrics.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
-#include "matrix/Types.hpp"
 
 template <typename Scalar, typename GroupLayout>
 struct LagrangianMetricsGroup;

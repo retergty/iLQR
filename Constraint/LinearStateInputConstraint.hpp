@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Constraint/StateInputConstraint.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * 线性状态-输入约束。

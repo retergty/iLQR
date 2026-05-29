@@ -3,7 +3,7 @@
  * @brief 控制器基类：按时间与状态计算控制输入，支持清空与类型查询。
  */
 #pragma once
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /** @brief 控制器类型枚举。 */
 enum class ControllerType { UNKNOWN, FEEDFORWARD, LINEAR, ONNX, BEHAVIORAL };

@@ -4,8 +4,8 @@
  */
 #pragma once
 
+#include "iLQR/LinearAlgebraTypes.hpp"
 #include "matrix/CholeskyDecomposition.hpp"
-#include "matrix/Types.hpp"
 
 /**
  * @brief 单节点 Riccati 修正：时间、状态代价修正 deltaQm、哈密顿量 Hessian

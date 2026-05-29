@@ -6,7 +6,7 @@
 
 #include "Controller/LinearController.hpp"
 #include "Dynamics/LinearSystemDynamics.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 // 验证线性系统的流映射返回 Ax + Bu。
 TEST(DynamicsTest, LinearSystem_FlowMap) {

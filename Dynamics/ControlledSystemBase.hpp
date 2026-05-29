@@ -6,7 +6,7 @@
 #pragma once
 #include "Controller/Controller.hpp"
 #include "Integration/Integration.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief 受控系统动力学基类：可设置控制器，computeFlowMap(t,x) 内部用控制器算 u

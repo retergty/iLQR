@@ -9,7 +9,7 @@
 #include "ModelData/ModelData.hpp"
 #include "RiccatiEquations/DiscreteTimeRiccatiEquations.hpp"
 #include "RiccatiEquations/RiccatiModification.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 // 验证 reduced form 下单步 Riccati 递推与标量参考值一致。
 TEST(RiccatiTest, ReducedFormOneStepMatchesScalarReference) {

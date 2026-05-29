@@ -5,7 +5,7 @@
  */
 #pragma once
 #include "Integration/Observer.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief 自治系统动力学基类：根据时间与状态计算状态导数 dx/dt。

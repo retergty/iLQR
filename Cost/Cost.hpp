@@ -5,7 +5,7 @@
 #pragma once
 #include "Approximation/QuadraticApproximation.hpp"
 #include "IntrusiveList/IntrusiveList.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief 仅状态代价项基类：按时间与状态计算代价值及二次近似。

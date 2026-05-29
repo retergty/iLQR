@@ -8,9 +8,9 @@
 #include "ModelData/Multiplier.hpp"
 #include "Tests/Include/MatrixEigenConversion.hpp"
 #include "iLQR/HessianCorrection.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
 #include "matrix/CholeskyDecomposition.hpp"
-#include "matrix/Types.hpp"
 
 using test_tools::matrix_eigen_conversion::toEigenMatrix;
 

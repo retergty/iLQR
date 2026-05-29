@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief 观测器：将积分器输出的 (time, state)

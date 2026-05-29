@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief 离散系统基类：子类实现

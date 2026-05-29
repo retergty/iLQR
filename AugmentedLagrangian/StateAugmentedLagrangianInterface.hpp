@@ -7,7 +7,7 @@
 #include "Approximation/QuadraticApproximation.hpp"
 #include "ModelData/Multiplier.hpp"
 #include "OptimalControlData/LagrangianMetrics.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief

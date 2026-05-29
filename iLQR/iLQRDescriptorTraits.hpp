@@ -3,8 +3,8 @@
 #include <array>
 
 #include "OptimalControlData/Reference.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
-#include "matrix/Types.hpp"
 
 /**
  * @brief iLQR descriptor 的集中视图。

@@ -1,6 +1,6 @@
 #pragma once
 #include "Constraint/StateConstraint.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * 线性仅状态约束。

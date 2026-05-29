@@ -14,8 +14,8 @@
 #include "SearchStrategy/SearchStrategyBase.hpp"
 #include "iLQR/DDPSetting.hpp"
 #include "iLQR/HessianCorrection.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 #include "iLQR/iLQRTypes.hpp"
-#include "matrix/Types.hpp"
 
 /**
  * @brief 迭代线性二次调节器（iLQR）：基于名义轨迹的 LQ 近似与离散时间 Riccati

@@ -6,7 +6,7 @@
 #pragma once
 
 #include "Controller/Controller.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /** @brief 求根算法类型枚举（当前未使用）。 */
 enum class RootFinderType { ANDERSON_BJORCK, PEGASUS, ILLINOIS, REGULA_FALSI };

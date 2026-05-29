@@ -11,8 +11,8 @@
 #include "Initialization/DefaultInitializer.hpp"
 #include "OptimalControl/OptimalControlProblem.hpp"
 #include "Penalties/QuadraticPenalty.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
-#include "matrix/Types.hpp"
 
 namespace double_integrator {
 template <typename Scalar, int ArrayLength>

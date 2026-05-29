@@ -9,7 +9,7 @@
 #include "Approximation/LinearApproximation.hpp"
 #include "Approximation/QuadraticApproximation.hpp"
 #include "Constraint/ConstraintOrder.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief

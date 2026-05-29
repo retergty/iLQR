@@ -1,6 +1,6 @@
 /**
- * @file matrix/Types.hpp
- * @brief 基础固定尺寸矩阵与向量类型别名。
+ * @file iLQR/LinearAlgebraTypes.hpp
+ * @brief iLQR 使用的固定尺寸矩阵与向量类型别名。
  */
 #pragma once
 

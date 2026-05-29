@@ -8,7 +8,7 @@
 #include <cmath>
 
 #include "Misc/LinearInterpolation.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 using namespace LinearInterpolation;
 

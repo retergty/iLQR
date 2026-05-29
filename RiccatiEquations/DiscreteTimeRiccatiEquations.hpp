@@ -7,7 +7,7 @@
 
 #include "ModelData/ModelData.hpp"
 #include "RiccatiEquations/RiccatiModification.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief 离散时间 Riccati 单步递推的中间缓存（Sm*Am, Gm, Gv 等）。

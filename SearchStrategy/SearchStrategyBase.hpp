@@ -3,7 +3,7 @@
  * @brief 搜索策略基类：线搜索/置信域等子问题求解接口及搜索解容器。
  */
 #pragma once
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 template <typename Descriptor>
 struct iLQRTypes;

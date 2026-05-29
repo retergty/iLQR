@@ -11,7 +11,7 @@
 
 #include "AugmentedLagrangian/StateInputAugmentedLagrangianInterface.hpp"
 #include "ModelData/Metrics.hpp"
-#include "matrix/Types.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
  * @brief 状态-输入增广拉格朗日惩罚项集合：对多个 StateInputAugmentedLagrangian

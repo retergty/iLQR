@@ -7,8 +7,8 @@
 #include "Dynamics/DiscreteSystemDynamicsBase.hpp"
 #include "Misc/LinearInterpolation.hpp"
 #include "OptimalControl/OptimalControlProblem.hpp"
+#include "iLQR/LinearAlgebraTypes.hpp"
 #include "iLQR/iLQRDescriptor.hpp"
-#include "matrix/Types.hpp"
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
