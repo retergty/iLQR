@@ -22,9 +22,7 @@ using Descriptor = iLQRDescriptor<
 using Solver = iLQR<Descriptor>;
 using StateVector = typename Solver::StateVector_t;
 using InputVector = typename Solver::InputVector_t;
-using TimeTrajectory = typename Solver::TimeTrajectory_t;
-using StateTrajectory = typename Solver::StateTrajectory_t;
-using InputTrajectory = typename Solver::InputTrajectory_t;
+using TargetTrajectories = typename Solver::TargetTrajectories_t;
 
 InputVector hoverInput() {
   return InputVector{Scalar(0.0), Scalar(0.0), -Mass * Gravity};
@@ -49,28 +47,23 @@ class HoverInitializer final
 
 void configureVelocityReference(const Scalar initTime,
                                 const StateVector& velocityReference,
-                                TimeTrajectory& timeTrajectory,
-                                StateTrajectory& stateTrajectory,
-                                InputTrajectory& inputTrajectory) {
+                                TargetTrajectories& targetTrajectory) {
   for (size_t i = 0; i < PredictLength + 1; ++i) {
-    timeTrajectory[i] = initTime + static_cast<Scalar>(i) * TimeStep;
-    stateTrajectory[i].setZero();
-    stateTrajectory[i].template head<3>() =
+    targetTrajectory.timeTrajectory[i] =
+        initTime + static_cast<Scalar>(i) * TimeStep;
+    targetTrajectory.stateTrajectory[i].setZero();
+    targetTrajectory.stateTrajectory[i].template head<3>() =
         velocityReference.template head<3>();
-    stateTrajectory[i].template tail<3>() = hoverInput();
-    inputTrajectory[i] = hoverInput();
+    targetTrajectory.stateTrajectory[i].template tail<3>() = hoverInput();
+    targetTrajectory.inputTrajectory[i] = hoverInput();
   }
 }
 
 void runOneMpcCycle(Solver& solver, Solver::OptimalControlProblem_t& problem,
                     const StateVector& velocityReference, Scalar& currentTime,
                     StateVector& currentState) {
-  TimeTrajectory timeTrajectory;
-  StateTrajectory stateTrajectory;
-  InputTrajectory inputTrajectory;
-  configureVelocityReference(currentTime, velocityReference, timeTrajectory,
-                             stateTrajectory, inputTrajectory);
-  solver.setDesireTrajectory(timeTrajectory, stateTrajectory, inputTrajectory);
+  configureVelocityReference(currentTime, velocityReference,
+                             solver.targetTrajectory());
 
   solver.run(currentTime, currentState);
   const InputVector firstInput = solver.primalSolution().inputTrajectory_[0];

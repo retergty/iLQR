@@ -223,6 +223,9 @@ class iLQR {
   const PerformanceIndex_t performanceIndex() const {
     return performanceIndex_;
   }
+  TargetTrajectories_t& targetTrajectory() {
+    return targetTrajectory_;
+  }
   const TargetTrajectories_t& targetTrajectory() const {
     return targetTrajectory_;
   }
