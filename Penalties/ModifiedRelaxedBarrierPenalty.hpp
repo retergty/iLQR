@@ -25,7 +25,7 @@ class ModifiedRelaxedBarrierPenalty final
    * stepLenght：步长参数，参见类说明。
    */
   struct Config {
-    Config() : Config(10.0, 0.0, 1.0) {}
+    Config() : Config(Scalar(10.0), Scalar(0.0), Scalar(1.0)) {}
     Config(const Scalar scaleParam, const Scalar relaxationParam,
            const Scalar stepSizeParam)
         : scale(scaleParam),
@@ -47,7 +47,7 @@ class ModifiedRelaxedBarrierPenalty final
     (void)t;
     const Scalar v = vFunc(l, h);
     if (v > config_.relaxation) {
-      return -wFunc(l) * log(1 + v);
+      return -wFunc(l) * log(Scalar(1.0) + v);
     } else {
       const Scalar vDelta = v - config_.relaxation;
       return wFunc(l) *
@@ -61,7 +61,7 @@ class ModifiedRelaxedBarrierPenalty final
     (void)t;
     const Scalar v = vFunc(l, h);
     if (v > config_.relaxation) {
-      return -wFunc(l) / (1.0 + v) * dvdhFunc(l);
+      return -wFunc(l) / (Scalar(1.0) + v) * dvdhFunc(l);
     } else {
       return wFunc(l) *
              (quadCoeff_.c2 * (v - config_.relaxation) + quadCoeff_.c1) *
@@ -75,7 +75,7 @@ class ModifiedRelaxedBarrierPenalty final
     const Scalar v = vFunc(l, h);
     const Scalar dvdh = dvdhFunc(l);
     if (v > config_.relaxation) {
-      return wFunc(l) / ((1 + v) * (1 + v)) * dvdh * dvdh;
+      return wFunc(l) / ((Scalar(1.0) + v) * (Scalar(1.0) + v)) * dvdh * dvdh;
     } else {
       return wFunc(l) * quadCoeff_.c2 * dvdh * dvdh;
     }
@@ -85,9 +85,9 @@ class ModifiedRelaxedBarrierPenalty final
                           const Scalar h) const override {
     (void)t;
     const Scalar v = vFunc(l, h);
-    constexpr Scalar lambdaMin = 1e-4;
+    constexpr Scalar lambdaMin = Scalar(1e-4);
     if (v > config_.relaxation) {
-      return std::max(lambdaMin, wFunc(l) * dvdhFunc(l) / (1 + v));
+      return std::max(lambdaMin, wFunc(l) * dvdhFunc(l) / (Scalar(1.0) + v));
     } else {
       return std::max(
           lambdaMin,
@@ -97,7 +97,7 @@ class ModifiedRelaxedBarrierPenalty final
     }
   }
 
-  Scalar initializeMultiplier() const override { return 1.0; }
+  Scalar initializeMultiplier() const override { return Scalar(1.0); }
 
  private:
   ModifiedRelaxedBarrierPenalty(const ModifiedRelaxedBarrierPenalty& other) =
@@ -111,12 +111,12 @@ class ModifiedRelaxedBarrierPenalty final
 
   struct QuadCoeff {
     QuadCoeff(const Config& config) {
-      c2 = 1.0 / std::pow(1.0 + config.relaxation, 2);
-      c1 = -1.0 / (1.0 + config.relaxation);
-      c0 = -log(1.0 + config.relaxation);
+      c2 = Scalar(1.0) / std::pow(Scalar(1.0) + config.relaxation, Scalar(2.0));
+      c1 = -Scalar(1.0) / (Scalar(1.0) + config.relaxation);
+      c0 = -log(Scalar(1.0) + config.relaxation);
     }
 
-    Scalar c2 = 0.0, c1 = 0.0, c0 = 0.0;
+    Scalar c2 = Scalar(0.0), c1 = Scalar(0.0), c0 = Scalar(0.0);
   };
 
   const Config config_;

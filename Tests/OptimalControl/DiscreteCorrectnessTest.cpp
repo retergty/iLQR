@@ -259,8 +259,6 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
     ddpSettings.timeStep_ = timeStep;
     ddpSettings.maxNumIterations_ = 30;
     ddpSettings.minRelCost_ = 1e-9;
-    ddpSettings.constraintTolerance_ = 1e-6;
-    ddpSettings.strategy_ = SearchStrategyType::LINE_SEARCH;
     ddpSettings.lineSearch_.minStepLength = 1e-2;
     ddpSettings.lineSearch_.maxStepLength = 1.0;
     ddpSettings.lineSearch_.hessianCorrectionMultiple = 1e-6;

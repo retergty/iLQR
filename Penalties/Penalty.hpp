@@ -57,7 +57,7 @@ class Penalty final {
       const Scalar t,
       const ScalarFunctionLinearApproximation<Scalar, XDim, UDim>& h,
       const Scalar l) const {
-    Scalar penaltyValue = 0.0;
+    Scalar penaltyValue = Scalar(0.0);
     Scalar penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) =
         getPenaltyValue1stDev2ndDev(t, h.f, l);
@@ -94,7 +94,7 @@ class Penalty final {
       Scalar t,
       const ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& h,
       const Scalar l) const {
-    Scalar penaltyValue = 0.0;
+    Scalar penaltyValue = Scalar(0.0);
     Scalar penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) =
         getPenaltyValue1stDev2ndDev(t, h.f, l);

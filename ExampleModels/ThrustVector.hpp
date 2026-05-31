@@ -33,7 +33,7 @@ template <typename Scalar>
 class ThrustVectorDynamicSystem final
     : public DiscreteSystemDynamicsBase<Scalar, STATE_DIM, INPUT_DIM> {
  public:
-  static constexpr Scalar Gravity_Acc = 9.8;
+  static constexpr Scalar Gravity_Acc = Scalar(9.8);
   using LinearApproximation_t =
       typename DiscreteSystemDynamicsBase<Scalar, STATE_DIM,
                                           INPUT_DIM>::LinearApproximation_t;
@@ -278,9 +278,9 @@ class ThrustDirectionChangeCost final
     : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
   /** @brief 获取代价值。 */
  public:
-  static constexpr Scalar epsilon = 1e-4;
+  static constexpr Scalar epsilon = Scalar(1e-4);
   static constexpr Scalar Weight = 1;
-  static constexpr Scalar MinThrustForDirection = 1e-2;
+  static constexpr Scalar MinThrustForDirection = Scalar(1e-2);
 
   explicit ThrustDirectionChangeCost(int cost_number = 0)
       : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number) {

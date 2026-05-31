@@ -37,7 +37,7 @@ Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(
   for (size_t i = 0; i < VarDimisions; i++) {
     // 灵感来源：
     // http://en.wikipedia.org/wiki/Numerical_differentiation#Practical_considerations_using_floating_point_arithmetic
-    Scalar h = eps * std::max(std::fabs(x0(i)), 1.0);
+    Scalar h = eps * std::max(std::fabs(x0(i)), Scalar(1.0));
 
     Vector<Scalar, VarDimisions> xPlus = x0;
     xPlus(i) += h;
@@ -45,7 +45,7 @@ Matrix<Scalar, StateDimisions, VarDimisions> finiteDifferenceDerivative(
     if (doubleSidedDerivative) {
       Vector<Scalar, VarDimisions> xMinus = x0;
       xMinus(i) -= h;
-      jacobian.col(i) = (f(xPlus) - f(xMinus)) / (2.0 * h);
+      jacobian.col(i) = (f(xPlus) - f(xMinus)) / (Scalar(2.0) * h);
     } else {
       jacobian.col(i) = (f(xPlus) - f0) / h;
     }

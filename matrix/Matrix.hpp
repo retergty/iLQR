@@ -439,11 +439,11 @@ class Matrix {
   }
 
   bool isApprox(const Matrix<Type, M, N>& other,
-                const Type eps = Type(1e-4f)) const {
+                const Type eps = Type(1e-4)) const {
     return isEqual(*this, other, eps);
   }
 
-  bool isZero(const Type eps = Type(1e-4f)) const {
+  bool isZero(const Type eps = Type(1e-4)) const {
     return isApprox(Matrix<Type, M, N>::Zero(), eps);
   }
 
@@ -829,7 +829,7 @@ Matrix<Type, M, N> operator*(Type scalar, const Matrix<Type, M, N>& other) {
 
 template <typename Type, int M, int N>
 bool isEqual(const Matrix<Type, M, N>& x, const Matrix<Type, M, N>& y,
-             const Type eps = Type(1e-4f)) {
+             const Type eps = Type(1e-4)) {
   for (size_t i = 0; i < M; i++) {
     for (size_t j = 0; j < N; j++) {
       if (!isEqualF(x(i, j), y(i, j), eps)) {

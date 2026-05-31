@@ -46,7 +46,6 @@ class CircularKinematicsSmoothAbsolutePenaltyTest : public testing::Test {
     ddpSettings.timeStep_ = timeStep;
     ddpSettings.maxNumIterations_ = 40;
     ddpSettings.minRelCost_ = 1e-8;
-    ddpSettings.strategy_ = SearchStrategyType::LINE_SEARCH;
     ddpSettings.lineSearch_.minStepLength = 0.01;
     ddpSettings.lineSearch_.maxStepLength = 1.0;
     ddpSettings.lineSearch_.hessianCorrectionMultiple = 1.0;

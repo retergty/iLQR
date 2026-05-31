@@ -211,7 +211,6 @@ problem.dynamicsPtr = &dynamics;
 DDPSettings<Scalar> settings;
 settings.timeStep_ = 0.01;
 settings.maxNumIterations_ = 30;
-settings.strategy_ = SearchStrategyType::LINE_SEARCH;
 
 const Matrix<Scalar, XDim, XDim> Q = Matrix<Scalar, XDim, XDim>::Identity();
 const Matrix<Scalar, UDim, UDim> R = Matrix<Scalar, UDim, UDim>::Identity();

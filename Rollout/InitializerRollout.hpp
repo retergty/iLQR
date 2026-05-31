@@ -52,7 +52,7 @@ class InitializerRollout : RolloutBase<Scalar, XDim, UDim> {
 
     // 通过加入一个 dt 的小分数确保包含 finalTime，使得：N
     // * dt <= finalTime < (N + 1) * dt。
-    Scalar finalTimeLocal = finalTime + 0.1 * this->settings().timeStep;
+    Scalar finalTimeLocal = finalTime + Scalar(0.1) * this->settings().timeStep;
     Scalar t = initTime;
     const Scalar timeStep = this->settings().timeStep;
 

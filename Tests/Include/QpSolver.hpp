@@ -256,7 +256,7 @@ QpCostApproximation<Scalar> getCostMatrices(
   auto& c = qpCost.f;
   H.setZero(numDecisionVariables, numDecisionVariables);
   g.setZero(numDecisionVariables);
-  c = 0.0;
+  c = Scalar(0.0);
 
   int currRow = 0;
   for (int k = 0; k < N; ++k) {

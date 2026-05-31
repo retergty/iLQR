@@ -407,7 +407,7 @@ class SliceT {
 
   Type norm() const { return std::sqrt(norm_squared()); }
 
-  bool isZero(const Type eps = Type(1e-4f)) const {
+  bool isZero(const Type eps = Type(1e-4)) const {
     const SliceT<MatrixT, Type, P, Q, M, N>& self = *this;
 
     for (size_t i = 0; i < P; i++) {

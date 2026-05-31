@@ -75,11 +75,11 @@ class Euler : public Vector<Type, 3> {
   Euler(const Dcm<Type>& dcm) {
     theta() = std::asin(-dcm(2, 0));
 
-    if ((std::fabs(theta() - Type(M_PI / 2))) < Type(1.0e-3)) {
+    if ((std::fabs(theta() - Type(M_PI) / Type(2.0))) < Type(1.0e-3)) {
       phi() = 0;
       psi() = std::atan2(dcm(1, 2), dcm(0, 2));
 
-    } else if ((std::fabs(theta() + Type(M_PI / 2))) < Type(1.0e-3)) {
+    } else if ((std::fabs(theta() + Type(M_PI) / Type(2.0))) < Type(1.0e-3)) {
       phi() = 0;
       psi() = std::atan2(-dcm(1, 2), -dcm(0, 2));
 

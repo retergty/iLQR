@@ -17,7 +17,7 @@ namespace matrix {
  * @return true if the two values are considered equal, false otherwise
  */
 template <typename Type>
-bool isEqualF(const Type x, const Type y, const Type eps = Type(1e-4f)) {
+bool isEqualF(const Type x, const Type y, const Type eps = Type(1e-4)) {
   return (std::fabs(x - y) <= eps) || (std::isnan(x) && std::isnan(y)) ||
          (std::isinf(x) && std::isinf(y) && std::isnan(x - y));
 }

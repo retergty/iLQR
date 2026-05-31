@@ -16,7 +16,7 @@
  */
 template <typename Scalar, int XDim, int UDim>
 struct ModelData {
-  Scalar time = 0.0;
+  Scalar time = Scalar(0.0);
 
   /** @brief 动力学线性近似：x_{k+1} ≈ dfdx*dx + dfdu*du + f。 */
   VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> dynamics;

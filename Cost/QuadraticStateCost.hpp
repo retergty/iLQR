@@ -33,7 +33,7 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
                       stateTrajectoy) final {
     const Vector<Scalar, XDim> xDeviation =
         getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
-    return 0.5 * xDeviation.dot(Q_ * xDeviation);
+    return Scalar(0.5) * xDeviation.dot(Q_ * xDeviation);
   }
 
   /** @brief 获取代价的二次近似（dfdxx=Q, dfdx=Q*(x-x_ref),
@@ -50,7 +50,7 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> Phi;
     Phi.dfdxx = Q_;
     Phi.dfdx = Q_ * xDeviation;
-    Phi.f = 0.5 * xDeviation.dot(Phi.dfdx);
+    Phi.f = Scalar(0.5) * xDeviation.dot(Phi.dfdx);
     return Phi;
   }
 
@@ -123,12 +123,12 @@ class QuadraticStateInputCost
         getInputDeviation(time, input, timeTrajectory, inputTrajectory);
 
     if (has_P_) {
-      return 0.5 * stateDeviation.dot(Q_ * stateDeviation) +
-             0.5 * inputDeviation.dot(R_ * inputDeviation) +
+      return Scalar(0.5) * stateDeviation.dot(Q_ * stateDeviation) +
+             Scalar(0.5) * inputDeviation.dot(R_ * inputDeviation) +
              inputDeviation.dot(P_ * stateDeviation);
     } else {
-      return 0.5 * stateDeviation.dot(Q_ * stateDeviation) +
-             0.5 * inputDeviation.dot(R_ * inputDeviation);
+      return Scalar(0.5) * stateDeviation.dot(Q_ * stateDeviation) +
+             Scalar(0.5) * inputDeviation.dot(R_ * inputDeviation);
     }
   }
 
@@ -152,7 +152,8 @@ class QuadraticStateInputCost
     L.dfduu = R_;
     L.dfdx = Q_ * stateDeviation;
     L.dfdu = R_ * inputDeviation;
-    L.f = 0.5 * stateDeviation.dot(L.dfdx) + 0.5 * inputDeviation.dot(L.dfdu);
+    L.f = Scalar(0.5) * stateDeviation.dot(L.dfdx) +
+          Scalar(0.5) * inputDeviation.dot(L.dfdu);
 
     if (has_P_ == 0) {
       L.dfdux.setZero();

@@ -22,7 +22,7 @@ class SmoothAbsolutePenalty final : public AugmentedPenaltyBase<Scalar> {
    * stepLenght：步长参数，参见类说明。
    */
   struct Config {
-    Config() : Config(100.0, 1e-2, 0.0) {}
+    Config() : Config(Scalar(100.0), Scalar(1e-2), Scalar(0.0)) {}
     Config(const Scalar scaleParam, const Scalar relaxationParam,
            const Scalar stepSizeParam)
         : scale(scaleParam),
@@ -55,7 +55,7 @@ class SmoothAbsolutePenalty final : public AugmentedPenaltyBase<Scalar> {
     (void)t;
     (void)l;
     const Scalar deltaSquare = config_.relaxation * config_.relaxation;
-    return config_.scale * deltaSquare / pow(h * h + deltaSquare, 1.5);
+    return config_.scale * deltaSquare / pow(h * h + deltaSquare, Scalar(1.5));
   }
 
   Scalar updateMultiplier(const Scalar t, const Scalar l,
@@ -63,7 +63,7 @@ class SmoothAbsolutePenalty final : public AugmentedPenaltyBase<Scalar> {
     (void)t;
     return l - config_.stepSize * config_.scale * h;
   }
-  Scalar initializeMultiplier() const override { return 0.0; }
+  Scalar initializeMultiplier() const override { return Scalar(0.0); }
 
  private:
   SmoothAbsolutePenalty(const SmoothAbsolutePenalty& other) = default;

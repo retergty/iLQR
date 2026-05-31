@@ -232,7 +232,7 @@ class SquareMatrix : public Matrix<Type, M, M> {
 
   // checks if block diagonal is symmetric
   template <int Width>
-  bool isBlockSymmetric(size_t first, const Type eps = Type(1e-8f)) {
+  bool isBlockSymmetric(size_t first, const Type eps = Type(1e-8)) {
     static_assert(Width >= 0, "Block width must be non-negative");
     static_assert(Width <= M, "Width bigger than matrix");
     assert(first + Width <= M);
@@ -254,7 +254,7 @@ class SquareMatrix : public Matrix<Type, M, M> {
 
   // checks if rows and columns are symmetric
   template <int Width>
-  bool isRowColSymmetric(size_t first, const Type eps = Type(1e-8f)) {
+  bool isRowColSymmetric(size_t first, const Type eps = Type(1e-8)) {
     static_assert(Width >= 0, "Block width must be non-negative");
     static_assert(Width <= M, "Width bigger than matrix");
     assert(first + Width <= M);

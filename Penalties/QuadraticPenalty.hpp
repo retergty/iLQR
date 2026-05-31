@@ -41,7 +41,7 @@ class QuadraticPenalty final : public AugmentedPenaltyBase<Scalar> {
    * stepSize：步长参数，参见类说明。
    */
   struct Config {
-    Config() : Config(100.0, 0.0) {}
+    Config() : Config(Scalar(100.0), Scalar(0.0)) {}
     Config(const Scalar scaleParam, const Scalar stepSizeParam)
         : scale(scaleParam), stepSize(stepSizeParam) {}
     Scalar scale;
@@ -56,7 +56,7 @@ class QuadraticPenalty final : public AugmentedPenaltyBase<Scalar> {
   Scalar getValue(const Scalar t, const Scalar l,
                   const Scalar h) const override {
     (void)t;
-    return -l * h + 0.5 * config_.scale * h * h;
+    return -l * h + Scalar(0.5) * config_.scale * h * h;
   }
   Scalar getDerivative(const Scalar t, const Scalar l,
                        const Scalar h) const override {
@@ -76,7 +76,7 @@ class QuadraticPenalty final : public AugmentedPenaltyBase<Scalar> {
     (void)t;
     return l - config_.stepSize * config_.scale * h;
   }
-  Scalar initializeMultiplier() const override { return 0.0; }
+  Scalar initializeMultiplier() const override { return Scalar(0.0); }
 
  private:
   QuadraticPenalty(const QuadraticPenalty& other) = default;

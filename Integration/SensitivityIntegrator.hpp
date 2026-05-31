@@ -96,7 +96,7 @@ class EK2DynamicsDiscretizer
       SystemDynamicsBase<Scalar, XDim, UDim>& system, const Scalar t,
       const Vector<Scalar, XDim>& x, const Vector<Scalar, UDim>& u,
       const Scalar dt) override {
-    const Scalar dt_halve = dt / 2.0;
+    const Scalar dt_halve = dt / Scalar(2.0);
 
     // 系统评估
     const Vector<Scalar, XDim> k1 = system.computeFlowMap(t, x, u);
@@ -112,7 +112,7 @@ class EK2DynamicsDiscretizer
                         const Scalar t, const Vector<Scalar, XDim>& x,
                         const Vector<Scalar, UDim>& u,
                         const Scalar dt) override {
-    const Scalar dt_halve = dt / 2.0;
+    const Scalar dt_halve = dt / Scalar(2.0);
 
     // 系统评估
     VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k1 =
@@ -149,9 +149,9 @@ class EK4DynamicsDiscretizer
       SystemDynamicsBase<Scalar, XDim, UDim>& system, const Scalar t,
       const Vector<Scalar, XDim>& x, const Vector<Scalar, UDim>& u,
       const Scalar dt) override {
-    const Scalar dt_halve = dt / 2.0;
-    const Scalar dt_sixth = dt / 6.0;
-    const Scalar dt_third = dt / 3.0;
+    const Scalar dt_halve = dt / Scalar(2.0);
+    const Scalar dt_sixth = dt / Scalar(6.0);
+    const Scalar dt_third = dt / Scalar(3.0);
 
     // 系统评估
     const Vector<Scalar, XDim> k1 = system.computeFlowMap(t, x, u);
@@ -170,9 +170,9 @@ class EK4DynamicsDiscretizer
                         const Scalar t, const Vector<Scalar, XDim>& x,
                         const Vector<Scalar, UDim>& u,
                         const Scalar dt) override {
-    const Scalar dt_halve = dt / 2.0;
-    const Scalar dt_sixth = dt / 6.0;
-    const Scalar dt_third = dt / 3.0;
+    const Scalar dt_halve = dt / Scalar(2.0);
+    const Scalar dt_sixth = dt / Scalar(6.0);
+    const Scalar dt_third = dt / Scalar(3.0);
 
     // 系统评估
     VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k1 =

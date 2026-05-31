@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <memory>
-#include <string>
 
 #include "ExampleModels/EXP0.hpp"
 #include "Initialization/DefaultInitializer.hpp"
@@ -53,25 +52,13 @@ class Exp0 : public testing::Test {
     return rolloutSettings;
   };
 
-  DDPSettings_t getSettings(SearchStrategyType strategy,
-                            bool useFeedbackPolicy = true) const {
+  DDPSettings_t getSettings() const {
     DDPSettings_t ddpSettings;
     ddpSettings.timeStep_ = timeStep;
     ddpSettings.maxNumIterations_ = 30;
     ddpSettings.minRelCost_ = minRelCost;
-    ddpSettings.useFeedbackPolicy_ = useFeedbackPolicy;
-    ddpSettings.strategy_ = strategy;
     ddpSettings.lineSearch_.minStepLength = 0.0001;
     return ddpSettings;
-  }
-
-  std::string getTestName(const DDPSettings_t& ddpSettings) const {
-    std::string testName;
-    testName += "EXP0 Test { ";
-    testName += "Algorithm: iLQR,  ";
-    testName +=
-        "Strategy: " + searchStrategyToString(ddpSettings.strategy_) + " }";
-    return testName;
   }
 
   void setConstantReferenceTrajectory() {
@@ -144,17 +131,6 @@ class Exp0 : public testing::Test {
     return solver;
   }
 
-  static std::string searchStrategyToString(SearchStrategyType strategy) {
-    switch (strategy) {
-      case SearchStrategyType::LINE_SEARCH:
-        return "LINE_SEARCH";
-      case SearchStrategyType::LEVENBERG_MARQUARDT:
-        return "LEVENBERG_MARQUARDT";
-      default:
-        return "UNKNOWN";
-    }
-  }
-
   const Scalar startTime = 0.0;
   const Scalar finalTime = 2.0;
   const StateVector_t initState{0.0, 2.0};
@@ -168,7 +144,7 @@ class Exp0 : public testing::Test {
 /******************************************************************************************************/
 TEST_F(Exp0, ddp_feedback_policy) {
   // DDP 设置。
-  auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, true);
+  auto ddpSettings = getSettings();
 
   // 动力学和 rollout。
   exp0::EXP0_Sys1<Scalar> systemDynamics;
@@ -198,9 +174,9 @@ TEST_F(Exp0, ddp_feedback_policy) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-TEST_F(Exp0, ddp_feedforward_policy) {
+TEST_F(Exp0, ddp_controller_bias_is_finite) {
   // DDP 设置。
-  auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, false);
+  auto ddpSettings = getSettings();
 
   // 动力学和 rollout。
   exp0::EXP0_Sys1<Scalar> systemDynamics;
@@ -220,10 +196,9 @@ TEST_F(Exp0, ddp_feedforward_policy) {
   const auto& ctrl = solution.controller_;
 
   EXPECT_EQ(ctrl.getType(), ControllerType::LINEAR)
-      << "MESSAGE: iLQR solution does not contain a controller with "
-         "feedforward terms!";
+      << "MESSAGE: iLQR solution does not contain a linear controller!";
   EXPECT_TRUE(ctrl.biasArray_.back().isAllFinite())
-      << "MESSAGE: iLQR feedforward policy contains invalid values!";
+      << "MESSAGE: iLQR controller bias contains invalid values!";
   EXPECT_DOUBLE_EQ(ctrl.timeStamp_.back(), finalTime)
       << "MESSAGE: iLQR failed in policy final time of controller!";
   EXPECT_DOUBLE_EQ(solution.timeTrajectory_.back(), finalTime)
@@ -235,7 +210,7 @@ TEST_F(Exp0, ddp_feedforward_policy) {
 /******************************************************************************************************/
 TEST_F(Exp0, ddp_moving_horizon) {
   // DDP 设置。
-  const auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, true);
+  const auto ddpSettings = getSettings();
 
   // 动力学和 rollout。
   exp0::EXP0_Sys1<Scalar> systemDynamics;
@@ -284,7 +259,7 @@ TEST_F(Exp0, ddp_moving_horizon) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
-  auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, true);
+  auto ddpSettings = getSettings();
   ddpSettings.maxNumIterations_ = 50;
   ddpSettings.minRelCost_ = 1e-9;
 
@@ -331,7 +306,7 @@ TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
 /******************************************************************************************************/
 TEST_F(Exp0, ddp_q_function) {
   // DDP 设置。
-  auto ddpSettings = getSettings(SearchStrategyType::LINE_SEARCH, true);
+  auto ddpSettings = getSettings();
   ddpSettings.maxNumIterations_ = 50;
   ddpSettings.minRelCost_ = 1e-9;  // 允许更多迭代，使
                                    // 最终线搜索的影响可以忽略。
@@ -415,67 +390,3 @@ TEST_F(Exp0, ddp_q_function) {
       << "MESSAGE for test 3: Derivative of Q function w.r.t. to u is zero: "
       << dQdu3(0);
 }
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-/* 添加参数化测试套件。 */
-class Exp0Param : public Exp0,
-                  public testing::WithParamInterface<SearchStrategyType> {
- protected:
-  SearchStrategyType getSearchStrategy() const { return GetParam(); }
-};
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-TEST_P(Exp0Param, ILQR) {
-  // DDP 设置。
-  const auto ddpSettings = getSettings(getSearchStrategy(), true);
-
-  // 动力学和 rollout。
-  exp0::EXP0_Sys1<Scalar> systemDynamics;
-
-  // 实例化。
-  exp0::EXP0_Cost<Scalar, static_cast<int>(PredictLength + 1)> cost;
-  exp0::EXP0_FinalCost<Scalar, static_cast<int>(PredictLength + 1)> finalCost;
-  Problem_t localProblem;
-  auto ddp =
-      createSolver(ddpSettings, systemDynamics, cost, finalCost, localProblem);
-
-  // 运行 DDP。
-  EXPECT_NO_THROW(ddp->run(startTime, initState));
-
-  // 获取解。
-  const auto& solution = ddp->primalSolution();
-  const auto& ctrl = solution.controller_;
-
-  EXPECT_EQ(ctrl.getType(), ControllerType::LINEAR)
-      << "MESSAGE: " << getTestName(ddpSettings)
-      << ": iLQR solution does not contain a linear feedback policy!";
-  EXPECT_DOUBLE_EQ(ctrl.timeStamp_.back(), finalTime)
-      << "MESSAGE: " << getTestName(ddpSettings)
-      << ": failed in policy final time of controller!";
-  EXPECT_DOUBLE_EQ(solution.timeTrajectory_.back(), finalTime)
-      << "MESSAGE: " << getTestName(ddpSettings)
-      << ": failed in policy final time of trajectory!";
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-INSTANTIATE_TEST_SUITE_P(
-    Exp0ParamCase, Exp0Param,
-    testing::ValuesIn({SearchStrategyType::LINE_SEARCH,
-                       SearchStrategyType::LEVENBERG_MARQUARDT}),
-    [](const testing::TestParamInfo<Exp0Param::ParamType>& info) {
-      /* 返回用于 gtest 摘要的测试名称。 */
-      switch (info.param) {
-        case SearchStrategyType::LINE_SEARCH:
-          return std::string("LINE_SEARCH");
-        case SearchStrategyType::LEVENBERG_MARQUARDT:
-          return std::string("LEVENBERG_MARQUARDT");
-        default:
-          return std::string("UNKNOWN");
-      }
-    });

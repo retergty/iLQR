@@ -3,6 +3,8 @@
  * @brief 线性控制器：u(t,x) = K(t)*x + uff(t)，支持时间/状态插值。
  */
 #pragma once
+#include <cmath>
+
 #include "Controller/Controller.hpp"
 #include "Misc/LinearInterpolation.hpp"
 
@@ -99,7 +101,7 @@ class LinearController final : public ControllerBase<Scalar, XDim, UDim> {
   /** @brief 判断是否为空：若所有时间戳近似为 0 则视为空。 */
   bool empty() const override {
     for (size_t i = 0; i < ArrayLen; ++i) {
-      if (abs(timeStamp_[i]) > 1e-6f) {
+      if (std::abs(timeStamp_[i]) > Scalar(1e-6)) {
         return false;
       }
     }

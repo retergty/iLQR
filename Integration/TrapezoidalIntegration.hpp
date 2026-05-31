@@ -29,7 +29,7 @@ VALUE trapezoidalIntegration(
 
   for (std::size_t k = 1; k < ArrayLen; k++) {
     VALUE temp = valueTrajectory[k - 1] + valueTrajectory[k];
-    temp *= (0.5 * (timeTrajectory[k] - timeTrajectory[k - 1]));
+    temp *= (Scalar(0.5) * (timeTrajectory[k] - timeTrajectory[k - 1]));
     initialValue += temp;
   }  // k 循环结束。
 

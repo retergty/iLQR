@@ -17,7 +17,7 @@
 template <typename Scalar, int XDim, int UDim>
 struct RiccatiModification {
   /** @brief 该节点时间。 */
-  Scalar time_ = 0.0;
+  Scalar time_ = Scalar(0.0);
 
   /** @brief 状态代价的 Riccati 修正矩阵（如 Hessian 修正等）。 */
   Matrix<Scalar, XDim, XDim> deltaQm_;

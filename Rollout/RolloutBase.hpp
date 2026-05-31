@@ -17,7 +17,7 @@ enum class RootFinderType { ANDERSON_BJORCK, PEGASUS, ILLINOIS, REGULA_FALSI };
 template <typename Scalar>
 struct RolloutSettings {
   /** @brief 固定步长 rollout 使用的时间步长。 */
-  Scalar timeStep = 1e-2;
+  Scalar timeStep = Scalar(1e-2);
 
   /** @brief rollout 时是否写入或重建输入轨迹。 */
   bool reconstructInputTrajectory = true;

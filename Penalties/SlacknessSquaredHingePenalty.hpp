@@ -23,7 +23,7 @@ class SlacknessSquaredHingePenalty final : public AugmentedPenaltyBase<Scalar> {
    * 类说明中记为 \alpha。
    */
   struct Config {
-    Config() : Config(10.0, 1.0) {}
+    Config() : Config(Scalar(10.0), Scalar(1.0)) {}
     Config(const Scalar scaleParam, const Scalar stepSizeParam)
         : scale(scaleParam), stepSize(stepSizeParam) {}
     Scalar scale;
@@ -38,27 +38,29 @@ class SlacknessSquaredHingePenalty final : public AugmentedPenaltyBase<Scalar> {
   Scalar getValue(const Scalar t, const Scalar l,
                   const Scalar h) const override {
     (void)t;
-    return (h < l / config_.scale) ? (-l * h + 0.5 * config_.scale * h * h)
-                                   : (-0.5 * l * l / config_.scale);
+    return (h < l / config_.scale)
+               ? (-l * h + Scalar(0.5) * config_.scale * h * h)
+               : (-Scalar(0.5) * l * l / config_.scale);
   }
   Scalar getDerivative(const Scalar t, const Scalar l,
                        const Scalar h) const override {
     (void)t;
-    return (h < l / config_.scale) ? (-l + config_.scale * h) : 0.0;
+    return (h < l / config_.scale) ? (-l + config_.scale * h) : Scalar(0.0);
   }
   Scalar getSecondDerivative(const Scalar t, const Scalar l,
                              const Scalar h) const override {
     (void)t;
-    return (h < l / config_.scale) ? config_.scale : 0.0;
+    return (h < l / config_.scale) ? config_.scale : Scalar(0.0);
   }
 
   Scalar updateMultiplier(const Scalar t, const Scalar l,
                           const Scalar h) const override {
     (void)t;
-    return std::max(0.0, std::max(l - config_.stepSize * config_.scale * h,
-                                  (1.0 - config_.stepSize) * l));
+    return std::max(Scalar(0.0),
+                    std::max(l - config_.stepSize * config_.scale * h,
+                             (Scalar(1.0) - config_.stepSize) * l));
   }
-  Scalar initializeMultiplier() const override { return 0.0; }
+  Scalar initializeMultiplier() const override { return Scalar(0.0); }
 
  private:
   SlacknessSquaredHingePenalty(const SlacknessSquaredHingePenalty& other) =

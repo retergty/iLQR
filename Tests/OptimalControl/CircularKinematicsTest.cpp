@@ -2,15 +2,13 @@
 
 #include <cmath>
 #include <string>
-#include <tuple>
 
 #include "ExampleModels/CircularKinematics.hpp"
 #include "Initialization/DefaultInitializer.hpp"
 #include "iLQR/iLQR.hpp"
 
 class CircularKinematicsTest
-    : public testing::TestWithParam<std::tuple<
-          SearchStrategyType, circular_model::AugmentedLagrangianType>> {
+    : public testing::TestWithParam<circular_model::AugmentedLagrangianType> {
  protected:
   using Scalar = double;
   static constexpr int STATE_DIM = circular_model::STATE_DIM;
@@ -46,12 +44,11 @@ class CircularKinematicsTest
     }
   }
 
-  DDPSettings<Scalar> getSettings(SearchStrategyType strategy) const {
+  DDPSettings<Scalar> getSettings() const {
     DDPSettings<Scalar> ddpSettings;
     ddpSettings.timeStep_ = timeStep;
     ddpSettings.maxNumIterations_ = 75;
     ddpSettings.minRelCost_ = 1e-8;
-    ddpSettings.strategy_ = strategy;
     ddpSettings.lineSearch_.minStepLength = 0.01;
     ddpSettings.lineSearch_.maxStepLength = 1.0;
     ddpSettings.lineSearch_.hessianCorrectionMultiple = 0.01;
@@ -75,22 +72,10 @@ class CircularKinematicsTest
 
  protected:
   std::string getTestName(
-      SearchStrategyType strategy,
       circular_model::AugmentedLagrangianType augmentedLagrangianType) const {
-    switch (strategy) {
-      case SearchStrategyType::LINE_SEARCH:
-        return "Circular-Kinematics Test { Algorithm: iLQR, Strategy: "
-               "LINE_SEARCH, Augmented Lagrangian: " +
-               augmentedLagrangianTypeToString(augmentedLagrangianType) + " }";
-      case SearchStrategyType::LEVENBERG_MARQUARDT:
-        return "Circular-Kinematics Test { Algorithm: iLQR, Strategy: "
-               "LEVENBERG_MARQUARDT, Augmented Lagrangian: " +
-               augmentedLagrangianTypeToString(augmentedLagrangianType) + " }";
-      default:
-        return "Circular-Kinematics Test { Algorithm: iLQR, Strategy: "
-               "UNKNOWN, Augmented Lagrangian: " +
-               augmentedLagrangianTypeToString(augmentedLagrangianType) + " }";
-    }
+    return "Circular-Kinematics Test { Algorithm: iLQR, Augmented "
+           "Lagrangian: " +
+           augmentedLagrangianTypeToString(augmentedLagrangianType) + " }";
   }
 
   void expectCircularMotion(const Solver_t& solver,
@@ -133,9 +118,8 @@ class CircularKinematicsTest
 };
 
 TEST_P(CircularKinematicsTest, ILQR) {
-  const auto strategy = std::get<0>(GetParam());
-  const auto augmentedLagrangianType = std::get<1>(GetParam());
-  const auto ddpSettings = getSettings(strategy);
+  const auto augmentedLagrangianType = GetParam();
+  const auto ddpSettings = getSettings();
   auto& problem =
       circular_model::createCircularKinematicsProblem<Scalar, PredictLength>(
           augmentedLagrangianType);
@@ -146,33 +130,17 @@ TEST_P(CircularKinematicsTest, ILQR) {
                              targetTrajectory.inputTrajectory);
 
   ASSERT_NO_THROW(solver.run(startTime, initState));
-  expectCircularMotion(solver, getTestName(strategy, augmentedLagrangianType));
+  expectCircularMotion(solver, getTestName(augmentedLagrangianType));
 }
 
 INSTANTIATE_TEST_SUITE_P(
     CircularKinematicsTestCase, CircularKinematicsTest,
-    testing::Combine(
-        testing::ValuesIn({SearchStrategyType::LINE_SEARCH}),
-        testing::ValuesIn(
-            {circular_model::AugmentedLagrangianType::Quadratic,
-             circular_model::AugmentedLagrangianType::QuadraticStrong})),
+    testing::ValuesIn(
+        {circular_model::AugmentedLagrangianType::Quadratic,
+         circular_model::AugmentedLagrangianType::QuadraticStrong}),
     [](const testing::TestParamInfo<CircularKinematicsTest::ParamType>& info) {
-      std::string name;
-      switch (std::get<0>(info.param)) {
-        case SearchStrategyType::LINE_SEARCH:
-          name += "LINE_SEARCH";
-          break;
-        case SearchStrategyType::LEVENBERG_MARQUARDT:
-          name += "LEVENBERG_MARQUARDT";
-          break;
-        default:
-          name += "UNKNOWN";
-          break;
-      }
-      name += "__";
-      name += CircularKinematicsTest::augmentedLagrangianTypeToString(
-          std::get<1>(info.param));
-      return name;
+      return CircularKinematicsTest::augmentedLagrangianTypeToString(
+          info.param);
     });
 
 int main(int argc, char** argv) {

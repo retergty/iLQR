@@ -87,7 +87,7 @@ class StateInputAugmentedLagrangian final
   Multiplier<Scalar, CDim> initializeLagrangian(
       const Scalar time) const override {
     (void)time;
-    return {1.0, penalty_.initializeMultipliers()};
+    return {Scalar(1.0), penalty_.initializeMultipliers()};
   }
 
  private:

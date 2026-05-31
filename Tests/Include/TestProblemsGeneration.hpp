@@ -220,7 +220,7 @@ inline bool isQpFeasible(
   if (svd.rank() != A.rows()) {
     std::cerr << "A is not full row-rank\n";
     return false;
-  } else if (conditionNumber > 1e6) {
+  } else if (conditionNumber > Scalar(1e6)) {
     std::cerr << "A is ill-conditioned\n";
     return false;
   }

@@ -15,22 +15,22 @@
 template <typename Scalar>
 struct PerformanceIndex {
   /** @brief 该次 rollout 的 merit 函数值（用于线搜索与收敛判据）。 */
-  Scalar merit = 0.0;
+  Scalar merit = Scalar(0.0);
 
   /** @brief 该次 rollout 的总代价。 */
-  Scalar cost = 0.0;
+  Scalar cost = Scalar(0.0);
 
   /** @brief 对偶可行性的误差平方和（终端/中间时刻违反的平方范数之和）。 */
-  Scalar dualFeasibilitiesSSE = 0.0;
+  Scalar dualFeasibilitiesSSE = Scalar(0.0);
 
   /** @brief 系统动力学违反的误差平方和。 */
-  Scalar dynamicsViolationSSE = 0.0;
+  Scalar dynamicsViolationSSE = Scalar(0.0);
 
   /** @brief 等式约束拉格朗日项之和（状态等式、状态-输入等式惩罚）。 */
-  Scalar equalityLagrangian = 0.0;
+  Scalar equalityLagrangian = Scalar(0.0);
 
   /** @brief 不等式约束拉格朗日项之和（状态不等式、状态-输入不等式惩罚）。 */
-  Scalar inequalityLagrangian = 0.0;
+  Scalar inequalityLagrangian = Scalar(0.0);
 
   /** @brief 将另一性能指标逐项加到本对象。 */
   PerformanceIndex& operator+=(const PerformanceIndex& rhs) {
@@ -60,7 +60,8 @@ struct PerformanceIndex {
    * @param [in] prec 数值比较精度，默认 1e-8。
    * @return 各分量均在 prec 内近似相等则返回 true。
    */
-  bool isApprox(const PerformanceIndex& other, const Scalar prec = 1e-8) const {
+  bool isApprox(const PerformanceIndex& other,
+                const Scalar prec = Scalar(1e-8)) const {
     return numerics::almost_eq(this->merit, other.merit, prec) &&
            numerics::almost_eq(this->cost, other.cost, prec) &&
            numerics::almost_eq(this->dualFeasibilitiesSSE,
@@ -121,9 +122,9 @@ template <typename Scalar, typename Dims, typename Layout>
 PerformanceIndex<Scalar> toPerformanceIndex(
     const Metrics<Scalar, Dims, Layout>& m) {
   PerformanceIndex<Scalar> performanceIndex;
-  performanceIndex.merit = 0.0;  // 留给求解器填充。
+  performanceIndex.merit = Scalar(0.0);  // 留给求解器填充。
   performanceIndex.cost = m.cost;
-  performanceIndex.dualFeasibilitiesSSE = 0.0;  // 留给求解器填充。
+  performanceIndex.dualFeasibilitiesSSE = Scalar(0.0);  // 留给求解器填充。
   performanceIndex.dynamicsViolationSSE =
       getEqConstraintsSSE(m.dynamicsViolation);
   performanceIndex.equalityLagrangian = sumPenalties(m.stateEqLagrangian) +

@@ -33,37 +33,37 @@ class RungeKuttaDormandPrince5Stepper {
               bool computeDxdtOut = true) {
     /* Runge-Kutta Dormand-Prince Butcher 表常数。
      * https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method */
-    constexpr Scalar a2 = 1.0 / 5;
-    constexpr Scalar a3 = 3.0 / 10;
-    constexpr Scalar a4 = 4.0 / 5;
-    constexpr Scalar a5 = 8.0 / 9;
+    constexpr Scalar a2 = Scalar(1.0) / Scalar(5.0);
+    constexpr Scalar a3 = Scalar(3.0) / Scalar(10.0);
+    constexpr Scalar a4 = Scalar(4.0) / Scalar(5.0);
+    constexpr Scalar a5 = Scalar(8.0) / Scalar(9.0);
 
-    constexpr Scalar b21 = 1.0 / 5;
+    constexpr Scalar b21 = Scalar(1.0) / Scalar(5.0);
 
-    constexpr Scalar b31 = 3.0 / 40;
-    constexpr Scalar b32 = 9.0 / 40;
+    constexpr Scalar b31 = Scalar(3.0) / Scalar(40.0);
+    constexpr Scalar b32 = Scalar(9.0) / Scalar(40.0);
 
-    constexpr Scalar b41 = 44.0 / 45;
-    constexpr Scalar b42 = -56.0 / 15;
-    constexpr Scalar b43 = 32.0 / 9;
+    constexpr Scalar b41 = Scalar(44.0) / Scalar(45.0);
+    constexpr Scalar b42 = -Scalar(56.0) / Scalar(15.0);
+    constexpr Scalar b43 = Scalar(32.0) / Scalar(9.0);
 
-    constexpr Scalar b51 = 19372.0 / 6561;
-    constexpr Scalar b52 = -25360.0 / 2187;
-    constexpr Scalar b53 = 64448.0 / 6561;
-    constexpr Scalar b54 = -212.0 / 729;
+    constexpr Scalar b51 = Scalar(19372.0) / Scalar(6561.0);
+    constexpr Scalar b52 = -Scalar(25360.0) / Scalar(2187.0);
+    constexpr Scalar b53 = Scalar(64448.0) / Scalar(6561.0);
+    constexpr Scalar b54 = -Scalar(212.0) / Scalar(729.0);
 
-    constexpr Scalar b61 = 9017.0 / 3168;
-    constexpr Scalar b62 = -355.0 / 33;
-    constexpr Scalar b63 = 46732.0 / 5247;
-    constexpr Scalar b64 = 49.0 / 176;
-    constexpr Scalar b65 = -5103.0 / 18656;
+    constexpr Scalar b61 = Scalar(9017.0) / Scalar(3168.0);
+    constexpr Scalar b62 = -Scalar(355.0) / Scalar(33.0);
+    constexpr Scalar b63 = Scalar(46732.0) / Scalar(5247.0);
+    constexpr Scalar b64 = Scalar(49.0) / Scalar(176.0);
+    constexpr Scalar b65 = -Scalar(5103.0) / Scalar(18656.0);
 
-    constexpr Scalar c1 = 35.0 / 384;
+    constexpr Scalar c1 = Scalar(35.0) / Scalar(384.0);
     // c2 = 0
-    constexpr Scalar c3 = 500.0 / 1113;
-    constexpr Scalar c4 = 125.0 / 192;
-    constexpr Scalar c5 = -2187.0 / 6784;
-    constexpr Scalar c6 = 11.0 / 84;
+    constexpr Scalar c3 = Scalar(500.0) / Scalar(1113.0);
+    constexpr Scalar c4 = Scalar(125.0) / Scalar(192.0);
+    constexpr Scalar c5 = -Scalar(2187.0) / Scalar(6784.0);
+    constexpr Scalar c6 = Scalar(11.0) / Scalar(84.0);
 
     k1_ = dxdt;  // k1 = 上一次迭代中的 system(x, t)。
     Vector<Scalar, XDim> x = x0 + dt * b21 * k1_;
@@ -142,7 +142,7 @@ class RungeKuttaDormandPrince5 : public IntegratorBase<Scalar, XDim> {
                       const Scalar dt) override {
     // 通过加入一个 dt 的小分数确保包含 finalTime，使得：N
     // * dt <= finalTime < (N + 1) * dt。
-    const Scalar finalTimeLocal = finalTime + 0.1 * dt;
+    const Scalar finalTimeLocal = finalTime + Scalar(0.1) * dt;
     const int numSteps = static_cast<int>((finalTimeLocal - startTime) / dt);
     assert(numSteps >= 0);
 

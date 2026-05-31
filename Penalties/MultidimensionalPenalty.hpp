@@ -62,7 +62,7 @@ class MultidimensionalPenalty final {
       const Scalar t,
       const VectorFunctionLinearApproximation<Scalar, CDim, XDim, UDim>& h,
       const Vector<Scalar, CDim>& l) const {
-    Scalar penaltyValue = 0.0;
+    Scalar penaltyValue = Scalar(0.0);
     Vector<Scalar, CDim> penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) =
         getPenaltyValue1stDev2ndDev(t, h.f, l);
@@ -98,7 +98,7 @@ class MultidimensionalPenalty final {
       const Scalar t,
       const VectorFunctionQuadraticApproximation<Scalar, CDim, XDim, UDim>& h,
       const Vector<Scalar, CDim>& l) const {
-    Scalar penaltyValue = 0.0;
+    Scalar penaltyValue = Scalar(0.0);
     Vector<Scalar, CDim> penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) =
         getPenaltyValue1stDev2ndDev(t, h.f, l);
@@ -178,7 +178,7 @@ class MultidimensionalPenalty final {
   std::tuple<Scalar, Vector<Scalar, CDim>, Vector<Scalar, CDim>>
   getPenaltyValue1stDev2ndDev(Scalar t, const Vector<Scalar, CDim>& h,
                               const Vector<Scalar, CDim>& l) const {
-    Scalar penaltyValue = 0.0;
+    Scalar penaltyValue = Scalar(0.0);
     Vector<Scalar, CDim> penaltyDerivative;
     Vector<Scalar, CDim> penaltySecondDerivative;
     for (int i = 0; i < CDim; ++i) {

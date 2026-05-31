@@ -25,7 +25,7 @@ enum class HessianCorrectionStrategy {
 template <typename Scalar, int Dimisions>
 void shiftHessian(HessianCorrectionStrategy strategy,
                   Matrix<Scalar, Dimisions, Dimisions>& matrix,
-                  Scalar minEigenvalue = 1e-6) {
+                  Scalar minEigenvalue = Scalar(1e-6)) {
   switch (strategy) {
     case HessianCorrectionStrategy::DIAGONAL_SHIFT: {
       for (int i = 0; i < Dimisions; ++i) {

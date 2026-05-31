@@ -223,9 +223,7 @@ class iLQR {
   const PerformanceIndex_t performanceIndex() const {
     return performanceIndex_;
   }
-  TargetTrajectories_t& targetTrajectory() {
-    return targetTrajectory_;
-  }
+  TargetTrajectories_t& targetTrajectory() { return targetTrajectory_; }
   const TargetTrajectories_t& targetTrajectory() const {
     return targetTrajectory_;
   }
@@ -448,7 +446,7 @@ class iLQR {
     }
     // 使用梯形近似方法积分。
     return trapezoidalIntegration(controller.timeStamp_, biasArraySquaredNorm,
-                                  0.0);
+                                  Scalar(0.0));
   }
 
  private:
@@ -493,7 +491,7 @@ class iLQR {
     // 通过加入一个 dt 的小分数确保包含 finalTime，使得：N
     // * dt <= finalTime < (N + 1) * dt。
     Scalar finalTimeLocal = std::min(lastFinalTime_, finalTime_) +
-                            static_cast<Scalar>(0.01) * ddpSettings_.timeStep_;
+                            Scalar(0.01) * ddpSettings_.timeStep_;
     int numSteps = std::min(
         static_cast<int>((finalTimeLocal - initTime_) / ddpSettings_.timeStep_),
         static_cast<int>(PredictLength));
@@ -581,11 +579,9 @@ class iLQR {
         optimalControlProblem_, targetTrajectory_, time, state, multiplier);
 
     // 修正终端时刻 Hessian。
-    if (ddpSettings_.strategy_ == SearchStrategyType::LINE_SEARCH) {
-      shiftHessian(ddpSettings_.lineSearch_.hessianCorrectionStrategy,
-                   modelData.cost.dfdxx,
-                   ddpSettings_.lineSearch_.hessianCorrectionMultiple);
-    }
+    shiftHessian(ddpSettings_.lineSearch_.hessianCorrectionStrategy,
+                 modelData.cost.dfdxx,
+                 ddpSettings_.lineSearch_.hessianCorrectionMultiple);
   }
 
   /**
@@ -816,7 +812,7 @@ class iLQR {
         unoptimizedController_, nominalDualData_.dualSolution, solution);
 
     if (success) {
-      avgTimeStepFP_ = 0.9 * avgTimeStepFP_ + 0.1 * avgTimeStep;
+      avgTimeStepFP_ = Scalar(0.9) * avgTimeStepFP_ + Scalar(0.1) * avgTimeStep;
     }
 
     // 更新对偶解。
@@ -868,7 +864,7 @@ class iLQR {
         indexAlpha, primalSolution.stateTrajectory_);
     const StateVector_t deltaX = state - xNominal;
     const StateVector_t SmDeltaX = valueFunction.dfdxx * deltaX;
-    valueFunction.f += deltaX.dot(0.5 * SmDeltaX + valueFunction.dfdx);
+    valueFunction.f += deltaX.dot(Scalar(0.5) * SmDeltaX + valueFunction.dfdx);
     valueFunction.dfdx += SmDeltaX;  // 在更新 f 后调整 dfdx！
 
     return valueFunction;
@@ -912,9 +908,9 @@ class iLQR {
   TargetTrajectories_t targetTrajectory_;
 
   // 当前求解时间区间和初始条件。
-  Scalar initTime_{0.0};
-  Scalar finalTime_{0.0};
-  Scalar lastFinalTime_{0.0};
+  Scalar initTime_{Scalar(0.0)};
+  Scalar finalTime_{Scalar(0.0)};
+  Scalar lastFinalTime_{Scalar(0.0)};
   StateVector_t initState_;
 
   // 当前反向递推使用的名义数据。
@@ -937,7 +933,7 @@ class iLQR {
   // 性能和迭代记录。
   PerformanceIndex_t performanceIndex_;
   PerformanceIndex_t performanceIndexLast_;
-  Scalar avgTimeStepFP_ = 0.0;
-  Scalar avgTimeStepBP_ = 0.0;
+  Scalar avgTimeStepFP_ = Scalar(0.0);
+  Scalar avgTimeStepBP_ = Scalar(0.0);
   size_t totalNumIterations_{0};
 };

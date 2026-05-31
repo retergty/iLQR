@@ -24,9 +24,9 @@ class DoubleIntegratorReachingTask {
   static constexpr int STATE_DIM = 2;
   static constexpr int INPUT_DIM = 1;
   static constexpr int GOAL_CONSTRAINT_DIM = STATE_DIM;
-  static constexpr Scalar timeStep = 1e-2;
-  static constexpr Scalar minRelCost = 1e-12;  // 避免过早终止。
-  static constexpr Scalar constraintTolerance = 1e-3;
+  static constexpr Scalar timeStep = Scalar(1e-2);
+  static constexpr Scalar minRelCost = Scalar(1e-12);  // 避免过早终止。
+  static constexpr Scalar constraintTolerance = Scalar(1e-3);
   using StateVector_t = Vector<Scalar, STATE_DIM>;
   using StateMatrix_t = Matrix<Scalar, STATE_DIM, STATE_DIM>;
   using InputVector_t = Vector<Scalar, INPUT_DIM>;
@@ -50,7 +50,7 @@ class DoubleIntegratorReachingTask {
   virtual ~DoubleIntegratorReachingTask() = default;
 
  protected:
-  const Scalar tGoal = 1.0;
+  const Scalar tGoal = Scalar(1.0);
   const StateVector_t xInit = StateVector_t::Zero();
   const StateVector_t xGoal{Scalar(2.0), Scalar(0.0)};
 
@@ -71,8 +71,8 @@ class DoubleIntegratorReachingTask {
     const GoalConstraint_t& constraint() const { return constraint_; }
 
    private:
-    static constexpr Scalar penaltyScale = 10.0;
-    static constexpr Scalar stepSize = 1.0;
+    static constexpr Scalar penaltyScale = Scalar(10.0);
+    static constexpr Scalar stepSize = Scalar(1.0);
 
     GoalConstraint_t constraint_;
     GoalPenalty_t scalarPenalty_;
