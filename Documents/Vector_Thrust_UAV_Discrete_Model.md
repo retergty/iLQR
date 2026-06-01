@@ -2,13 +2,13 @@
 
 ## 状态与输入
 
-考虑姿态在预测时域内已知且近似不变的矢量无人机平动模型。采用 NED 全局坐标系速度与上一拍机体系推力构成增广状态：
+考虑姿态在预测时域内已知且近似不变的矢量无人机平动模型。采用 NED 全局坐标系速度与上一拍机体系推力加速度构成增广状态：
 
 $$
 X_k =
 \begin{bmatrix}
 v_k^N \\
-F_{k-1}^B
+a_{T,k-1}^B
 \end{bmatrix}
 \in \mathbb{R}^6
 $$
@@ -22,27 +22,33 @@ $$
 表示 NED 全局坐标系下的速度，且：
 
 $$
-F_{k-1}^B \in \mathbb{R}^3
+a_{T,k-1}^B \in \mathbb{R}^3
 $$
 
-表示上一采样时刻的机体系推力。
+表示上一采样时刻的机体系推力加速度，其中：
 
-在每次 MPC 求解开始时，初始增广状态应使用真实上一控制周期的推力：
+$$
+a_{T,k}^B := \frac{F_k^B}{m}
+$$
+
+其单位为 $\mathrm{m}/\mathrm{s}^2$。若后续串联加速度控制器 `acc_control`，则优化器可以直接输出 $a_{T,k}^B$，由下游控制器完成推力或执行器指令转换。
+
+在每次 MPC 求解开始时，初始增广状态应使用真实上一控制周期的机体系推力加速度：
 
 $$
 X_0 =
 \begin{bmatrix}
 v_0^N \\
-F_{\mathrm{last}}^B
+a_{T,\mathrm{last}}^B
 \end{bmatrix}
 $$
 
-其中 $F_{\mathrm{last}}^B$ 应来自上一周期实际发送或估计得到的机体系推力。若将其随意置零，第一步方向变化代价会失去物理意义。
+其中 $a_{T,\mathrm{last}}^B$ 应来自上一周期实际发送、估计或由上一拍推力除以质量得到的机体系推力加速度。若将其随意置零，第一步方向变化代价会失去物理意义。
 
-控制输入定义为当前采样时刻的机体系推力：
+控制输入定义为当前采样时刻的机体系推力加速度：
 
 $$
-U_k = F_k^B \in \mathbb{R}^3
+U_k = a_{T,k}^B \in \mathbb{R}^3
 $$
 
 ## 离散动力学
@@ -53,7 +59,7 @@ $$
 R_B^N
 $$
 
-表示机体系到 NED 全局坐标系的旋转矩阵，预测时域内认为常量；$m$ 为质量，$\Delta t$ 为采样周期，$g e_3$ 为 NED 全局坐标系下沿 Down 轴正方向的重力加速度项。
+表示机体系到 NED 全局坐标系的旋转矩阵，预测时域内认为常量；$\Delta t$ 为采样周期，$g e_3$ 为 NED 全局坐标系下沿 Down 轴正方向的重力加速度项。由于控制输入已经是机体系推力加速度，离散动力学中不再显式出现质量 $m$。
 
 离散动力学为：
 
@@ -63,7 +69,7 @@ X_{k+1}
 f_d(X_k, U_k)
 =
 \begin{bmatrix}
-v_k^N + \Delta t \left(\frac{1}{m} R_B^N U_k + g e_3\right) \\
+v_k^N + \Delta t \left(R_B^N U_k + g e_3\right) \\
 U_k
 \end{bmatrix}
 $$
@@ -89,7 +95,7 @@ $$
 $$
 B_d =
 \begin{bmatrix}
-\frac{\Delta t}{m} R_B^N \\
+\Delta t R_B^N \\
 I_3
 \end{bmatrix}
 $$
@@ -118,10 +124,10 @@ $$
 v_{\mathrm{ref},k}^N
 $$
 
-参考推力为：
+参考推力加速度为：
 
 $$
-F_{\mathrm{ref},k}^B
+a_{T,\mathrm{ref},k}^B
 $$
 
 基础二次代价可写为：
@@ -135,20 +141,20 @@ Q_v
 \left(v_k^N - v_{\mathrm{ref},k}^N\right)
 +
 \frac{1}{2}
-\left(U_k - F_{\mathrm{ref},k}^B\right)^T
-R_F
-\left(U_k - F_{\mathrm{ref},k}^B\right)
+\left(U_k - a_{T,\mathrm{ref},k}^B\right)^T
+R_a
+\left(U_k - a_{T,\mathrm{ref},k}^B\right)
 $$
 
-## 推力方向转角速度代价
+## 推力加速度方向转角速度代价
 
-上一拍推力方向和当前推力方向分别为：
+上一拍推力加速度方向和当前推力加速度方向分别为：
 
 $$
 n_{k-1}
 =
-\frac{F_{k-1}^B}
-{\sqrt{(F_{k-1}^B)^T F_{k-1}^B + \varepsilon}}
+\frac{a_{T,k-1}^B}
+{\sqrt{(a_{T,k-1}^B)^T a_{T,k-1}^B + \varepsilon}}
 $$
 
 $$
@@ -165,9 +171,9 @@ $$
 =
 n_k^T n_{k-1}
 =
-\frac{U_k^T F_{k-1}^B}
+\frac{U_k^T a_{T,k-1}^B}
 {\sqrt{U_k^T U_k + \varepsilon}
- \sqrt{(F_{k-1}^B)^T F_{k-1}^B + \varepsilon}}
+ \sqrt{(a_{T,k-1}^B)^T a_{T,k-1}^B + \varepsilon}}
 $$
 
 为避免 $\arccos(\cdot)$ 在 $\cos\theta_k \to 1$ 附近导数奇异，采用：
@@ -261,10 +267,10 @@ $$
 其中：
 
 $$
-r(z) = n(U_k) - n(F_{k-1}^B)
+r(z) = n(U_k) - n(a_{T,k-1}^B)
 $$
 
-由于 $n_k$ 和 $n_{k-1}$ 均由推力向量归一化得到，$r_k$ 对状态与输入是非线性的。先对残差平方形式求微分：
+由于 $n_k$ 和 $n_{k-1}$ 均由推力加速度向量归一化得到，$r_k$ 对状态与输入是非线性的。先对残差平方形式求微分：
 
 $$
 d\ell
@@ -327,33 +333,33 @@ $$
 对归一化函数：
 
 $$
-n(F)
+n(y)
 :=
-\frac{F}{\sqrt{F^T F + \varepsilon}}
+\frac{y}{\sqrt{y^T y + \varepsilon}}
 $$
 
 令：
 
 $$
-s(F) := \sqrt{F^T F + \varepsilon}
+s(y) := \sqrt{y^T y + \varepsilon}
 $$
 
 则：
 
 $$
-n(F) = s(F)^{-1} F
+n(y) = s(y)^{-1} y
 $$
 
-先求 $s(F)$ 的微分：
+先求 $s(y)$ 的微分：
 
 $$
 ds
 =
 \frac{1}{2}
-\left(F^T F + \varepsilon\right)^{-1/2}
-d(F^T F)
+\left(y^T y + \varepsilon\right)^{-1/2}
+d(y^T y)
 =
-\frac{F^T dF}{s}
+\frac{y^T dy}{s}
 $$
 
 因此：
@@ -363,17 +369,17 @@ d\left(s^{-1}\right)
 =
 -s^{-2} ds
 =
--\frac{F^T dF}{s^3}
+-\frac{y^T dy}{s^3}
 $$
 
-对 $n(F)=s^{-1}F$ 求微分：
+对 $n(y)=s^{-1}y$ 求微分：
 
 $$
 dn
 =
-s^{-1} dF
+s^{-1} dy
 +
-F d\left(s^{-1}\right)
+y d\left(s^{-1}\right)
 $$
 
 代入上式：
@@ -381,21 +387,21 @@ $$
 $$
 dn
 =
-\frac{1}{s} dF
+\frac{1}{s} dy
 -
-\frac{F F^T}{s^3} dF
+\frac{y y^T}{s^3} dy
 $$
 
 所以归一化函数的一阶导为：
 
 $$
-J_n(F)
+J_n(y)
 :=
-\frac{\partial n}{\partial F}
+\frac{\partial n}{\partial y}
 =
-\frac{1}{s(F)} I_3
+\frac{1}{s(y)} I_3
 -
-\frac{1}{s(F)^3} F F^T
+\frac{1}{s(y)^3} y y^T
 $$
 
 现在将状态按本文模型分块：
@@ -404,20 +410,20 @@ $$
 X_k =
 \begin{bmatrix}
 v_k^N \\
-F_{k-1}^B
+a_{T,k-1}^B
 \end{bmatrix}
 $$
 
-定义选择矩阵 $S_F \in \mathbb{R}^{3 \times 6}$，用于从状态中取出上一拍推力：
+定义选择矩阵 $S_a \in \mathbb{R}^{3 \times 6}$，用于从状态中取出上一拍推力加速度：
 
 $$
-F_{k-1}^B = S_F X_k
+a_{T,k-1}^B = S_a X_k
 $$
 
 其中：
 
 $$
-S_F =
+S_a =
 \begin{bmatrix}
 0_3 & I_3
 \end{bmatrix}
@@ -430,7 +436,7 @@ r_k
 =
 n(U_k)
 -
-n(S_F X_k)
+n(S_a X_k)
 $$
 
 因此对状态和输入的 Jacobian 分别为：
@@ -440,7 +446,7 @@ J_{r,x}
 :=
 \frac{\partial r_k}{\partial X_k}
 =
--J_n(F_{k-1}^B) S_F
+-J_n(a_{T,k-1}^B) S_a
 $$
 
 $$
@@ -451,12 +457,12 @@ J_{r,u}
 J_n(U_k)
 $$
 
-等价地，若直接看状态中的推力分量，则有：
+等价地，若直接看状态中的推力加速度分量，则有：
 
 $$
-\frac{\partial r_k}{\partial F_{k-1}^B}
+\frac{\partial r_k}{\partial a_{T,k-1}^B}
 =
--J_n(F_{k-1}^B)
+-J_n(a_{T,k-1}^B)
 $$
 
 $$
@@ -511,7 +517,7 @@ $$
 \begin{bmatrix}
 0_3 \\
 -w_{\mathrm{angle}}
-J_n(F_{k-1}^B)^T r_k
+J_n(a_{T,k-1}^B)^T r_k
 \end{bmatrix}
 $$
 
@@ -528,8 +534,8 @@ $$
 0_3 & 0_3 \\
 0_3 &
 w_{\mathrm{angle}}
-J_n(F_{k-1}^B)^T
-J_n(F_{k-1}^B)
+J_n(a_{T,k-1}^B)^T
+J_n(a_{T,k-1}^B)
 \end{bmatrix}
 $$
 
@@ -548,11 +554,11 @@ $$
 0_3 &
 -w_{\mathrm{angle}}
 J_n(U_k)^T
-J_n(F_{k-1}^B)
+J_n(a_{T,k-1}^B)
 \end{bmatrix}
 $$
 
-这里 $\ell_{ux}$ 的尺寸为 $3 \times 6$，其左侧对应速度状态的 $3 \times 3$ 块为零，右侧对应上一拍推力状态的 $3 \times 3$ 块为非零。该结构正好对应代码中 `dfdux.block<3, 3>(0, 3)` 的填充方式。
+这里 $\ell_{ux}$ 的尺寸为 $3 \times 6$，其左侧对应速度状态的 $3 \times 3$ 块为零，右侧对应上一拍推力加速度状态的 $3 \times 3$ 块为非零。该结构正好对应代码中 `dfdux.block<3, 3>(0, 3)` 的填充方式。
 
 上述 Gauss-Newton Hessian 可写成：
 
@@ -571,7 +577,7 @@ $$
 
 因此它是半正定矩阵。相比手写完整 Hessian，该近似更容易实现，也更适合 iLQR 反向 Riccati 递推中的局部二次模型。
 
-需要注意的是，引入 $\varepsilon$ 后，$n(F)$ 的模长不再严格等于 1。因此：
+需要注意的是，引入 $\varepsilon$ 后，$n(y)$ 的模长不再严格等于 1。因此：
 
 $$
 \frac{1}{2}
@@ -580,11 +586,11 @@ $$
 1 - n_k^T n_{k-1}
 $$
 
-二者只在推力幅值远大于 $\sqrt{\varepsilon}$ 时近似相等。若希望完全保持原始代价值，可仍使用 $1 - n_k^T n_{k-1}$ 计算 cost；若希望获得更稳定且实现简单的二次近似，可将残差平方形式作为方向平滑项的工程实现形式，并配合低推力门控权重。
+二者只在推力加速度幅值远大于 $\sqrt{\varepsilon}$ 时近似相等。若希望完全保持原始代价值，可仍使用 $1 - n_k^T n_{k-1}$ 计算 cost；若希望获得更稳定且实现简单的二次近似，可将残差平方形式作为方向平滑项的工程实现形式，并配合低推力加速度门控权重。
 
-## 低推力门控
+## 低推力加速度门控
 
-当 $\|U_k\|$ 或 $\|F_{k-1}^B\|$ 很小时，推力方向本身没有稳定的物理意义。此时即使通过 $\varepsilon$ 避免了除零，方向代价仍可能给优化器施加不合理的惩罚。因此可引入门控权重：
+当 $\|U_k\|$ 或 $\|a_{T,k-1}^B\|$ 很小时，推力加速度方向本身没有稳定的物理意义。此时即使通过 $\varepsilon$ 避免了除零，方向代价仍可能给优化器施加不合理的惩罚。因此可引入门控权重：
 
 $$
 \gamma_k \in [0, 1]
@@ -611,13 +617,13 @@ w_{\mathrm{angle}}
 r_k^T r_k
 $$
 
-其中 $\gamma_k$ 应随当前推力和上一拍推力的幅值降低而减小。一个简单的平滑门控形式为：
+其中 $\gamma_k$ 应随当前推力加速度和上一拍推力加速度的幅值降低而减小。一个简单的平滑门控形式为：
 
 $$
 \gamma_k
 :=
 \sigma(\|U_k\|)
-\sigma(\|F_{k-1}^B\|)
+\sigma(\|a_{T,k-1}^B\|)
 $$
 
 其中：
@@ -625,16 +631,16 @@ $$
 $$
 \sigma(s)
 :=
-\frac{s^2}{s^2 + F_{\min}^2}
+\frac{s^2}{s^2 + a_{\min}^2}
 $$
 
-$F_{\min}$ 表示方向代价开始变得可信的推力尺度。该形式满足：
+$a_{\min}$ 表示方向代价开始变得可信的推力加速度尺度。该形式满足：
 
 $$
 \sigma(0) = 0
 $$
 
-且当 $s \gg F_{\min}$ 时：
+且当 $s \gg a_{\min}$ 时：
 
 $$
 \sigma(s) \to 1
@@ -645,7 +651,7 @@ $$
 $$
 \gamma_k =
 \begin{cases}
-1, & \|U_k\| \ge F_{\min},\ \|F_{k-1}^B\| \ge F_{\min} \\
+1, & \|U_k\| \ge a_{\min},\ \|a_{T,k-1}^B\| \ge a_{\min} \\
 0, & \text{otherwise}
 \end{cases}
 $$
@@ -670,7 +676,7 @@ w_{\mathrm{angle}}
 J_r^T J_r
 $$
 
-这样可以保持 Gauss-Newton Hessian 的半正定结构，并避免低推力区域的方向代价主导优化。
+这样可以保持 Gauss-Newton Hessian 的半正定结构，并避免低推力加速度区域的方向代价主导优化。
 
 ## 完整离散阶段代价
 
@@ -695,20 +701,20 @@ Q_v
 \left(v_k^N - v_{\mathrm{ref},k}^N\right)
 +
 \frac{1}{2}
-\left(U_k - F_{\mathrm{ref},k}^B\right)^T
-R_F
-\left(U_k - F_{\mathrm{ref},k}^B\right)
+\left(U_k - a_{T,\mathrm{ref},k}^B\right)^T
+R_a
+\left(U_k - a_{T,\mathrm{ref},k}^B\right)
 +
 w_{\mathrm{angle}}
 \left(
 1 -
-\frac{U_k^T F_{k-1}^B}
+\frac{U_k^T a_{T,k-1}^B}
 {\sqrt{U_k^T U_k + \varepsilon}
- \sqrt{(F_{k-1}^B)^T F_{k-1}^B + \varepsilon}}
+ \sqrt{(a_{T,k-1}^B)^T a_{T,k-1}^B + \varepsilon}}
 \right)
 $$
 
-若启用低推力门控，则将最后一项中的 $w_{\mathrm{angle}}$ 替换为 $\gamma_k w_{\mathrm{angle}}$。
+若启用低推力加速度门控，则将最后一项中的 $w_{\mathrm{angle}}$ 替换为 $\gamma_k w_{\mathrm{angle}}$。
 
 预测时域总代价为：
 
@@ -732,15 +738,15 @@ Q_f
 \left(v_N^N - v_{\mathrm{ref},N}^N\right)
 $$
 
-如果希望终端时推力也接近稳态或参考推力，可加入可选终端项：
+如果希望终端时推力加速度也接近稳态或参考推力加速度，可加入可选终端项：
 
 $$
 \frac{1}{2}
-\left(F_{N-1}^B - F_{\mathrm{ref},N}^B\right)^T
-Q_{F,f}
-\left(F_{N-1}^B - F_{\mathrm{ref},N}^B\right)
+\left(a_{T,N-1}^B - a_{T,\mathrm{ref},N}^B\right)^T
+Q_{a,f}
+\left(a_{T,N-1}^B - a_{T,\mathrm{ref},N}^B\right)
 $$
 
 ## 备注
 
-当 $\|U_k\|$ 或 $\|F_{k-1}^B\|$ 很小时，推力方向本身物理意义变弱。工程实现中可通过 $\varepsilon$ 保证数值稳定，但仅靠 $\varepsilon$ 不能保证低推力区域的物理合理性。更稳妥的做法是在低推力区间引入门控权重 $\gamma_k$，必要时降低或关闭方向变化代价。
+当 $\|U_k\|$ 或 $\|a_{T,k-1}^B\|$ 很小时，推力加速度方向本身物理意义变弱。工程实现中可通过 $\varepsilon$ 保证数值稳定，但仅靠 $\varepsilon$ 不能保证低推力加速度区域的物理合理性。更稳妥的做法是在低推力加速度区间引入门控权重 $\gamma_k$，必要时降低或关闭方向变化代价。

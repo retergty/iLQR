@@ -11,7 +11,6 @@ namespace {
 using Scalar = double;
 constexpr size_t PredictLength = 15;
 constexpr Scalar TimeStep = 0.01;
-constexpr Scalar Mass = 1.0;
 constexpr Scalar Gravity = 9.8;
 constexpr size_t LoopCycle = 1000000;
 
@@ -25,7 +24,7 @@ using InputVector = typename Solver::InputVector_t;
 using TargetTrajectories = typename Solver::TargetTrajectories_t;
 
 InputVector hoverInput() {
-  return InputVector{Scalar(0.0), Scalar(0.0), -Mass * Gravity};
+  return InputVector{Scalar(0.0), Scalar(0.0), -Gravity};
 }
 
 class HoverInitializer final
@@ -40,7 +39,7 @@ class HoverInitializer final
     input = hoverInput();
 
     nextState.template head<3>() = state.template head<3>();
-    nextState(2) += dt * (input(2) / Mass + Gravity);
+    nextState(2) += dt * (input(2) + Gravity);
     nextState.template tail<3>() = input;
   }
 };
@@ -77,7 +76,7 @@ void runOneMpcCycle(Solver& solver, Solver::OptimalControlProblem_t& problem,
 
 int main() {
   auto& problem =
-      thrust_vector::createThrustVectorProblem<Scalar, PredictLength>(Mass);
+      thrust_vector::createThrustVectorProblem<Scalar, PredictLength>();
   HoverInitializer initializer;
 
   DDPSettings<Scalar> settings;

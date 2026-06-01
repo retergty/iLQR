@@ -12,7 +12,6 @@ namespace {
 using Scalar = double;
 constexpr size_t PredictLength = 15;
 constexpr Scalar TimeStep = 0.01;
-constexpr Scalar Mass = 1.0;
 constexpr Scalar Gravity = 9.8;
 
 using Descriptor = iLQRDescriptor<
@@ -27,7 +26,7 @@ using StateTrajectory = typename Solver::StateTrajectory_t;
 using InputTrajectory = typename Solver::InputTrajectory_t;
 
 InputVector hoverInput() {
-  return InputVector{Scalar(0.0), Scalar(0.0), -Mass * Gravity};
+  return InputVector{Scalar(0.0), Scalar(0.0), -Gravity};
 }
 
 class HoverInitializer final
@@ -42,7 +41,7 @@ class HoverInitializer final
     input = hoverInput();
 
     nextState.template head<3>() = state.template head<3>();
-    nextState(2) += dt * (input(2) / Mass + Gravity);
+    nextState(2) += dt * (input(2) + Gravity);
     nextState.template tail<3>() = input;
   }
 };
@@ -79,8 +78,8 @@ void runOneMpcCycle(Solver& solver, Solver::OptimalControlProblem_t& problem,
   currentState = problem.dynamicsPtr->computeMap(currentTime, currentState,
                                                  firstInput, TimeStep);
   EXPECT_TRUE(currentState.isAllFinite());
-  const InputVector currentThrust = currentState.template tail<3>();
-  EXPECT_TRUE(currentThrust.isApprox(firstInput, 1e-10));
+  const InputVector currentAcceleration = currentState.template tail<3>();
+  EXPECT_TRUE(currentAcceleration.isApprox(firstInput, 1e-10));
 
   currentTime += TimeStep;
 }
@@ -93,7 +92,7 @@ Scalar velocityError(const StateVector& state,
 }  // namespace
 
 TEST(ThrustVectorDynamicsTest, GravityAcceleratesPositiveDownAxis) {
-  thrust_vector::ThrustVectorDynamicSystem<Scalar> dynamics(Mass);
+  thrust_vector::ThrustVectorDynamicSystem<Scalar> dynamics;
 
   StateVector state;
   state.setZero();
@@ -111,7 +110,7 @@ TEST(ThrustVectorDynamicsTest, GravityAcceleratesPositiveDownAxis) {
 
 TEST(ThrustVectorMpcTest, RecedingHorizonOptimizationReducesVelocityError) {
   auto& problem =
-      thrust_vector::createThrustVectorProblem<Scalar, PredictLength>(Mass);
+      thrust_vector::createThrustVectorProblem<Scalar, PredictLength>();
   HoverInitializer initializer;
 
   DDPSettings<Scalar> settings;
@@ -147,7 +146,7 @@ TEST(ThrustVectorMpcTest, RecedingHorizonOptimizationReducesVelocityError) {
 
 TEST(ThrustVectorMpcTest, TracksAndMaintainsVelocityReference) {
   auto& problem =
-      thrust_vector::createThrustVectorProblem<Scalar, PredictLength>(Mass);
+      thrust_vector::createThrustVectorProblem<Scalar, PredictLength>();
   HoverInitializer initializer;
 
   DDPSettings<Scalar> settings;

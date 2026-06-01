@@ -15,7 +15,8 @@
 /**
  * 该示例定义了一个最优控制问题，其中运动学建模的
  * 是一个矢量推力无人机，状态空间是6维
- * NED 全局坐标系三轴速度+上一拍机体系推力，输入是3维机体系推力
+ * NED 全局坐标系三轴速度+上一拍机体系推力加速度，
+ * 输入是3维机体系推力加速度
  * 同时添加余弦相似度的代价函数
  */
 
@@ -58,9 +59,7 @@ class ThrustVectorDynamicSystem final
     bool dirty;
   };
 
-  ThrustVectorDynamicSystem(const Scalar mass) : mass_(mass) {
-    rotB2w_.setIdentity();
-  }
+  ThrustVectorDynamicSystem() { rotB2w_.setIdentity(); }
   ~ThrustVectorDynamicSystem() override = default;
 
   void updateRotationMatrix(const Matrix<Scalar, 3, 3>& rotation) {
@@ -71,7 +70,7 @@ class ThrustVectorDynamicSystem final
   void updateCache(const Scalar dt) {
     if (cache_.dirty ||
         std::abs(cache_.dt - dt) > std::numeric_limits<Scalar>::epsilon()) {
-      cache_.B.template topRows<3>() = (dt / mass_) * rotB2w_;
+      cache_.B.template topRows<3>() = dt * rotB2w_;
       cache_.bias(2) = dt * Gravity_Acc;
       cache_.dt = dt;
       cache_.dirty = false;
@@ -117,7 +116,6 @@ class ThrustVectorDynamicSystem final
   }
 
  private:
-  Scalar mass_;
   Matrix<Scalar, 3, 3> rotB2w_;
   PreCompCache cache_;
 };
@@ -280,7 +278,7 @@ class ThrustDirectionChangeCost final
  public:
   static constexpr Scalar epsilon = Scalar(1e-4);
   static constexpr Scalar Weight = 1;
-  static constexpr Scalar MinThrustForDirection = Scalar(1e-2);
+  static constexpr Scalar MinThrustAccelerationForDirection = Scalar(1e-2);
 
   explicit ThrustDirectionChangeCost(int cost_number = 0)
       : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number) {
@@ -299,13 +297,13 @@ class ThrustDirectionChangeCost final
     (void)inputTrajectory;
     (void)stateTrajectoy;
 
-    const Vector<Scalar, 3> last_thr{state(3), state(4), state(5)};
-    const Vector<Scalar, 3> thr = input;
-    Vector<Scalar, 3> last_thr_dir =
-        last_thr / std::sqrt(last_thr.dot(last_thr) + epsilon);
-    Vector<Scalar, 3> thr_dir = thr / std::sqrt(thr.dot(thr) + epsilon);
-    const Vector<Scalar, 3> rk = thr_dir - last_thr_dir;
-    const Scalar gate = lowThrustGate(last_thr, thr);
+    const Vector<Scalar, 3> last_acc{state(3), state(4), state(5)};
+    const Vector<Scalar, 3> acc = input;
+    Vector<Scalar, 3> last_acc_dir =
+        last_acc / std::sqrt(last_acc.dot(last_acc) + epsilon);
+    Vector<Scalar, 3> acc_dir = acc / std::sqrt(acc.dot(acc) + epsilon);
+    const Vector<Scalar, 3> rk = acc_dir - last_acc_dir;
+    const Scalar gate = lowAccelerationGate(last_acc, acc);
     return Scalar(0.5) * gate * Weight * rk.dot(rk);
   }
 
@@ -323,51 +321,54 @@ class ThrustDirectionChangeCost final
     (void)inputTrajectory;
     (void)stateTrajectory;
 
-    const Vector<Scalar, 3> last_thr{state(3), state(4), state(5)};
-    const Vector<Scalar, 3> thr = input;
-    const Scalar last_thr_norm = std::sqrt(last_thr.dot(last_thr) + epsilon);
-    const Scalar thr_norm = std::sqrt(thr.dot(thr) + epsilon);
-    const Vector<Scalar, 3> last_thr_dir = last_thr / last_thr_norm;
-    const Vector<Scalar, 3> thr_dir = thr / thr_norm;
-    const Vector<Scalar, 3> rk = thr_dir - last_thr_dir;
+    const Vector<Scalar, 3> last_acc{state(3), state(4), state(5)};
+    const Vector<Scalar, 3> acc = input;
+    const Scalar last_acc_norm = std::sqrt(last_acc.dot(last_acc) + epsilon);
+    const Scalar acc_norm = std::sqrt(acc.dot(acc) + epsilon);
+    const Vector<Scalar, 3> last_acc_dir = last_acc / last_acc_norm;
+    const Vector<Scalar, 3> acc_dir = acc / acc_norm;
+    const Vector<Scalar, 3> rk = acc_dir - last_acc_dir;
 
     const Matrix<Scalar, 3, 3> identity = Matrix<Scalar, 3, 3>::Identity();
-    const Matrix<Scalar, 3, 3> last_thr_jacobian =
-        identity / last_thr_norm -
-        (last_thr * last_thr.transpose()) /
-            (last_thr_norm * last_thr_norm * last_thr_norm);
-    const Matrix<Scalar, 3, 3> thr_jacobian =
-        identity / thr_norm -
-        (thr * thr.transpose()) / (thr_norm * thr_norm * thr_norm);
+    const Matrix<Scalar, 3, 3> last_acc_jacobian =
+        identity / last_acc_norm -
+        (last_acc * last_acc.transpose()) /
+            (last_acc_norm * last_acc_norm * last_acc_norm);
+    const Matrix<Scalar, 3, 3> acc_jacobian =
+        identity / acc_norm -
+        (acc * acc.transpose()) / (acc_norm * acc_norm * acc_norm);
 
-    const Scalar gate = lowThrustGate(last_thr, thr);
+    const Scalar gate = lowAccelerationGate(last_acc, acc);
     const Scalar effectiveWeight = gate * Weight;
 
     approximation_.f = Scalar(0.5) * effectiveWeight * rk.dot(rk);
     approximation_.dfdx.template tail<3>() =
-        -effectiveWeight * last_thr_jacobian.transpose() * rk;
-    approximation_.dfdu = effectiveWeight * thr_jacobian.transpose() * rk;
+        -effectiveWeight * last_acc_jacobian.transpose() * rk;
+    approximation_.dfdu = effectiveWeight * acc_jacobian.transpose() * rk;
     approximation_.dfdxx.template slice<3, 3>(3, 3) =
-        effectiveWeight * last_thr_jacobian.transpose() * last_thr_jacobian;
+        effectiveWeight * last_acc_jacobian.transpose() * last_acc_jacobian;
     approximation_.dfduu =
-        effectiveWeight * thr_jacobian.transpose() * thr_jacobian;
+        effectiveWeight * acc_jacobian.transpose() * acc_jacobian;
     approximation_.dfdux.template slice<3, 3>(0, 3) =
-        -effectiveWeight * thr_jacobian.transpose() * last_thr_jacobian;
+        -effectiveWeight * acc_jacobian.transpose() * last_acc_jacobian;
 
     return approximation_;
   }
 
  private:
-  static Scalar thrustGateSigma(const Vector<Scalar, 3>& thrust) {
-    const Scalar thrustNormSquared = thrust.squaredNorm();
-    const Scalar minThrustSquared =
-        MinThrustForDirection * MinThrustForDirection;
-    return thrustNormSquared / (thrustNormSquared + minThrustSquared);
+  static Scalar accelerationGateSigma(const Vector<Scalar, 3>& acceleration) {
+    const Scalar accelerationNormSquared = acceleration.squaredNorm();
+    const Scalar minAccelerationSquared =
+        MinThrustAccelerationForDirection * MinThrustAccelerationForDirection;
+    return accelerationNormSquared /
+           (accelerationNormSquared + minAccelerationSquared);
   }
 
-  static Scalar lowThrustGate(const Vector<Scalar, 3>& lastThrust,
-                              const Vector<Scalar, 3>& currentThrust) {
-    return thrustGateSigma(lastThrust) * thrustGateSigma(currentThrust);
+  static Scalar lowAccelerationGate(
+      const Vector<Scalar, 3>& lastAcceleration,
+      const Vector<Scalar, 3>& currentAcceleration) {
+    return accelerationGateSigma(lastAcceleration) *
+           accelerationGateSigma(currentAcceleration);
   }
 
   ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
@@ -397,8 +398,7 @@ Matrix<Scalar, INPUT_DIM, INPUT_DIM> makeDefaultThrustVectorInputWeight() {
 }
 
 template <typename Scalar, size_t PredictLength>
-inline ThrustVectorProblem<Scalar, PredictLength>& createThrustVectorProblem(
-    Scalar mass = Scalar(1.0)) {
+inline ThrustVectorProblem<Scalar, PredictLength>& createThrustVectorProblem() {
   using Problem_t = ThrustVectorProblem<Scalar, PredictLength>;
   using TrackCost_t =
       ThrustVectorTrackCost<Scalar, static_cast<int>(PredictLength + 1)>;
@@ -407,7 +407,7 @@ inline ThrustVectorProblem<Scalar, PredictLength>& createThrustVectorProblem(
   using FinalCost_t =
       ThrustVectorTrackFinalCost<Scalar, static_cast<int>(PredictLength + 1)>;
 
-  static ThrustVectorDynamicSystem<Scalar> dynamics(mass);
+  static ThrustVectorDynamicSystem<Scalar> dynamics;
   static const Matrix<Scalar, STATE_DIM, STATE_DIM> Q =
       makeDefaultThrustVectorStateWeight<Scalar>();
   static const Matrix<Scalar, INPUT_DIM, INPUT_DIM> R =
