@@ -106,6 +106,12 @@ inline
     getIntermediateDualSolutionAtTime(
         const DualSolution<Scalar, Horizon, ConstraintConfig>& dualSolution,
         Scalar time) {
+  constexpr std::size_t PredictLength = Horizon::PredictLength;
+  static_assert(PredictLength > 0);
+  if (time >= dualSolution.timeTrajectory[PredictLength - 1]) {
+    return dualSolution.intermediates.back();
+  }
+
   const std::pair<int, Scalar> indexAlpha =
       LinearInterpolation::timeSegment(time, dualSolution.timeTrajectory);
   return LinearInterpolation::interpolate(indexAlpha,

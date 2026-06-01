@@ -19,6 +19,7 @@ endif()
 
 option(ILQR_BUILD_TESTING "Build iLQR tests" ${ILQR_IS_TOP_LEVEL})
 option(ILQR_ENABLE_DEV_OPTIONS "Enable iLQR development compile/link options" ${ILQR_IS_TOP_LEVEL})
+option(ILQR_ENABLE_ASAN "Enable AddressSanitizer for targets using iLQR::Options" OFF)
 set(ILQR_MATRIX_TARGET "" CACHE STRING "External Matrix target used by iLQR")
 if(ILQR_IS_TOP_LEVEL)
   set(ILQR_FORCE_OPTIMIZATION_DEFAULT OFF)
@@ -78,6 +79,16 @@ if(ILQR_ENABLE_DEV_OPTIONS)
     -Wl,--gc-sections
     -Wl,--start-group
     -Wl,--end-group
+  )
+endif()
+
+if(ILQR_ENABLE_ASAN)
+  target_compile_options(iLQROptions INTERFACE
+    -fsanitize=address
+    -fno-omit-frame-pointer
+  )
+  target_link_options(iLQROptions INTERFACE
+    -fsanitize=address
   )
 endif()
 

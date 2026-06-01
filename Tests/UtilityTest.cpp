@@ -6,6 +6,7 @@
 #include "Controller/LinearController.hpp"
 #include "Initialization/DefaultInitializer.hpp"
 #include "ModelData/Multiplier.hpp"
+#include "OptimalControlData/DualSolution.hpp"
 #include "Tests/Include/MatrixEigenConversion.hpp"
 #include "iLQR/HessianCorrection.hpp"
 #include "iLQR/LinearAlgebraTypes.hpp"
@@ -156,6 +157,32 @@ TEST(UtilityTest, MultiplierCollectionInterpolationInterpolatesEachCategory) {
                    11.5);
   EXPECT_DOUBLE_EQ(std::get<0>(interpolated.stateInputIneq.terms).lagrangian(0),
                    115.0);
+}
+
+// 验证中间对偶解查询到旧终端时刻时不会访问超出 intermediates 的元素。
+TEST(UtilityTest, DualSolutionIntermediateInterpolationClampsAtTerminalTime) {
+  using Horizon_t = Horizon<3>;
+  using OneDimGroup = ConstraintGroupLayout<ConstraintTerm<1>>;
+  using ConstraintConfig_t =
+      ConstraintConfig<StateConstraintConfig<ConstraintLayout<>>,
+                       StateInputConstraintConfig<ConstraintLayout<
+                           OneDimGroup, ConstraintGroupLayout<>>>>;
+  using DualSolution_t = DualSolution<double, Horizon_t, ConstraintConfig_t>;
+
+  DualSolution_t dualSolution;
+  dualSolution.timeTrajectory = {0.0, 1.0, 2.0, 3.0};
+  for (size_t k = 0; k < Horizon_t::PredictLength; ++k) {
+    std::get<0>(dualSolution.intermediates[k].stateInputEq.terms) = {
+        10.0 + static_cast<double>(k),
+        Vector<double, 1>{100.0 + static_cast<double>(k)}};
+  }
+
+  const auto interpolated = getIntermediateDualSolutionAtTime(
+      dualSolution, dualSolution.timeTrajectory.back());
+  const auto& term = std::get<0>(interpolated.stateInputEq.terms);
+
+  EXPECT_DOUBLE_EQ(term.penalty, 12.0);
+  EXPECT_DOUBLE_EQ(term.lagrangian(0), 102.0);
 }
 
 // 验证默认初始化器保持状态不变并把输入初值清零。

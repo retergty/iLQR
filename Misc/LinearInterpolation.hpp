@@ -55,6 +55,8 @@ auto interpolate(const std::pair<int, Scalar>& indexAlpha,
     // 普通插值情况。
     int index = indexAlpha.first;
     Scalar alpha = indexAlpha.second;
+    assert(index >= 0);
+    assert(static_cast<size_t>(index + 1) < ArrayLength);
     const auto& lhs = accessFun(dataArray, index);
     const auto& rhs = accessFun(dataArray, index + 1);
 

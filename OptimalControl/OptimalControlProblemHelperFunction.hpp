@@ -51,12 +51,13 @@ void initializeIntermediateMultiplierCollection(
 }
 
 /**
- * @brief 根据缓存的对偶解初始化对偶解：若缓存非空则插值，否则用 ocp
+ * @brief 根据缓存的对偶解初始化对偶解：若允许复用缓存则插值，否则用 ocp
  * 的拉格朗日初始化。
  * @param [in] ocp 最优控制问题。
  * @param [in] primalSolution 原始解（时间轨迹）。
  * @param [in] cachedDualSolution 缓存的对偶解（用于插值）。
  * @param [out] dualSolution 待初始化的对偶解。
+ * @param [in] useCachedDualSolution 是否复用缓存对偶解。
  */
 template <typename Scalar, typename Transcription, typename ConstraintConfig>
 void initializeDualSolution(
@@ -65,7 +66,8 @@ void initializeDualSolution(
     const DualSolution<Scalar, typename Transcription::Horizon,
                        ConstraintConfig>& cachedDualSolution,
     DualSolution<Scalar, typename Transcription::Horizon, ConstraintConfig>&
-        dualSolution) {
+        dualSolution,
+    bool useCachedDualSolution) {
   constexpr std::size_t PredictLength = Transcription::PredictLength;
   using IntermediateMultiplierCollection_t =
       MultiplierCollection<Scalar,
@@ -73,7 +75,7 @@ void initializeDualSolution(
 
   dualSolution.timeTrajectory = primalSolution.timeTrajectory_;
 
-  if (!cachedDualSolution.empty()) {
+  if (useCachedDualSolution) {
     // 终端
     dualSolution.final = cachedDualSolution.final;
 
@@ -97,6 +99,18 @@ void initializeDualSolution(
       initializeIntermediateMultiplierCollection(ocp, time, multipliers);
     }
   }
+}
+
+template <typename Scalar, typename Transcription, typename ConstraintConfig>
+void initializeDualSolution(
+    const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>& ocp,
+    const PrimalSolution<Scalar, Transcription>& primalSolution,
+    const DualSolution<Scalar, typename Transcription::Horizon,
+                       ConstraintConfig>& cachedDualSolution,
+    DualSolution<Scalar, typename Transcription::Horizon, ConstraintConfig>&
+        dualSolution) {
+  initializeDualSolution(ocp, primalSolution, cachedDualSolution, dualSolution,
+                         !cachedDualSolution.empty());
 }
 
 /**

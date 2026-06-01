@@ -127,10 +127,29 @@ class iLQR {
         initializerRollout_(*initializer, ddpSettings_.timeStep_),
         lineSearchStrategy_(makeLineSearchSettings(ddp_setting), *this) {
     assert(optimalControlProblem_.dynamicsPtr != nullptr);
-    // 设置零解。
+    reset();
+  };
+
+  /**
+   * @brief 重置求解器缓存，清除 warm start 解与运行统计。
+   *
+   * 不修改最优控制问题、参考轨迹、rollout 配置和临时工作区；下一次 run()
+   * 将从 initializer 冷启动。
+   */
+  void reset() {
+    initTime_ = Scalar(0.0);
+    finalTime_ = Scalar(0.0);
+    lastFinalTime_ = Scalar(0.0);
+
     optimizedPrimalSolution_.clear();
     optimizedDualSolution_.clear();
-  };
+
+    avgTimeStepFP_ = Scalar(0.0);
+    avgTimeStepBP_ = Scalar(0.0);
+    totalNumIterations_ = 0;
+
+    lineSearchStrategy_.reset();
+  }
 
   /**
    * 求解器主流程：针对给定初始
@@ -152,7 +171,7 @@ class iLQR {
     bool initialSolutionExists =
         initializePrimalSolution();  // 如果 rollout 不完全来自
                                      // Initializer，则为 true。
-    initializeDualSolutionAndMetrics();
+    initializeDualSolutionAndMetrics(initialSolutionExists);
 
     performanceIndexLast_ = performanceIndex_;
     // 主循环收敛变量。
@@ -531,11 +550,12 @@ class iLQR {
    * 基于优化解和名义原始解初始化名义对偶解，
    * 同时更新 ProblemMetrics。
    */
-  void initializeDualSolutionAndMetrics() {
+  void initializeDualSolutionAndMetrics(bool useCachedDualSolution) {
     // 初始化对偶解。
     initializeDualSolution(
         optimalControlProblem_, nominalPrimalData_.primalSolution,
-        optimizedDualSolution_, nominalDualData_.dualSolution);
+        optimizedDualSolution_, nominalDualData_.dualSolution,
+        useCachedDualSolution);
 
     computeRolloutMetrics(optimalControlProblem_, targetTrajectory_,
                           nominalPrimalData_.primalSolution,
