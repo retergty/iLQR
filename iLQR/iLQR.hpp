@@ -242,6 +242,8 @@ class iLQR {
   const PerformanceIndex_t performanceIndex() const {
     return performanceIndex_;
   }
+  DDPSettings<Scalar>& ddpSettings() { return ddpSettings_; }
+  const DDPSettings<Scalar>& ddpSettings() const { return ddpSettings_; }
   TargetTrajectories_t& targetTrajectory() { return targetTrajectory_; }
   const TargetTrajectories_t& targetTrajectory() const {
     return targetTrajectory_;
@@ -252,6 +254,8 @@ class iLQR {
   const OptimalControlProblem_t& optimalControlProblem() const {
     return optimalControlProblem_;
   }
+  Rollout_t& rollout() { return rollout_; }
+  const Rollout_t& rollout() const { return rollout_; }
 
   ValueFunctionQuadraticApproximation_t getValueFunction(
       const Scalar time, const StateVector_t& state) const {
@@ -913,14 +917,14 @@ class iLQR {
 
   DDPSettings<Scalar> ddpSettings_{};
 
- public:
   // 保持 public 以支持搜索策略集成和已有外部设置
   // 代码。
   OptimalControlProblem_t& optimalControlProblem_;
+
   Rollout_t rollout_;
+
   InitializerRollout_t initializerRollout_;
 
- private:
   LineSearchStrategy_t lineSearchStrategy_;
 
   Transcription_t transcription_;

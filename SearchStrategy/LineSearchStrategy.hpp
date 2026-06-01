@@ -200,7 +200,7 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
                                        *inputRef.unoptimizedControllerPtr,
                                        solution.primalSolution.controller_);
     solution.avgTimeStep = iLQR_t::rolloutTrajectory(
-        ilqr_.rollout_, inputRef.timePeriodPtr->first, *inputRef.initStatePtr,
+        ilqr_.rollout(), inputRef.timePeriodPtr->first, *inputRef.initStatePtr,
         inputRef.timePeriodPtr->second, solution.primalSolution);
 
     // 计算问题指标。
