@@ -11,7 +11,6 @@ namespace {
 using Scalar = double;
 constexpr size_t PredictLength = 15;
 constexpr Scalar TimeStep = 0.01;
-constexpr Scalar Gravity = 9.8;
 constexpr size_t LoopCycle = 1000000;
 
 using Descriptor = iLQRDescriptor<
@@ -24,7 +23,7 @@ using InputVector = typename Solver::InputVector_t;
 using TargetTrajectories = typename Solver::TargetTrajectories_t;
 
 InputVector hoverInput() {
-  return InputVector{Scalar(0.0), Scalar(0.0), -Gravity};
+  return InputVector{Scalar(0.0), Scalar(0.0), Scalar(0.0)};
 }
 
 class HoverInitializer final
@@ -38,8 +37,7 @@ class HoverInitializer final
     const Scalar dt = nextTime - time;
     input = hoverInput();
 
-    nextState.template head<3>() = state.template head<3>();
-    nextState(2) += dt * (input(2) + Gravity);
+    nextState.template head<3>() = state.template head<3>() + dt * input;
     nextState.template tail<3>() = input;
   }
 };

@@ -12,7 +12,6 @@ namespace {
 using Scalar = double;
 constexpr size_t PredictLength = 15;
 constexpr Scalar TimeStep = 0.01;
-constexpr Scalar Gravity = 9.8;
 
 using Descriptor = iLQRDescriptor<
     Scalar, TranscriptionConfig<
@@ -26,7 +25,7 @@ using StateTrajectory = typename Solver::StateTrajectory_t;
 using InputTrajectory = typename Solver::InputTrajectory_t;
 
 InputVector hoverInput() {
-  return InputVector{Scalar(0.0), Scalar(0.0), -Gravity};
+  return InputVector{Scalar(0.0), Scalar(0.0), Scalar(0.0)};
 }
 
 class HoverInitializer final
@@ -40,8 +39,7 @@ class HoverInitializer final
     const Scalar dt = nextTime - time;
     input = hoverInput();
 
-    nextState.template head<3>() = state.template head<3>();
-    nextState(2) += dt * (input(2) + Gravity);
+    nextState.template head<3>() = state.template head<3>() + dt * input;
     nextState.template tail<3>() = input;
   }
 };
@@ -91,7 +89,7 @@ Scalar velocityError(const StateVector& state,
 }
 }  // namespace
 
-TEST(ThrustVectorDynamicsTest, GravityAcceleratesPositiveDownAxis) {
+TEST(ThrustVectorDynamicsTest, ZeroInputMaintainsVelocity) {
   thrust_vector::ThrustVectorDynamicSystem<Scalar> dynamics;
 
   StateVector state;
@@ -102,7 +100,7 @@ TEST(ThrustVectorDynamicsTest, GravityAcceleratesPositiveDownAxis) {
   const StateVector nextState =
       dynamics.computeMap(Scalar(0.0), state, input, TimeStep);
 
-  EXPECT_NEAR(nextState(2), TimeStep * Gravity, Scalar(1e-12));
+  EXPECT_TRUE(nextState.template head<3>().isZero(Scalar(1e-12)));
   EXPECT_NEAR(nextState(3), input(0), Scalar(1e-12));
   EXPECT_NEAR(nextState(4), input(1), Scalar(1e-12));
   EXPECT_NEAR(nextState(5), input(2), Scalar(1e-12));

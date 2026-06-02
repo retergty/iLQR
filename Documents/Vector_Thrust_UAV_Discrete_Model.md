@@ -1,14 +1,14 @@
-# 矢量无人机离散状态空间与转角速度代价
+# 矢量无人机总加速度离散状态空间与转角速度代价
 
 ## 状态与输入
 
-考虑姿态在预测时域内已知且近似不变的矢量无人机平动模型。采用 NED 全局坐标系速度与上一拍机体系推力加速度构成增广状态：
+考虑姿态在预测时域内已知且近似不变的矢量无人机平动模型。采用 NED 全局坐标系速度与上一拍 NED 全局坐标系总加速度构成增广状态：
 
 $$
 X_k =
 \begin{bmatrix}
 v_k^N \\
-a_{T,k-1}^B
+a_{\mathrm{tot},k-1}^N
 \end{bmatrix}
 \in \mathbb{R}^6
 $$
@@ -22,44 +22,38 @@ $$
 表示 NED 全局坐标系下的速度，且：
 
 $$
-a_{T,k-1}^B \in \mathbb{R}^3
+a_{\mathrm{tot},k-1}^N \in \mathbb{R}^3
 $$
 
-表示上一采样时刻的机体系推力加速度，其中：
+表示上一采样时刻的 NED 全局坐标系总加速度，即：
 
 $$
-a_{T,k}^B := \frac{F_k^B}{m}
+a_{\mathrm{tot},k}^N := \dot v_k^N
 $$
 
-其单位为 $\mathrm{m}/\mathrm{s}^2$。若后续串联加速度控制器 `acc_control`，则优化器可以直接输出 $a_{T,k}^B$，由下游控制器完成推力或执行器指令转换。
+其单位为 $\mathrm{m}/\mathrm{s}^2$。该定义使悬停或匀速飞行时的平衡输入为零，更适合作为速度外环 MPC 的控制量。若后续串联加速度控制器 `acc_control`，则优化器可以直接输出期望总加速度 $a_{\mathrm{tot},k}^N$，由下游控制器结合重力补偿、姿态和推力分配完成执行器指令转换。
 
-在每次 MPC 求解开始时，初始增广状态应使用真实上一控制周期的机体系推力加速度：
+在每次 MPC 求解开始时，初始增广状态应使用真实上一控制周期的 NED 总加速度：
 
 $$
 X_0 =
 \begin{bmatrix}
 v_0^N \\
-a_{T,\mathrm{last}}^B
+a_{\mathrm{tot},\mathrm{last}}^N
 \end{bmatrix}
 $$
 
-其中 $a_{T,\mathrm{last}}^B$ 应来自上一周期实际发送、估计或由上一拍推力除以质量得到的机体系推力加速度。若将其随意置零，第一步方向变化代价会失去物理意义。
+其中 $a_{\mathrm{tot},\mathrm{last}}^N$ 应来自上一控制周期实际发送或估计得到的 NED 总加速度。
 
-控制输入定义为当前采样时刻的机体系推力加速度：
+控制输入定义为当前采样时刻的 NED 总加速度：
 
 $$
-U_k = a_{T,k}^B \in \mathbb{R}^3
+U_k = a_{\mathrm{tot},k}^N \in \mathbb{R}^3
 $$
 
 ## 离散动力学
 
-设：
-
-$$
-R_B^N
-$$
-
-表示机体系到 NED 全局坐标系的旋转矩阵，预测时域内认为常量；$\Delta t$ 为采样周期，$g e_3$ 为 NED 全局坐标系下沿 Down 轴正方向的重力加速度项。由于控制输入已经是机体系推力加速度，离散动力学中不再显式出现质量 $m$。
+设 $\Delta t$ 为采样周期。
 
 离散动力学为：
 
@@ -69,7 +63,7 @@ X_{k+1}
 f_d(X_k, U_k)
 =
 \begin{bmatrix}
-v_k^N + \Delta t \left(R_B^N U_k + g e_3\right) \\
+v_k^N + \Delta t U_k \\
 U_k
 \end{bmatrix}
 $$
@@ -95,7 +89,7 @@ $$
 $$
 B_d =
 \begin{bmatrix}
-\Delta t R_B^N \\
+\Delta t I_3 \\
 I_3
 \end{bmatrix}
 $$
@@ -103,7 +97,7 @@ $$
 $$
 c_d =
 \begin{bmatrix}
-\Delta t \, g e_3 \\
+0_3 \\
 0_3
 \end{bmatrix}
 $$
@@ -124,10 +118,10 @@ $$
 v_{\mathrm{ref},k}^N
 $$
 
-参考推力加速度为：
+参考总加速度为：
 
 $$
-a_{T,\mathrm{ref},k}^B
+a_{\mathrm{tot},\mathrm{ref},k}^N
 $$
 
 基础二次代价可写为：
@@ -141,27 +135,41 @@ Q_v
 \left(v_k^N - v_{\mathrm{ref},k}^N\right)
 +
 \frac{1}{2}
-\left(U_k - a_{T,\mathrm{ref},k}^B\right)^T
+\left(U_k - a_{\mathrm{tot},\mathrm{ref},k}^N\right)^T
 R_a
-\left(U_k - a_{T,\mathrm{ref},k}^B\right)
+\left(U_k - a_{\mathrm{tot},\mathrm{ref},k}^N\right)
 $$
 
 ## 推力加速度方向转角速度代价
 
-上一拍推力加速度方向和当前推力加速度方向分别为：
+虽然控制输入采用 NED 总加速度，但推力方向变化的物理意义应基于推力加速度，而不是总加速度。先从总加速度中去掉重力项：
+
+$$
+a_{T,k}^N
+:=
+U_k - g e_3
+$$
+
+$$
+a_{T,k-1}^N
+:=
+a_{\mathrm{tot},k-1}^N - g e_3
+$$
+
+由于同一个旋转矩阵不会改变两个向量的夹角，方向变化代价可以直接在 NED 坐标系下计算，无需再转换到机体系。上一拍推力加速度方向和当前推力加速度方向分别为：
 
 $$
 n_{k-1}
 =
-\frac{a_{T,k-1}^B}
-{\sqrt{(a_{T,k-1}^B)^T a_{T,k-1}^B + \varepsilon}}
+\frac{a_{T,k-1}^N}
+{\sqrt{(a_{T,k-1}^N)^T a_{T,k-1}^N + \varepsilon}}
 $$
 
 $$
 n_k
 =
-\frac{U_k}
-{\sqrt{U_k^T U_k + \varepsilon}}
+\frac{a_{T,k}^N}
+{\sqrt{(a_{T,k}^N)^T a_{T,k}^N + \varepsilon}}
 $$
 
 两者夹角的余弦为：
@@ -171,9 +179,9 @@ $$
 =
 n_k^T n_{k-1}
 =
-\frac{U_k^T a_{T,k-1}^B}
-{\sqrt{U_k^T U_k + \varepsilon}
- \sqrt{(a_{T,k-1}^B)^T a_{T,k-1}^B + \varepsilon}}
+\frac{(a_{T,k}^N)^T a_{T,k-1}^N}
+{\sqrt{(a_{T,k}^N)^T a_{T,k}^N + \varepsilon}
+ \sqrt{(a_{T,k-1}^N)^T a_{T,k-1}^N + \varepsilon}}
 $$
 
 为避免 $\arccos(\cdot)$ 在 $\cos\theta_k \to 1$ 附近导数奇异，采用：
@@ -267,7 +275,11 @@ $$
 其中：
 
 $$
-r(z) = n(U_k) - n(a_{T,k-1}^B)
+r(z)
+=
+n\left(U_k - g e_3\right)
+-
+n\left(a_{\mathrm{tot},k-1}^N - g e_3\right)
 $$
 
 由于 $n_k$ 和 $n_{k-1}$ 均由推力加速度向量归一化得到，$r_k$ 对状态与输入是非线性的。先对残差平方形式求微分：
@@ -410,14 +422,14 @@ $$
 X_k =
 \begin{bmatrix}
 v_k^N \\
-a_{T,k-1}^B
+a_{\mathrm{tot},k-1}^N
 \end{bmatrix}
 $$
 
-定义选择矩阵 $S_a \in \mathbb{R}^{3 \times 6}$，用于从状态中取出上一拍推力加速度：
+定义选择矩阵 $S_a \in \mathbb{R}^{3 \times 6}$，用于从状态中取出上一拍 NED 总加速度：
 
 $$
-a_{T,k-1}^B = S_a X_k
+a_{\mathrm{tot},k-1}^N = S_a X_k
 $$
 
 其中：
@@ -429,14 +441,28 @@ S_a =
 \end{bmatrix}
 $$
 
+为简化记号，定义当前节点和上一拍的 NED 推力加速度：
+
+$$
+y_u
+:=
+U_k - g e_3
+$$
+
+$$
+y_x
+:=
+S_a X_k - g e_3
+$$
+
 残差可写为：
 
 $$
 r_k
 =
-n(U_k)
+n(y_u)
 -
-n(S_a X_k)
+n(y_x)
 $$
 
 因此对状态和输入的 Jacobian 分别为：
@@ -446,7 +472,7 @@ J_{r,x}
 :=
 \frac{\partial r_k}{\partial X_k}
 =
--J_n(a_{T,k-1}^B) S_a
+-J_n(y_x) S_a
 $$
 
 $$
@@ -454,21 +480,21 @@ J_{r,u}
 :=
 \frac{\partial r_k}{\partial U_k}
 =
-J_n(U_k)
+J_n(y_u)
 $$
 
-等价地，若直接看状态中的推力加速度分量，则有：
+等价地，若直接看状态中的上一拍 NED 总加速度分量，则有：
 
 $$
-\frac{\partial r_k}{\partial a_{T,k-1}^B}
+\frac{\partial r_k}{\partial a_{\mathrm{tot},k-1}^N}
 =
--J_n(a_{T,k-1}^B)
+-J_n(y_x)
 $$
 
 $$
 \frac{\partial r_k}{\partial U_k}
 =
-J_n(U_k)
+J_n(y_u)
 $$
 
 且 $J_{r,x}$ 仅在状态后 3 维对应的列块非零。
@@ -517,14 +543,14 @@ $$
 \begin{bmatrix}
 0_3 \\
 -w_{\mathrm{angle}}
-J_n(a_{T,k-1}^B)^T r_k
+J_n(y_x)^T r_k
 \end{bmatrix}
 $$
 
 $$
 \ell_u =
 w_{\mathrm{angle}}
-J_n(U_k)^T r_k
+J_n(y_u)^T r_k
 $$
 
 $$
@@ -534,8 +560,8 @@ $$
 0_3 & 0_3 \\
 0_3 &
 w_{\mathrm{angle}}
-J_n(a_{T,k-1}^B)^T
-J_n(a_{T,k-1}^B)
+J_n(y_x)^T
+J_n(y_x)
 \end{bmatrix}
 $$
 
@@ -543,8 +569,8 @@ $$
 \ell_{uu}
 \approx
 w_{\mathrm{angle}}
-J_n(U_k)^T
-J_n(U_k)
+J_n(y_u)^T
+J_n(y_u)
 $$
 
 $$
@@ -553,12 +579,12 @@ $$
 \begin{bmatrix}
 0_3 &
 -w_{\mathrm{angle}}
-J_n(U_k)^T
-J_n(a_{T,k-1}^B)
+J_n(y_u)^T
+J_n(y_x)
 \end{bmatrix}
 $$
 
-这里 $\ell_{ux}$ 的尺寸为 $3 \times 6$，其左侧对应速度状态的 $3 \times 3$ 块为零，右侧对应上一拍推力加速度状态的 $3 \times 3$ 块为非零。该结构正好对应代码中 `dfdux.block<3, 3>(0, 3)` 的填充方式。
+这里 $\ell_{ux}$ 的尺寸为 $3 \times 6$，其左侧对应速度状态的 $3 \times 3$ 块为零，右侧对应上一拍 NED 总加速度状态的 $3 \times 3$ 块为非零。
 
 上述 Gauss-Newton Hessian 可写成：
 
@@ -590,7 +616,7 @@ $$
 
 ## 低推力加速度门控
 
-当 $\|U_k\|$ 或 $\|a_{T,k-1}^B\|$ 很小时，推力加速度方向本身没有稳定的物理意义。此时即使通过 $\varepsilon$ 避免了除零，方向代价仍可能给优化器施加不合理的惩罚。因此可引入门控权重：
+当 $\|a_{T,k}^N\|$ 或 $\|a_{T,k-1}^N\|$ 很小时，推力加速度方向本身没有稳定的物理意义。此时即使通过 $\varepsilon$ 避免了除零，方向代价仍可能给优化器施加不合理的惩罚。因此可引入门控权重：
 
 $$
 \gamma_k \in [0, 1]
@@ -622,8 +648,8 @@ $$
 $$
 \gamma_k
 :=
-\sigma(\|U_k\|)
-\sigma(\|a_{T,k-1}^B\|)
+\sigma(\|a_{T,k}^N\|)
+\sigma(\|a_{T,k-1}^N\|)
 $$
 
 其中：
@@ -651,7 +677,7 @@ $$
 $$
 \gamma_k =
 \begin{cases}
-1, & \|U_k\| \ge a_{\min},\ \|a_{T,k-1}^B\| \ge a_{\min} \\
+1, & \|a_{T,k}^N\| \ge a_{\min},\ \|a_{T,k-1}^N\| \ge a_{\min} \\
 0, & \text{otherwise}
 \end{cases}
 $$
@@ -701,16 +727,16 @@ Q_v
 \left(v_k^N - v_{\mathrm{ref},k}^N\right)
 +
 \frac{1}{2}
-\left(U_k - a_{T,\mathrm{ref},k}^B\right)^T
+\left(U_k - a_{\mathrm{tot},\mathrm{ref},k}^N\right)^T
 R_a
-\left(U_k - a_{T,\mathrm{ref},k}^B\right)
+\left(U_k - a_{\mathrm{tot},\mathrm{ref},k}^N\right)
 +
 w_{\mathrm{angle}}
 \left(
 1 -
-\frac{U_k^T a_{T,k-1}^B}
-{\sqrt{U_k^T U_k + \varepsilon}
- \sqrt{(a_{T,k-1}^B)^T a_{T,k-1}^B + \varepsilon}}
+\frac{(a_{T,k}^N)^T a_{T,k-1}^N}
+{\sqrt{(a_{T,k}^N)^T a_{T,k}^N + \varepsilon}
+ \sqrt{(a_{T,k-1}^N)^T a_{T,k-1}^N + \varepsilon}}
 \right)
 $$
 
@@ -738,15 +764,23 @@ Q_f
 \left(v_N^N - v_{\mathrm{ref},N}^N\right)
 $$
 
-如果希望终端时推力加速度也接近稳态或参考推力加速度，可加入可选终端项：
+如果希望终端时总加速度也接近稳态或参考总加速度，可加入可选终端项：
 
 $$
 \frac{1}{2}
-\left(a_{T,N-1}^B - a_{T,\mathrm{ref},N}^B\right)^T
+\left(a_{\mathrm{tot},N-1}^N - a_{\mathrm{tot},\mathrm{ref},N}^N\right)^T
 Q_{a,f}
-\left(a_{T,N-1}^B - a_{T,\mathrm{ref},N}^B\right)
+\left(a_{\mathrm{tot},N-1}^N - a_{\mathrm{tot},\mathrm{ref},N}^N\right)
 $$
+
+若终端处更关心推力方向或推力幅值，也可以对 NED 推力加速度
+
+$$
+a_{\mathrm{tot},N-1}^N - g e_3
+$$
+
+与参考推力加速度建立终端项。
 
 ## 备注
 
-当 $\|U_k\|$ 或 $\|a_{T,k-1}^B\|$ 很小时，推力加速度方向本身物理意义变弱。工程实现中可通过 $\varepsilon$ 保证数值稳定，但仅靠 $\varepsilon$ 不能保证低推力加速度区域的物理合理性。更稳妥的做法是在低推力加速度区间引入门控权重 $\gamma_k$，必要时降低或关闭方向变化代价。
+当 $\|a_{T,k}^N\|$ 或 $\|a_{T,k-1}^N\|$ 很小时，推力加速度方向本身物理意义变弱。工程实现中可通过 $\varepsilon$ 保证数值稳定，但仅靠 $\varepsilon$ 不能保证低推力加速度区域的物理合理性。更稳妥的做法是在低推力加速度区间引入门控权重 $\gamma_k$，必要时降低或关闭方向变化代价。本文虽然使用 NED 总加速度作为控制输入，但所有与推力方向相关的代价和门控都应先减去 $g e_3$，并基于还原后的 NED 推力加速度计算。
