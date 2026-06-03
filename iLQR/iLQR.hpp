@@ -239,7 +239,7 @@ class iLQR {
   const PrimalSolution_t& primalSolution() const {
     return optimizedPrimalSolution_;
   }
-  const PerformanceIndex_t performanceIndex() const {
+  const PerformanceIndex_t& performanceIndex() const {
     return performanceIndex_;
   }
   DDPSettings<Scalar>& ddpSettings() { return ddpSettings_; }

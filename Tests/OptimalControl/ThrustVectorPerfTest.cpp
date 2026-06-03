@@ -90,7 +90,9 @@ int main() {
 
   StateVector velocityReference;
   velocityReference.setZero();
-  velocityReference(0) = Scalar(1.0);
+  velocityReference(0) = Scalar(0.0118);
+  velocityReference(1) = Scalar(-0.008);
+  velocityReference(2) = Scalar(2.45166);
 
   Scalar currentTime = 0.0;
 
