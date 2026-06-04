@@ -4,7 +4,9 @@
 #include <cmath>
 
 #include "Controller/LinearController.hpp"
+#include "Dynamics/DiscreteLinearSystemDynamics.hpp"
 #include "Dynamics/LinearSystemDynamics.hpp"
+#include "Rollout/DiscreteTimeRollout.hpp"
 #include "Rollout/TimeTriggeredRollout.hpp"
 
 // 验证零输入 rollout 与 xdot = x 的解析解一致。
@@ -91,6 +93,47 @@ TEST(LinearSystemRolloutTest, FeedbackControllerMatchesClosedLoopSolution) {
     EXPECT_TRUE(rolloutStateTrajectory[i].isApprox(expectedState, 1e-6))
         << "i = " << i;
     EXPECT_TRUE(rolloutInputTrajectory[i].isApprox(expectedInput, 1e-6))
+        << "i = " << i;
+  }
+}
+
+// 验证离散 rollout 返回写入点数，与 TimeTriggeredRollout 的语义一致。
+TEST(LinearSystemRolloutTest, DiscreteRolloutReturnsWrittenPointCount) {
+  Matrix<double, 2, 2> A = Matrix<double, 2, 2>::Identity();
+  Matrix<double, 2, 1> B{1.0, -2.0};
+  DiscreteLinearSystemDynamics<double, 2, 1> lin_sys(A, B);
+
+  DiscreteTimeRollout<double, 2, 1> rollout(&lin_sys, 0.25);
+
+  constexpr double initTime = 0.02;
+  constexpr double finalTime = 1.02;
+  LinearController<double, 2, 1, 5> controller;
+
+  for (int i = 0; i < 5; ++i) {
+    controller.timeStamp_[i] = initTime + 0.25 * i;
+    controller.biasArray_[i] = Vector<double, 1>::Ones();
+    controller.gainArray_[i] = Matrix<double, 1, 2>::Zero();
+  }
+
+  std::array<double, 5> rolloutTimeTrajectory;
+  std::array<Vector<double, 2>, 5> rolloutStateTrajectory;
+  std::array<Vector<double, 1>, 5> rolloutInputTrajectory;
+
+  RolloutTrajectoryPointer<double, 2, 1> rolloutTrajectoryPointer(
+      rolloutTimeTrajectory.data(), rolloutStateTrajectory.data(),
+      rolloutInputTrajectory.data(), 5);
+  const int count =
+      rollout.run(initTime, Vector<double, 2>::Zero(), finalTime, &controller,
+                  rolloutTrajectoryPointer);
+
+  ASSERT_EQ(count, 5);
+  for (int i = 0; i < count; ++i) {
+    EXPECT_NEAR(rolloutTimeTrajectory[i], initTime + 0.25 * i, 1e-12);
+    EXPECT_TRUE(rolloutStateTrajectory[i].isApprox(
+        Vector<double, 2>{static_cast<double>(i), -2.0 * i}, 1e-12))
+        << "i = " << i;
+    EXPECT_TRUE(
+        rolloutInputTrajectory[i].isApprox(Vector<double, 1>::Ones(), 1e-12))
         << "i = " << i;
   }
 }

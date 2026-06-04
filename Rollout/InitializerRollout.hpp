@@ -41,7 +41,7 @@ class InitializerRollout : RolloutBase<Scalar, XDim, UDim> {
    * @param [in] finalTime 终止时间。
    * @param [in] controller 未使用。
    * @param [in,out] trajectory 输出轨迹。
-   * @return 步数（写入点数减 1）。
+   * @return 写入的轨迹点数。
    */
   int run(const Scalar initTime, const Vector<Scalar, XDim>& initState,
           const Scalar finalTime,
@@ -70,7 +70,7 @@ class InitializerRollout : RolloutBase<Scalar, XDim, UDim> {
       state = nextState;
       t += timeStep;
     }  // i 循环结束。
-    return numSteps;
+    return static_cast<int>(numSteps + 1);
   }
 
  private:

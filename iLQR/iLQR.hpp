@@ -376,16 +376,15 @@ class iLQR {
    * @param [in,out] primalSolution 结果写入其时间/状态/输入轨迹；需已设置
    * controller 供 rollout 使用。
    */
-  static void rolloutTrajectory(RolloutBase_t& rollout, Scalar initTime,
-                                const StateVector_t& initState,
-                                Scalar finalTime,
-                                PrimalSolution_t& primalSolution) {
+  static int rolloutTrajectory(RolloutBase_t& rollout, Scalar initTime,
+                               const StateVector_t& initState, Scalar finalTime,
+                               PrimalSolution_t& primalSolution) {
     RolloutTrajectoryPointer_t rolloutTrajectortPtr(
         primalSolution.timeTrajectory_.data(),
         primalSolution.stateTrajectory_.data(),
         primalSolution.inputTrajectory_.data(), PredictLength + 1);
-    rollout.run(initTime, initState, finalTime, &primalSolution.controller_,
-                rolloutTrajectortPtr);
+    return rollout.run(initTime, initState, finalTime,
+                       &primalSolution.controller_, rolloutTrajectortPtr);
   }
 
   /**
@@ -506,17 +505,15 @@ class iLQR {
    */
   int rolloutInitialController(PrimalSolution_t& inputPrimalSolution,
                                PrimalSolution_t& outputPrimalSolution) {
-    // 通过加入一个 dt 的小分数确保包含 finalTime，使得：N
-    // * dt <= finalTime < (N + 1) * dt。
-    Scalar finalTimeLocal = std::min(lastFinalTime_, finalTime_) +
-                            Scalar(0.01) * ddpSettings_.timeStep_;
-    int numSteps = std::min(
-        static_cast<int>((finalTimeLocal - initTime_) / ddpSettings_.timeStep_),
-        static_cast<int>(PredictLength));
-
     outputPrimalSolution.controller_ = inputPrimalSolution.controller_;
-    rolloutTrajectory(rollout_, initTime_, initState_, lastFinalTime_,
-                      outputPrimalSolution);
+    const Scalar rolloutFinalTime = std::min(lastFinalTime_, finalTime_);
+    const int writtenPoints =
+        rolloutTrajectory(rollout_, initTime_, initState_, rolloutFinalTime,
+                          outputPrimalSolution);
+
+    const int numSteps = writtenPoints - 1;
+    assert(writtenPoints > 0);
+    assert(numSteps <= static_cast<int>(PredictLength));
 
     return numSteps;
   }
@@ -527,6 +524,10 @@ class iLQR {
    * Initializer 的结果拼接。
    */
   void rolloutInitializer(PrimalSolution_t& primalSolution, int numSteps) {
+    if (numSteps >= static_cast<int>(PredictLength)) {
+      return;
+    }
+
     RolloutTrajectoryPointer_t rolloutTrajectoryPtr(
         primalSolution.timeTrajectory_.data() + numSteps,
         primalSolution.stateTrajectory_.data() + numSteps,

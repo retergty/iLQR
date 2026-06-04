@@ -49,7 +49,7 @@ class DiscreteTimeRollout : public RolloutBase<Scalar, XDim, UDim> {
    * @param [in] finalTime 终止时间。
    * @param [in] controller 控制策略。
    * @param [in,out] trajectory 输出轨迹缓冲区。
-   * @return 步数（写入点数减 1）。
+   * @return 写入的轨迹点数。
    */
   int run(const Scalar initTime, const Vector<Scalar, XDim>& initState,
           const Scalar finalTime,
@@ -89,7 +89,7 @@ class DiscreteTimeRollout : public RolloutBase<Scalar, XDim, UDim> {
       trajectory.inputTrajectory[numSteps] = controller->computeInput(t, state);
     }
 
-    return static_cast<int>(numSteps);
+    return static_cast<int>(numSteps + 1);
   }
 
  private:
