@@ -144,8 +144,6 @@ class iLQR {
     optimizedPrimalSolution_.clear();
     optimizedDualSolution_.clear();
 
-    avgTimeStepFP_ = Scalar(0.0);
-    avgTimeStepBP_ = Scalar(0.0);
     totalNumIterations_ = 0;
 
     lineSearchStrategy_.reset();
@@ -184,7 +182,7 @@ class iLQR {
       approximateOptimalControlProblem();
 
       // nominal --> nominal：求解 LQ 问题。
-      avgTimeStepBP_ = solveSequentialRiccatiEquations(
+      solveSequentialRiccatiEquations(
           nominalPrimalData_.modelDataFinalTime.cost);
 
       // 计算控制器并将结果存入 unoptimizedController_。
@@ -377,20 +375,17 @@ class iLQR {
    * @param [in] finalTime 终止时间。
    * @param [in,out] primalSolution 结果写入其时间/状态/输入轨迹；需已设置
    * controller 供 rollout 使用。
-   * @return 平均时间步长。
    */
-  static Scalar rolloutTrajectory(RolloutBase_t& rollout, Scalar initTime,
-                                  const StateVector_t& initState,
-                                  Scalar finalTime,
-                                  PrimalSolution_t& primalSolution) {
+  static void rolloutTrajectory(RolloutBase_t& rollout, Scalar initTime,
+                                const StateVector_t& initState,
+                                Scalar finalTime,
+                                PrimalSolution_t& primalSolution) {
     RolloutTrajectoryPointer_t rolloutTrajectortPtr(
         primalSolution.timeTrajectory_.data(),
         primalSolution.stateTrajectory_.data(),
         primalSolution.inputTrajectory_.data(), PredictLength + 1);
     rollout.run(initTime, initState, finalTime, &primalSolution.controller_,
                 rolloutTrajectortPtr);
-    // 平均时间步长。
-    return (finalTime - initTime) / static_cast<Scalar>(PredictLength);
   }
 
   /**
@@ -683,9 +678,8 @@ class iLQR {
    * Lv/Km。
    * @param [in] finalValueFunction 终端价值函数二次近似（Sm=dfdxx, Sv=dfdx,
    * s=f）。
-   * @return 平均时间步长（用于统计）。
    */
-  Scalar solveSequentialRiccatiEquations(
+  void solveSequentialRiccatiEquations(
       const ValueFunctionQuadraticApproximation_t& finalValueFunction) {
     const ModelData_t& finalModelData = nominalPrimalData_.modelDataFinalTime;
     RiccatiModification_t& finalRiccatiModification =
@@ -705,23 +699,19 @@ class iLQR {
     // 反馈。
     finalKmFinal = -finalModelData.cost.dfdux;
 
-    return solveSequentialRiccatiEquationsImpl(finalValueFunction);
+    solveSequentialRiccatiEquationsImpl(finalValueFunction);
   }
 
   /**
    * 用于求解所有分区 Riccati 方程的实现。
    *
    * @param [in] finalValueFunction 终端价值函数（Sm=dfdxx, Sv=dfdx, s=f）。
-   * @return 平均时间步长。
    */
-  Scalar solveSequentialRiccatiEquationsImpl(
+  void solveSequentialRiccatiEquationsImpl(
       const ValueFunctionQuadraticApproximation_t& finalValueFunction) {
     nominalDualData_.valueFunctionTrajectory.back() = finalValueFunction;
 
     riccatiEquationsWorker(finalValueFunction);
-
-    // 平均时间步长。
-    return (finalTime_ - initTime_) / PredictLength;
   }
 
   /**
@@ -827,17 +817,12 @@ class iLQR {
    * 解。 */
   void takePrimalDualStep(Scalar lqModelExpectedCost) {
     // 更新原始解：运行搜索策略并找到最优 stepLength。
-    Scalar avgTimeStep = 0;
     SearchStrategySolutionRef_t solution(
-        avgTimeStep, optimizedDualSolution_, optimizedPrimalSolution_,
+        optimizedDualSolution_, optimizedPrimalSolution_,
         optimizedProblemMetrics_, performanceIndex_);
     const bool success = lineSearchStrategy_.run(
         {initTime_, finalTime_}, initState_, lqModelExpectedCost,
         unoptimizedController_, nominalDualData_.dualSolution, solution);
-
-    if (success) {
-      avgTimeStepFP_ = Scalar(0.9) * avgTimeStepFP_ + Scalar(0.1) * avgTimeStep;
-    }
 
     // 更新对偶解。
     if (success) {
@@ -957,7 +942,5 @@ class iLQR {
   // 性能和迭代记录。
   PerformanceIndex_t performanceIndex_;
   PerformanceIndex_t performanceIndexLast_;
-  Scalar avgTimeStepFP_ = Scalar(0.0);
-  Scalar avgTimeStepBP_ = Scalar(0.0);
   size_t totalNumIterations_{0};
 };

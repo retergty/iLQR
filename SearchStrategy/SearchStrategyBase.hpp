@@ -3,30 +3,22 @@
  * @brief 搜索策略基类：线搜索/置信域等子问题求解接口及搜索解容器。
  */
 #pragma once
-#include "iLQR/LinearAlgebraTypes.hpp"
+#include <utility>
 
 template <typename Descriptor>
 struct iLQRTypes;
 /**
- * @brief 搜索策略候选输出：平均步长、原始解、问题指标与性能指标。
+ * @brief 搜索策略候选输出：原始解、问题指标与性能指标。
  * @note 候选解不缓存对偶解；对偶解由 SearchStrategySolutionRef 在外部保存。
- * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam UDim 控制维度。
- * @tparam PredictLength 预测步数。
- * @tparam StateEqConstrains 等 约束维度。
+ * @tparam Descriptor iLQR 类型描述。
  */
 template <typename Descriptor>
 struct SearchStrategySolution {
   using Types = iLQRTypes<Descriptor>;
-  using Scalar = typename Types::Scalar;
   using PrimalSolution_t = typename Types::PrimalSolution_t;
-  using DualSolution_t = typename Types::DualSolution_t;
   using ProblemMetrics_t = typename Types::ProblemMetrics_t;
   using PerformanceIndex_t = typename Types::PerformanceIndex_t;
 
-  /** @brief 平均时间步长。 */
-  Scalar avgTimeStep;
   /** @brief 原始解。 */
   PrimalSolution_t primalSolution;
   /** @brief 问题指标。 */
@@ -35,32 +27,25 @@ struct SearchStrategySolution {
   PerformanceIndex_t performanceIndex;
 };
 
-/** @brief 搜索策略写回视图：绑定外部 avg/dual/primal/metrics/performance。 */
+/** @brief 搜索策略写回视图：绑定外部 dual/primal/metrics/performance。 */
 template <typename Descriptor>
 struct SearchStrategySolutionRef {
   using Types = iLQRTypes<Descriptor>;
-  using Scalar = typename Types::Scalar;
   using PrimalSolution_t = typename Types::PrimalSolution_t;
   using DualSolution_t = typename Types::DualSolution_t;
   using ProblemMetrics_t = typename Types::ProblemMetrics_t;
   using PerformanceIndex_t = typename Types::PerformanceIndex_t;
 
-  using SearchStrategySolution_t = SearchStrategySolution<Descriptor>;
-
   /** @brief 直接绑定各成员引用。 */
-  SearchStrategySolutionRef(Scalar& avgTimeStepArg,
-                            DualSolution_t& dualSolutionArg,
+  SearchStrategySolutionRef(DualSolution_t& dualSolutionArg,
                             PrimalSolution_t& primalSolutionArg,
                             ProblemMetrics_t& problemMetricsArg,
                             PerformanceIndex_t& performanceIndexArg)
-      : avgTimeStep(avgTimeStepArg),
-        dualSolution(dualSolutionArg),
+      : dualSolution(dualSolutionArg),
         primalSolution(primalSolutionArg),
         problemMetrics(problemMetricsArg),
         performanceIndex(performanceIndexArg) {}
 
-  /** @brief 平均时间步长引用。 */
-  Scalar& avgTimeStep;
   /** @brief 对偶解引用。 */
   DualSolution_t& dualSolution;
   /** @brief 原始解引用。 */
@@ -73,11 +58,7 @@ struct SearchStrategySolutionRef {
 
 /**
  * @brief 搜索策略抽象基类：线搜索、置信域等子问题求解的通用接口。
- * @tparam Scalar 标量类型。
- * @tparam XDim 状态维度。
- * @tparam UDim 控制维度。
- * @tparam PredictLength 预测步数。
- * @tparam StateEqConstrains 等 约束维度。
+ * @tparam Descriptor iLQR 类型描述。
  */
 template <typename Descriptor>
 class SearchStrategyBase {
@@ -114,7 +95,7 @@ class SearchStrategyBase {
    * @param [in] unoptimizedController 待搜索的未优化控制器。
    * @param [in] dualSolution 对偶解。
    * @param [in,out] solution 解。
-   * 输出（primalSolution、performanceIndex、problemMetrics、avgTimeStep）。
+   * 输出（primalSolution、performanceIndex、problemMetrics）。
    * @return 搜索是否成功。
    */
   virtual bool run(const std::pair<Scalar, Scalar>& timePeriod,

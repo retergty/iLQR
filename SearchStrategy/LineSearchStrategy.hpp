@@ -92,7 +92,6 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
 
     solutionRef.primalSolution = selectedSolution.primalSolution;
     solutionRef.dualSolution = dualSolution;
-    solutionRef.avgTimeStep = selectedSolution.avgTimeStep;
     solutionRef.performanceIndex = selectedSolution.performanceIndex;
     solutionRef.problemMetrics = selectedSolution.problemMetrics;
     return true;
@@ -199,7 +198,7 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
     iLQR_t::changeControllerStepLength(stepLength,
                                        *inputRef.unoptimizedControllerPtr,
                                        solution.primalSolution.controller_);
-    solution.avgTimeStep = iLQR_t::rolloutTrajectory(
+    iLQR_t::rolloutTrajectory(
         ilqr_.rollout(), inputRef.timePeriodPtr->first, *inputRef.initStatePtr,
         inputRef.timePeriodPtr->second, solution.primalSolution);
 

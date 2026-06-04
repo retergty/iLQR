@@ -77,10 +77,8 @@ TEST(LinearSystemILQRTest, RolloutTrajectoryWritesPrimalSolution) {
   }
 
   const Vector<double, 2> initState{3.0, 4.0};
-  const double averageTimeStep =
-      Solver::rolloutTrajectory(rollout, 0.0, initState, 2.0, primalSolution);
+  Solver::rolloutTrajectory(rollout, 0.0, initState, 2.0, primalSolution);
 
-  EXPECT_DOUBLE_EQ(averageTimeStep, 0.5);
   for (int i = 0; i < 5; ++i) {
     const double t = 0.5 * i;
     const Vector<double, 2> expectedState{3.0 + t, 4.0 - 2.0 * t};
