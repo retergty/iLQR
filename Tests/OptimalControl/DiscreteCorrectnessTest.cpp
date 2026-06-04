@@ -256,12 +256,12 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
 
   DDPSettings<Scalar> getSettings() const {
     DDPSettings<Scalar> ddpSettings;
-    ddpSettings.timeStep_ = timeStep;
-    ddpSettings.maxNumIterations_ = 30;
-    ddpSettings.minRelCost_ = 1e-9;
-    ddpSettings.lineSearch_.minStepLength = 1e-2;
-    ddpSettings.lineSearch_.maxStepLength = 1.0;
-    ddpSettings.lineSearch_.hessianCorrectionMultiple = 1e-6;
+    ddpSettings.timeStep = timeStep;
+    ddpSettings.maxNumIterations = 30;
+    ddpSettings.minRelCost = 1e-9;
+    ddpSettings.lineSearch.minStepLength = 1e-2;
+    ddpSettings.lineSearch.maxStepLength = 1.0;
+    ddpSettings.lineSearch.hessianCorrectionMultiple = 1e-6;
     return ddpSettings;
   }
 

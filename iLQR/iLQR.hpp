@@ -123,8 +123,8 @@ class iLQR {
        Initializer_t* initializer)
       : ddpSettings_(ddp_setting),
         optimalControlProblem_(optimalControlProblem),
-        rollout_(optimalControlProblem_.dynamicsPtr, ddpSettings_.timeStep_),
-        initializerRollout_(*initializer, ddpSettings_.timeStep_),
+        rollout_(optimalControlProblem_.dynamicsPtr, ddpSettings_.timeStep),
+        initializerRollout_(*initializer, ddpSettings_.timeStep),
         lineSearchStrategy_(makeLineSearchSettings(ddp_setting), *this) {
     assert(optimalControlProblem_.dynamicsPtr != nullptr);
     reset();
@@ -161,7 +161,7 @@ class iLQR {
     initTime_ = initTime;
     initState_ = initState;
     lastFinalTime_ = finalTime_;
-    finalTime_ = initTime + ddpSettings_.timeStep_ * (PredictLength);
+    finalTime_ = initTime + ddpSettings_.timeStep * (PredictLength);
     const size_t initIteration = totalNumIterations_;
 
     // optimized --> nominal：基于优化解初始化名义原始解和对偶解。
@@ -209,7 +209,7 @@ class iLQR {
       initialSolutionExists = true;
 
       if (isConverged || (totalNumIterations_ - initIteration) ==
-                             ddpSettings_.maxNumIterations_) {
+                             ddpSettings_.maxNumIterations) {
         break;
       } else {
         // optimized --> nominal：将优化解作为下一次迭代的名义解。
@@ -234,13 +234,28 @@ class iLQR {
                                     inputTrajectory);
   }
 
+  /**
+   * @brief 设置下一次 run() 使用的固定时间步长。
+   *
+   * 同步更新 DDP 配置、主 rollout 和 initializer rollout 的步长。该接口保留
+   * 已缓存的优化解，使下一次 run() 可以将旧控制器作为 warm start，并在新的
+   * 时间网格上重新 rollout 与离散化。
+   *
+   * @param [in] dt 新时间步长，必须为正数。
+   */
+  void setTimeStep(const Scalar dt) {
+    assert(dt > Scalar(0));
+    ddpSettings_.timeStep = dt;
+    rollout_.settings().timeStep = dt;
+    initializerRollout_.settings().timeStep = dt;
+  }
+
   const PrimalSolution_t& primalSolution() const {
     return optimizedPrimalSolution_;
   }
   const PerformanceIndex_t& performanceIndex() const {
     return performanceIndex_;
   }
-  DDPSettings<Scalar>& ddpSettings() { return ddpSettings_; }
   const DDPSettings<Scalar>& ddpSettings() const { return ddpSettings_; }
   TargetTrajectories_t& targetTrajectory() { return targetTrajectory_; }
   const TargetTrajectories_t& targetTrajectory() const {
@@ -469,8 +484,8 @@ class iLQR {
  private:
   static LineSearchSettings<Scalar> makeLineSearchSettings(
       const DDPSettings<Scalar>& ddpSettings) {
-    LineSearchSettings<Scalar> settings = ddpSettings.lineSearch_;
-    settings.minRelCost = ddpSettings.minRelCost_;
+    LineSearchSettings<Scalar> settings = ddpSettings.lineSearch;
+    settings.minRelCost = ddpSettings.minRelCost;
     return settings;
   }
 
@@ -599,9 +614,9 @@ class iLQR {
         optimalControlProblem_, targetTrajectory_, time, state, multiplier);
 
     // 修正终端时刻 Hessian。
-    shiftHessian(ddpSettings_.lineSearch_.hessianCorrectionStrategy,
+    shiftHessian(ddpSettings_.lineSearch.hessianCorrectionStrategy,
                  modelData.cost.dfdxx,
-                 ddpSettings_.lineSearch_.hessianCorrectionMultiple);
+                 ddpSettings_.lineSearch.hessianCorrectionMultiple);
   }
 
   /**

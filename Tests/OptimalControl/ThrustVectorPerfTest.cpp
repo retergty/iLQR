@@ -78,10 +78,10 @@ int main() {
   HoverInitializer initializer;
 
   DDPSettings<Scalar> settings;
-  settings.timeStep_ = TimeStep;
-  settings.maxNumIterations_ = 20;
-  settings.minRelCost_ = 1e-6;
-  settings.lineSearch_.minStepLength = 0.1;
+  settings.timeStep = TimeStep;
+  settings.maxNumIterations = 20;
+  settings.minRelCost = 1e-6;
+  settings.lineSearch.minStepLength = 0.1;
   Solver solver(settings, problem, &initializer);
 
   StateVector currentState;

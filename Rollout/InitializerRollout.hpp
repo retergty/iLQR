@@ -16,7 +16,7 @@
  * @tparam UDim 控制维度。
  */
 template <typename Scalar, int XDim, int UDim>
-class InitializerRollout : RolloutBase<Scalar, XDim, UDim> {
+class InitializerRollout : public RolloutBase<Scalar, XDim, UDim> {
  public:
   using Initializer_t = Initializer<Scalar, XDim, UDim>;
   using RolloutTrajectoryPointer_t =

@@ -98,6 +98,63 @@ TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts) {
   EXPECT_DOUBLE_EQ(metrics.final.cost, 9.0);
 }
 
+// 验证运行间修改 dt 时，DDP 配置与主 rollout 同步更新，并且下一次 run()
+// 会在新时间网格上重新生成轨迹；旧解仍作为 warm-start 控制器参与初始化。
+TEST(iLQREndToEndTest, SetTimeStepUpdatesNextRunTimeGrid) {
+  using Descriptor =
+      iLQRDescriptor<double, TranscriptionConfig<Dimensions<2, 2>, Horizon<5>>>;
+  using Solver = iLQR<Descriptor>;
+
+  constexpr double initialDt = 0.1;
+  constexpr double updatedDt = 0.2;
+  constexpr double secondRunInitTime = 0.1;
+  constexpr double tolerance = 1e-12;
+
+  Matrix<double, 2, 2> A = Matrix<double, 2, 2>::Identity();
+  Matrix<double, 2, 2> B = Matrix<double, 2, 2>::Identity();
+  LinearSystemDynamics<double, 2, 2> dynamics(A, B);
+  DefaultInitializer<double, 2, 2> initializer;
+  DDPSettings<double> ddpSetting;
+  ddpSetting.timeStep = initialDt;
+  ddpSetting.maxNumIterations = 1;
+
+  Solver::OptimalControlProblem_t problem;
+  problem.dynamicsPtr = &dynamics;
+  QuadraticStateInputCost<double, 2, 2, 6> runningCost(
+      Matrix<double, 2, 2>::Identity(), Matrix<double, 2, 2>::Identity(), 0);
+  QuadraticStateCost<double, 2, 6> finalCost(
+      2.0 * Matrix<double, 2, 2>::Identity(), 0);
+  problem.cost.add(runningCost);
+  problem.finalCost.add(finalCost);
+
+  Solver solver(ddpSetting, problem, &initializer);
+
+  std::array<double, 6> timeTraj;
+  std::array<Vector<double, 2>, 6> stateTraj, inputTraj;
+  for (size_t i = 0; i < 6; ++i) {
+    timeTraj[i] = static_cast<double>(i) * updatedDt;
+    stateTraj[i].setZero();
+    inputTraj[i].setZero();
+  }
+  solver.setDesireTrajectory(timeTraj, stateTraj, inputTraj);
+
+  const Vector<double, 2> initState{1.0, 0.5};
+  ASSERT_NO_THROW(solver.run(0.0, initState));
+  EXPECT_NEAR(solver.primalSolution().timeTrajectory_.back(),
+              5.0 * initialDt, tolerance);
+
+  solver.setTimeStep(updatedDt);
+  EXPECT_DOUBLE_EQ(solver.ddpSettings().timeStep, updatedDt);
+  EXPECT_DOUBLE_EQ(solver.rollout().settings().timeStep, updatedDt);
+
+  ASSERT_NO_THROW(solver.run(secondRunInitTime, initState));
+  for (size_t i = 0; i < solver.primalSolution().timeTrajectory_.size(); ++i) {
+    EXPECT_NEAR(solver.primalSolution().timeTrajectory_[i],
+                secondRunInitTime + static_cast<double>(i) * updatedDt,
+                tolerance);
+  }
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

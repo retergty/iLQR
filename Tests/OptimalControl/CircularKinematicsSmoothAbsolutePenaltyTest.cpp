@@ -43,12 +43,12 @@ class CircularKinematicsSmoothAbsolutePenaltyTest : public testing::Test {
 
   DDPSettings<Scalar> settings() const {
     DDPSettings<Scalar> ddpSettings;
-    ddpSettings.timeStep_ = timeStep;
-    ddpSettings.maxNumIterations_ = 40;
-    ddpSettings.minRelCost_ = 1e-8;
-    ddpSettings.lineSearch_.minStepLength = 0.01;
-    ddpSettings.lineSearch_.maxStepLength = 1.0;
-    ddpSettings.lineSearch_.hessianCorrectionMultiple = 1.0;
+    ddpSettings.timeStep = timeStep;
+    ddpSettings.maxNumIterations = 40;
+    ddpSettings.minRelCost = 1e-8;
+    ddpSettings.lineSearch.minStepLength = 0.01;
+    ddpSettings.lineSearch.maxStepLength = 1.0;
+    ddpSettings.lineSearch.hessianCorrectionMultiple = 1.0;
     return ddpSettings;
   }
 

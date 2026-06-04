@@ -15,14 +15,14 @@
 template <typename Scalar>
 struct DDPSettings {
   /** @brief DDP 最大迭代次数。 */
-  size_t maxNumIterations_ = 10;
+  size_t maxNumIterations = 10;
   /** @brief 基于代价最小相对变化的终止条件阈值。 */
-  Scalar minRelCost_ = Scalar(1e-3);
+  Scalar minRelCost = Scalar(1e-3);
 
   /** @brief Riccati 方程积分时间步长（固定步长积分方案）。 */
-  Scalar timeStep_ = Scalar(1e-2);
+  Scalar timeStep = Scalar(1e-2);
 
   /** @brief 线搜索策略参数。 */
-  LineSearchSettings<Scalar> lineSearch_{};
+  LineSearchSettings<Scalar> lineSearch{};
 
 };  // DDP_Settings 结束。

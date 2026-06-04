@@ -112,9 +112,9 @@ TEST(ThrustVectorMpcTest, RecedingHorizonOptimizationReducesVelocityError) {
   HoverInitializer initializer;
 
   DDPSettings<Scalar> settings;
-  settings.timeStep_ = TimeStep;
-  settings.maxNumIterations_ = 20;
-  settings.minRelCost_ = 1e-6;
+  settings.timeStep = TimeStep;
+  settings.maxNumIterations = 20;
+  settings.minRelCost = 1e-6;
 
   Solver solver(settings, problem, &initializer);
 
@@ -148,9 +148,9 @@ TEST(ThrustVectorMpcTest, TracksAndMaintainsVelocityReference) {
   HoverInitializer initializer;
 
   DDPSettings<Scalar> settings;
-  settings.timeStep_ = TimeStep;
-  settings.maxNumIterations_ = 25;
-  settings.minRelCost_ = 1e-7;
+  settings.timeStep = TimeStep;
+  settings.maxNumIterations = 25;
+  settings.minRelCost = 1e-7;
 
   Solver solver(settings, problem, &initializer);
 

@@ -54,10 +54,10 @@ class Exp0 : public testing::Test {
 
   DDPSettings_t getSettings() const {
     DDPSettings_t ddpSettings;
-    ddpSettings.timeStep_ = timeStep;
-    ddpSettings.maxNumIterations_ = 30;
-    ddpSettings.minRelCost_ = minRelCost;
-    ddpSettings.lineSearch_.minStepLength = 0.0001;
+    ddpSettings.timeStep = timeStep;
+    ddpSettings.maxNumIterations = 30;
+    ddpSettings.minRelCost = minRelCost;
+    ddpSettings.lineSearch.minStepLength = 0.0001;
     return ddpSettings;
   }
 
@@ -260,8 +260,8 @@ TEST_F(Exp0, ddp_moving_horizon) {
 /******************************************************************************************************/
 TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
   auto ddpSettings = getSettings();
-  ddpSettings.maxNumIterations_ = 50;
-  ddpSettings.minRelCost_ = 1e-9;
+  ddpSettings.maxNumIterations = 50;
+  ddpSettings.minRelCost = 1e-9;
 
   exp0::EXP0_Sys1<Scalar> systemDynamics;
 
@@ -307,8 +307,8 @@ TEST_F(Exp0, qp_solver_matches_ilqr_solution) {
 TEST_F(Exp0, ddp_q_function) {
   // DDP 设置。
   auto ddpSettings = getSettings();
-  ddpSettings.maxNumIterations_ = 50;
-  ddpSettings.minRelCost_ = 1e-9;  // 允许更多迭代，使
+  ddpSettings.maxNumIterations = 50;
+  ddpSettings.minRelCost = 1e-9;  // 允许更多迭代，使
                                    // 最终线搜索的影响可以忽略。
 
   // 动力学和 rollout。
