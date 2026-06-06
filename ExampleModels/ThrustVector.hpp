@@ -261,6 +261,65 @@ class ThrustVectorTrackFinalCost final
 };
 
 template <typename Scalar, int ArrayLength>
+class ThrustInputRateCost final
+    : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
+ public:
+  ThrustInputRateCost(const Matrix<Scalar, INPUT_DIM, INPUT_DIM>& S,
+                      int cost_number)
+      : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number),
+        S_(S) {
+    approximation_.setZero();
+    approximation_.dfdxx.template slice<3, 3>(3, 3) = S_;
+    approximation_.dfduu = S_;
+    approximation_.dfdux.template slice<3, 3>(0, 3) = -S_;
+  }
+
+  Scalar getValue(
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
+      override {
+    (void)time;
+    (void)timeTrajectory;
+    (void)stateTrajectoy;
+    (void)inputTrajectory;
+
+    const Vector<Scalar, INPUT_DIM> inputRate =
+        input - state.template tail<INPUT_DIM>();
+    return Scalar(0.5) * inputRate.dot(S_ * inputRate);
+  }
+
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
+  getQuadraticApproximation(
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
+      override {
+    (void)time;
+    (void)timeTrajectory;
+    (void)stateTrajectory;
+    (void)inputTrajectory;
+
+    const Vector<Scalar, INPUT_DIM> inputRate =
+        input - state.template tail<INPUT_DIM>();
+    const Vector<Scalar, INPUT_DIM> weightedInputRate = S_ * inputRate;
+    approximation_.f = Scalar(0.5) * inputRate.dot(weightedInputRate);
+    approximation_.dfdx.template tail<INPUT_DIM>() = -weightedInputRate;
+    approximation_.dfdu = weightedInputRate;
+    return approximation_;
+  }
+
+ private:
+  Matrix<Scalar, INPUT_DIM, INPUT_DIM> S_;
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
+      approximation_;
+};
+
+template <typename Scalar, int ArrayLength>
 class ThrustDirectionChangeCost final
     : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
   /** @brief 获取代价值。 */
@@ -409,11 +468,18 @@ Matrix<Scalar, INPUT_DIM, INPUT_DIM> makeDefaultThrustVectorInputWeight() {
   return Scalar(1e-3) * Matrix<Scalar, INPUT_DIM, INPUT_DIM>::Identity();
 }
 
+template <typename Scalar>
+Matrix<Scalar, INPUT_DIM, INPUT_DIM> makeDefaultThrustInputRateWeight() {
+  return Scalar(1e-2) * Matrix<Scalar, INPUT_DIM, INPUT_DIM>::Identity();
+}
+
 template <typename Scalar, size_t PredictLength>
 inline ThrustVectorProblem<Scalar, PredictLength>& createThrustVectorProblem() {
   using Problem_t = ThrustVectorProblem<Scalar, PredictLength>;
   using TrackCost_t =
       ThrustVectorTrackCost<Scalar, static_cast<int>(PredictLength + 1)>;
+  using InputRateCost_t =
+      ThrustInputRateCost<Scalar, static_cast<int>(PredictLength + 1)>;
   using DirectionCost_t =
       ThrustDirectionChangeCost<Scalar, static_cast<int>(PredictLength + 1)>;
   using FinalCost_t =
@@ -424,11 +490,14 @@ inline ThrustVectorProblem<Scalar, PredictLength>& createThrustVectorProblem() {
       makeDefaultThrustVectorStateWeight<Scalar>();
   static const Matrix<Scalar, INPUT_DIM, INPUT_DIM> R =
       makeDefaultThrustVectorInputWeight<Scalar>();
+  static const Matrix<Scalar, INPUT_DIM, INPUT_DIM> S =
+      makeDefaultThrustInputRateWeight<Scalar>();
   static const Matrix<Scalar, STATE_DIM, STATE_DIM> Qf =
       makeDefaultThrustVectorFinalWeight<Scalar>();
 
   static TrackCost_t trackCost(Q, R, 0);
-  static DirectionCost_t directionCost(1);
+  static InputRateCost_t inputRateCost(S, 1);
+  static DirectionCost_t directionCost(2);
   static FinalCost_t finalCost(Qf, 0);
   static Problem_t problem;
   static bool initialized = false;
@@ -436,6 +505,7 @@ inline ThrustVectorProblem<Scalar, PredictLength>& createThrustVectorProblem() {
   if (!initialized) {
     problem.dynamicsPtr = &dynamics;
     problem.cost.add(trackCost);
+    problem.cost.add(inputRateCost);
     problem.cost.add(directionCost);
     problem.finalCost.add(finalCost);
     initialized = true;

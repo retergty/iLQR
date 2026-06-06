@@ -140,6 +140,128 @@ R_a
 \left(U_k - a_{\mathrm{tot},\mathrm{ref},k}^N\right)
 $$
 
+## 输入变化率代价
+
+由于增广状态的后 3 维保存了上一拍 NED 总加速度，可以直接对当前输入相对上一拍输入的变化量加二次惩罚：
+
+$$
+e_{\Delta a,k}
+:=
+U_k - a_{\mathrm{tot},k-1}^N
+$$
+
+$$
+\ell_{\mathrm{rate},k}
+:=
+\frac{1}{2}
+e_{\Delta a,k}^T
+S_{\Delta a}
+e_{\Delta a,k}
+$$
+
+其中 $S_{\Delta a} \in \mathbb{R}^{3 \times 3}$ 为输入变化率权重矩阵。该项用于抑制相邻采样时刻的期望总加速度跳变，使速度外环 MPC 的输出更平滑。
+
+定义选择矩阵 $E_a \in \mathbb{R}^{3 \times 6}$：
+
+$$
+E_a =
+\begin{bmatrix}
+0_3 & I_3
+\end{bmatrix}
+$$
+
+则：
+
+$$
+a_{\mathrm{tot},k-1}^N = E_a X_k
+$$
+
+$$
+e_{\Delta a,k}
+=
+U_k - E_a X_k
+$$
+
+因此该项对状态和输入的梯度为：
+
+$$
+\ell_x
+=
+-E_a^T
+S_{\Delta a}
+e_{\Delta a,k}
+$$
+
+$$
+\ell_u
+=
+S_{\Delta a}
+e_{\Delta a,k}
+$$
+
+对应 Hessian 为：
+
+$$
+\ell_{xx}
+=
+E_a^T
+S_{\Delta a}
+E_a
+$$
+
+$$
+\ell_{uu}
+=
+S_{\Delta a}
+$$
+
+$$
+\ell_{ux}
+=
+-S_{\Delta a}
+E_a
+$$
+
+在当前状态维度为 6、输入维度为 3 的实现中，矩阵块形式为：
+
+$$
+\ell_x =
+\begin{bmatrix}
+0_3 \\
+-S_{\Delta a} e_{\Delta a,k}
+\end{bmatrix}
+$$
+
+$$
+\ell_u =
+S_{\Delta a} e_{\Delta a,k}
+$$
+
+$$
+\ell_{xx}
+=
+\begin{bmatrix}
+0_3 & 0_3 \\
+0_3 & S_{\Delta a}
+\end{bmatrix}
+$$
+
+$$
+\ell_{uu}
+=
+S_{\Delta a}
+$$
+
+$$
+\ell_{ux}
+=
+\begin{bmatrix}
+0_3 & -S_{\Delta a}
+\end{bmatrix}
+$$
+
+这对应实现中的 `dfdxx` 后 3 维状态块、`dfduu` 输入块，以及 `dfdux` 的输入-上一拍总加速度交叉块。
+
 ## 推力加速度方向转角速度代价
 
 虽然控制输入采用 NED 总加速度，但推力方向变化的物理意义应基于推力加速度，而不是总加速度。先从总加速度中去掉重力项：
@@ -713,6 +835,8 @@ $$
 =
 \ell_{\mathrm{track},k}
 +
+\ell_{\mathrm{rate},k}
++
 \ell_{\mathrm{angle},k}
 $$
 
@@ -731,16 +855,18 @@ Q_v
 R_a
 \left(U_k - a_{\mathrm{tot},\mathrm{ref},k}^N\right)
 +
+\frac{1}{2}
+\left(U_k - a_{\mathrm{tot},k-1}^N\right)^T
+S_{\Delta a}
+\left(U_k - a_{\mathrm{tot},k-1}^N\right)
++
+\frac{1}{2}
+\gamma_k
 w_{\mathrm{angle}}
-\left(
-1 -
-\frac{(a_{T,k}^N)^T a_{T,k-1}^N}
-{\sqrt{(a_{T,k}^N)^T a_{T,k}^N + \varepsilon}
- \sqrt{(a_{T,k-1}^N)^T a_{T,k-1}^N + \varepsilon}}
-\right)
+r_k^T r_k
 $$
 
-若启用低推力加速度门控，则将最后一项中的 $w_{\mathrm{angle}}$ 替换为 $\gamma_k w_{\mathrm{angle}}$。
+其中 $r_k = n(a_{T,k}^N) - n(a_{T,k-1}^N)$，$\gamma_k$ 为低推力加速度门控权重。若不启用门控，则可令 $\gamma_k = 1$。
 
 预测时域总代价为：
 

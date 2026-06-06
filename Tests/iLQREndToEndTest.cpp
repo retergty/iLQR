@@ -140,8 +140,8 @@ TEST(iLQREndToEndTest, SetTimeStepUpdatesNextRunTimeGrid) {
 
   const Vector<double, 2> initState{1.0, 0.5};
   ASSERT_NO_THROW(solver.run(0.0, initState));
-  EXPECT_NEAR(solver.primalSolution().timeTrajectory_.back(),
-              5.0 * initialDt, tolerance);
+  EXPECT_NEAR(solver.primalSolution().timeTrajectory_.back(), 5.0 * initialDt,
+              tolerance);
 
   solver.setTimeStep(updatedDt);
   EXPECT_DOUBLE_EQ(solver.ddpSettings().timeStep, updatedDt);

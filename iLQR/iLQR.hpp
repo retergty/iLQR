@@ -257,6 +257,7 @@ class iLQR {
     return performanceIndex_;
   }
   const DDPSettings<Scalar>& ddpSettings() const { return ddpSettings_; }
+  size_t totalNumIterations() const { return totalNumIterations_; }
   TargetTrajectories_t& targetTrajectory() { return targetTrajectory_; }
   const TargetTrajectories_t& targetTrajectory() const {
     return targetTrajectory_;

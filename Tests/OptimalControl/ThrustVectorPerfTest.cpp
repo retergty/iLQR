@@ -9,7 +9,7 @@
 
 namespace {
 using Scalar = double;
-constexpr size_t PredictLength = 15;
+constexpr size_t PredictLength = 25;
 constexpr Scalar TimeStep = 0.01;
 constexpr size_t LoopCycle = 1000000;
 
@@ -56,19 +56,23 @@ void configureVelocityReference(const Scalar initTime,
   }
 }
 
-void runOneMpcCycle(Solver& solver, Solver::OptimalControlProblem_t& problem,
-                    const StateVector& velocityReference, Scalar& currentTime,
-                    StateVector& currentState) {
+size_t runOneMpcCycle(Solver& solver, Solver::OptimalControlProblem_t& problem,
+                      const StateVector& velocityReference, Scalar& currentTime,
+                      StateVector& currentState) {
   configureVelocityReference(currentTime, velocityReference,
                              solver.targetTrajectory());
 
+  const size_t iterationsBefore = solver.totalNumIterations();
   solver.run(currentTime, currentState);
+  const size_t mpcIterations = solver.totalNumIterations() - iterationsBefore;
+
   const InputVector firstInput = solver.primalSolution().inputTrajectory_[0];
 
   currentState = problem.dynamicsPtr->computeMap(currentTime, currentState,
                                                  firstInput, TimeStep);
 
   currentTime += TimeStep;
+  return mpcIterations;
 }
 }  // namespace
 
@@ -81,7 +85,6 @@ int main() {
   settings.timeStep = TimeStep;
   settings.maxNumIterations = 20;
   settings.minRelCost = 1e-6;
-  settings.lineSearch.minStepLength = 0.1;
   Solver solver(settings, problem, &initializer);
 
   StateVector currentState;
@@ -97,13 +100,19 @@ int main() {
   Scalar currentTime = 0.0;
 
   std::chrono::time_point now = std::chrono::steady_clock::now();
+  size_t totalMpcIterations = 0;
   for (size_t cycle = 0; cycle < LoopCycle; ++cycle) {
-    runOneMpcCycle(solver, problem, velocityReference, currentTime,
-                   currentState);
+    totalMpcIterations +=
+        runOneMpcCycle(solver, problem, velocityReference, currentTime,
+                       currentState);
   }
   std::cout << "final state: " << currentState.transpose() << std::endl;
   const auto pass_time = std::chrono::steady_clock::now() - now;
   std::cout << "pass time : "
             << std::chrono::duration<double>(pass_time).count() << std::endl;
+  std::cout << "average mpc iterations: "
+            << static_cast<double>(totalMpcIterations) /
+                   static_cast<double>(LoopCycle)
+            << std::endl;
   return 0;
 }
