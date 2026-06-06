@@ -42,6 +42,53 @@ TEST(UtilityTest, CholeskyDecompositionSolvesMatrixRightHandSide) {
   EXPECT_TRUE(toEigenMatrix(solution).isApprox(expected, 1e-12));
 }
 
+// 验证 3x3 特化 LLT 分解能得到已知解析下三角因子。
+TEST(UtilityTest, CholeskyDecomposition3x3ComputesExpectedLLTFactor) {
+  const Matrix<double, 3, 3> matrix{
+      {4.0, 12.0, -16.0}, {12.0, 37.0, -43.0}, {-16.0, -43.0, 98.0}};
+  const Matrix<double, 3, 3> expectedL{
+      {2.0, 0.0, 0.0}, {6.0, 1.0, 0.0}, {-8.0, 5.0, 3.0}};
+
+  CholeskyDecomposition<double, 3> cholesky;
+  ASSERT_TRUE(cholesky.Decomposition(matrix));
+
+  const Matrix<double, 3, 3> l = cholesky.GetMatrixL();
+  const Matrix<double, 3, 3> lt = cholesky.GetMatrixLT();
+  EXPECT_TRUE(l.isApprox(expectedL, 1e-12));
+  EXPECT_TRUE((l * lt).isApprox(matrix, 1e-12));
+}
+
+// 验证 3x3 特化 LLT 分解在多组 SPD 矩阵上与 Eigen 的下三角因子一致。
+TEST(UtilityTest, CholeskyDecomposition3x3MatchesEigenLLTFactor) {
+  const std::array<Matrix<double, 3, 3>, 3> matrices = {{
+      {{6.0, 2.0, 1.0}, {2.0, 5.0, 2.0}, {1.0, 2.0, 4.0}},
+      {{25.0, 15.0, -5.0}, {15.0, 18.0, 0.0}, {-5.0, 0.0, 11.0}},
+      {{10.0, -2.0, 3.0}, {-2.0, 7.0, 1.5}, {3.0, 1.5, 8.0}},
+  }};
+
+  for (const auto& matrix : matrices) {
+    CholeskyDecomposition<double, 3> cholesky;
+    ASSERT_TRUE(cholesky.Decomposition(matrix));
+
+    const Matrix<double, 3, 3> l = cholesky.GetMatrixL();
+    const Matrix<double, 3, 3> lt = cholesky.GetMatrixLT();
+    const Eigen::Matrix<double, 3, 3> expectedL =
+        toEigenMatrix(matrix).llt().matrixL();
+
+    EXPECT_TRUE(toEigenMatrix(l).isApprox(expectedL, 1e-12));
+    EXPECT_TRUE((l * lt).isApprox(matrix, 1e-12));
+  }
+}
+
+// 验证 3x3 特化 LLT 分解会拒绝非正定矩阵。
+TEST(UtilityTest, CholeskyDecomposition3x3RejectsNonPositiveDefiniteMatrix) {
+  const Matrix<double, 3, 3> matrix{
+      {1.0, 2.0, 3.0}, {2.0, 1.0, 4.0}, {3.0, 4.0, 1.0}};
+
+  CholeskyDecomposition<double, 3> cholesky;
+  EXPECT_FALSE(cholesky.Decomposition(matrix));
+}
+
 // 验证 Cholesky 只存下三角时仍能重构 L、L^T 并通过 const 对象求解。
 TEST(UtilityTest, CholeskyDecompositionAccessorsAreConstCorrect) {
   Matrix<double, 3, 3> matrix{
