@@ -17,7 +17,6 @@ struct DiscreteTimeRiccatiData {
   Matrix<Scalar, XDim, XDim> Sm_Am_;
   Matrix<Scalar, UDim, XDim> Gm_;
   Vector<Scalar, UDim> Gv_;
-  Matrix<Scalar, XDim, XDim> Gm_T_Km_;
 };
 
 /**
@@ -94,31 +93,30 @@ class DiscreteTimeRiccatiEquations {
 
     // Gm = Pm + Bm^T * Sm * Am
     dreCache.Gm_ = modelData.cost.dfdux;
-    dreCache.Gm_ += modelData.dynamics.dfdu.transpose() * dreCache.Sm_Am_;
+    dreCache.Gm_.addTransposeProduct(modelData.dynamics.dfdu, dreCache.Sm_Am_);
 
     // Gv = Rv + Bm^T * Sv
     dreCache.Gv_ = modelData.cost.dfdu;
-    dreCache.Gv_ += modelData.dynamics.dfdu.transpose() * SvNext;
+    dreCache.Gv_.addTransposeProduct(modelData.dynamics.dfdu, SvNext);
 
     // 反馈：Km = -Hm^{-1} * Gm。
     riccatiModification.HmLLT_.Solve(Km, dreCache.Gm_);
-    Km = -Km;
+    Km *= Scalar(-1);
+
     // 前馈：Lv = -Hm^{-1} * Gv。
     riccatiModification.HmLLT_.Solve(Lv, dreCache.Gv_);
-    Lv = -Lv;
-
-    // 预计算 (2)
-    dreCache.Gm_T_Km_ = dreCache.Gm_.transpose() * Km;
+    Lv *= Scalar(-1);
 
     /*
      * Sm
      */
     // = Qm + deltaQm
-    Sm = modelData.cost.dfdxx + riccatiModification.deltaQm_;
+    Sm = modelData.cost.dfdxx;
+    Sm += riccatiModification.deltaQm_;
     // += Am^T * Sm * Am, Sm is symmetry
-    Sm += dreCache.Sm_Am_.transpose() * modelData.dynamics.dfdx;
+    Sm.addTransposeProduct(dreCache.Sm_Am_, modelData.dynamics.dfdx);
     // += Gm^T * Km
-    Sm += dreCache.Gm_T_Km_;
+    Sm.addTransposeProduct(dreCache.Gm_, Km);
 
     /*
      * Sv
@@ -126,9 +124,9 @@ class DiscreteTimeRiccatiEquations {
     // = Qv
     Sv = modelData.cost.dfdx;
     // += Am^T * Sv
-    Sv += modelData.dynamics.dfdx.transpose() * SvNext;
+    Sv.addTransposeProduct(modelData.dynamics.dfdx, SvNext);
     // += Gm^T * Lv
-    Sv += dreCache.Gm_.transpose() * Lv;
+    Sv.addTransposeProduct(dreCache.Gm_, Lv);
 
     /*
      * s

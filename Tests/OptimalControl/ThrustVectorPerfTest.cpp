@@ -9,7 +9,7 @@
 
 namespace {
 using Scalar = double;
-constexpr size_t PredictLength = 25;
+constexpr size_t PredictLength = 30;
 constexpr Scalar TimeStep = 0.01;
 constexpr size_t LoopCycle = 1000000;
 
@@ -37,8 +37,11 @@ class HoverInitializer final
     const Scalar dt = nextTime - time;
     input = hoverInput();
 
-    nextState.template head<3>() = state.template head<3>() + dt * input;
-    nextState.template tail<3>() = input;
+    const InputVector currentAcceleration =
+        state.template tail<thrust_vector::INPUT_DIM>() + input;
+    nextState.template head<3>() =
+        state.template head<3>() + dt * currentAcceleration;
+    nextState.template tail<3>() = currentAcceleration;
   }
 };
 
@@ -102,9 +105,8 @@ int main() {
   std::chrono::time_point now = std::chrono::steady_clock::now();
   size_t totalMpcIterations = 0;
   for (size_t cycle = 0; cycle < LoopCycle; ++cycle) {
-    totalMpcIterations +=
-        runOneMpcCycle(solver, problem, velocityReference, currentTime,
-                       currentState);
+    totalMpcIterations += runOneMpcCycle(solver, problem, velocityReference,
+                                         currentTime, currentState);
   }
   std::cout << "final state: " << currentState.transpose() << std::endl;
   const auto pass_time = std::chrono::steady_clock::now() - now;

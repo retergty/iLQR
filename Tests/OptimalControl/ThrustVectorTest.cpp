@@ -39,8 +39,11 @@ class HoverInitializer final
     const Scalar dt = nextTime - time;
     input = hoverInput();
 
-    nextState.template head<3>() = state.template head<3>() + dt * input;
-    nextState.template tail<3>() = input;
+    const InputVector currentAcceleration =
+        state.template tail<thrust_vector::INPUT_DIM>() + input;
+    nextState.template head<3>() =
+        state.template head<3>() + dt * currentAcceleration;
+    nextState.template tail<3>() = currentAcceleration;
   }
 };
 
@@ -71,13 +74,15 @@ void runOneMpcCycle(Solver& solver, Solver::OptimalControlProblem_t& problem,
 
   ASSERT_NO_THROW(solver.run(currentTime, currentState));
   const InputVector firstInput = solver.primalSolution().inputTrajectory_[0];
+  const InputVector previousAcceleration = currentState.template tail<3>();
 
   EXPECT_TRUE(firstInput.isAllFinite());
   currentState = problem.dynamicsPtr->computeMap(currentTime, currentState,
                                                  firstInput, TimeStep);
   EXPECT_TRUE(currentState.isAllFinite());
   const InputVector currentAcceleration = currentState.template tail<3>();
-  EXPECT_TRUE(currentAcceleration.isApprox(firstInput, 1e-10));
+  EXPECT_TRUE(
+      currentAcceleration.isApprox(previousAcceleration + firstInput, 1e-10));
 
   currentTime += TimeStep;
 }

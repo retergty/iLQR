@@ -16,7 +16,7 @@
  * 该示例定义了一个最优控制问题，其中运动学建模的
  * 是一个矢量推力无人机，状态空间是6维
  * NED 全局坐标系三轴速度+上一拍 NED 总加速度，
- * 输入是3维 NED 总加速度
+ * 输入是3维 NED 总加速度增量
  * 同时添加余弦相似度的代价函数
  */
 
@@ -46,6 +46,7 @@ class ThrustVectorDynamicSystem final
       dt = 0;
       dirty = true;
       A.template topLeftCorner<3, 3>().setIdentity();
+      A.template slice<3, 3>(3, 3).setIdentity();
       B.template bottomRows<3>().setIdentity();
       approximation.dfdx = A;
     }
@@ -62,7 +63,10 @@ class ThrustVectorDynamicSystem final
   void updateCache(const Scalar dt) {
     if (cache_.dirty ||
         std::abs(cache_.dt - dt) > std::numeric_limits<Scalar>::epsilon()) {
+      cache_.A.template topRightCorner<3, 3>() =
+          dt * Matrix<Scalar, 3, 3>::Identity();
       cache_.B.template topRows<3>() = dt * Matrix<Scalar, 3, 3>::Identity();
+      cache_.approximation.dfdx = cache_.A;
       cache_.dt = dt;
       cache_.dirty = false;
     }
@@ -98,9 +102,12 @@ class ThrustVectorDynamicSystem final
 
     Vector<Scalar, STATE_DIM> next_state;
     updateCache(dt);
+    const Vector<Scalar, INPUT_DIM> currentAcceleration =
+        x.template tail<INPUT_DIM>() + u;
     next_state.template head<3>() =
-        x.template head<3>() + cache_.B.template topRows<3>() * u;
-    next_state.template tail<3>() = u;
+        x.template head<3>() +
+        cache_.B.template topRows<3>() * currentAcceleration;
+    next_state.template tail<3>() = currentAcceleration;
 
     return next_state;
   }
@@ -121,7 +128,9 @@ class ThrustVectorTrackCost final
         R_(R) {
     approximation_.setZero();
     approximation_.dfdxx.template topLeftCorner<3, 3>() = Qv_;
+    approximation_.dfdxx.template slice<3, 3>(3, 3) = R_;
     approximation_.dfduu = R_;
+    approximation_.dfdux.template slice<3, 3>(0, 3) = R_;
   }
   ~ThrustVectorTrackCost() override = default;
 
@@ -137,14 +146,16 @@ class ThrustVectorTrackCost final
     const Vector<Scalar, 3> velocityDeviation =
         state.template head<3>() -
         interpolateVelocityReference(indexAlpha, stateTrajectoy);
-    const Vector<Scalar, INPUT_DIM> inputDeviation =
-        input - interpolateInputReference(indexAlpha, inputTrajectory);
+    const Vector<Scalar, INPUT_DIM> accelerationDeviation =
+        state.template tail<INPUT_DIM>() + input -
+        interpolateInputReference(indexAlpha, inputTrajectory);
     const Vector<Scalar, 3> weightedVelocityDeviation = Qv_ * velocityDeviation;
-    const Vector<Scalar, INPUT_DIM> weightedInputDeviation =
-        R_ * inputDeviation;
+    const Vector<Scalar, INPUT_DIM> weightedAccelerationDeviation =
+        R_ * accelerationDeviation;
 
     return Scalar(0.5) * velocityDeviation.dot(weightedVelocityDeviation) +
-           Scalar(0.5) * inputDeviation.dot(weightedInputDeviation);
+           Scalar(0.5) *
+               accelerationDeviation.dot(weightedAccelerationDeviation);
   }
 
   ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
@@ -160,17 +171,20 @@ class ThrustVectorTrackCost final
     const Vector<Scalar, 3> velocityDeviation =
         state.template head<3>() -
         interpolateVelocityReference(indexAlpha, stateTrajectoy);
-    const Vector<Scalar, INPUT_DIM> inputDeviation =
-        input - interpolateInputReference(indexAlpha, inputTrajectory);
+    const Vector<Scalar, INPUT_DIM> accelerationDeviation =
+        state.template tail<INPUT_DIM>() + input -
+        interpolateInputReference(indexAlpha, inputTrajectory);
     const Vector<Scalar, 3> weightedVelocityDeviation = Qv_ * velocityDeviation;
-    const Vector<Scalar, INPUT_DIM> weightedInputDeviation =
-        R_ * inputDeviation;
+    const Vector<Scalar, INPUT_DIM> weightedAccelerationDeviation =
+        R_ * accelerationDeviation;
 
     approximation_.f =
         Scalar(0.5) * velocityDeviation.dot(weightedVelocityDeviation) +
-        Scalar(0.5) * inputDeviation.dot(weightedInputDeviation);
+        Scalar(0.5) * accelerationDeviation.dot(weightedAccelerationDeviation);
     approximation_.dfdx.template head<3>() = weightedVelocityDeviation;
-    approximation_.dfdu = weightedInputDeviation;
+    approximation_.dfdx.template tail<INPUT_DIM>() =
+        weightedAccelerationDeviation;
+    approximation_.dfdu = weightedAccelerationDeviation;
     return approximation_;
   }
 
@@ -269,9 +283,7 @@ class ThrustInputRateCost final
       : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number),
         S_(S) {
     approximation_.setZero();
-    approximation_.dfdxx.template slice<3, 3>(3, 3) = S_;
     approximation_.dfduu = S_;
-    approximation_.dfdux.template slice<3, 3>(0, 3) = -S_;
   }
 
   Scalar getValue(
@@ -283,12 +295,11 @@ class ThrustInputRateCost final
       override {
     (void)time;
     (void)timeTrajectory;
+    (void)state;
     (void)stateTrajectoy;
     (void)inputTrajectory;
 
-    const Vector<Scalar, INPUT_DIM> inputRate =
-        input - state.template tail<INPUT_DIM>();
-    return Scalar(0.5) * inputRate.dot(S_ * inputRate);
+    return Scalar(0.5) * input.dot(S_ * input);
   }
 
   ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
@@ -301,14 +312,12 @@ class ThrustInputRateCost final
       override {
     (void)time;
     (void)timeTrajectory;
+    (void)state;
     (void)stateTrajectory;
     (void)inputTrajectory;
 
-    const Vector<Scalar, INPUT_DIM> inputRate =
-        input - state.template tail<INPUT_DIM>();
-    const Vector<Scalar, INPUT_DIM> weightedInputRate = S_ * inputRate;
-    approximation_.f = Scalar(0.5) * inputRate.dot(weightedInputRate);
-    approximation_.dfdx.template tail<INPUT_DIM>() = -weightedInputRate;
+    const Vector<Scalar, INPUT_DIM> weightedInputRate = S_ * input;
+    approximation_.f = Scalar(0.5) * input.dot(weightedInputRate);
     approximation_.dfdu = weightedInputRate;
     return approximation_;
   }
@@ -348,7 +357,8 @@ class ThrustDirectionChangeCost final
 
     const Vector<Scalar, 3> lastThrustAcceleration =
         state.template tail<3>() - gravityVector();
-    const Vector<Scalar, 3> thrustAcceleration = input - gravityVector();
+    const Vector<Scalar, 3> thrustAcceleration =
+        state.template tail<3>() + input - gravityVector();
     const Vector<Scalar, 3> lastThrustDirection =
         lastThrustAcceleration /
         std::sqrt(lastThrustAcceleration.dot(lastThrustAcceleration) + epsilon);
@@ -377,7 +387,8 @@ class ThrustDirectionChangeCost final
 
     const Vector<Scalar, 3> lastThrustAcceleration =
         state.template tail<3>() - gravityVector();
-    const Vector<Scalar, 3> thrustAcceleration = input - gravityVector();
+    const Vector<Scalar, 3> thrustAcceleration =
+        state.template tail<3>() + input - gravityVector();
     const Scalar lastThrustAccelerationNorm =
         std::sqrt(lastThrustAcceleration.dot(lastThrustAcceleration) + epsilon);
     const Scalar thrustAccelerationNorm =
@@ -399,6 +410,8 @@ class ThrustDirectionChangeCost final
         (thrustAcceleration * thrustAcceleration.transpose()) /
             (thrustAccelerationNorm * thrustAccelerationNorm *
              thrustAccelerationNorm);
+    const Matrix<Scalar, 3, 3> stateAccelerationJacobian =
+        thrustAccelerationJacobian - lastThrustAccelerationJacobian;
 
     const Scalar gate =
         lowAccelerationGate(lastThrustAcceleration, thrustAcceleration);
@@ -406,18 +419,18 @@ class ThrustDirectionChangeCost final
 
     approximation_.f = Scalar(0.5) * effectiveWeight * rk.dot(rk);
     approximation_.dfdx.template tail<3>() =
-        -effectiveWeight * lastThrustAccelerationJacobian.transpose() * rk;
+        effectiveWeight * stateAccelerationJacobian.transpose() * rk;
     approximation_.dfdu =
         effectiveWeight * thrustAccelerationJacobian.transpose() * rk;
     approximation_.dfdxx.template slice<3, 3>(3, 3) =
-        effectiveWeight * lastThrustAccelerationJacobian.transpose() *
-        lastThrustAccelerationJacobian;
+        effectiveWeight * stateAccelerationJacobian.transpose() *
+        stateAccelerationJacobian;
     approximation_.dfduu = effectiveWeight *
                            thrustAccelerationJacobian.transpose() *
                            thrustAccelerationJacobian;
     approximation_.dfdux.template slice<3, 3>(0, 3) =
-        -effectiveWeight * thrustAccelerationJacobian.transpose() *
-        lastThrustAccelerationJacobian;
+        effectiveWeight * thrustAccelerationJacobian.transpose() *
+        stateAccelerationJacobian;
 
     return approximation_;
   }

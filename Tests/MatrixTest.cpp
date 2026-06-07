@@ -312,6 +312,31 @@ TEST(MatrixTest, VectorSupportsMatrixMultiplication) {
   EXPECT_TRUE(product.isApprox(expected, 1e-12));
 }
 
+// 验证 Matrix 可以直接计算 A^T * B，避免显式构造转置矩阵。
+TEST(MatrixTest, MatrixSupportsTransposeMultiply) {
+  const matrix::Matrix<double, 3, 2> lhs{{1.0, 2.0}, {3.0, 4.0}, {5.0, 6.0}};
+  const matrix::Matrix<double, 3, 2> rhs{
+      {7.0, 8.0}, {9.0, 10.0}, {11.0, 12.0}};
+
+  const matrix::Matrix<double, 2, 2> product = lhs.transposeMultiply(rhs);
+  const matrix::Matrix<double, 2, 2> expected = lhs.transpose() * rhs;
+
+  EXPECT_TRUE(product.isApprox(expected, 1e-12));
+}
+
+// 验证 Matrix 可以直接累加 A^T * B，不产生乘积临时矩阵。
+TEST(MatrixTest, MatrixSupportsAddTransposeProduct) {
+  const matrix::Matrix<double, 3, 2> lhs{{1.0, 2.0}, {3.0, 4.0}, {5.0, 6.0}};
+  const matrix::Matrix<double, 3, 1> rhs{7.0, 8.0, 9.0};
+  matrix::Matrix<double, 2, 1> accumulated{10.0, 20.0};
+
+  const matrix::Matrix<double, 2, 1> expected =
+      accumulated + lhs.transpose() * rhs;
+  accumulated.addTransposeProduct(lhs, rhs);
+
+  EXPECT_TRUE(accumulated.isApprox(expected, 1e-12));
+}
+
 // 验证 Vector * Vector 保持点积语义。
 TEST(MatrixTest, VectorMultiplicationWithVectorKeepsDotProduct) {
   const matrix::Vector<double, 2> lhs{2.0, 3.0};
