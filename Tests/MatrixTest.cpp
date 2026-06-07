@@ -209,15 +209,19 @@ TEST(MatrixTest, MatrixSupportsFixedSizeBlockWrappers) {
       matrix::Matrix<double, 2, 2>{{1.0, 2.0}, {3.0, 4.0}};
   matrix.template topRightCorner<2, 2>() =
       matrix::Matrix<double, 2, 2>{{5.0, 6.0}, {7.0, 8.0}};
+  matrix.template bottomLeftCorner<2, 2>() =
+      matrix::Matrix<double, 2, 2>{{9.0, 10.0}, {11.0, 12.0}};
+  matrix.template bottomRightCorner<2, 2>() =
+      matrix::Matrix<double, 2, 2>{{13.0, 14.0}, {15.0, 16.0}};
   matrix.template topRows<1>() =
-      matrix::Matrix<double, 1, 4>{9.0, 10.0, 11.0, 12.0};
+      matrix::Matrix<double, 1, 4>{17.0, 18.0, 19.0, 20.0};
   matrix.template bottomRows<1>() =
-      matrix::Matrix<double, 1, 4>{13.0, 14.0, 15.0, 16.0};
+      matrix::Matrix<double, 1, 4>{21.0, 22.0, 23.0, 24.0};
 
-  const matrix::Matrix<double, 4, 4> expected{{9.0, 10.0, 11.0, 12.0},
+  const matrix::Matrix<double, 4, 4> expected{{17.0, 18.0, 19.0, 20.0},
                                               {3.0, 4.0, 7.0, 8.0},
-                                              {0.0, 0.0, 0.0, 0.0},
-                                              {13.0, 14.0, 15.0, 16.0}};
+                                              {9.0, 10.0, 13.0, 14.0},
+                                              {21.0, 22.0, 23.0, 24.0}};
 
   EXPECT_TRUE(matrix.isApprox(expected, 1e-12));
 
@@ -226,11 +230,19 @@ TEST(MatrixTest, MatrixSupportsFixedSizeBlockWrappers) {
       constMatrix.template topLeftCorner<2, 2>();
   const matrix::Matrix<double, 2, 2> topRight =
       constMatrix.template topRightCorner<2, 2>();
+  const matrix::Matrix<double, 2, 2> bottomLeft =
+      constMatrix.template bottomLeftCorner<2, 2>();
+  const matrix::Matrix<double, 2, 2> bottomRight =
+      constMatrix.template bottomRightCorner<2, 2>();
 
   EXPECT_TRUE(topLeft.isApprox(
-      matrix::Matrix<double, 2, 2>{{9.0, 10.0}, {3.0, 4.0}}, 1e-12));
+      matrix::Matrix<double, 2, 2>{{17.0, 18.0}, {3.0, 4.0}}, 1e-12));
   EXPECT_TRUE(topRight.isApprox(
-      matrix::Matrix<double, 2, 2>{{11.0, 12.0}, {7.0, 8.0}}, 1e-12));
+      matrix::Matrix<double, 2, 2>{{19.0, 20.0}, {7.0, 8.0}}, 1e-12));
+  EXPECT_TRUE(bottomLeft.isApprox(
+      matrix::Matrix<double, 2, 2>{{9.0, 10.0}, {21.0, 22.0}}, 1e-12));
+  EXPECT_TRUE(bottomRight.isApprox(
+      matrix::Matrix<double, 2, 2>{{13.0, 14.0}, {23.0, 24.0}}, 1e-12));
 }
 
 // 验证可写切片支持 Eigen 风格 setIdentity()。

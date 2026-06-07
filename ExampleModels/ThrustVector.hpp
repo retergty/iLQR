@@ -46,7 +46,7 @@ class ThrustVectorDynamicSystem final
       dt = 0;
       dirty = true;
       A.template topLeftCorner<3, 3>().setIdentity();
-      A.template slice<3, 3>(3, 3).setIdentity();
+      A.template bottomRightCorner<3, 3>().setIdentity();
       B.template bottomRows<3>().setIdentity();
       approximation.dfdx = A;
     }
@@ -128,9 +128,9 @@ class ThrustVectorTrackCost final
         R_(R) {
     approximation_.setZero();
     approximation_.dfdxx.template topLeftCorner<3, 3>() = Qv_;
-    approximation_.dfdxx.template slice<3, 3>(3, 3) = R_;
+    approximation_.dfdxx.template bottomRightCorner<3, 3>() = R_;
     approximation_.dfduu = R_;
-    approximation_.dfdux.template slice<3, 3>(0, 3) = R_;
+    approximation_.dfdux.template topRightCorner<3, 3>() = R_;
   }
   ~ThrustVectorTrackCost() override = default;
 
@@ -422,13 +422,13 @@ class ThrustDirectionChangeCost final
         effectiveWeight * stateAccelerationJacobian.transpose() * rk;
     approximation_.dfdu =
         effectiveWeight * thrustAccelerationJacobian.transpose() * rk;
-    approximation_.dfdxx.template slice<3, 3>(3, 3) =
+    approximation_.dfdxx.template bottomRightCorner<3, 3>() =
         effectiveWeight * stateAccelerationJacobian.transpose() *
         stateAccelerationJacobian;
     approximation_.dfduu = effectiveWeight *
                            thrustAccelerationJacobian.transpose() *
                            thrustAccelerationJacobian;
-    approximation_.dfdux.template slice<3, 3>(0, 3) =
+    approximation_.dfdux.template topRightCorner<3, 3>() =
         effectiveWeight * thrustAccelerationJacobian.transpose() *
         stateAccelerationJacobian;
 
