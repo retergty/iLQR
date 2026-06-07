@@ -41,17 +41,15 @@ class ThrustVectorDynamicSystem final
   struct PreCompCache {
     PreCompCache() {
       A.setZero();
-      B.setZero();
       approximation.setZero();
       dt = 0;
       dirty = true;
       A.template topLeftCorner<3, 3>().setIdentity();
       A.template bottomRightCorner<3, 3>().setIdentity();
-      B.template bottomRows<3>().setIdentity();
       approximation.dfdx = A;
+      approximation.dfdu.template bottomRows<3>().setIdentity();
     }
     Matrix<Scalar, STATE_DIM, STATE_DIM> A;
-    Matrix<Scalar, STATE_DIM, INPUT_DIM> B;
     LinearApproximation_t approximation;
     Scalar dt;
     bool dirty;
@@ -63,9 +61,10 @@ class ThrustVectorDynamicSystem final
   void updateCache(const Scalar dt) {
     if (cache_.dirty ||
         std::abs(cache_.dt - dt) > std::numeric_limits<Scalar>::epsilon()) {
-      cache_.A.template topRightCorner<3, 3>() =
-          dt * Matrix<Scalar, 3, 3>::Identity();
-      cache_.B.template topRows<3>() = dt * Matrix<Scalar, 3, 3>::Identity();
+      for (int i = 0; i < 3; ++i) {
+        cache_.A(i, i + 3) = dt;
+        cache_.approximation.dfdu(i, i) = dt;
+      }
       cache_.approximation.dfdx = cache_.A;
       cache_.dt = dt;
       cache_.dirty = false;
@@ -79,7 +78,7 @@ class ThrustVectorDynamicSystem final
     LinearApproximation_t approximation;
     approximation.f = computeMap(t, x, u, dt);
     approximation.dfdx = cache_.A;
-    approximation.dfdu = cache_.B;
+    approximation.dfdu = cache_.approximation.dfdu;
     return approximation;
   }
 
@@ -91,7 +90,6 @@ class ThrustVectorDynamicSystem final
     (void)u;
 
     updateCache(dt);
-    cache_.approximation.dfdu = cache_.B;
     return cache_.approximation;
   }
   Vector<Scalar, STATE_DIM> computeMap(Scalar t,
@@ -104,10 +102,10 @@ class ThrustVectorDynamicSystem final
     updateCache(dt);
     const Vector<Scalar, INPUT_DIM> currentAcceleration =
         x.template tail<INPUT_DIM>() + u;
-    next_state.template head<3>() =
-        x.template head<3>() +
-        cache_.B.template topRows<3>() * currentAcceleration;
-    next_state.template tail<3>() = currentAcceleration;
+    for (int i = 0; i < 3; ++i) {
+      next_state(i) = x(i) + dt * currentAcceleration(i);
+      next_state(i + 3) = currentAcceleration(i);
+    }
 
     return next_state;
   }
@@ -128,9 +126,7 @@ class ThrustVectorTrackCost final
         R_(R) {
     approximation_.setZero();
     approximation_.dfdxx.template topLeftCorner<3, 3>() = Qv_;
-    approximation_.dfdxx.template bottomRightCorner<3, 3>() = R_;
     approximation_.dfduu = R_;
-    approximation_.dfdux.template topRightCorner<3, 3>() = R_;
   }
   ~ThrustVectorTrackCost() override = default;
 
@@ -146,16 +142,14 @@ class ThrustVectorTrackCost final
     const Vector<Scalar, 3> velocityDeviation =
         state.template head<3>() -
         interpolateVelocityReference(indexAlpha, stateTrajectoy);
-    const Vector<Scalar, INPUT_DIM> accelerationDeviation =
-        state.template tail<INPUT_DIM>() + input -
-        interpolateInputReference(indexAlpha, inputTrajectory);
+    const Vector<Scalar, INPUT_DIM> inputDeviation =
+        input - interpolateInputReference(indexAlpha, inputTrajectory);
     const Vector<Scalar, 3> weightedVelocityDeviation = Qv_ * velocityDeviation;
-    const Vector<Scalar, INPUT_DIM> weightedAccelerationDeviation =
-        R_ * accelerationDeviation;
+    const Vector<Scalar, INPUT_DIM> weightedInputDeviation =
+        R_ * inputDeviation;
 
     return Scalar(0.5) * velocityDeviation.dot(weightedVelocityDeviation) +
-           Scalar(0.5) *
-               accelerationDeviation.dot(weightedAccelerationDeviation);
+           Scalar(0.5) * inputDeviation.dot(weightedInputDeviation);
   }
 
   ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
@@ -171,20 +165,17 @@ class ThrustVectorTrackCost final
     const Vector<Scalar, 3> velocityDeviation =
         state.template head<3>() -
         interpolateVelocityReference(indexAlpha, stateTrajectoy);
-    const Vector<Scalar, INPUT_DIM> accelerationDeviation =
-        state.template tail<INPUT_DIM>() + input -
-        interpolateInputReference(indexAlpha, inputTrajectory);
+    const Vector<Scalar, INPUT_DIM> inputDeviation =
+        input - interpolateInputReference(indexAlpha, inputTrajectory);
     const Vector<Scalar, 3> weightedVelocityDeviation = Qv_ * velocityDeviation;
-    const Vector<Scalar, INPUT_DIM> weightedAccelerationDeviation =
-        R_ * accelerationDeviation;
+    const Vector<Scalar, INPUT_DIM> weightedInputDeviation =
+        R_ * inputDeviation;
 
     approximation_.f =
         Scalar(0.5) * velocityDeviation.dot(weightedVelocityDeviation) +
-        Scalar(0.5) * accelerationDeviation.dot(weightedAccelerationDeviation);
+        Scalar(0.5) * inputDeviation.dot(weightedInputDeviation);
     approximation_.dfdx.template head<3>() = weightedVelocityDeviation;
-    approximation_.dfdx.template tail<INPUT_DIM>() =
-        weightedAccelerationDeviation;
-    approximation_.dfdu = weightedAccelerationDeviation;
+    approximation_.dfdu = weightedInputDeviation;
     return approximation_;
   }
 
@@ -212,6 +203,118 @@ class ThrustVectorTrackCost final
 
   Matrix<Scalar, 3, 3> Qv_;
   Matrix<Scalar, INPUT_DIM, INPUT_DIM> R_;
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
+      approximation_;
+};
+
+template <typename Scalar, int ArrayLength>
+class ThrustVectorDiagonalTrackCost final
+    : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
+ public:
+  ThrustVectorDiagonalTrackCost(const Matrix<Scalar, STATE_DIM, STATE_DIM>& Q,
+                                const Matrix<Scalar, INPUT_DIM, INPUT_DIM>& R,
+                                int cost_number)
+      : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number) {
+    approximation_.setZero();
+    for (int i = 0; i < 3; ++i) {
+      QvDiagonal_(i) = Q(i, i);
+      RDiagonal_(i) = R(i, i);
+      approximation_.dfdxx(i, i) = QvDiagonal_(i);
+      approximation_.dfduu(i, i) = RDiagonal_(i);
+    }
+  }
+  ~ThrustVectorDiagonalTrackCost() override = default;
+
+  Scalar getValue(
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
+      override {
+    const auto indexAlpha =
+        LinearInterpolation::timeSegment(time, timeTrajectory);
+    return computeDiagonalCost<false>(indexAlpha, state, input, stateTrajectoy,
+                                      inputTrajectory);
+  }
+
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
+  getQuadraticApproximation(
+      Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Scalar, ArrayLength>& timeTrajectory,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
+      override {
+    const auto indexAlpha =
+        LinearInterpolation::timeSegment(time, timeTrajectory);
+    approximation_.f = computeDiagonalCost<true>(
+        indexAlpha, state, input, stateTrajectoy, inputTrajectory);
+    return approximation_;
+  }
+
+ private:
+  ThrustVectorDiagonalTrackCost(const ThrustVectorDiagonalTrackCost& other) =
+      default;
+
+  Scalar interpolateStateReferenceComponent(
+      const std::pair<int, Scalar>& indexAlpha,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
+      int dim) const {
+    if constexpr (ArrayLength > 1) {
+      const int index = indexAlpha.first;
+      const Scalar alpha = indexAlpha.second;
+      return alpha * stateTrajectory[index](dim) +
+             (Scalar(1) - alpha) * stateTrajectory[index + 1](dim);
+    } else {
+      return stateTrajectory[0](dim);
+    }
+  }
+
+  Scalar interpolateInputReferenceComponent(
+      const std::pair<int, Scalar>& indexAlpha,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory,
+      int dim) const {
+    if constexpr (ArrayLength > 1) {
+      const int index = indexAlpha.first;
+      const Scalar alpha = indexAlpha.second;
+      return alpha * inputTrajectory[index](dim) +
+             (Scalar(1) - alpha) * inputTrajectory[index + 1](dim);
+    } else {
+      return inputTrajectory[0](dim);
+    }
+  }
+
+  template <bool UpdateApproximation>
+  Scalar computeDiagonalCost(
+      const std::pair<int, Scalar>& indexAlpha,
+      const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>&
+          inputTrajectory) {
+    Scalar value = 0;
+    for (int i = 0; i < 3; ++i) {
+      const Scalar velocityDeviation =
+          state(i) -
+          interpolateStateReferenceComponent(indexAlpha, stateTrajectory, i);
+      const Scalar inputDeviation =
+          input(i) -
+          interpolateInputReferenceComponent(indexAlpha, inputTrajectory, i);
+
+      value += QvDiagonal_(i) * velocityDeviation * velocityDeviation +
+               RDiagonal_(i) * inputDeviation * inputDeviation;
+
+      if constexpr (UpdateApproximation) {
+        approximation_.dfdx(i) = QvDiagonal_(i) * velocityDeviation;
+        approximation_.dfdu(i) = RDiagonal_(i) * inputDeviation;
+      }
+    }
+    return Scalar(0.5) * value;
+  }
+
+  Vector<Scalar, 3> QvDiagonal_;
+  Vector<Scalar, INPUT_DIM> RDiagonal_;
   ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
       approximation_;
 };
@@ -275,57 +378,81 @@ class ThrustVectorTrackFinalCost final
 };
 
 template <typename Scalar, int ArrayLength>
-class ThrustInputRateCost final
-    : public StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
+class ThrustVectorDiagonalTrackFinalCost final
+    : public StateCost<Scalar, STATE_DIM, ArrayLength> {
  public:
-  ThrustInputRateCost(const Matrix<Scalar, INPUT_DIM, INPUT_DIM>& S,
-                      int cost_number)
-      : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number),
-        S_(S) {
+  ThrustVectorDiagonalTrackFinalCost(
+      const Matrix<Scalar, STATE_DIM, STATE_DIM>& Q, int cost_number)
+      : StateCost<Scalar, STATE_DIM, ArrayLength>(cost_number) {
     approximation_.setZero();
-    approximation_.dfduu = S_;
+    for (int i = 0; i < 3; ++i) {
+      QvDiagonal_(i) = Q(i, i);
+      approximation_.dfdxx(i, i) = QvDiagonal_(i);
+    }
+  }
+  ~ThrustVectorDiagonalTrackFinalCost() override = default;
+
+  Scalar getValue(Scalar time, const Vector<Scalar, STATE_DIM>& state,
+                  const std::array<Scalar, ArrayLength>& timeTrajectory,
+                  const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>&
+                      stateTrajectory) override {
+    const auto indexAlpha =
+        LinearInterpolation::timeSegment(time, timeTrajectory);
+    return computeDiagonalCost<false>(indexAlpha, state, stateTrajectory);
   }
 
-  Scalar getValue(
-      Scalar time, const Vector<Scalar, STATE_DIM>& state,
-      const Vector<Scalar, INPUT_DIM>& input,
-      const std::array<Scalar, ArrayLength>& timeTrajectory,
-      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
-      override {
-    (void)time;
-    (void)timeTrajectory;
-    (void)state;
-    (void)stateTrajectoy;
-    (void)inputTrajectory;
-
-    return Scalar(0.5) * input.dot(S_ * input);
-  }
-
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0>
   getQuadraticApproximation(
       Scalar time, const Vector<Scalar, STATE_DIM>& state,
-      const Vector<Scalar, INPUT_DIM>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
-      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory)
       override {
-    (void)time;
-    (void)timeTrajectory;
-    (void)state;
-    (void)stateTrajectory;
-    (void)inputTrajectory;
-
-    const Vector<Scalar, INPUT_DIM> weightedInputRate = S_ * input;
-    approximation_.f = Scalar(0.5) * input.dot(weightedInputRate);
-    approximation_.dfdu = weightedInputRate;
+    const auto indexAlpha =
+        LinearInterpolation::timeSegment(time, timeTrajectory);
+    approximation_.f =
+        computeDiagonalCost<true>(indexAlpha, state, stateTrajectory);
     return approximation_;
   }
 
  private:
-  Matrix<Scalar, INPUT_DIM, INPUT_DIM> S_;
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
-      approximation_;
+  ThrustVectorDiagonalTrackFinalCost(
+      const ThrustVectorDiagonalTrackFinalCost& other) = default;
+
+  Scalar interpolateStateReferenceComponent(
+      const std::pair<int, Scalar>& indexAlpha,
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
+      int dim) const {
+    if constexpr (ArrayLength > 1) {
+      const int index = indexAlpha.first;
+      const Scalar alpha = indexAlpha.second;
+      return alpha * stateTrajectory[index](dim) +
+             (Scalar(1) - alpha) * stateTrajectory[index + 1](dim);
+    } else {
+      return stateTrajectory[0](dim);
+    }
+  }
+
+  template <bool UpdateApproximation>
+  Scalar computeDiagonalCost(const std::pair<int, Scalar>& indexAlpha,
+                             const Vector<Scalar, STATE_DIM>& state,
+                             const std::array<Vector<Scalar, STATE_DIM>,
+                                              ArrayLength>& stateTrajectory) {
+    Scalar value = 0;
+    for (int i = 0; i < 3; ++i) {
+      const Scalar velocityDeviation =
+          state(i) -
+          interpolateStateReferenceComponent(indexAlpha, stateTrajectory, i);
+      value += QvDiagonal_(i) * velocityDeviation * velocityDeviation;
+
+      if constexpr (UpdateApproximation) {
+        approximation_.dfdx(i) = QvDiagonal_(i) * velocityDeviation;
+      }
+    }
+    return Scalar(0.5) * value;
+  }
+
+  Vector<Scalar, 3> QvDiagonal_;
+  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0> approximation_;
 };
 
 template <typename Scalar, int ArrayLength>
@@ -339,7 +466,8 @@ class ThrustDirectionChangeCost final
   static constexpr Scalar GravityAcceleration = Scalar(9.8);
 
   explicit ThrustDirectionChangeCost(int cost_number = 0)
-      : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number) {
+      : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number),
+        gravityVector_{Scalar(0), Scalar(0), GravityAcceleration} {
     approximation_.setZero();
   }
 
@@ -356,9 +484,9 @@ class ThrustDirectionChangeCost final
     (void)stateTrajectoy;
 
     const Vector<Scalar, 3> lastThrustAcceleration =
-        state.template tail<3>() - gravityVector();
+        state.template tail<3>() - gravityVector_;
     const Vector<Scalar, 3> thrustAcceleration =
-        state.template tail<3>() + input - gravityVector();
+        state.template tail<3>() + input - gravityVector_;
     const Vector<Scalar, 3> lastThrustDirection =
         lastThrustAcceleration /
         std::sqrt(lastThrustAcceleration.dot(lastThrustAcceleration) + epsilon);
@@ -386,9 +514,9 @@ class ThrustDirectionChangeCost final
     (void)stateTrajectory;
 
     const Vector<Scalar, 3> lastThrustAcceleration =
-        state.template tail<3>() - gravityVector();
+        state.template tail<3>() - gravityVector_;
     const Vector<Scalar, 3> thrustAcceleration =
-        state.template tail<3>() + input - gravityVector();
+        state.template tail<3>() + input - gravityVector_;
     const Scalar lastThrustAccelerationNorm =
         std::sqrt(lastThrustAcceleration.dot(lastThrustAcceleration) + epsilon);
     const Scalar thrustAccelerationNorm =
@@ -399,17 +527,11 @@ class ThrustDirectionChangeCost final
         thrustAcceleration / thrustAccelerationNorm;
     const Vector<Scalar, 3> rk = thrustDirection - lastThrustDirection;
 
-    const Matrix<Scalar, 3, 3> identity = Matrix<Scalar, 3, 3>::Identity();
     const Matrix<Scalar, 3, 3> lastThrustAccelerationJacobian =
-        identity / lastThrustAccelerationNorm -
-        (lastThrustAcceleration * lastThrustAcceleration.transpose()) /
-            (lastThrustAccelerationNorm * lastThrustAccelerationNorm *
-             lastThrustAccelerationNorm);
+        computeDirectionJacobian(lastThrustAcceleration,
+                                 lastThrustAccelerationNorm);
     const Matrix<Scalar, 3, 3> thrustAccelerationJacobian =
-        identity / thrustAccelerationNorm -
-        (thrustAcceleration * thrustAcceleration.transpose()) /
-            (thrustAccelerationNorm * thrustAccelerationNorm *
-             thrustAccelerationNorm);
+        computeDirectionJacobian(thrustAcceleration, thrustAccelerationNorm);
     const Matrix<Scalar, 3, 3> stateAccelerationJacobian =
         thrustAccelerationJacobian - lastThrustAccelerationJacobian;
 
@@ -436,8 +558,19 @@ class ThrustDirectionChangeCost final
   }
 
  private:
-  static Vector<Scalar, 3> gravityVector() {
-    return Vector<Scalar, 3>{Scalar(0), Scalar(0), GravityAcceleration};
+  static Matrix<Scalar, 3, 3> computeDirectionJacobian(
+      const Vector<Scalar, 3>& acceleration, const Scalar norm) {
+    Matrix<Scalar, 3, 3> jacobian;
+    const Scalar invNorm = Scalar(1) / norm;
+    const Scalar invNormCubed = invNorm * invNorm * invNorm;
+
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        jacobian(i, j) = (i == j ? invNorm : Scalar(0)) -
+                         acceleration(i) * acceleration(j) * invNormCubed;
+      }
+    }
+    return jacobian;
   }
 
   static Scalar accelerationGateSigma(const Vector<Scalar, 3>& acceleration) {
@@ -455,6 +588,7 @@ class ThrustDirectionChangeCost final
            accelerationGateSigma(currentAcceleration);
   }
 
+  const Vector<Scalar, 3> gravityVector_;
   ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
       approximation_;
 };
@@ -481,36 +615,28 @@ Matrix<Scalar, INPUT_DIM, INPUT_DIM> makeDefaultThrustVectorInputWeight() {
   return Scalar(1e-3) * Matrix<Scalar, INPUT_DIM, INPUT_DIM>::Identity();
 }
 
-template <typename Scalar>
-Matrix<Scalar, INPUT_DIM, INPUT_DIM> makeDefaultThrustInputRateWeight() {
-  return Scalar(1e-2) * Matrix<Scalar, INPUT_DIM, INPUT_DIM>::Identity();
-}
-
 template <typename Scalar, size_t PredictLength>
 inline ThrustVectorProblem<Scalar, PredictLength>& createThrustVectorProblem() {
   using Problem_t = ThrustVectorProblem<Scalar, PredictLength>;
   using TrackCost_t =
-      ThrustVectorTrackCost<Scalar, static_cast<int>(PredictLength + 1)>;
-  using InputRateCost_t =
-      ThrustInputRateCost<Scalar, static_cast<int>(PredictLength + 1)>;
+      ThrustVectorDiagonalTrackCost<Scalar,
+                                    static_cast<int>(PredictLength + 1)>;
   using DirectionCost_t =
       ThrustDirectionChangeCost<Scalar, static_cast<int>(PredictLength + 1)>;
   using FinalCost_t =
-      ThrustVectorTrackFinalCost<Scalar, static_cast<int>(PredictLength + 1)>;
+      ThrustVectorDiagonalTrackFinalCost<Scalar,
+                                         static_cast<int>(PredictLength + 1)>;
 
   static ThrustVectorDynamicSystem<Scalar> dynamics;
   static const Matrix<Scalar, STATE_DIM, STATE_DIM> Q =
       makeDefaultThrustVectorStateWeight<Scalar>();
   static const Matrix<Scalar, INPUT_DIM, INPUT_DIM> R =
       makeDefaultThrustVectorInputWeight<Scalar>();
-  static const Matrix<Scalar, INPUT_DIM, INPUT_DIM> S =
-      makeDefaultThrustInputRateWeight<Scalar>();
   static const Matrix<Scalar, STATE_DIM, STATE_DIM> Qf =
       makeDefaultThrustVectorFinalWeight<Scalar>();
 
   static TrackCost_t trackCost(Q, R, 0);
-  static InputRateCost_t inputRateCost(S, 1);
-  static DirectionCost_t directionCost(2);
+  static DirectionCost_t directionCost(1);
   static FinalCost_t finalCost(Qf, 0);
   static Problem_t problem;
   static bool initialized = false;
@@ -518,7 +644,6 @@ inline ThrustVectorProblem<Scalar, PredictLength>& createThrustVectorProblem() {
   if (!initialized) {
     problem.dynamicsPtr = &dynamics;
     problem.cost.add(trackCost);
-    problem.cost.add(inputRateCost);
     problem.cost.add(directionCost);
     problem.finalCost.add(finalCost);
     initialized = true;

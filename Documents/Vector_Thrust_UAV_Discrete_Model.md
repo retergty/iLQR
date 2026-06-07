@@ -109,22 +109,22 @@ $$
 
 ## 目标函数
 
-令参考速度为：
+令参考速度和参考输入分别为：
 
 $$
 v_{\mathrm{ref},k}^N
 $$
 
-参考总加速度为：
-
 $$
-a_{\mathrm{tot},\mathrm{ref},k}^N
+U_{\mathrm{ref},k}
 $$
 
-基础二次代价可写为：
+其中 $U_{\mathrm{ref},k}$ 为参考总加速度增量。若没有参考输入增量，可取 $U_{\mathrm{ref},k}=0$。
+
+基础二次代价采用速度跟踪和输入增量惩罚：
 
 $$
-\ell_{\mathrm{track},k}
+\ell_{\mathrm{base},k}
 =
 \frac{1}{2}
 \left(v_k^N - v_{\mathrm{ref},k}^N\right)^T
@@ -132,129 +132,39 @@ Q_v
 \left(v_k^N - v_{\mathrm{ref},k}^N\right)
 +
 \frac{1}{2}
-\left(a_{\mathrm{tot},k-1}^N + U_k - a_{\mathrm{tot},\mathrm{ref},k}^N\right)^T
-R_a
-\left(a_{\mathrm{tot},k-1}^N + U_k - a_{\mathrm{tot},\mathrm{ref},k}^N\right)
+\left(U_k - U_{\mathrm{ref},k}\right)^T
+R
+\left(U_k - U_{\mathrm{ref},k}\right)
 $$
 
-令选择矩阵 $S_a \in \mathbb{R}^{3 \times 6}$ 从状态中取出上一拍 NED 总加速度：
+该基础代价不耦合状态和输入：
 
 $$
-S_a =
+\ell_x =
 \begin{bmatrix}
-0_3 & I_3
+Q_v\left(v_k^N - v_{\mathrm{ref},k}^N\right) \\
+0_3
 \end{bmatrix}
 $$
 
-则：
-
 $$
-a_{\mathrm{tot},k-1}^N = S_a X_k
-$$
-
-定义绝对总加速度参考误差：
-
-$$
-e_{a,k}
-:=
-S_a X_k + U_k - a_{\mathrm{tot},\mathrm{ref},k}^N
-$$
-
-加速度参考项对状态和输入的梯度为：
-
-$$
-\ell_x
-=
-S_a^T R_a e_{a,k}
+\ell_u = R\left(U_k - U_{\mathrm{ref},k}\right)
 $$
 
 $$
-\ell_u
-=
-R_a e_{a,k}
-$$
-
-对应 Hessian 为：
-
-$$
-\ell_{xx}
-=
-S_a^T R_a S_a
+\ell_{xx}=
+\begin{bmatrix}
+Q_v & 0_3 \\
+0_3 & 0_3
+\end{bmatrix}
 $$
 
 $$
-\ell_{uu}
-=
-R_a
+\ell_{uu}=R,\quad
+\ell_{ux}=0
 $$
 
-$$
-\ell_{ux}
-=
-R_a S_a
-$$
-
-在当前状态维度为 6、输入维度为 3 的实现中，该项会在状态后 3 维、输入维度，以及输入-上一拍总加速度交叉块上产生非零二次项。
-
-速度跟踪项只作用于状态前 3 维，其梯度为 $Q_v(v_k^N - v_{\mathrm{ref},k}^N)$，Hessian 为状态左上角的 $Q_v$ 块。
-
-## 输入变化率代价
-
-由于增量式 MPC 的控制输入本身就是 NED 总加速度增量，可以直接对输入加二次惩罚：
-
-$$
-e_{\Delta a,k}
-:=
-U_k
-$$
-
-$$
-\ell_{\mathrm{rate},k}
-:=
-\frac{1}{2}
-e_{\Delta a,k}^T
-S_{\Delta a}
-e_{\Delta a,k}
-$$
-
-其中 $S_{\Delta a} \in \mathbb{R}^{3 \times 3}$ 为输入增量权重矩阵。该项用于抑制相邻采样时刻的期望总加速度跳变，使速度外环 MPC 的输出更平滑。
-
-因此该项对状态和输入的梯度为：
-
-$$
-\ell_x
-=
-0
-$$
-
-$$
-\ell_u
-=
-S_{\Delta a}
-e_{\Delta a,k}
-$$
-
-对应 Hessian 为：
-
-$$
-\ell_{xx}
-=
-0
-$$
-
-$$
-\ell_{uu}
-=
-S_{\Delta a}
-$$
-
-$$
-\ell_{ux}
-=
-0
-$$
-
-这对应实现中的 `dfduu` 输入块；由于该项只依赖输入增量，不产生 `dfdxx` 状态块或 `dfdux` 输入-状态交叉块。
+如果后续需要跟踪参考绝对总加速度，应单独引入加速度参考代价，而不是耦合在基础速度-输入 QR 代价中。
 
 ## 推力加速度方向转角速度代价
 
@@ -647,9 +557,7 @@ $$
 $$
 \ell_k(X_k, U_k)
 =
-\ell_{\mathrm{track},k}
-+
-\ell_{\mathrm{rate},k}
+\ell_{\mathrm{base},k}
 +
 \ell_{\mathrm{angle},k}
 $$
@@ -665,14 +573,9 @@ Q_v
 \left(v_k^N - v_{\mathrm{ref},k}^N\right)
 +
 \frac{1}{2}
-\left(a_{\mathrm{tot},k-1}^N + U_k - a_{\mathrm{tot},\mathrm{ref},k}^N\right)^T
-R_a
-\left(a_{\mathrm{tot},k-1}^N + U_k - a_{\mathrm{tot},\mathrm{ref},k}^N\right)
-+
-\frac{1}{2}
-U_k^T
-S_{\Delta a}
-U_k
+\left(U_k - U_{\mathrm{ref},k}\right)^T
+R
+\left(U_k - U_{\mathrm{ref},k}\right)
 +
 \frac{1}{2}
 \gamma_k
