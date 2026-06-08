@@ -51,6 +51,7 @@ set(TEST_SOURCES
     OptimalControl/CircularKinematicsTest.cpp
     OptimalControl/CircularKinematicsSmoothAbsolutePenaltyTest.cpp
     OptimalControl/ThrustVectorTest.cpp
+    OptimalControl/ThrustVectorFirstOrderLagTest.cpp
 )
 
 # 循环添加所有测试
@@ -83,6 +84,7 @@ endforeach()
 # 独立性能测试目标：用于手动 perf/benchmark，不注册到 ctest。
 set(PERF_SOURCES
     OptimalControl/ThrustVectorPerfTest.cpp
+    OptimalControl/ThrustVectorFirstOrderLagPerfTest.cpp
 )
 
 foreach(perf_source ${PERF_SOURCES})
