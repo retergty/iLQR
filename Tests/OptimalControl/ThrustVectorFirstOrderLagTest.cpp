@@ -178,6 +178,151 @@ TEST(ThrustVectorFirstOrderLagTrajectoryTest,
   }
 }
 
+TEST(ThrustVectorFirstOrderLagCostTest,
+     TrackCostIncludesCommandAccelerationReference) {
+  using TrackCost =
+      thrust_vector_first_order_lag::ThrustVectorTrackCost<Scalar, 2>;
+
+  Matrix<Scalar, thrust_vector_first_order_lag::STATE_DIM,
+         thrust_vector_first_order_lag::STATE_DIM>
+      Q;
+  Q.setZero();
+  Matrix<Scalar, thrust_vector_first_order_lag::INPUT_DIM,
+         thrust_vector_first_order_lag::INPUT_DIM>
+      R;
+  R.setZero();
+  Matrix<Scalar, thrust_vector_first_order_lag::INPUT_DIM,
+         thrust_vector_first_order_lag::INPUT_DIM>
+      Ra;
+  Ra(0, 0) = Scalar(2.0);
+  Ra(0, 1) = Scalar(0.1);
+  Ra(0, 2) = Scalar(-0.2);
+  Ra(1, 0) = Scalar(0.1);
+  Ra(1, 1) = Scalar(3.0);
+  Ra(1, 2) = Scalar(0.4);
+  Ra(2, 0) = Scalar(-0.2);
+  Ra(2, 1) = Scalar(0.4);
+  Ra(2, 2) = Scalar(4.0);
+
+  TrackCost cost(Q, R, Ra, 0);
+
+  std::array<Scalar, 2> timeTrajectory{Scalar(0), Scalar(1)};
+  std::array<StateVector, 2> stateTrajectory;
+  std::array<InputVector, 2> inputTrajectory;
+  for (size_t i = 0; i < 2; ++i) {
+    stateTrajectory[i].setZero();
+    inputTrajectory[i].setZero();
+  }
+  stateTrajectory[0].template segment<3>(6) =
+      Vector<Scalar, 3>{Scalar(0.1), Scalar(-0.4), Scalar(0.6)};
+
+  StateVector state;
+  state.setZero();
+  state.template segment<3>(6) =
+      Vector<Scalar, 3>{Scalar(0.5), Scalar(-0.1), Scalar(0.2)};
+  InputVector input{Scalar(0.4), Scalar(0.3), Scalar(-0.2)};
+
+  const Vector<Scalar, 3> commandAccelerationDeviation =
+      state.template segment<3>(6) + input -
+      stateTrajectory[0].template segment<3>(6);
+  const Vector<Scalar, 3> weightedCommandAccelerationDeviation =
+      Ra * commandAccelerationDeviation;
+  const Scalar expectedValue =
+      Scalar(0.5) * commandAccelerationDeviation.dot(
+                        weightedCommandAccelerationDeviation);
+
+  EXPECT_NEAR(cost.getValue(Scalar(0), state, input, timeTrajectory,
+                            stateTrajectory, inputTrajectory),
+              expectedValue, Scalar(1e-12));
+
+  const auto approximation = cost.getQuadraticApproximation(
+      Scalar(0), state, input, timeTrajectory, stateTrajectory,
+      inputTrajectory);
+  EXPECT_NEAR(approximation.f, expectedValue, Scalar(1e-12));
+  for (int i = 0; i < 3; ++i) {
+    EXPECT_NEAR(approximation.dfdx(i + 6),
+                weightedCommandAccelerationDeviation(i), Scalar(1e-12));
+    EXPECT_NEAR(approximation.dfdu(i),
+                weightedCommandAccelerationDeviation(i), Scalar(1e-12));
+    for (int j = 0; j < 3; ++j) {
+      EXPECT_NEAR(approximation.dfdxx(i + 6, j + 6), Ra(i, j),
+                  Scalar(1e-12));
+      EXPECT_NEAR(approximation.dfduu(i, j), Ra(i, j), Scalar(1e-12));
+      EXPECT_NEAR(approximation.dfdux(i, j + 6), Ra(i, j), Scalar(1e-12));
+    }
+  }
+}
+
+TEST(ThrustVectorFirstOrderLagCostTest,
+     DiagonalTrackCostIncludesCommandAccelerationReference) {
+  using TrackCost =
+      thrust_vector_first_order_lag::ThrustVectorDiagonalTrackCost<Scalar, 2>;
+
+  Matrix<Scalar, thrust_vector_first_order_lag::STATE_DIM,
+         thrust_vector_first_order_lag::STATE_DIM>
+      Q;
+  Q.setZero();
+  Matrix<Scalar, thrust_vector_first_order_lag::INPUT_DIM,
+         thrust_vector_first_order_lag::INPUT_DIM>
+      R;
+  R.setZero();
+  Matrix<Scalar, thrust_vector_first_order_lag::INPUT_DIM,
+         thrust_vector_first_order_lag::INPUT_DIM>
+      Ra;
+  Ra.setZero();
+  Ra(0, 0) = Scalar(2.0);
+  Ra(1, 1) = Scalar(3.0);
+  Ra(2, 2) = Scalar(4.0);
+
+  TrackCost cost(Q, R, Ra, 0);
+
+  std::array<Scalar, 2> timeTrajectory{Scalar(0), Scalar(1)};
+  std::array<StateVector, 2> stateTrajectory;
+  std::array<InputVector, 2> inputTrajectory;
+  for (size_t i = 0; i < 2; ++i) {
+    stateTrajectory[i].setZero();
+    inputTrajectory[i].setZero();
+  }
+  stateTrajectory[0].template segment<3>(6) =
+      Vector<Scalar, 3>{Scalar(0.1), Scalar(-0.4), Scalar(0.6)};
+
+  StateVector state;
+  state.setZero();
+  state.template segment<3>(6) =
+      Vector<Scalar, 3>{Scalar(0.5), Scalar(-0.1), Scalar(0.2)};
+  InputVector input{Scalar(0.4), Scalar(0.3), Scalar(-0.2)};
+
+  const Vector<Scalar, 3> commandAccelerationDeviation =
+      state.template segment<3>(6) + input -
+      stateTrajectory[0].template segment<3>(6);
+  Scalar expectedValue = Scalar(0);
+  for (int i = 0; i < 3; ++i) {
+    expectedValue += Ra(i, i) * commandAccelerationDeviation(i) *
+                     commandAccelerationDeviation(i);
+  }
+  expectedValue *= Scalar(0.5);
+
+  EXPECT_NEAR(cost.getValue(Scalar(0), state, input, timeTrajectory,
+                            stateTrajectory, inputTrajectory),
+              expectedValue, Scalar(1e-12));
+
+  const auto approximation = cost.getQuadraticApproximation(
+      Scalar(0), state, input, timeTrajectory, stateTrajectory,
+      inputTrajectory);
+  EXPECT_NEAR(approximation.f, expectedValue, Scalar(1e-12));
+  for (int i = 0; i < 3; ++i) {
+    const Scalar weightedCommandAccelerationDeviation =
+        Ra(i, i) * commandAccelerationDeviation(i);
+    EXPECT_NEAR(approximation.dfdx(i + 6),
+                weightedCommandAccelerationDeviation, Scalar(1e-12));
+    EXPECT_NEAR(approximation.dfdu(i),
+                weightedCommandAccelerationDeviation, Scalar(1e-12));
+    EXPECT_NEAR(approximation.dfdxx(i + 6, i + 6), Ra(i, i), Scalar(1e-12));
+    EXPECT_NEAR(approximation.dfduu(i, i), Ra(i, i), Scalar(1e-12));
+    EXPECT_NEAR(approximation.dfdux(i, i + 6), Ra(i, i), Scalar(1e-12));
+  }
+}
+
 TEST(ThrustVectorFirstOrderLagMpcTest,
      RecedingHorizonOptimizationReducesVelocityError) {
   const auto ilqrSettings = makeILQRSettings(25, Scalar(1e-6));

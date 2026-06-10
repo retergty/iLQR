@@ -242,7 +242,7 @@ $$
 
 ## 目标函数
 
-基础二次代价仍采用速度跟踪和输入增量惩罚：
+基础二次代价采用速度跟踪和输入增量惩罚：
 
 $$
 \ell_{\mathrm{base},k}
@@ -297,23 +297,82 @@ $$
 \ell_{uu}=R,\quad \ell_{ux}=0
 $$
 
-如果希望命令加速度或实际加速度接近参考值，可额外加入：
+由于 $U_k$ 是增量输入，$R$ 只惩罚“改变命令”的动作，并不直接惩罚已经累积在状态中的命令总加速度。如果优化器把 $a_{\mathrm{cmd},k-1}^N$ 推到一个长期偏置值附近，后续保持 $U_k \approx 0$ 时该偏置不会被输入增量代价约束。在一阶滞后模型中，这种命令总加速度与参考平衡点之间的偏差会持续驱动执行器响应，容易表现为慢性偏置、来回修正或速度闭环震荡。
+
+因此加入命令总加速度参考代价：
 
 $$
+\ell_{\mathrm{cmd},k}
+:=
 \frac{1}{2}
-\left(a_{\mathrm{cmd},k-1}^N-a_{\mathrm{cmd,ref},k}^N\right)^T
-Q_{\mathrm{cmd}}
-\left(a_{\mathrm{cmd},k-1}^N-a_{\mathrm{cmd,ref},k}^N\right)
+\left(a_{\mathrm{cmd},k}^N-a_{\mathrm{cmd,ref},k}^N\right)^T
+R_a
+\left(a_{\mathrm{cmd},k}^N-a_{\mathrm{cmd,ref},k}^N\right)
 $$
 
-或：
+其中：
 
 $$
-\frac{1}{2}
-\left(a_{\mathrm{eff},k}^N-a_{\mathrm{eff,ref},k}^N\right)^T
-Q_{\mathrm{eff}}
-\left(a_{\mathrm{eff},k}^N-a_{\mathrm{eff,ref},k}^N\right)
+a_{\mathrm{cmd},k}^N
+=
+a_{\mathrm{cmd},k-1}^N+U_k
 $$
+
+该项约束的是当前周期实际准备发送给下游的命令总加速度，而不是上一拍命令状态本身。它给优化器提供了“命令总量应回到参考平衡点”的软约束，使 $R$ 负责限制命令变化速度，$R_a$ 负责限制命令总量长期漂移。工程实现中，$a_{\mathrm{cmd,ref},k}^N$ 通常可取当前实际命令或由上层规划给出的期望命令轨迹；若只希望抑制漂移而不引入额外前馈，常值参考取当前已发送命令即可。
+
+定义选择矩阵：
+
+$$
+S_{\mathrm{cmd}}
+=
+\begin{bmatrix}
+0_3 & 0_3 & I_3
+\end{bmatrix}
+$$
+
+则命令加速度偏差为：
+
+$$
+e_{\mathrm{cmd},k}
+:=
+S_{\mathrm{cmd}}X_k+U_k-a_{\mathrm{cmd,ref},k}^N
+$$
+
+命令加速度代价的梯度为：
+
+$$
+\ell_{\mathrm{cmd},x}
+=
+S_{\mathrm{cmd}}^T R_a e_{\mathrm{cmd},k}
+$$
+
+$$
+\ell_{\mathrm{cmd},u}
+=
+R_a e_{\mathrm{cmd},k}
+$$
+
+Hessian 为：
+
+$$
+\ell_{\mathrm{cmd},xx}
+=
+S_{\mathrm{cmd}}^T R_a S_{\mathrm{cmd}}
+$$
+
+$$
+\ell_{\mathrm{cmd},uu}
+=
+R_a
+$$
+
+$$
+\ell_{\mathrm{cmd},ux}
+=
+R_a S_{\mathrm{cmd}}
+$$
+
+在当前实现中，该项已整合进 `TrackCost`，与速度跟踪和输入增量代价一次性返回同一个二次近似；对角线版本只取 $Q_v$、$R$ 和 $R_a$ 的对角线，以减少小维度 MPC 中的矩阵运算开销。
 
 ## 推力加速度方向变化代价
 
@@ -560,6 +619,8 @@ $$
 =
 \ell_{\mathrm{base},k}
 +
+\ell_{\mathrm{cmd},k}
++
 \ell_{\mathrm{angle},k}
 $$
 
@@ -577,6 +638,11 @@ Q_v
 \left(U_k - U_{\mathrm{ref},k}\right)^T
 R
 \left(U_k - U_{\mathrm{ref},k}\right)
++
+\frac{1}{2}
+\left(S_{\mathrm{cmd}}X_k+U_k-a_{\mathrm{cmd,ref},k}^N\right)^T
+R_a
+\left(S_{\mathrm{cmd}}X_k+U_k-a_{\mathrm{cmd,ref},k}^N\right)
 +
 \frac{1}{2}
 \gamma_k
@@ -626,6 +692,8 @@ $$
 $$
 
 例如 $\alpha=0.2$ 表示每个控制周期实际总加速度追上当前命令误差的 $20\%$，响应较慢但更平滑；$\alpha=0.5$ 表示每拍追上误差的 $50\%$，响应更快。
+
+$R$ 和 $R_a$ 的作用不同：$R$ 抑制命令增量 $U_k$ 过大，使输出变化更平滑；$R_a$ 抑制命令总加速度 $a_{\mathrm{cmd},k}^N$ 长期偏离参考平衡点。若系统出现命令总加速度长期偏置、速度误差附近来回修正或低频震荡，可适当增大 $R_a$；若响应过慢或无法建立必要加速度，则应减小 $R_a$ 或检查参考命令是否设置过于保守。通常可先令 $R_a$ 比 $R$ 小一到两个数量级，再结合闭环震荡和响应速度逐步调整。
 
 若已知连续时间常数 $T$，也可以换算：
 
