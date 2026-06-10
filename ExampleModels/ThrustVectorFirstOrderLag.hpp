@@ -789,6 +789,7 @@ class ThrustVectorReferenceTrajectoryGenerator {
                 const Vector3_t& alpha) const {
     Vector3_t preview_velocity = velocity_reference_;
     const Vector3_t constrained_alpha = constrainAlpha(alpha);
+    Scalar trajectory_time = current_time;
 
     for (size_t i = 0; i < targetTrajectory.timeTrajectory.size(); ++i) {
       if (i > 0) {
@@ -796,8 +797,8 @@ class ThrustVectorReferenceTrajectoryGenerator {
             lowPass(preview_velocity, velocity_setpoint, constrained_alpha);
       }
 
-      targetTrajectory.timeTrajectory[i] =
-          current_time + static_cast<Scalar>(i) * time_step;
+      targetTrajectory.timeTrajectory[i] = trajectory_time;
+      trajectory_time += time_step;
       targetTrajectory.stateTrajectory[i].setZero();
       for (int dim = 0; dim < 3; ++dim) {
         targetTrajectory.stateTrajectory[i](dim) = preview_velocity(dim);

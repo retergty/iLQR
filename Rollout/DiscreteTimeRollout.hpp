@@ -59,34 +59,35 @@ class DiscreteTimeRollout : public RolloutBase<Scalar, XDim, UDim> {
     assert(systemDynamicsPtr_ != nullptr);
     assert(controller != nullptr);
 
-    const Scalar timeStep = this->settings().timeStep;
+    const auto& settings = this->settings();
+    const Scalar timeStep = settings.timeStep;
+    const bool reconstructInputTrajectory = settings.reconstructInputTrajectory;
     const Scalar finalTimeLocal = finalTime + Scalar(0.1) * timeStep;
     const size_t numSteps =
         static_cast<size_t>((finalTimeLocal - initTime) / timeStep);
+    assert(numSteps < trajectory.maxLength);
 
     Scalar t = initTime;
-    Vector<Scalar, XDim> state = initState;
+    trajectory.timeTrajectory[0] = t;
+    trajectory.stateTrajectory[0] = initState;
 
     for (size_t i = 0; i < numSteps; ++i) {
-      assert(i < trajectory.maxLength);
+      const Vector<Scalar, UDim> input =
+          controller->computeInput(t, trajectory.stateTrajectory[i]);
 
-      const Vector<Scalar, UDim> input = controller->computeInput(t, state);
-
-      trajectory.timeTrajectory[i] = t;
-      trajectory.stateTrajectory[i] = state;
-      if (this->settings().reconstructInputTrajectory) {
+      if (reconstructInputTrajectory) {
         trajectory.inputTrajectory[i] = input;
       }
 
-      state = systemDynamicsPtr_->computeMap(t, state, input, timeStep);
+      trajectory.stateTrajectory[i + 1] = systemDynamicsPtr_->computeMap(
+          t, trajectory.stateTrajectory[i], input, timeStep);
       t += timeStep;
+      trajectory.timeTrajectory[i + 1] = t;
     }
 
-    assert(numSteps < trajectory.maxLength);
-    trajectory.timeTrajectory[numSteps] = t;
-    trajectory.stateTrajectory[numSteps] = state;
-    if (this->settings().reconstructInputTrajectory) {
-      trajectory.inputTrajectory[numSteps] = controller->computeInput(t, state);
+    if (reconstructInputTrajectory) {
+      trajectory.inputTrajectory[numSteps] =
+          controller->computeInput(t, trajectory.stateTrajectory[numSteps]);
     }
 
     return static_cast<int>(numSteps + 1);
