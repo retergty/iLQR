@@ -145,6 +145,7 @@ class iLQR {
     optimizedDualSolution_.clear();
 
     totalNumIterations_ = 0;
+    totalNumRuns_ = 0;
 
     lineSearchStrategy_.reset();
   }
@@ -163,7 +164,7 @@ class iLQR {
     lastFinalTime_ = finalTime_;
     finalTime_ = initTime + ddpSettings_.timeStep * (PredictLength);
     const size_t initIteration = totalNumIterations_;
-
+    totalNumRuns_++;
     // optimized --> nominal：基于优化解初始化名义原始解和对偶解。
     // 基于优化解。
     bool initialSolutionExists =
@@ -258,6 +259,12 @@ class iLQR {
   }
   const DDPSettings<Scalar>& ddpSettings() const { return ddpSettings_; }
   size_t totalNumIterations() const { return totalNumIterations_; }
+  size_t totalNumRuns() const { return totalNumRuns_; }
+  Scalar averageNumIterations() const {
+    return totalNumRuns_ == 0 ? Scalar(0)
+                              : static_cast<Scalar>(totalNumIterations_) /
+                                    static_cast<Scalar>(totalNumRuns_);
+  }
   TargetTrajectories_t& targetTrajectory() { return targetTrajectory_; }
   const TargetTrajectories_t& targetTrajectory() const {
     return targetTrajectory_;
@@ -960,4 +967,5 @@ class iLQR {
   PerformanceIndex_t performanceIndex_;
   PerformanceIndex_t performanceIndexLast_;
   size_t totalNumIterations_{0};
+  size_t totalNumRuns_{0};
 };

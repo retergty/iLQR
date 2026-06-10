@@ -39,15 +39,13 @@ void configureVelocityReference(const Scalar initTime,
   }
 }
 
-size_t runOneMpcCycle(Solver& solver, Solver::OptimalControlProblem_t& problem,
-                      const StateVector& velocityReference, Scalar& currentTime,
-                      StateVector& currentState) {
+void runOneMpcCycle(Solver& solver, Solver::OptimalControlProblem_t& problem,
+                    const StateVector& velocityReference, Scalar& currentTime,
+                    StateVector& currentState) {
   configureVelocityReference(currentTime, velocityReference,
                              solver.targetTrajectory());
 
-  const size_t iterationsBefore = solver.totalNumIterations();
   solver.run(currentTime, currentState);
-  const size_t mpcIterations = solver.totalNumIterations() - iterationsBefore;
 
   const InputVector firstInput = solver.primalSolution().inputTrajectory_[0];
 
@@ -55,7 +53,6 @@ size_t runOneMpcCycle(Solver& solver, Solver::OptimalControlProblem_t& problem,
                                                  firstInput, TimeStep);
 
   currentTime += TimeStep;
-  return mpcIterations;
 }
 
 thrust_vector::ThrustVectorILQRSettings<Scalar> makeILQRSettings() {
@@ -97,18 +94,15 @@ int main() {
   Scalar currentTime = 0.0;
 
   std::chrono::time_point now = std::chrono::steady_clock::now();
-  size_t totalMpcIterations = 0;
   for (size_t cycle = 0; cycle < LoopCycle; ++cycle) {
-    totalMpcIterations += runOneMpcCycle(solver, problem, velocityReference,
-                                         currentTime, currentState);
+    runOneMpcCycle(solver, problem, velocityReference, currentTime,
+                   currentState);
   }
   std::cout << "final state: " << currentState.transpose() << std::endl;
   const auto pass_time = std::chrono::steady_clock::now() - now;
   std::cout << "pass time : "
             << std::chrono::duration<double>(pass_time).count() << std::endl;
-  std::cout << "average mpc iterations: "
-            << static_cast<double>(totalMpcIterations) /
-                   static_cast<double>(LoopCycle)
+  std::cout << "average mpc iterations: " << solver.averageNumIterations()
             << std::endl;
   return 0;
 }
