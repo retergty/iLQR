@@ -20,16 +20,8 @@
 /**
  * @brief 迭代线性二次调节器（iLQR）：基于名义轨迹的 LQ 近似与离散时间 Riccati
  * 反向递推的 DDP 求解器。
- * @tparam Scalar 标量类型（如 double）。
- * @tparam XDim 状态维度。
- * @tparam UDim 控制维度。
- * @tparam PredictLength 预测步数（时间节点数为 PredictLength+1）。
- * @tparam StateEqConstrains 状态等式约束数（中间时刻）。
- * @tparam StateIneqConstrains 状态不等式约束数（中间时刻）。
- * @tparam StateInputEqConstrains 状态-输入等式约束数。
- * @tparam StateInputIneqConstrains 状态-输入不等式约束数。
- * @tparam FinalStateEqConstrains 终端状态等式约束数。
- * @tparam FinalStateIneqConstrains 终端状态不等式约束数。
+ * @tparam Descriptor
+ * 编译期描述符，集中定义标量类型、维度、时域、动力学模式和约束配置。
  */
 template <typename Descriptor>
 class iLQR {
@@ -40,12 +32,6 @@ class iLQR {
   static constexpr int XDim = Types::XDim;
   static constexpr int UDim = Types::UDim;
   static constexpr std::size_t PredictLength = Types::PredictLength;
-  static constexpr int StateEqConstrains = Types::StateEq;
-  static constexpr int StateIneqConstrains = Types::StateIneq;
-  static constexpr int StateInputEqConstrains = Types::StateInputEq;
-  static constexpr int StateInputIneqConstrains = Types::StateInputIneq;
-  static constexpr int FinalStateEqConstrains = Types::FinalStateEq;
-  static constexpr int FinalStateIneqConstrains = Types::FinalStateIneq;
 
   using OptimalControlProblem_t = typename Types::OptimalControlProblem_t;
 
@@ -78,6 +64,9 @@ class iLQR {
       typename Types::SearchStrategySolutionRef_t;
 
   using LinearController_t = typename Types::LinearController_t;
+  using ControllerGainTrajectory_t = std::array<KmMatrix_t, PredictLength + 1>;
+  using ControllerDeltaBiasTrajectory_t =
+      std::array<LvVector_t, PredictLength + 1>;
   using SearchStrategyBase_t = typename Types::SearchStrategyBase_t;
   using LineSearchStrategy_t = LineSearchStrategy<Descriptor>;
   using RiccatiModification_t = typename Types::RiccatiModification_t;
@@ -182,9 +171,12 @@ class iLQR {
       // 轨迹。
       approximateOptimalControlProblem();
 
-      // nominal --> nominal：求解 LQ 问题。
+      // nominal --> nominal：求解 LQ 问题，直接写入待线搜索控制器的
+      // feedback gain 与 feedforward delta bias。
       solveSequentialRiccatiEquations(
-          nominalPrimalData_.modelDataFinalTime.cost);
+          nominalPrimalData_.modelDataFinalTime.cost,
+          unoptimizedController_.gainArray_,
+          unoptimizedController_.deltaBiasArray_);
 
       // 计算控制器并将结果存入 unoptimizedController_。
       calculateController();
@@ -436,25 +428,6 @@ class iLQR {
   }
 
   /**
-   * @brief 按步长生成控制器：时间戳与增益与 unoptimizedController 相同，bias =
-   * bias + stepLength * deltaBias。
-   * @param [in] stepLength 线搜索步长。
-   * @param [in] unoptimizedController 未优化控制器（含 deltaBiasArray）。
-   * @param [out] controller 输出控制器。
-   */
-  static void incrementController(
-      Scalar stepLength, const LinearController_t& unoptimizedController,
-      LinearController_t& controller) {
-    controller.timeStamp_ = unoptimizedController.timeStamp_;
-    controller.gainArray_ = unoptimizedController.gainArray_;
-    for (size_t k = 0; k < unoptimizedController.size(); k++) {
-      controller.biasArray_[k] =
-          unoptimizedController.biasArray_[k] +
-          stepLength * unoptimizedController.deltaBiasArray_[k];
-    }
-  }
-
-  /**
    * @brief 仅更新控制器的 bias：biasArray = unoptimizedController.biasArray +
    * stepLength * deltaBiasArray。
    * @param [in] stepLength 步长。
@@ -702,40 +675,19 @@ class iLQR {
    * Lv/Km。
    * @param [in] finalValueFunction 终端价值函数二次近似（Sm=dfdxx, Sv=dfdx,
    * s=f）。
+   * @param [out] controllerGainTrajectory 控制器反馈增益数组；仅写入
+   * 0..PredictLength-1，终端点由 calculateController() 补齐。
+   * @param [out] controllerDeltaBiasTrajectory 控制器前馈更新数组；仅写入
+   * 0..PredictLength-1，终端点由 calculateController() 补齐。
    */
   void solveSequentialRiccatiEquations(
-      const ValueFunctionQuadraticApproximation_t& finalValueFunction) {
-    const ModelData_t& finalModelData = nominalPrimalData_.modelDataFinalTime;
-    RiccatiModification_t& finalRiccatiModification =
-        nominalDualData_.riccatiModificationTrajectory.back();
-    LvVector_t& finalLvFinal = lvTrajectoryStock_.back();
-    KmMatrix_t& finalKmFinal = kmTrajectoryStock_.back();
-
-    SmMatrix_t SmDummy;
-    SmDummy.setZero();
-
-    prepareRiccatiModification(finalModelData, SmDummy,
-                               finalRiccatiModification);
-
-    // 前馈。
-    finalLvFinal = -finalModelData.cost.dfdu;
-
-    // 反馈。
-    finalKmFinal = -finalModelData.cost.dfdux;
-
-    solveSequentialRiccatiEquationsImpl(finalValueFunction);
-  }
-
-  /**
-   * 用于求解所有分区 Riccati 方程的实现。
-   *
-   * @param [in] finalValueFunction 终端价值函数（Sm=dfdxx, Sv=dfdx, s=f）。
-   */
-  void solveSequentialRiccatiEquationsImpl(
-      const ValueFunctionQuadraticApproximation_t& finalValueFunction) {
+      const ValueFunctionQuadraticApproximation_t& finalValueFunction,
+      ControllerGainTrajectory_t& controllerGainTrajectory,
+      ControllerDeltaBiasTrajectory_t& controllerDeltaBiasTrajectory) {
     nominalDualData_.valueFunctionTrajectory.back() = finalValueFunction;
 
-    riccatiEquationsWorker(finalValueFunction);
+    riccatiEquationsWorker(finalValueFunction, controllerGainTrajectory,
+                           controllerDeltaBiasTrajectory);
   }
 
   /**
@@ -743,20 +695,26 @@ class iLQR {
    * 补偿。
    *
    * @param [in] finalValueFunction 终端价值函数，用于反向递推的初值。
+   * @param [out] controllerGainTrajectory 控制器反馈增益数组。
+   * @param [out] controllerDeltaBiasTrajectory 控制器前馈更新数组。
    */
   void riccatiEquationsWorker(
-      const ValueFunctionQuadraticApproximation_t& finalValueFunction) {
+      const ValueFunctionQuadraticApproximation_t& finalValueFunction,
+      ControllerGainTrajectory_t& controllerGainTrajectory,
+      ControllerDeltaBiasTrajectory_t& controllerDeltaBiasTrajectory) {
     /*
      * 求解 Riccati 方程。
      */
     const ValueFunctionQuadraticApproximation_t* valueFunctionNext =
         &finalValueFunction;
 
+    // Riccati 只产生区间控制律 K_0..K_{N-1} 和 d_0..d_{N-1}；
+    // controller 的末端点用于时间插值，稍后由倒数第二个控制律补齐。
     int curIndex = PredictLength - 1;
     constexpr int stopIndex = 0;
     while (curIndex >= stopIndex) {
-      LvVector_t& curLv = lvTrajectoryStock_[curIndex];
-      KmMatrix_t& curKm = kmTrajectoryStock_[curIndex];
+      LvVector_t& curLv = controllerDeltaBiasTrajectory[curIndex];
+      KmMatrix_t& curKm = controllerGainTrajectory[curIndex];
       RiccatiModification_t& curRiccatiModification =
           nominalDualData_.riccatiModificationTrajectory[curIndex];
       const ModelData_t& curModelData =
@@ -827,14 +785,12 @@ class iLQR {
     const InputVector_t& nominalInput =
         primalData.primalSolution.inputTrajectory_[timeIndex];
 
-    // 反馈增益。
-    dstController.gainArray_[timeIndex] = kmTrajectoryStock_[timeIndex];
-
-    // 偏置输入。
+    // gainArray_/deltaBiasArray_ 已由 Riccati 递推写入；这里仅把
+    // u = Kx + uff 转换成经过名义点的 affine bias：uff = u_nominal -
+    // Kx_nominal。
     dstController.biasArray_[timeIndex] = nominalInput;
     dstController.biasArray_[timeIndex] -=
         dstController.gainArray_[timeIndex] * nominalState;
-    dstController.deltaBiasArray_[timeIndex] = lvTrajectoryStock_[timeIndex];
   }
 
   /** 基于当前 LQ 解更新优化后的原始解和对偶
@@ -926,8 +882,7 @@ class iLQR {
 
   DDPSettings<Scalar> ddpSettings_{};
 
-  // 保持 public 以支持搜索策略集成和已有外部设置
-  // 代码。
+  // 最优控制问题定义由外部持有，本求解器仅保存引用。
   OptimalControlProblem_t& optimalControlProblem_;
 
   Rollout_t rollout_;
@@ -960,8 +915,6 @@ class iLQR {
 
   // Riccati 递推工作区。
   DiscreteTimeRiccatiEquations_t riccatiEquationsSolver_;
-  std::array<KmMatrix_t, PredictLength + 1> kmTrajectoryStock_;  // 反馈。
-  std::array<LvVector_t, PredictLength + 1> lvTrajectoryStock_;  // 前馈。
 
   // 性能和迭代记录。
   PerformanceIndex_t performanceIndex_;

@@ -76,7 +76,7 @@ struct DualDataContainer {
   // 对偶解
   DualSolution_t dualSolution;
   // Riccati 修正。
-  std::array<RiccatiModification_t, PredictLength + 1>
+  std::array<RiccatiModification_t, PredictLength>
       riccatiModificationTrajectory;
   // Riccati 解系数。
   std::array<ValueFunctionQuadraticApproximation_t, PredictLength + 1>

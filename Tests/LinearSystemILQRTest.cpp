@@ -5,8 +5,8 @@
 #include "Dynamics/LinearSystemDynamics.hpp"
 #include "iLQR/iLQR.hpp"
 
-// 验证 incrementController 保留时间戳和增益，只更新前馈偏置。
-TEST(LinearSystemILQRTest, IncrementControllerUpdatesOnlyFeedforwardBias) {
+// 验证线搜索步长只改变控制器前馈偏置，控制器结构由搜索策略预先初始化。
+TEST(LinearSystemILQRTest, ChangeControllerStepLengthUpdatesOnlyBias) {
   using Descriptor =
       iLQRDescriptor<double, TranscriptionConfig<Dimensions<2, 1>, Horizon<2>>>;
   using Solver = iLQR<Descriptor>;
@@ -14,26 +14,23 @@ TEST(LinearSystemILQRTest, IncrementControllerUpdatesOnlyFeedforwardBias) {
   Solver::LinearController_t controller;
 
   for (int i = 0; i < 3; ++i) {
-    unoptimizedController.timeStamp_[i] = 0.5 * i;
     unoptimizedController.biasArray_[i] = {1.0 + i};
     unoptimizedController.deltaBiasArray_[i] = {4.0 - i};
-    unoptimizedController.gainArray_[i] = {2.0 + i, -1.0 * i};
 
-    controller.timeStamp_[i] = -1.0;
+    controller.timeStamp_[i] = 0.5 * i;
     controller.biasArray_[i] = {-100.0};
     controller.deltaBiasArray_[i] = {-200.0};
-    controller.gainArray_[i] = Matrix<double, 1, 2>::Constant(-300.0);
+    controller.gainArray_[i] = {2.0 + i, -1.0 * i};
   }
 
-  Solver::incrementController(0.25, unoptimizedController, controller);
+  Solver::changeControllerStepLength(0.25, unoptimizedController, controller);
 
   for (int i = 0; i < 3; ++i) {
     const Vector<double, 1> expectedBias{(1.0 + i) + 0.25 * (4.0 - i)};
 
-    EXPECT_DOUBLE_EQ(controller.timeStamp_[i],
-                     unoptimizedController.timeStamp_[i]);
+    EXPECT_DOUBLE_EQ(controller.timeStamp_[i], 0.5 * i);
     EXPECT_TRUE(controller.gainArray_[i].isApprox(
-        unoptimizedController.gainArray_[i], 1e-12))
+        Matrix<double, 1, 2>{2.0 + i, -1.0 * i}, 1e-12))
         << "i = " << i;
     EXPECT_TRUE(controller.biasArray_[i].isApprox(expectedBias, 1e-12))
         << "i = " << i;
