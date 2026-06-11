@@ -103,8 +103,8 @@ struct iLQRTypes {
   using IntermediateMultiplierTrajectory_t =
       std::array<IntermediateMultiplierCollection_t, PredictLength>;
   using ModelDataTrajectory_t = std::array<ModelData_t, PredictLength>;
-  using SearchStrategySolution_t = SearchStrategySolution<Descriptor>;
-  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Descriptor>;
+  using SearchStrategySolutionBuffer_t =
+      SearchStrategySolutionBuffer<Descriptor>;
   using SearchStrategyBase_t = SearchStrategyBase<Descriptor>;
   using ValueFunctionQuadraticApproximation_t =
       ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>;

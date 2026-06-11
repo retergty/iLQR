@@ -60,9 +60,10 @@ class iLQR {
   using Rollout_t = typename Types::Rollout_t;
   using RolloutTrajectoryPointer_t = typename Types::RolloutTrajectoryPointer_t;
 
-  using SearchStrategySolution_t = typename Types::SearchStrategySolution_t;
-  using SearchStrategySolutionRef_t =
-      typename Types::SearchStrategySolutionRef_t;
+  using SearchStrategySolutionBuffer_t =
+      typename Types::SearchStrategySolutionBuffer_t;
+  using SearchStrategySolutionSlot_t =
+      typename SearchStrategySolutionBuffer_t::Slot;
 
   using LinearController_t = typename Types::LinearController_t;
   using ControllerGainTrajectory_t = std::array<KmMatrix_t, PredictLength + 1>;
@@ -801,33 +802,38 @@ class iLQR {
   /** 基于当前 LQ 解更新优化后的原始解和对偶
    * 解。 */
   void takePrimalDualStep(Scalar lqModelExpectedCost) {
-    // 更新原始解：运行搜索策略并找到最优 stepLength。
-    SearchStrategySolutionRef_t solution(
-        *optimizedDualSolutionPtr_, *optimizedPrimalSolutionPtr_,
-        *optimizedProblemMetricsPtr_, performanceIndex_);
-    const bool success = lineSearchStrategy_.run(
+    PrimalSolution_t* baselinePrimalSolutionPtr = optimizedPrimalSolutionPtr_;
+    ProblemMetrics_t* baselineProblemMetricsPtr = optimizedProblemMetricsPtr_;
+
+    PrimalSolution_t* candidatePrimalSolutionPtr = nominalPrimalSolutionPtr_;
+    ProblemMetrics_t* candidateProblemMetricsPtr = nominalProblemMetricsPtr_;
+
+    SearchStrategySolutionBuffer_t solutionBuffer(
+        *baselinePrimalSolutionPtr, *baselineProblemMetricsPtr,
+        *candidatePrimalSolutionPtr, *candidateProblemMetricsPtr);
+    SearchStrategySolutionSlot_t* selectedSlot = lineSearchStrategy_.run(
         {initTime_, finalTime_}, initState_, lqModelExpectedCost,
-        unoptimizedController_, *nominalDualSolutionPtr_, solution);
+        solutionBuffer, unoptimizedController_, *nominalDualSolutionPtr_);
+    assert(selectedSlot != nullptr);
 
-    // 更新对偶解。
-    if (success) {
-      updateDualSolution(optimalControlProblem_, *optimizedPrimalSolutionPtr_,
-                         *optimizedProblemMetricsPtr_,
-                         *optimizedDualSolutionPtr_);
-      performanceIndex_ = computeRolloutPerformanceIndex(
-          optimizedPrimalSolutionPtr_->timeTrajectory_,
-          *optimizedProblemMetricsPtr_);
-      performanceIndex_.merit = calculateRolloutMerit(performanceIndex_);
+    const bool selectedCandidate = selectedSlot == &solutionBuffer.candidate;
+    if (selectedCandidate) {
+      std::swap(optimizedPrimalSolutionPtr_, nominalPrimalSolutionPtr_);
+      std::swap(optimizedProblemMetricsPtr_, nominalProblemMetricsPtr_);
     }
 
-    // 如果失败，则使用名义解；为保持缓存数据一致性，所有
-    // 缓存都应保持不变。
-    if (!success) {
-      *optimizedDualSolutionPtr_ = *nominalDualSolutionPtr_;
-      *optimizedPrimalSolutionPtr_ = *nominalPrimalSolutionPtr_;
-      *optimizedProblemMetricsPtr_ = *nominalProblemMetricsPtr_;
-      performanceIndex_ = performanceIndexLast_;
-    }
+    // updateDualSolution() 会读取旧乘子并原地更新；线搜索评价使用的是
+    // nominalDualSolutionPtr_，因此无论选中 baseline 还是 candidate，都先把
+    // 当前 nominal dual 槽切到 optimized 侧作为更新起点。
+    std::swap(optimizedDualSolutionPtr_, nominalDualSolutionPtr_);
+
+    updateDualSolution(optimalControlProblem_, *optimizedPrimalSolutionPtr_,
+                       *optimizedProblemMetricsPtr_,
+                       *optimizedDualSolutionPtr_);
+    performanceIndex_ = computeRolloutPerformanceIndex(
+        optimizedPrimalSolutionPtr_->timeTrajectory_,
+        *optimizedProblemMetricsPtr_);
+    performanceIndex_.merit = calculateRolloutMerit(performanceIndex_);
   }
 
   ValueFunctionQuadraticApproximation_t getValueFunctionImpl(

@@ -8,52 +8,42 @@
 template <typename Descriptor>
 struct iLQRTypes;
 /**
- * @brief 搜索策略候选输出：原始解、问题指标与性能指标。
- * @note 候选解不缓存对偶解；对偶解由 SearchStrategySolutionRef 在外部保存。
+ * @brief 搜索策略外部候选缓冲区视图：绑定 baseline/candidate 两个候选槽。
+ *
+ * 该结构不拥有 primalSolution/problemMetrics 存储，只把线搜索需要反复覆盖的
+ * 两组外部缓冲区组织成固定双槽。搜索结束后，selectedSlotPtr 指向被接受的槽。
+ *
  * @tparam Descriptor iLQR 类型描述。
  */
 template <typename Descriptor>
-struct SearchStrategySolution {
+struct SearchStrategySolutionBuffer {
   using Types = iLQRTypes<Descriptor>;
   using PrimalSolution_t = typename Types::PrimalSolution_t;
   using ProblemMetrics_t = typename Types::ProblemMetrics_t;
   using PerformanceIndex_t = typename Types::PerformanceIndex_t;
 
-  /** @brief 原始解。 */
-  PrimalSolution_t primalSolution;
-  /** @brief 问题指标。 */
-  ProblemMetrics_t problemMetrics;
-  /** @brief 性能指标。 */
-  PerformanceIndex_t performanceIndex;
-};
+  /** @brief 单个候选槽：轨迹/metrics 绑定外部存储，performanceIndex 本地保存。
+   */
+  struct Slot {
+    PrimalSolution_t& primalSolution;
+    ProblemMetrics_t& problemMetrics;
+    PerformanceIndex_t performanceIndex;
+  };
 
-/** @brief 搜索策略写回视图：绑定外部 dual/primal/metrics/performance。 */
-template <typename Descriptor>
-struct SearchStrategySolutionRef {
-  using Types = iLQRTypes<Descriptor>;
-  using PrimalSolution_t = typename Types::PrimalSolution_t;
-  using DualSolution_t = typename Types::DualSolution_t;
-  using ProblemMetrics_t = typename Types::ProblemMetrics_t;
-  using PerformanceIndex_t = typename Types::PerformanceIndex_t;
+  SearchStrategySolutionBuffer(PrimalSolution_t& baselinePrimalSolution,
+                               ProblemMetrics_t& baselineProblemMetrics,
+                               PrimalSolution_t& candidatePrimalSolution,
+                               ProblemMetrics_t& candidateProblemMetrics)
+      : baseline{baselinePrimalSolution, baselineProblemMetrics, {}},
+        candidate{candidatePrimalSolution, candidateProblemMetrics, {}},
+        selectedSlotPtr(&baseline) {}
 
-  /** @brief 直接绑定各成员引用。 */
-  SearchStrategySolutionRef(DualSolution_t& dualSolutionArg,
-                            PrimalSolution_t& primalSolutionArg,
-                            ProblemMetrics_t& problemMetricsArg,
-                            PerformanceIndex_t& performanceIndexArg)
-      : dualSolution(dualSolutionArg),
-        primalSolution(primalSolutionArg),
-        problemMetrics(problemMetricsArg),
-        performanceIndex(performanceIndexArg) {}
-
-  /** @brief 对偶解引用。 */
-  DualSolution_t& dualSolution;
-  /** @brief 原始解引用。 */
-  PrimalSolution_t& primalSolution;
-  /** @brief 问题指标引用。 */
-  ProblemMetrics_t& problemMetrics;
-  /** @brief 性能指标引用。 */
-  PerformanceIndex_t& performanceIndex;
+  /** @brief 零步长候选，作为 Armijo 比较基准。 */
+  Slot baseline;
+  /** @brief 正步长候选，线搜索过程中会被重复覆盖。 */
+  Slot candidate;
+  /** @brief 搜索结束后指向被接受的候选槽。 */
+  Slot* selectedSlotPtr;
 };
 
 /**
@@ -70,8 +60,10 @@ class SearchStrategyBase {
   using PerformanceIndex_t = typename Types::PerformanceIndex_t;
   using ModelData_t = typename Types::ModelData_t;
   using DualSolution_t = typename Types::DualSolution_t;
-  using SearchStrategySolution_t = SearchStrategySolution<Descriptor>;
-  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Descriptor>;
+  using SearchStrategySolutionBuffer_t =
+      SearchStrategySolutionBuffer<Descriptor>;
+  using SearchStrategySolutionSlot_t =
+      typename SearchStrategySolutionBuffer_t::Slot;
   using HmMatrix_t = typename Types::HmMatrix_t;
   using SmMatrix_t = typename Types::SmMatrix_t;
 
@@ -87,22 +79,21 @@ class SearchStrategyBase {
   virtual void reset() = 0;
 
   /**
-   * @brief 根据未优化控制器与对偶解执行搜索，将最优轨迹、控制器与性能指标写入
-   * 解。
+   * @brief 根据未优化控制器与对偶解执行搜索，在候选缓冲区中返回被选中的槽。
    * @param [in] timePeriod 时间区间 (初始时间, 终止时间)。
    * @param [in] initState 初始状态。
    * @param [in] expectedCost 基于 LQ 模型的期望代价。
+   * @param [in,out] solutionBuffer 外部 baseline/candidate 候选缓冲区。
    * @param [in] unoptimizedController 待搜索的未优化控制器。
    * @param [in] dualSolution 对偶解。
-   * @param [in,out] solution 解。
-   * 输出（primalSolution、performanceIndex、problemMetrics）。
-   * @return 搜索是否成功。
+   * @return 被选中的候选槽；返回 nullptr 表示搜索失败且没有可用候选。
    */
-  virtual bool run(const std::pair<Scalar, Scalar>& timePeriod,
-                   const StateVector_t& initState, const Scalar expectedCost,
-                   const LinearController_t& unoptimizedController,
-                   const DualSolution_t& dualSolution,
-                   SearchStrategySolutionRef_t& solution) = 0;
+  virtual SearchStrategySolutionSlot_t* run(
+      const std::pair<Scalar, Scalar>& timePeriod,
+      const StateVector_t& initState, const Scalar expectedCost,
+      SearchStrategySolutionBuffer_t& solutionBuffer,
+      const LinearController_t& unoptimizedController,
+      const DualSolution_t& dualSolution) = 0;
 
   /**
    * @brief 检查 DDP 主循环是否收敛。

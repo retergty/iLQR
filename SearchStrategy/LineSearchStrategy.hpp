@@ -29,8 +29,10 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
   using PerformanceIndex_t = typename Types::PerformanceIndex_t;
   using ModelData_t = typename Types::ModelData_t;
   using DualSolution_t = typename Types::DualSolution_t;
-  using SearchStrategySolution_t = SearchStrategySolution<Descriptor>;
-  using SearchStrategySolutionRef_t = SearchStrategySolutionRef<Descriptor>;
+  using SearchStrategySolutionBuffer_t =
+      SearchStrategySolutionBuffer<Descriptor>;
+  using SearchStrategySolutionSlot_t =
+      typename SearchStrategySolutionBuffer_t::Slot;
   using HmMatrix_t = typename Types::HmMatrix_t;
   using SmMatrix_t = typename Types::SmMatrix_t;
   using iLQR_t = iLQR<Descriptor>;
@@ -51,27 +53,27 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
 
   /**
    * @brief 执行线搜索：从最大步长起尝试，选满足 Armijo
-   * 的最大步长，将最优候选解写回 solutionRef。
+   * 的最大步长，并返回外部候选缓冲区中的被选中槽。
    * @param [in] timePeriod 积分时间区间 (initTime, finalTime)。
    * @param [in] initState 初始状态。
    * @param [in] expectedCost 期望代价（当前未使用）。
+   * @param [in,out] solutionBuffer baseline/candidate 外部候选缓冲区。
    * @param [in] unoptimizedController 未优化控制器（含 deltaBias）。
    * @param [in] dualSolution 对偶解。
-   * @param [in,out] solutionRef 输出解引用；primal/metrics/performanceIndex
-   * 来自最佳候选解，dualSolution 复制自输入 dualSolution。
-   * @return 当前实现恒返回 true。
+   * @return 被选中的候选槽；当前实现总会至少返回零步长 baseline。
    */
-  bool run(const std::pair<Scalar, Scalar>& timePeriod,
-           const StateVector_t& initState, const Scalar expectedCost,
-           const LinearController_t& unoptimizedController,
-           const DualSolution_t& dualSolution,
-           SearchStrategySolutionRef_t& solutionRef) override {
+  SearchStrategySolutionSlot_t* run(
+      const std::pair<Scalar, Scalar>& timePeriod,
+      const StateVector_t& initState, const Scalar expectedCost,
+      SearchStrategySolutionBuffer_t& solutionBuffer,
+      const LinearController_t& unoptimizedController,
+      const DualSolution_t& dualSolution) override {
     (void)expectedCost;
     const LineSearchInputRef inputRef{&timePeriod, &initState,
                                       &unoptimizedController, &dualSolution};
 
-    SearchStrategySolution_t& baselineSolution = baselineSolutionCache_;
-    SearchStrategySolution_t& candidateSolution = candidateSolutionCache_;
+    SearchStrategySolutionSlot_t& baselineSolution = solutionBuffer.baseline;
+    SearchStrategySolutionSlot_t& candidateSolution = solutionBuffer.candidate;
 
     initializeControllerStructure(unoptimizedController,
                                   baselineSolution.primalSolution.controller_);
@@ -87,14 +89,9 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
     const bool acceptedCandidate =
         lineSearchTask(inputRef, baselineMerit, unoptimizedControllerUpdateIS,
                        candidateSolution);
-    const SearchStrategySolution_t& selectedSolution =
-        acceptedCandidate ? candidateSolution : baselineSolution;
-
-    solutionRef.primalSolution = selectedSolution.primalSolution;
-    solutionRef.dualSolution = dualSolution;
-    solutionRef.performanceIndex = selectedSolution.performanceIndex;
-    solutionRef.problemMetrics = selectedSolution.problemMetrics;
-    return true;
+    solutionBuffer.selectedSlotPtr =
+        acceptedCandidate ? &candidateSolution : &baselineSolution;
+    return solutionBuffer.selectedSlotPtr;
   }
 
   /**
@@ -193,7 +190,7 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
    * dualSolution 只作为 metrics 计算输入，不存入候选解。
    */
   void computeSolution(const LineSearchInputRef& inputRef, Scalar stepLength,
-                       SearchStrategySolution_t& solution) {
+                       SearchStrategySolutionSlot_t& solution) {
     // 计算原始解。
     iLQR_t::changeControllerStepLength(stepLength,
                                        *inputRef.unoptimizedControllerPtr,
@@ -218,7 +215,7 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
   /** @brief 从最大步长开始按收缩率递减尝试，返回是否接受正步长候选。 */
   bool lineSearchTask(const LineSearchInputRef& inputRef, Scalar baselineMerit,
                       Scalar unoptimizedControllerUpdateIS,
-                      SearchStrategySolution_t& candidateSolution) {
+                      SearchStrategySolutionSlot_t& candidateSolution) {
     Scalar stepLength = settings_.maxStepLength;
     const size_t MaxSearch = maxNumOfSearches(settings_);
     for (size_t alphaExp = 0; alphaExp < MaxSearch; ++alphaExp) {
@@ -246,7 +243,4 @@ class LineSearchStrategy final : public SearchStrategyBase<Descriptor> {
   LineSearchSettings<Scalar> settings_{};
 
   iLQR_t& ilqr_;
-
-  SearchStrategySolution_t baselineSolutionCache_;
-  SearchStrategySolution_t candidateSolutionCache_;
 };
