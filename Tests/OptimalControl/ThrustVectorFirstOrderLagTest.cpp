@@ -228,25 +228,27 @@ TEST(ThrustVectorFirstOrderLagCostTest,
   const Vector<Scalar, 3> weightedCommandAccelerationDeviation =
       Ra * commandAccelerationDeviation;
   const Scalar expectedValue =
-      Scalar(0.5) * commandAccelerationDeviation.dot(
-                        weightedCommandAccelerationDeviation);
+      Scalar(0.5) *
+      commandAccelerationDeviation.dot(weightedCommandAccelerationDeviation);
 
   EXPECT_NEAR(cost.getValue(Scalar(0), state, input, timeTrajectory,
                             stateTrajectory, inputTrajectory),
               expectedValue, Scalar(1e-12));
 
-  const auto approximation = cost.getQuadraticApproximation(
-      Scalar(0), state, input, timeTrajectory, stateTrajectory,
-      inputTrajectory);
+  auto approximation = ScalarFunctionQuadraticApproximation<
+      Scalar, thrust_vector_first_order_lag::STATE_DIM,
+      thrust_vector_first_order_lag::INPUT_DIM>::Zero();
+  cost.addQuadraticApproximation(Scalar(0), state, input, timeTrajectory,
+                                 stateTrajectory, inputTrajectory,
+                                 approximation);
   EXPECT_NEAR(approximation.f, expectedValue, Scalar(1e-12));
   for (int i = 0; i < 3; ++i) {
     EXPECT_NEAR(approximation.dfdx(i + 6),
                 weightedCommandAccelerationDeviation(i), Scalar(1e-12));
-    EXPECT_NEAR(approximation.dfdu(i),
-                weightedCommandAccelerationDeviation(i), Scalar(1e-12));
+    EXPECT_NEAR(approximation.dfdu(i), weightedCommandAccelerationDeviation(i),
+                Scalar(1e-12));
     for (int j = 0; j < 3; ++j) {
-      EXPECT_NEAR(approximation.dfdxx(i + 6, j + 6), Ra(i, j),
-                  Scalar(1e-12));
+      EXPECT_NEAR(approximation.dfdxx(i + 6, j + 6), Ra(i, j), Scalar(1e-12));
       EXPECT_NEAR(approximation.dfduu(i, j), Ra(i, j), Scalar(1e-12));
       EXPECT_NEAR(approximation.dfdux(i, j + 6), Ra(i, j), Scalar(1e-12));
     }
@@ -306,17 +308,20 @@ TEST(ThrustVectorFirstOrderLagCostTest,
                             stateTrajectory, inputTrajectory),
               expectedValue, Scalar(1e-12));
 
-  const auto approximation = cost.getQuadraticApproximation(
-      Scalar(0), state, input, timeTrajectory, stateTrajectory,
-      inputTrajectory);
+  auto approximation = ScalarFunctionQuadraticApproximation<
+      Scalar, thrust_vector_first_order_lag::STATE_DIM,
+      thrust_vector_first_order_lag::INPUT_DIM>::Zero();
+  cost.addQuadraticApproximation(Scalar(0), state, input, timeTrajectory,
+                                 stateTrajectory, inputTrajectory,
+                                 approximation);
   EXPECT_NEAR(approximation.f, expectedValue, Scalar(1e-12));
   for (int i = 0; i < 3; ++i) {
     const Scalar weightedCommandAccelerationDeviation =
         Ra(i, i) * commandAccelerationDeviation(i);
-    EXPECT_NEAR(approximation.dfdx(i + 6),
-                weightedCommandAccelerationDeviation, Scalar(1e-12));
-    EXPECT_NEAR(approximation.dfdu(i),
-                weightedCommandAccelerationDeviation, Scalar(1e-12));
+    EXPECT_NEAR(approximation.dfdx(i + 6), weightedCommandAccelerationDeviation,
+                Scalar(1e-12));
+    EXPECT_NEAR(approximation.dfdu(i), weightedCommandAccelerationDeviation,
+                Scalar(1e-12));
     EXPECT_NEAR(approximation.dfdxx(i + 6, i + 6), Ra(i, i), Scalar(1e-12));
     EXPECT_NEAR(approximation.dfduu(i, i), Ra(i, i), Scalar(1e-12));
     EXPECT_NEAR(approximation.dfdux(i, i + 6), Ra(i, i), Scalar(1e-12));

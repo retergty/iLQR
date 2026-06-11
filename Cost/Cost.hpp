@@ -8,7 +8,7 @@
 #include "iLQR/LinearAlgebraTypes.hpp"
 
 /**
- * @brief 仅状态代价项基类：按时间与状态计算代价值及二次近似。
+ * @brief 仅状态代价项基类：按时间与状态计算代价值，并向给定对象累加二次近似。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam ArrayLength 轨迹长度。
@@ -33,12 +33,12 @@ class StateCost
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy) = 0;
 
-  /** @brief 获取代价的二次近似（仅状态）。 */
-  virtual ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
-  getQuadraticApproximation(
+  /** @brief 计算并累加代价的二次近似（仅状态）。 */
+  virtual void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
-      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy) = 0;
+      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& addAppro) = 0;
 
   /** @brief 代价项唯一标识号。 */
   int number;
@@ -48,7 +48,8 @@ class StateCost
 };
 
 /**
- * @brief 状态-输入代价项基类：按时间、状态与输入计算代价值及二次近似。
+ * @brief
+ * 状态-输入代价项基类：按时间、状态与输入计算代价值，并向给定对象累加二次近似。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
  * @tparam UDim 输入维度。
@@ -76,14 +77,14 @@ class StateInputCost : public IntrusiveListNode<
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
       const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory) = 0;
 
-  /** @brief 获取代价的二次近似（状态-输入）。 */
-  virtual ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  getQuadraticApproximation(
+  /** @brief 计算并累加代价的二次近似（状态-输入）。 */
+  virtual void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
-      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory) = 0;
+      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro) = 0;
 
   // 标识状态-输入代价，必须唯一。
   int number;

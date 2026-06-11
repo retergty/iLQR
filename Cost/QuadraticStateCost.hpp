@@ -36,22 +36,19 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
     return Scalar(0.5) * xDeviation.dot(Q_ * xDeviation);
   }
 
-  /** @brief 获取代价的二次近似（dfdxx=Q, dfdx=Q*(x-x_ref),
+  /** @brief 计算并累加代价的二次近似（dfdxx=Q, dfdx=Q*(x-x_ref),
    * f=0.5*(x-x_ref)'*dfdx）。 */
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
-  getQuadraticApproximation(
+  void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
-      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy)
-      final {
+      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& addAppro) final {
     const Vector<Scalar, XDim> xDeviation =
         getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
-
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> Phi;
-    Phi.dfdxx = Q_;
-    Phi.dfdx = Q_ * xDeviation;
-    Phi.f = Scalar(0.5) * xDeviation.dot(Phi.dfdx);
-    return Phi;
+    const Vector<Scalar, XDim> weightedStateDeviation = Q_ * xDeviation;
+    addAppro.dfdxx += Q_;
+    addAppro.dfdx += weightedStateDeviation;
+    addAppro.f += Scalar(0.5) * xDeviation.dot(weightedStateDeviation);
   }
 
  protected:
@@ -132,40 +129,36 @@ class QuadraticStateInputCost
     }
   }
 
-  /** 获取代价项二次近似。 */
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  getQuadraticApproximation(
+  /** 计算并累加代价项二次近似。 */
+  void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
-      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory)
+      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro)
       final {
     (void)timeTrajectory;
     Vector<Scalar, XDim> stateDeviation =
         getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
     Vector<Scalar, UDim> inputDeviation =
         getInputDeviation(time, input, timeTrajectory, inputTrajectory);
+    const Vector<Scalar, XDim> weightedStateDeviation = Q_ * stateDeviation;
+    const Vector<Scalar, UDim> weightedInputDeviation = R_ * inputDeviation;
+    addAppro.dfdxx += Q_;
+    addAppro.dfduu += R_;
+    addAppro.dfdx += weightedStateDeviation;
+    addAppro.dfdu += weightedInputDeviation;
+    addAppro.f += Scalar(0.5) * stateDeviation.dot(weightedStateDeviation) +
+                  Scalar(0.5) * inputDeviation.dot(weightedInputDeviation);
 
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> L;
-    L.dfdxx = Q_;
-    L.dfduu = R_;
-    L.dfdx = Q_ * stateDeviation;
-    L.dfdu = R_ * inputDeviation;
-    L.f = Scalar(0.5) * stateDeviation.dot(L.dfdx) +
-          Scalar(0.5) * inputDeviation.dot(L.dfdu);
-
-    if (has_P_ == 0) {
-      L.dfdux.setZero();
-    } else {
+    if (has_P_) {
       const Vector<Scalar, UDim> pDeviation = P_ * stateDeviation;
-      L.f += inputDeviation.dot(pDeviation);
-      L.dfdu += pDeviation;
-      L.dfdx += P_.transpose() * inputDeviation;
-      L.dfdux = P_;
+      addAppro.f += inputDeviation.dot(pDeviation);
+      addAppro.dfdu += pDeviation;
+      addAppro.dfdx += P_.transpose() * inputDeviation;
+      addAppro.dfdux += P_;
     }
-
-    return L;
   }
 
  protected:

@@ -88,14 +88,14 @@ class CircularKinematicsCost
     return Scalar(0.5) * angularVelocityError * angularVelocityError +
            Scalar(0.005) * input.dot(input);
   }
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
-  getQuadraticApproximation(
+  void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, STATE_DIM>& state,
       const Vector<Scalar, INPUT_DIM>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectoy,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
-      override {
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory,
+      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>&
+          addAppro) override {
     (void)time;
     (void)timeTrajectory;
     (void)stateTrajectoy;
@@ -105,8 +105,6 @@ class CircularKinematicsCost
     static_assert(INPUT_DIM == 2,
                   "CircularKinematicsCost requires INPUT_DIM == 2.");
 
-    ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM> result;
-
     const Scalar x0 = state(0);
     const Scalar x1 = state(1);
     const Scalar u0 = input(0);
@@ -114,30 +112,28 @@ class CircularKinematicsCost
 
     const Scalar c = x0 * u1 - x1 * u0 - Scalar(1.0);
 
-    result.setZero();
-    result.f = Scalar(0.5) * c * c + Scalar(0.005) * input.dot(input);
+    addAppro.f += Scalar(0.5) * c * c + Scalar(0.005) * input.dot(input);
 
-    result.dfdx(0) = c * u1;
-    result.dfdx(1) = -c * u0;
+    addAppro.dfdx(0) += c * u1;
+    addAppro.dfdx(1) += -c * u0;
 
-    result.dfdu(0) = -c * x1 + Scalar(0.01) * u0;
-    result.dfdu(1) = c * x0 + Scalar(0.01) * u1;
+    addAppro.dfdu(0) += -c * x1 + Scalar(0.01) * u0;
+    addAppro.dfdu(1) += c * x0 + Scalar(0.01) * u1;
 
-    result.dfdxx(0, 0) = u1 * u1;
-    result.dfdxx(0, 1) = -u1 * u0;
-    result.dfdxx(1, 0) = -u0 * u1;
-    result.dfdxx(1, 1) = u0 * u0;
+    addAppro.dfdxx(0, 0) += u1 * u1;
+    addAppro.dfdxx(0, 1) += -u1 * u0;
+    addAppro.dfdxx(1, 0) += -u0 * u1;
+    addAppro.dfdxx(1, 1) += u0 * u0;
 
-    result.dfduu(0, 0) = x1 * x1 + Scalar(0.01);
-    result.dfduu(0, 1) = -x1 * x0;
-    result.dfduu(1, 0) = -x0 * x1;
-    result.dfduu(1, 1) = x0 * x0 + Scalar(0.01);
+    addAppro.dfduu(0, 0) += x1 * x1 + Scalar(0.01);
+    addAppro.dfduu(0, 1) += -x1 * x0;
+    addAppro.dfduu(1, 0) += -x0 * x1;
+    addAppro.dfduu(1, 1) += x0 * x0 + Scalar(0.01);
 
-    result.dfdux(0, 0) = -x1 * u1;
-    result.dfdux(0, 1) = x1 * u0 - c;
-    result.dfdux(1, 0) = x0 * u1 + c;
-    result.dfdux(1, 1) = -x0 * u0;
-    return result;
+    addAppro.dfdux(0, 0) += -x1 * u1;
+    addAppro.dfdux(0, 1) += x1 * u0 - c;
+    addAppro.dfdux(1, 0) += x0 * u1 + c;
+    addAppro.dfdux(1, 1) += -x0 * u0;
   }
 };
 

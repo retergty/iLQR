@@ -610,6 +610,339 @@ $$
 
 在局部二次近似中，工程上可在当前名义点计算 $\gamma_k$，并将其作为常量权重处理，从而避免门控函数的导数破坏 Gauss-Newton Hessian 的半正定结构。
 
+## 约束
+
+本节给出推力加速度命令的几何与幅值约束。约束对象选取当前控制周期将要发送给下游的命令总加速度对应的推力加速度，而不是实际生效推力加速度：
+
+$$
+a_{T,\mathrm{cmd},k}^N
+:=
+a_{\mathrm{cmd},k}^N
+-
+g e_3
+$$
+
+其中：
+
+$$
+a_{\mathrm{cmd},k}^N
+=
+S_{\mathrm{cmd}}X_k+U_k
+$$
+
+因此：
+
+$$
+y_k
+:=
+a_{T,\mathrm{cmd},k}^N
+=
+S_{\mathrm{cmd}}X_k+U_k-g e_3
+$$
+
+记：
+
+$$
+y_k =
+\begin{bmatrix}
+a_x \\
+a_y \\
+a_z
+\end{bmatrix}
+$$
+
+当前坐标系为 NED，$e_3=[0,0,1]^T$ 指向 Down 方向，重力总加速度为 $g e_3$。悬停附近总加速度 $a_{\mathrm{cmd},k}^N \approx 0$，对应推力加速度 $a_{T,\mathrm{cmd},k}^N \approx -g e_3$，因此正常上推时有 $a_z<0$。
+
+在当前 iLQR 约束实现中，`Constraint` 返回的约束值经 `AugmentedLagrangian` 与 `Penalties` 转换为附加代价。不等式建议统一写成：
+
+$$
+h(X_k,U_k) \ge 0
+$$
+
+例如 `SlacknessSquaredHingePenalty` 在 $h$ 变小或小于零时激活惩罚并更新非负乘子；当 $h$ 充分为正时，该约束分量对局部二次子问题的导数趋近于零。由于 $a_{T,\mathrm{cmd},k}^N$ 包含当前输入增量 $U_k$，这些约束应实现为状态-输入约束 `StateInputConstraint`，而不是仅依赖状态的 `StateConstraint`。`StateConstraint` 只适合 $h(X_k)$，其近似只返回对状态的导数；本节约束的最终导数需要同时给出对 $X_k$ 和 $U_k$ 的 Jacobian。工程实现时可将以下三个约束组合为一个 3 维状态-输入不等式约束：
+
+$$
+h(X_k,U_k)
+=
+\begin{bmatrix}
+h_{\mathrm{cone}} \\
+h_{\mathrm{ellip}} \\
+h_z
+\end{bmatrix}
+\ge 0
+$$
+
+### 锥约束
+
+锥约束限制推力加速度相对竖直上推方向的偏转角不超过 $\theta$：
+
+$$
+\sqrt{a_x^2+a_y^2}
+\le
+-a_z\tan\theta
+$$
+
+其中应满足：
+
+$$
+0 < \theta < \frac{\pi}{2}
+$$
+
+采用平滑根号形式写成 $h\ge0$：
+
+$$
+h_{\mathrm{cone}}
+:=
+-a_z\tan\theta
+-
+\sqrt{a_x^2+a_y^2+\varepsilon_{\mathrm{cone}}}
+\ge 0
+$$
+
+其中 $\varepsilon_{\mathrm{cone}}>0$ 用于避免 $a_x=a_y=0$ 附近的不可导，常用量级可取 $10^{-6}$ 到 $10^{-4}$。
+
+定义：
+
+$$
+r_{xy}
+:=
+\sqrt{a_x^2+a_y^2+\varepsilon_{\mathrm{cone}}}
+$$
+
+则约束对推力加速度命令 $y_k$ 的梯度为。该梯度只是链式法则中的中间量，最终写入 `StateInputConstraint` 的导数应按后文转换为对 $X_k$ 和 $U_k$ 的 Jacobian：
+
+$$
+\frac{\partial h_{\mathrm{cone}}}{\partial y}
+=
+\begin{bmatrix}
+-\dfrac{a_x}{r_{xy}} &
+-\dfrac{a_y}{r_{xy}} &
+-\tan\theta
+\end{bmatrix}
+$$
+
+若实现二次近似，非零二阶项只出现在 $a_x,a_y$ 平面：
+
+$$
+\frac{\partial^2 h_{\mathrm{cone}}}{\partial y^2}
+=
+\begin{bmatrix}
+-\dfrac{1}{r_{xy}}+\dfrac{a_x^2}{r_{xy}^3} &
+\dfrac{a_xa_y}{r_{xy}^3} &
+0 \\
+\dfrac{a_xa_y}{r_{xy}^3} &
+-\dfrac{1}{r_{xy}}+\dfrac{a_y^2}{r_{xy}^3} &
+0 \\
+0 & 0 & 0
+\end{bmatrix}
+$$
+
+相比平方形式，根号形式保持推力横向分量的一阶尺度，且不会在配合 $z$ 轴符号约束前产生双锥歧义，更适合作为增广拉格朗日不等式约束的直接表达。
+
+### 椭球约束
+
+椭球约束限制推力加速度命令三轴分量处于给定轴向能力范围内：
+
+$$
+\left(\frac{a_x}{a_{x,\max}}\right)^2
++
+\left(\frac{a_y}{a_{y,\max}}\right)^2
++
+\left(\frac{a_z}{a_{z,\max}}\right)^2
+\le
+1
+$$
+
+其中：
+
+$$
+a_{x,\max}>0,\quad
+a_{y,\max}>0,\quad
+a_{z,\max}>0
+$$
+
+写成 $h\ge0$：
+
+$$
+h_{\mathrm{ellip}}
+:=
+1
+-
+\left(\frac{a_x}{a_{x,\max}}\right)^2
+-
+\left(\frac{a_y}{a_{y,\max}}\right)^2
+-
+\left(\frac{a_z}{a_{z,\max}}\right)^2
+\ge 0
+$$
+
+该约束对推力加速度命令 $y_k$ 的梯度为。该梯度只是链式法则中的中间量，最终写入 `StateInputConstraint` 的导数应按后文转换为对 $X_k$ 和 $U_k$ 的 Jacobian：
+
+$$
+\frac{\partial h_{\mathrm{ellip}}}{\partial y}
+=
+\begin{bmatrix}
+-\dfrac{2a_x}{a_{x,\max}^2} &
+-\dfrac{2a_y}{a_{y,\max}^2} &
+-\dfrac{2a_z}{a_{z,\max}^2}
+\end{bmatrix}
+$$
+
+二阶项为常量：
+
+$$
+\frac{\partial^2 h_{\mathrm{ellip}}}{\partial y^2}
+=
+\begin{bmatrix}
+-\dfrac{2}{a_{x,\max}^2} & 0 & 0 \\
+0 & -\dfrac{2}{a_{y,\max}^2} & 0 \\
+0 & 0 & -\dfrac{2}{a_{z,\max}^2}
+\end{bmatrix}
+$$
+
+### 推力 z 轴最小值约束
+
+推力 $z$ 轴最小值约束用于防止推力方向反转。由于 NED 坐标系下正常上推对应 $a_z<0$，可设定一个负的阈值 $z_{\min}<0$：
+
+$$
+a_z \le z_{\min}
+$$
+
+写成 $h\ge0$：
+
+$$
+h_z
+:=
+z_{\min}-a_z
+\ge 0
+$$
+
+该约束对推力加速度命令 $y_k$ 的梯度为。该梯度只是链式法则中的中间量，最终写入 `StateInputConstraint` 的导数应按后文转换为对 $X_k$ 和 $U_k$ 的 Jacobian：
+
+$$
+\frac{\partial h_z}{\partial y}
+=
+\begin{bmatrix}
+0 & 0 & -1
+\end{bmatrix}
+$$
+
+二阶项为零：
+
+$$
+\frac{\partial^2 h_z}{\partial y^2}
+=
+0_{3\times3}
+$$
+
+若同时使用椭球约束与 $z$ 轴最小值约束，应至少保证存在可行的竖直推力分量：
+
+$$
+-a_{z,\max}\le z_{\min}<0
+$$
+
+### 约束对状态和输入的梯度
+
+`Constraint` 接口需要的不是对中间变量 $y_k$ 的导数，而是对优化变量的导数。对于本节的命令推力加速度约束，最终应返回：
+
+$$
+\mathrm{dfdx}
+=
+\frac{\partial h}{\partial X_k},
+\quad
+\mathrm{dfdu}
+=
+\frac{\partial h}{\partial U_k}
+$$
+
+上述三个约束均先写成 $y_k=a_{T,\mathrm{cmd},k}^N$ 的函数：
+
+$$
+h_i(X_k,U_k)=\bar h_i(y_k)
+$$
+
+由于：
+
+$$
+y_k
+=
+S_{\mathrm{cmd}}X_k+U_k-g e_3
+$$
+
+有：
+
+$$
+\frac{\partial y_k}{\partial X_k}
+=
+S_{\mathrm{cmd}},
+\quad
+\frac{\partial y_k}{\partial U_k}
+=
+I_3
+$$
+
+因此对任意约束分量 $h_i$：
+
+$$
+\frac{\partial h_i}{\partial X_k}
+=
+\frac{\partial \bar h_i}{\partial y}
+S_{\mathrm{cmd}}
+$$
+
+$$
+\frac{\partial h_i}{\partial U_k}
+=
+\frac{\partial \bar h_i}{\partial y}
+$$
+
+将三行梯度堆叠，得到状态-输入约束的 Jacobian：
+
+$$
+H_y
+:=
+\frac{\partial h}{\partial y}
+=
+\begin{bmatrix}
+\dfrac{\partial h_{\mathrm{cone}}}{\partial y} \\
+\dfrac{\partial h_{\mathrm{ellip}}}{\partial y} \\
+\dfrac{\partial h_z}{\partial y}
+\end{bmatrix}
+$$
+
+$$
+\frac{\partial h}{\partial X_k}
+=
+H_y S_{\mathrm{cmd}},
+\quad
+\frac{\partial h}{\partial U_k}
+=
+H_y
+$$
+
+若在 `StateInputConstraint` 中按 `ConstraintOrder::Linear` 提供局部线性近似，可只返回上述 $h$、$\partial h/\partial X_k$ 和 $\partial h/\partial U_k$，由 `MultidimensionalPenalty` 通过链式法则生成标量增广惩罚的二次近似。若希望保留约束自身曲率，可按 `ConstraintOrder::Quadratic` 同时填充每个约束分量的 Hessian：
+
+$$
+\frac{\partial^2 h_i}{\partial X_k^2}
+=
+S_{\mathrm{cmd}}^T
+\frac{\partial^2 \bar h_i}{\partial y^2}
+S_{\mathrm{cmd}}
+$$
+
+$$
+\frac{\partial^2 h_i}{\partial U_k\partial X_k}
+=
+\frac{\partial^2 \bar h_i}{\partial y^2}
+S_{\mathrm{cmd}}
+$$
+
+$$
+\frac{\partial^2 h_i}{\partial U_k^2}
+=
+\frac{\partial^2 \bar h_i}{\partial y^2}
+$$
+
 ## 完整离散阶段代价
 
 最终每个采样节点的 stage cost 可写为：

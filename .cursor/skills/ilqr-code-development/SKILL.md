@@ -15,6 +15,7 @@ When changing code in this repository:
 4. Do not introduce dynamic memory allocation in core solver paths.
 5. Prefer existing module boundaries and naming conventions.
 6. Add or update focused tests when behavior changes.
+7. After each code modification, run `clang-format` on every touched C/C++ source or header file before finishing the task.
 
 ## Project Constraints
 
@@ -41,7 +42,8 @@ This project is an iLQR optimal control implementation derived from OCS2 ideas b
 3. Match the local template style and compile-time dimension patterns.
 4. Prefer explicit fixed-size aliases from the existing type system.
 5. Decide whether the code change affects `README.md`.
-6. After editing, check lints for touched files and run the narrowest relevant tests when practical.
+6. After editing, run `clang-format` on all touched C/C++ files.
+7. Then check lints for touched files and run the narrowest relevant tests when practical.
 
 ## Testing Guidance
 

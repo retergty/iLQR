@@ -43,8 +43,8 @@ class StateCostCollection {
     cost_appro.setZero();
     for (auto it = list_.begin(); it != list_.end(); ++it) {
       if (it->isActive(time)) {
-        cost_appro += it->getQuadraticApproximation(
-            time, state, timeTrajectories, stateTrajectoies);
+        it->addQuadraticApproximation(time, state, timeTrajectories,
+                                      stateTrajectoies, cost_appro);
       }
     }
     return cost_appro;
@@ -102,9 +102,9 @@ class StateInputCostCollection {
     cost_appro.setZero();
     for (auto it = list_.begin(); it != list_.end(); ++it) {
       if (it->isActive(time)) {
-        cost_appro +=
-            it->getQuadraticApproximation(time, state, input, timeTrajectory,
-                                          stateTrajectoy, inputTrajectory);
+        it->addQuadraticApproximation(time, state, input, timeTrajectory,
+                                      stateTrajectoy, inputTrajectory,
+                                      cost_appro);
       }
     }
     return cost_appro;

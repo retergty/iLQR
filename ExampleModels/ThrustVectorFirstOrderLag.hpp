@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <limits>
 
+#include "Constraint/StateInputConstraint.hpp"
 #include "Cost/Cost.hpp"
 #include "Dynamics/DiscreteSystemDynamicsBase.hpp"
 #include "Initialization/Initializer.hpp"
@@ -175,6 +176,217 @@ class ThrustVectorDynamicSystem final
   PreCompCache cache_;
 };
 
+// 推力命令加速度约束：统一描述锥约束、椭球约束与 z 轴最小值约束。
+// 约束对象为 a_T,cmd = a_cmd - g * e3，其中 a_cmd = x(6:8) + u。
+template <typename Scalar>
+class ThrustCommandAccelerationConstraint final
+    : public StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM, 2> {
+ public:
+  struct Config {
+    Scalar maxTiltAngleRad{Scalar(0.0)};  // 锥约束最大偏转角（弧度）。
+    Scalar axMax{Scalar(1.0)};            // 椭球 x 轴半径。
+    Scalar ayMax{Scalar(1.0)};            // 椭球 y 轴半径。
+    Scalar azMax{Scalar(1.0)};            // 椭球 z 轴半径。
+    Scalar coneSmoothing{Scalar(1e-6)};   // 锥约束平滑项 epsilon。
+  };
+
+  explicit ThrustCommandAccelerationConstraint(const Config& config)
+      : StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM, 2>(
+            ConstraintOrder::Quadratic),
+        tanMaxTiltAngle_(std::tan(config.maxTiltAngleRad)),
+        inverseAxMaxSquared_(Scalar(1) / (config.axMax * config.axMax)),
+        inverseAyMaxSquared_(Scalar(1) / (config.ayMax * config.ayMax)),
+        inverseAzMaxSquared_(Scalar(1) / (config.azMax * config.azMax)),
+        coneSmoothing_(config.coneSmoothing),
+        gravity_(Scalar(kGravity)) {
+    assert(config.maxTiltAngleRad > Scalar(0));
+    assert(config.maxTiltAngleRad < Scalar(1.5707963267948966));
+    assert(config.axMax > Scalar(0));
+    assert(config.ayMax > Scalar(0));
+    assert(config.azMax > Scalar(0));
+    assert(config.coneSmoothing > Scalar(0));
+  }
+
+  ~ThrustCommandAccelerationConstraint() override = default;
+
+  Vector<Scalar, 2> getValue(
+      const Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input) const override {
+    (void)time;
+
+    const CommandThrustAcceleration aT =
+        commandThrustAcceleration(state, input);
+    const Scalar radialNorm =
+        std::sqrt(aT.ax * aT.ax + aT.ay * aT.ay + coneSmoothing_);
+
+    Vector<Scalar, 2> value;
+    // h_cone >= 0: sqrt(ax^2 + ay^2) <= -tan(theta) * az
+    value(0) = -tanMaxTiltAngle_ * aT.az - radialNorm;
+    // h_ellip >= 0: (ax/axMax)^2 + (ay/ayMax)^2 + (az/azMax)^2 <= 1
+    value(1) = Scalar(1) - inverseAxMaxSquared_ * aT.ax * aT.ax -
+               inverseAyMaxSquared_ * aT.ay * aT.ay -
+               inverseAzMaxSquared_ * aT.az * aT.az;
+    return value;
+  }
+
+  VectorFunctionQuadraticApproximation<Scalar, 2, STATE_DIM, INPUT_DIM>
+  getQuadraticApproximation(
+      const Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input) const override {
+    (void)time;
+
+    VectorFunctionQuadraticApproximation<Scalar, 2, STATE_DIM, INPUT_DIM>
+        approximation;
+    approximation.setZero();
+    approximation.f = getValue(time, state, input);
+
+    const CommandThrustAcceleration aT =
+        commandThrustAcceleration(state, input);
+
+    // ----- 约束 0：锥约束 h_cone -----
+    const Scalar radialNormSquared =
+        aT.ax * aT.ax + aT.ay * aT.ay + coneSmoothing_;
+    const Scalar radialNorm = std::sqrt(radialNormSquared);
+    const Scalar inverseRadialNorm = Scalar(1) / radialNorm;
+    const Scalar inverseRadialNormCubed =
+        inverseRadialNorm * inverseRadialNorm * inverseRadialNorm;
+
+    const Scalar coneDax = -aT.ax * inverseRadialNorm;
+    const Scalar coneDay = -aT.ay * inverseRadialNorm;
+    const Scalar coneDaz = -tanMaxTiltAngle_;
+
+    const Scalar coneDaxDax =
+        -inverseRadialNorm + aT.ax * aT.ax * inverseRadialNormCubed;
+    const Scalar coneDayDay =
+        -inverseRadialNorm + aT.ay * aT.ay * inverseRadialNormCubed;
+    const Scalar coneDaxDay = aT.ax * aT.ay * inverseRadialNormCubed;
+
+    approximation.dfdx(0, 6) = coneDax;
+    approximation.dfdx(0, 7) = coneDay;
+    approximation.dfdx(0, 8) = coneDaz;
+    approximation.dfdu(0, 0) = coneDax;
+    approximation.dfdu(0, 1) = coneDay;
+    approximation.dfdu(0, 2) = coneDaz;
+
+    approximation.dfdxx[0](6, 6) = coneDaxDax;
+    approximation.dfdxx[0](7, 7) = coneDayDay;
+    approximation.dfdxx[0](6, 7) = coneDaxDay;
+    approximation.dfdxx[0](7, 6) = coneDaxDay;
+
+    approximation.dfduu[0](0, 0) = coneDaxDax;
+    approximation.dfduu[0](1, 1) = coneDayDay;
+    approximation.dfduu[0](0, 1) = coneDaxDay;
+    approximation.dfduu[0](1, 0) = coneDaxDay;
+
+    approximation.dfdux[0](0, 6) = coneDaxDax;
+    approximation.dfdux[0](1, 7) = coneDayDay;
+    approximation.dfdux[0](0, 7) = coneDaxDay;
+    approximation.dfdux[0](1, 6) = coneDaxDay;
+
+    // ----- 约束 1：椭球约束 h_ellip -----
+    const Scalar ellipDax = -Scalar(2) * inverseAxMaxSquared_ * aT.ax;
+    const Scalar ellipDay = -Scalar(2) * inverseAyMaxSquared_ * aT.ay;
+    const Scalar ellipDaz = -Scalar(2) * inverseAzMaxSquared_ * aT.az;
+
+    const Scalar ellipDaxDax = -Scalar(2) * inverseAxMaxSquared_;
+    const Scalar ellipDayDay = -Scalar(2) * inverseAyMaxSquared_;
+    const Scalar ellipDazDaz = -Scalar(2) * inverseAzMaxSquared_;
+
+    approximation.dfdx(1, 6) = ellipDax;
+    approximation.dfdx(1, 7) = ellipDay;
+    approximation.dfdx(1, 8) = ellipDaz;
+    approximation.dfdu(1, 0) = ellipDax;
+    approximation.dfdu(1, 1) = ellipDay;
+    approximation.dfdu(1, 2) = ellipDaz;
+
+    approximation.dfdxx[1](6, 6) = ellipDaxDax;
+    approximation.dfdxx[1](7, 7) = ellipDayDay;
+    approximation.dfdxx[1](8, 8) = ellipDazDaz;
+
+    approximation.dfduu[1](0, 0) = ellipDaxDax;
+    approximation.dfduu[1](1, 1) = ellipDayDay;
+    approximation.dfduu[1](2, 2) = ellipDazDaz;
+
+    approximation.dfdux[1](0, 6) = ellipDaxDax;
+    approximation.dfdux[1](1, 7) = ellipDayDay;
+    approximation.dfdux[1](2, 8) = ellipDazDaz;
+
+    return approximation;
+  }
+
+ private:
+  struct CommandThrustAcceleration {
+    Scalar ax;
+    Scalar ay;
+    Scalar az;
+  };
+
+  CommandThrustAcceleration commandThrustAcceleration(
+      const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input) const {
+    return {state(6) + input(0), state(7) + input(1),
+            state(8) + input(2) - gravity_};
+  }
+
+  Scalar tanMaxTiltAngle_;
+  Scalar inverseAxMaxSquared_;
+  Scalar inverseAyMaxSquared_;
+  Scalar inverseAzMaxSquared_;
+  Scalar coneSmoothing_;
+  Scalar gravity_;
+};
+
+// 推力命令加速度线性约束：z 轴最小值约束（防反推）。
+// 约束对象为 a_T,cmd = a_cmd - g * e3，其中 a_cmd = x(6:8) + u。
+template <typename Scalar>
+class ThrustCommandAccelerationZMinConstraint final
+    : public StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM, 1> {
+ public:
+  struct Config {
+    Scalar zMin{Scalar(-1.0)};  // h_z >= 0: zMin - a_T,cmd,z
+  };
+
+  explicit ThrustCommandAccelerationZMinConstraint(const Config& config)
+      : StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM, 1>(
+            ConstraintOrder::Linear),
+        zMin_(config.zMin),
+        gravity_(Scalar(kGravity)) {}
+
+  ~ThrustCommandAccelerationZMinConstraint() override = default;
+
+  Vector<Scalar, 1> getValue(
+      const Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input) const override {
+    (void)time;
+    Vector<Scalar, 1> value;
+    value(0) = zMin_ - commandThrustAccelerationZ(state, input);
+    return value;
+  }
+
+  VectorFunctionLinearApproximation<Scalar, 1, STATE_DIM, INPUT_DIM>
+  getLinearApproximation(
+      const Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input) const override {
+    VectorFunctionLinearApproximation<Scalar, 1, STATE_DIM, INPUT_DIM>
+        approximation;
+    approximation.setZero();
+    approximation.f = getValue(time, state, input);
+    approximation.dfdx(0, 8) = Scalar(-1);
+    approximation.dfdu(0, 2) = Scalar(-1);
+    return approximation;
+  }
+
+ private:
+  Scalar commandThrustAccelerationZ(
+      const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input) const {
+    return state(8) + input(2) - gravity_;
+  }
+
+  Scalar zMin_;
+  Scalar gravity_;
+};
+
 // 轨迹跟踪代价：跟踪参考速度，用 R 惩罚命令加速度增量，并用 Ra
 // 惩罚下一拍命令总加速度 a_cmd_prev + delta_a_cmd 相对参考命令加速度的偏差。
 template <typename Scalar, int ArrayLength>
@@ -227,14 +439,14 @@ class ThrustVectorTrackCost final
                              weightedCommandAccelerationDeviation);
   }
 
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
-  getQuadraticApproximation(
+  void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, STATE_DIM>& state,
       const Vector<Scalar, INPUT_DIM>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
-      override {
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory,
+      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>&
+          addAppro) override {
     const auto indexAlpha =
         LinearInterpolation::timeSegment(time, timeTrajectory);
     const Vector<Scalar, 3> velocityDeviation =
@@ -261,7 +473,7 @@ class ThrustVectorTrackCost final
         weightedCommandAccelerationDeviation;
     approximation_.dfdu =
         weightedInputDeviation + weightedCommandAccelerationDeviation;
-    return approximation_;
+    addAppro += approximation_;
   }
 
  private:
@@ -343,19 +555,19 @@ class ThrustVectorDiagonalTrackCost final
                                       inputTrajectory);
   }
 
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
-  getQuadraticApproximation(
+  void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, STATE_DIM>& state,
       const Vector<Scalar, INPUT_DIM>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
-      override {
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory,
+      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>&
+          addAppro) override {
     const auto indexAlpha =
         LinearInterpolation::timeSegment(time, timeTrajectory);
     approximation_.f = computeDiagonalCost<true>(
         indexAlpha, state, input, stateTrajectory, inputTrajectory);
-    return approximation_;
+    addAppro += approximation_;
   }
 
  private:
@@ -460,11 +672,11 @@ class ThrustVectorTrackFinalCost final
     return Scalar(0.5) * velocityDeviation.dot(Qv_ * velocityDeviation);
   }
 
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0>
-  getQuadraticApproximation(
+  void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, STATE_DIM>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
-      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory)
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
+      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0>& addAppro)
       override {
     const Vector<Scalar, 3> velocityDeviation =
         state.template head<3>() -
@@ -473,7 +685,7 @@ class ThrustVectorTrackFinalCost final
     approximation_.f =
         Scalar(0.5) * velocityDeviation.dot(Qv_ * velocityDeviation);
     approximation_.dfdx.template head<3>() = Qv_ * velocityDeviation;
-    return approximation_;
+    addAppro += approximation_;
   }
 
  private:
@@ -521,17 +733,17 @@ class ThrustVectorDiagonalTrackFinalCost final
     return computeDiagonalCost<false>(indexAlpha, state, stateTrajectory);
   }
 
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0>
-  getQuadraticApproximation(
+  void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, STATE_DIM>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
-      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory)
+      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
+      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0>& addAppro)
       override {
     const auto indexAlpha =
         LinearInterpolation::timeSegment(time, timeTrajectory);
     approximation_.f =
         computeDiagonalCost<true>(indexAlpha, state, stateTrajectory);
-    return approximation_;
+    addAppro += approximation_;
   }
 
  private:
@@ -623,14 +835,14 @@ class ThrustDirectionChangeCost final
     return Scalar(0.5) * gate * weight_ * rk.dot(rk);
   }
 
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
-  getQuadraticApproximation(
+  void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, STATE_DIM>& state,
       const Vector<Scalar, INPUT_DIM>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory)
-      override {
+      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>& inputTrajectory,
+      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>&
+          addAppro) override {
     (void)time;
     (void)timeTrajectory;
     (void)inputTrajectory;
@@ -696,8 +908,7 @@ class ThrustDirectionChangeCost final
     approximation_.dfdux.template slice<3, 3>(0, 6) =
         effectiveWeight * inputAccelerationJacobian.transpose() *
         commandAccelerationJacobian;
-
-    return approximation_;
+    addAppro += approximation_;
   }
 
  private:

@@ -87,8 +87,11 @@ TEST_F(QuadraticCostTest, StateInputCostApproximation) {
   QuadraticStateInputCost<Scalar, XDim, UDim, ArrayLength> costFunction(Q_, R_,
                                                                         P_, 0);
 
-  const auto approximation = costFunction.getQuadraticApproximation(
-      t_, x_, u_, timeTrajectory_, stateTrajectory_, inputTrajectory_);
+  auto approximation =
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>::Zero();
+  costFunction.addQuadraticApproximation(t_, x_, u_, timeTrajectory_,
+                                         stateTrajectory_, inputTrajectory_,
+                                         approximation);
 
   const StateVector dx = x_ - xNominal_;
   const InputVector du = u_ - uNominal_;
@@ -113,8 +116,10 @@ TEST_F(QuadraticCostTest, StateCostValue) {
 TEST_F(QuadraticCostTest, StateCostApproximation) {
   QuadraticStateCost<Scalar, XDim, ArrayLength> costFunction(Qf_, 0);
 
-  const auto approximation = costFunction.getQuadraticApproximation(
-      t_, x_, timeTrajectory_, stateTrajectory_);
+  auto approximation =
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>::Zero();
+  costFunction.addQuadraticApproximation(t_, x_, timeTrajectory_,
+                                         stateTrajectory_, approximation);
 
   const StateVector dx = x_ - xNominal_;
 
