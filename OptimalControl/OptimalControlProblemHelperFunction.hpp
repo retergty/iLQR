@@ -154,10 +154,6 @@ void updateDualSolution(
   }
 
   // 中间节点
-  // static_assert(dualSolution.intermediates.size() ==
-  // primalSolution.timeTrajectory_.size());
-  // static_assert(problemMetrics.intermediates.size() ==
-  // primalSolution.timeTrajectory_.size());
 
   for (size_t i = 0; i < PredictLength; i++) {
     const Scalar& time = primalSolution.timeTrajectory_[i];

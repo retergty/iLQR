@@ -92,10 +92,9 @@ struct iLQRTypes {
   using DualSolutionRef_t = DualSolutionRef<Scalar, Horizon, ConstraintConfig>;
   using LinearQuadraticApproximator_t = LinearQuadraticApproximator<Descriptor>;
   using Transcription_t = ::Transcription_t<Descriptor>;
-  using PrimalDataContainer_t =
-      PrimalDataContainer<Scalar, TranscriptionConfig, ConstraintConfig>;
-  using DualDataContainer_t =
-      DualDataContainer<Scalar, TranscriptionConfig, ConstraintConfig>;
+  using LQApproximationData_t =
+      LQApproximationData<Scalar, TranscriptionConfig>;
+  using RiccatiData_t = RiccatiData<Scalar, TranscriptionConfig>;
   using ProblemMetrics_t =
       ProblemMetrics<Scalar, TranscriptionConfig, ConstraintConfig>;
   using PerformanceIndex_t = PerformanceIndex<Scalar>;

@@ -85,8 +85,8 @@ class iLQR {
   using DualSolutionRef_t = typename Types::DualSolutionRef_t;
   using LinearQuadraticApproximator_t =
       typename Types::LinearQuadraticApproximator_t;
-  using PrimalDataContainer_t = typename Types::PrimalDataContainer_t;
-  using DualDataContainer_t = typename Types::DualDataContainer_t;
+  using LQApproximationData_t = typename Types::LQApproximationData_t;
+  using RiccatiData_t = typename Types::RiccatiData_t;
   using ProblemMetrics_t = typename Types::ProblemMetrics_t;
   using PerformanceIndex_t = typename Types::PerformanceIndex_t;
   using PerformanceIndexEvaluator_t =
@@ -132,6 +132,10 @@ class iLQR {
 
     optimizedPrimalSolution_.clear();
     optimizedDualSolution_.clear();
+    optimizedProblemMetrics_.clear();
+    nominalPrimalSolution_.clear();
+    nominalDualSolution_.clear();
+    nominalProblemMetrics_.clear();
 
     totalNumIterations_ = 0;
     totalNumRuns_ = 0;
@@ -173,10 +177,9 @@ class iLQR {
 
       // nominal --> nominal：求解 LQ 问题，直接写入待线搜索控制器的
       // feedback gain 与 feedforward delta bias。
-      solveSequentialRiccatiEquations(
-          nominalPrimalData_.modelDataFinalTime.cost,
-          unoptimizedController_.gainArray_,
-          unoptimizedController_.deltaBiasArray_);
+      solveSequentialRiccatiEquations(nominalLQData_.modelDataFinalTime.cost,
+                                      unoptimizedController_.gainArray_,
+                                      unoptimizedController_.deltaBiasArray_);
 
       // 计算控制器并将结果存入 unoptimizedController_。
       calculateController();
@@ -185,7 +188,7 @@ class iLQR {
       // 可靠。
       const auto lqModelExpectedCost =
           initialSolutionExists
-              ? nominalDualData_.valueFunctionTrajectory.front().f
+              ? nominalRiccatiData_.valueFunctionTrajectory.front().f
               : performanceIndex_.merit;
 
       // nominal --> optimized：基于当前 LQ 解更新
@@ -207,9 +210,9 @@ class iLQR {
       } else {
         // optimized --> nominal：将优化解作为下一次迭代的名义解。
         // 下一次迭代。
-        optimizedDualSolution_.swap(nominalDualData_.dualSolution);
-        optimizedPrimalSolution_.swap(nominalPrimalData_.primalSolution);
-        optimizedProblemMetrics_.swap(nominalPrimalData_.problemMetrics);
+        optimizedDualSolution_.swap(nominalDualSolution_);
+        optimizedPrimalSolution_.swap(nominalPrimalSolution_);
+        optimizedProblemMetrics_.swap(nominalProblemMetrics_);
       }
     }  // while 循环结束。
   }
@@ -272,15 +275,14 @@ class iLQR {
 
   ValueFunctionQuadraticApproximation_t getValueFunction(
       const Scalar time, const StateVector_t& state) const {
-    return getValueFunctionImpl(time, state, nominalPrimalData_.primalSolution,
-                                nominalDualData_.valueFunctionTrajectory);
+    return getValueFunctionImpl(time, state, nominalPrimalSolution_,
+                                nominalRiccatiData_.valueFunctionTrajectory);
   }
 
   ValueFunctionQuadraticApproximation_t getValueFunction(
       size_t timeIndex, const StateVector_t& state) const {
-    return getValueFunctionImpl(timeIndex, state,
-                                nominalPrimalData_.primalSolution,
-                                nominalDualData_.valueFunctionTrajectory);
+    return getValueFunctionImpl(timeIndex, state, nominalPrimalSolution_,
+                                nominalRiccatiData_.valueFunctionTrajectory);
   }
 
   ValueFunctionQuadraticApproximation_t getQFunction(
@@ -289,9 +291,9 @@ class iLQR {
     assert(timeIndex < PredictLength);
 
     const ModelData_t& modelData =
-        nominalPrimalData_.modelDataTrajectory[timeIndex];
+        nominalLQData_.modelDataTrajectory[timeIndex];
     const ValueFunctionQuadraticApproximation_t& nextValueFunction =
-        nominalDualData_.valueFunctionTrajectory[timeIndex + 1];
+        nominalRiccatiData_.valueFunctionTrajectory[timeIndex + 1];
 
     ValueFunctionQuadraticApproximation_t qFunction = modelData.cost;
 
@@ -312,9 +314,9 @@ class iLQR {
                        nextValueFunction.dfdxx * modelData.dynamics.dfdu;
 
     const StateVector_t deltaX =
-        state - nominalPrimalData_.primalSolution.stateTrajectory_[timeIndex];
+        state - nominalPrimalSolution_.stateTrajectory_[timeIndex];
     const InputVector_t deltaU =
-        input - nominalPrimalData_.primalSolution.inputTrajectory_[timeIndex];
+        input - nominalPrimalSolution_.inputTrajectory_[timeIndex];
     const StateVector_t QxxDeltaX = qFunction.dfdxx * deltaX;
     const InputVector_t QuxDeltaX = qFunction.dfdux * deltaX;
     const InputVector_t QuuDeltaU = qFunction.dfduu * deltaU;
@@ -481,11 +483,11 @@ class iLQR {
     bool ret = false;
     if (lastFinalTime_ > initTime_) {
       numSteps = rolloutInitialController(optimizedPrimalSolution_,
-                                          nominalPrimalData_.primalSolution);
+                                          nominalPrimalSolution_);
       ret = true;
     }
     // 距离上次运行已过去太久。
-    rolloutInitializer(nominalPrimalData_.primalSolution, numSteps);
+    rolloutInitializer(nominalPrimalSolution_, numSteps);
     return ret;
   }
 
@@ -548,20 +550,17 @@ class iLQR {
    */
   void initializeDualSolutionAndMetrics(bool useCachedDualSolution) {
     // 初始化对偶解。
-    initializeDualSolution(
-        optimalControlProblem_, nominalPrimalData_.primalSolution,
-        optimizedDualSolution_, nominalDualData_.dualSolution,
-        useCachedDualSolution);
+    initializeDualSolution(optimalControlProblem_, nominalPrimalSolution_,
+                           optimizedDualSolution_, nominalDualSolution_,
+                           useCachedDualSolution);
 
     computeRolloutMetrics(optimalControlProblem_, targetTrajectory_,
-                          nominalPrimalData_.primalSolution,
-                          nominalDualData_.dualSolution,
-                          nominalPrimalData_.problemMetrics);
+                          nominalPrimalSolution_, nominalDualSolution_,
+                          nominalProblemMetrics_);
 
     // 计算 rollout merit。
     performanceIndex_ = computeRolloutPerformanceIndex(
-        nominalPrimalData_.primalSolution.timeTrajectory_,
-        nominalPrimalData_.problemMetrics);
+        nominalPrimalSolution_.timeTrajectory_, nominalProblemMetrics_);
     performanceIndex_.merit = calculateRolloutMerit(performanceIndex_);
   }
 
@@ -577,20 +576,17 @@ class iLQR {
    * - 增广拉格朗日项产生的约束惩罚近似
    */
   void approximateOptimalControlProblem() {
-    approximateIntermediateLQ(nominalDualData_.dualSolution,
-                              nominalPrimalData_);
+    approximateIntermediateLQ(nominalDualSolution_, nominalPrimalSolution_,
+                              nominalLQData_);
 
     /*
      * 计算终端时刻的 Heuristics 函数，并调用 shiftHessian
      * 处理 Heuristics 的二阶导数。
      */
-    ModelData_t& modelData = nominalPrimalData_.modelDataFinalTime;
-    const Scalar& time =
-        nominalPrimalData_.primalSolution.timeTrajectory_.back();
-    const StateVector_t& state =
-        nominalPrimalData_.primalSolution.stateTrajectory_.back();
-    const FinalMultiplierCollection_t& multiplier =
-        nominalDualData_.dualSolution.final;
+    ModelData_t& modelData = nominalLQData_.modelDataFinalTime;
+    const Scalar& time = nominalPrimalSolution_.timeTrajectory_.back();
+    const StateVector_t& state = nominalPrimalSolution_.stateTrajectory_.back();
+    const FinalMultiplierCollection_t& multiplier = nominalDualSolution_.final;
     modelData = LinearQuadraticApproximator_t::approximateFinalLQ(
         optimalControlProblem_, targetTrajectory_, time, state, multiplier);
 
@@ -604,20 +600,19 @@ class iLQR {
    * @brief 计算所有中间节点处最优控制问题的离散 LQ 近似。
    *
    * @param [in] dualSolution 对偶解。
-   * @param [in,out] primalData 原始数据（读轨迹，写 modelDataTrajectory）。
+   * @param [in] primalSolution 原始解（轨迹）。
+   * @param [in,out] lqData LQ 近似数据（写 modelDataTrajectory）。
    */
   void approximateIntermediateLQ(const DualSolution_t& dualSolution,
-                                 PrimalDataContainer_t& primalData) {
+                                 const PrimalSolution_t& primalSolution,
+                                 LQApproximationData_t& lqData) {
     // 创建别名。
-    const TimeTrajectory_t& timeTrajectory =
-        primalData.primalSolution.timeTrajectory_;
-    const StateTrajectory_t& stateTrajectory =
-        primalData.primalSolution.stateTrajectory_;
-    const InputTrajectory_t& inputTrajectory =
-        primalData.primalSolution.inputTrajectory_;
+    const TimeTrajectory_t& timeTrajectory = primalSolution.timeTrajectory_;
+    const StateTrajectory_t& stateTrajectory = primalSolution.stateTrajectory_;
+    const InputTrajectory_t& inputTrajectory = primalSolution.inputTrajectory_;
     const IntermediateMultiplierTrajectory_t& multiplierTrajectory =
         dualSolution.intermediates;
-    ModelDataTrajectory_t& modelDataTrajectory = primalData.modelDataTrajectory;
+    ModelDataTrajectory_t& modelDataTrajectory = lqData.modelDataTrajectory;
 
     for (size_t timeIndex = 0; timeIndex < PredictLength; ++timeIndex) {
       const Scalar timeStep =
@@ -684,7 +679,7 @@ class iLQR {
       const ValueFunctionQuadraticApproximation_t& finalValueFunction,
       ControllerGainTrajectory_t& controllerGainTrajectory,
       ControllerDeltaBiasTrajectory_t& controllerDeltaBiasTrajectory) {
-    nominalDualData_.valueFunctionTrajectory.back() = finalValueFunction;
+    nominalRiccatiData_.valueFunctionTrajectory.back() = finalValueFunction;
 
     riccatiEquationsWorker(finalValueFunction, controllerGainTrajectory,
                            controllerDeltaBiasTrajectory);
@@ -716,15 +711,15 @@ class iLQR {
       LvVector_t& curLv = controllerDeltaBiasTrajectory[curIndex];
       KmMatrix_t& curKm = controllerGainTrajectory[curIndex];
       RiccatiModification_t& curRiccatiModification =
-          nominalDualData_.riccatiModificationTrajectory[curIndex];
+          nominalRiccatiData_.riccatiModificationTrajectory[curIndex];
       const ModelData_t& curModelData =
-          nominalPrimalData_.modelDataTrajectory[curIndex];
+          nominalLQData_.modelDataTrajectory[curIndex];
 
       SmMatrix_t& curSm =
-          nominalDualData_.valueFunctionTrajectory[curIndex].dfdxx;
+          nominalRiccatiData_.valueFunctionTrajectory[curIndex].dfdxx;
       SvVector_t& curSv =
-          nominalDualData_.valueFunctionTrajectory[curIndex].dfdx;
-      Scalar& curs = nominalDualData_.valueFunctionTrajectory[curIndex].f;
+          nominalRiccatiData_.valueFunctionTrajectory[curIndex].dfdx;
+      Scalar& curs = nominalRiccatiData_.valueFunctionTrajectory[curIndex].f;
 
       prepareRiccatiModification(curModelData, valueFunctionNext->dfdxx,
                                  curRiccatiModification);
@@ -733,7 +728,8 @@ class iLQR {
           curModelData, curRiccatiModification, valueFunctionNext->dfdxx,
           valueFunctionNext->dfdx, valueFunctionNext->f, curKm, curLv, curSm,
           curSv, curs);
-      valueFunctionNext = &(nominalDualData_.valueFunctionTrajectory[curIndex]);
+      valueFunctionNext =
+          &(nominalRiccatiData_.valueFunctionTrajectory[curIndex]);
 
       --curIndex;
     }  // while 循环。
@@ -744,13 +740,12 @@ class iLQR {
    * 修改 unoptimizedController_。
    */
   void calculateController() {
-    unoptimizedController_.timeStamp_ =
-        nominalPrimalData_.primalSolution.timeTrajectory_;
+    unoptimizedController_.timeStamp_ = nominalPrimalSolution_.timeTrajectory_;
     optimizedPrimalSolution_.controller_.timeStamp_ =
         unoptimizedController_.timeStamp_;
 
     for (size_t timeIndex = 0; timeIndex < PredictLength; ++timeIndex) {
-      calculateControllerWorker(timeIndex, nominalPrimalData_,
+      calculateControllerWorker(timeIndex, nominalPrimalSolution_,
                                 unoptimizedController_);
     }
 
@@ -773,17 +768,17 @@ class iLQR {
    * 使用原始解计算 timeIndex 对应的控制器，并写回 dstController。
    *
    * @param [in] timeIndex 当前时间索引。
-   * @param [in] primalData 用于计算控制器的原始数据。
+   * @param [in] primalSolution 用于计算控制器的原始解。
    * @param [out] dstController 输出的控制器（增益、偏置、deltaBias
    * 写入对应索引）。
    */
   void calculateControllerWorker(size_t timeIndex,
-                                 const PrimalDataContainer_t& primalData,
+                                 const PrimalSolution_t& primalSolution,
                                  LinearController_t& dstController) {
     const StateVector_t& nominalState =
-        primalData.primalSolution.stateTrajectory_[timeIndex];
+        primalSolution.stateTrajectory_[timeIndex];
     const InputVector_t& nominalInput =
-        primalData.primalSolution.inputTrajectory_[timeIndex];
+        primalSolution.inputTrajectory_[timeIndex];
 
     // gainArray_/deltaBiasArray_ 已由 Riccati 递推写入；这里仅把
     // u = Kx + uff 转换成经过名义点的 affine bias：uff = u_nominal -
@@ -802,7 +797,7 @@ class iLQR {
         optimizedProblemMetrics_, performanceIndex_);
     const bool success = lineSearchStrategy_.run(
         {initTime_, finalTime_}, initState_, lqModelExpectedCost,
-        unoptimizedController_, nominalDualData_.dualSolution, solution);
+        unoptimizedController_, nominalDualSolution_, solution);
 
     // 更新对偶解。
     if (success) {
@@ -817,9 +812,9 @@ class iLQR {
     // 如果失败，则使用名义解；为保持缓存数据一致性，所有
     // 缓存都应保持不变。
     if (!success) {
-      optimizedDualSolution_ = nominalDualData_.dualSolution;
-      optimizedPrimalSolution_ = nominalPrimalData_.primalSolution;
-      optimizedProblemMetrics_ = nominalPrimalData_.problemMetrics;
+      optimizedDualSolution_ = nominalDualSolution_;
+      optimizedPrimalSolution_ = nominalPrimalSolution_;
+      optimizedProblemMetrics_ = nominalProblemMetrics_;
       performanceIndex_ = performanceIndexLast_;
     }
   }
@@ -901,9 +896,14 @@ class iLQR {
   Scalar lastFinalTime_{Scalar(0.0)};
   StateVector_t initState_;
 
-  // 当前反向递推使用的名义数据。
-  PrimalDataContainer_t nominalPrimalData_;
-  DualDataContainer_t nominalDualData_;
+  // 当前反向递推使用的名义解与 rollout 指标。
+  PrimalSolution_t nominalPrimalSolution_;
+  DualSolution_t nominalDualSolution_;
+  ProblemMetrics_t nominalProblemMetrics_;
+
+  // 当前反向递推使用的 LQ 近似与 Riccati 派生数据。
+  LQApproximationData_t nominalLQData_;
+  RiccatiData_t nominalRiccatiData_;
 
   // 当前接受的最佳解及其 rollout 指标。
   PrimalSolution_t optimizedPrimalSolution_;
