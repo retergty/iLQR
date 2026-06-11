@@ -400,13 +400,7 @@ class ThrustVectorTrackCost final
       : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number),
         Qv_(Q.template topLeftCorner<3, 3>()),
         R_(R),
-        Ra_(Ra) {
-    approximation_.setZero();
-    approximation_.dfdxx.template topLeftCorner<3, 3>() = Qv_;
-    approximation_.dfdxx.template slice<3, 3>(6, 6) = Ra_;
-    approximation_.dfduu = R_ + Ra_;
-    approximation_.dfdux.template slice<3, 3>(0, 6) = Ra_;
-  }
+        Ra_(Ra) {}
 
   ~ThrustVectorTrackCost() override = default;
 
@@ -463,17 +457,20 @@ class ThrustVectorTrackCost final
     const Vector<Scalar, INPUT_DIM> weightedCommandAccelerationDeviation =
         Ra_ * commandAccelerationDeviation;
 
-    approximation_.f =
+    addAppro.f +=
         Scalar(0.5) * velocityDeviation.dot(weightedVelocityDeviation) +
         Scalar(0.5) * inputDeviation.dot(weightedInputDeviation) +
         Scalar(0.5) * commandAccelerationDeviation.dot(
                           weightedCommandAccelerationDeviation);
-    approximation_.dfdx.template head<3>() = weightedVelocityDeviation;
-    approximation_.dfdx.template segment<3>(6) =
+    addAppro.dfdx.template head<3>() += weightedVelocityDeviation;
+    addAppro.dfdx.template segment<3>(6) +=
         weightedCommandAccelerationDeviation;
-    approximation_.dfdu =
+    addAppro.dfdu +=
         weightedInputDeviation + weightedCommandAccelerationDeviation;
-    addAppro += approximation_;
+    addAppro.dfdxx.template topLeftCorner<3, 3>() += Qv_;
+    addAppro.dfdxx.template slice<3, 3>(6, 6) += Ra_;
+    addAppro.dfduu += R_ + Ra_;
+    addAppro.dfdux.template slice<3, 3>(0, 6) += Ra_;
   }
 
  private:
@@ -513,8 +510,6 @@ class ThrustVectorTrackCost final
   Matrix<Scalar, 3, 3> Qv_;
   Matrix<Scalar, INPUT_DIM, INPUT_DIM> R_;
   Matrix<Scalar, INPUT_DIM, INPUT_DIM> Ra_;
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
-      approximation_;
 };
 
 // 轨迹跟踪代价的对角版本：只使用 Q、R、Ra
@@ -528,15 +523,10 @@ class ThrustVectorDiagonalTrackCost final
                                 const Matrix<Scalar, INPUT_DIM, INPUT_DIM>& Ra,
                                 int cost_number)
       : StateInputCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number) {
-    approximation_.setZero();
     for (int i = 0; i < 3; ++i) {
       QvDiagonal_(i) = Q(i, i);
       RDiagonal_(i) = R(i, i);
       RaDiagonal_(i) = Ra(i, i);
-      approximation_.dfdxx(i, i) = QvDiagonal_(i);
-      approximation_.dfdxx(i + 6, i + 6) = RaDiagonal_(i);
-      approximation_.dfduu(i, i) = RDiagonal_(i) + RaDiagonal_(i);
-      approximation_.dfdux(i, i + 6) = RaDiagonal_(i);
     }
   }
 
@@ -551,8 +541,27 @@ class ThrustVectorDiagonalTrackCost final
       override {
     const auto indexAlpha =
         LinearInterpolation::timeSegment(time, timeTrajectory);
-    return computeDiagonalCost<false>(indexAlpha, state, input, stateTrajectory,
-                                      inputTrajectory);
+    Scalar value = 0;
+    for (int i = 0; i < 3; ++i) {
+      const Scalar velocityDeviation =
+          state(i) -
+          interpolateStateReferenceComponent(indexAlpha, stateTrajectory, i);
+      const Scalar inputDeviation =
+          input(i) -
+          interpolateInputReferenceComponent(indexAlpha, inputTrajectory, i);
+      const Scalar commandAccelerationDeviation =
+          state(i + 6) + input(i) -
+          interpolateStateReferenceComponent(indexAlpha, stateTrajectory,
+                                             i + 6);
+      const Scalar weightedCommandAccelerationDeviation =
+          RaDiagonal_(i) * commandAccelerationDeviation;
+
+      value +=
+          QvDiagonal_(i) * velocityDeviation * velocityDeviation +
+          RDiagonal_(i) * inputDeviation * inputDeviation +
+          commandAccelerationDeviation * weightedCommandAccelerationDeviation;
+    }
+    return Scalar(0.5) * value;
   }
 
   void addQuadraticApproximation(
@@ -565,9 +574,36 @@ class ThrustVectorDiagonalTrackCost final
           addAppro) override {
     const auto indexAlpha =
         LinearInterpolation::timeSegment(time, timeTrajectory);
-    approximation_.f = computeDiagonalCost<true>(
-        indexAlpha, state, input, stateTrajectory, inputTrajectory);
-    addAppro += approximation_;
+    Scalar value = 0;
+    for (int i = 0; i < 3; ++i) {
+      const Scalar velocityDeviation =
+          state(i) -
+          interpolateStateReferenceComponent(indexAlpha, stateTrajectory, i);
+      const Scalar inputDeviation =
+          input(i) -
+          interpolateInputReferenceComponent(indexAlpha, inputTrajectory, i);
+      const Scalar commandAccelerationDeviation =
+          state(i + 6) + input(i) -
+          interpolateStateReferenceComponent(indexAlpha, stateTrajectory,
+                                             i + 6);
+      const Scalar weightedCommandAccelerationDeviation =
+          RaDiagonal_(i) * commandAccelerationDeviation;
+
+      value +=
+          QvDiagonal_(i) * velocityDeviation * velocityDeviation +
+          RDiagonal_(i) * inputDeviation * inputDeviation +
+          commandAccelerationDeviation * weightedCommandAccelerationDeviation;
+
+      addAppro.dfdx(i) += QvDiagonal_(i) * velocityDeviation;
+      addAppro.dfdx(i + 6) += weightedCommandAccelerationDeviation;
+      addAppro.dfdu(i) +=
+          RDiagonal_(i) * inputDeviation + weightedCommandAccelerationDeviation;
+      addAppro.dfdxx(i, i) += QvDiagonal_(i);
+      addAppro.dfdxx(i + 6, i + 6) += RaDiagonal_(i);
+      addAppro.dfduu(i, i) += RDiagonal_(i) + RaDiagonal_(i);
+      addAppro.dfdux(i, i + 6) += RaDiagonal_(i);
+    }
+    addAppro.f += Scalar(0.5) * value;
   }
 
  private:
@@ -602,49 +638,9 @@ class ThrustVectorDiagonalTrackCost final
     }
   }
 
-  template <bool UpdateApproximation>
-  Scalar computeDiagonalCost(
-      const std::pair<int, Scalar>& indexAlpha,
-      const Vector<Scalar, STATE_DIM>& state,
-      const Vector<Scalar, INPUT_DIM>& input,
-      const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
-      const std::array<Vector<Scalar, INPUT_DIM>, ArrayLength>&
-          inputTrajectory) {
-    Scalar value = 0;
-    for (int i = 0; i < 3; ++i) {
-      const Scalar velocityDeviation =
-          state(i) -
-          interpolateStateReferenceComponent(indexAlpha, stateTrajectory, i);
-      const Scalar inputDeviation =
-          input(i) -
-          interpolateInputReferenceComponent(indexAlpha, inputTrajectory, i);
-      const Scalar commandAccelerationDeviation =
-          state(i + 6) + input(i) -
-          interpolateStateReferenceComponent(indexAlpha, stateTrajectory,
-                                             i + 6);
-      const Scalar weightedCommandAccelerationDeviation =
-          RaDiagonal_(i) * commandAccelerationDeviation;
-
-      value +=
-          QvDiagonal_(i) * velocityDeviation * velocityDeviation +
-          RDiagonal_(i) * inputDeviation * inputDeviation +
-          commandAccelerationDeviation * weightedCommandAccelerationDeviation;
-
-      if constexpr (UpdateApproximation) {
-        approximation_.dfdx(i) = QvDiagonal_(i) * velocityDeviation;
-        approximation_.dfdx(i + 6) = weightedCommandAccelerationDeviation;
-        approximation_.dfdu(i) = RDiagonal_(i) * inputDeviation +
-                                 weightedCommandAccelerationDeviation;
-      }
-    }
-    return Scalar(0.5) * value;
-  }
-
   Vector<Scalar, 3> QvDiagonal_;
   Vector<Scalar, INPUT_DIM> RDiagonal_;
   Vector<Scalar, INPUT_DIM> RaDiagonal_;
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
-      approximation_;
 };
 
 // 终端速度跟踪代价：在预测时域末端惩罚速度与参考速度的偏差。
@@ -655,10 +651,7 @@ class ThrustVectorTrackFinalCost final
   ThrustVectorTrackFinalCost(const Matrix<Scalar, STATE_DIM, STATE_DIM>& Q,
                              int cost_number)
       : StateCost<Scalar, STATE_DIM, ArrayLength>(cost_number),
-        Qv_(Q.template topLeftCorner<3, 3>()) {
-    approximation_.setZero();
-    approximation_.dfdxx.template topLeftCorner<3, 3>() = Qv_;
-  }
+        Qv_(Q.template topLeftCorner<3, 3>()) {}
 
   ~ThrustVectorTrackFinalCost() override = default;
 
@@ -681,11 +674,12 @@ class ThrustVectorTrackFinalCost final
     const Vector<Scalar, 3> velocityDeviation =
         state.template head<3>() -
         interpolateVelocityReference(time, timeTrajectory, stateTrajectory);
+    const Vector<Scalar, 3> weightedVelocityDeviation = Qv_ * velocityDeviation;
 
-    approximation_.f =
-        Scalar(0.5) * velocityDeviation.dot(Qv_ * velocityDeviation);
-    approximation_.dfdx.template head<3>() = Qv_ * velocityDeviation;
-    addAppro += approximation_;
+    addAppro.f +=
+        Scalar(0.5) * velocityDeviation.dot(weightedVelocityDeviation);
+    addAppro.dfdx.template head<3>() += weightedVelocityDeviation;
+    addAppro.dfdxx.template topLeftCorner<3, 3>() += Qv_;
   }
 
  private:
@@ -704,7 +698,6 @@ class ThrustVectorTrackFinalCost final
   }
 
   Matrix<Scalar, 3, 3> Qv_;
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0> approximation_;
 };
 
 // 终端速度跟踪代价的对角版本：只使用 Qf 对角线按轴惩罚末端速度误差。
@@ -715,10 +708,8 @@ class ThrustVectorDiagonalTrackFinalCost final
   ThrustVectorDiagonalTrackFinalCost(
       const Matrix<Scalar, STATE_DIM, STATE_DIM>& Q, int cost_number)
       : StateCost<Scalar, STATE_DIM, ArrayLength>(cost_number) {
-    approximation_.setZero();
     for (int i = 0; i < 3; ++i) {
       QvDiagonal_(i) = Q(i, i);
-      approximation_.dfdxx(i, i) = QvDiagonal_(i);
     }
   }
 
@@ -730,7 +721,14 @@ class ThrustVectorDiagonalTrackFinalCost final
                       stateTrajectory) override {
     const auto indexAlpha =
         LinearInterpolation::timeSegment(time, timeTrajectory);
-    return computeDiagonalCost<false>(indexAlpha, state, stateTrajectory);
+    Scalar value = 0;
+    for (int i = 0; i < 3; ++i) {
+      const Scalar velocityDeviation =
+          state(i) -
+          interpolateStateReferenceComponent(indexAlpha, stateTrajectory, i);
+      value += QvDiagonal_(i) * velocityDeviation * velocityDeviation;
+    }
+    return Scalar(0.5) * value;
   }
 
   void addQuadraticApproximation(
@@ -741,9 +739,17 @@ class ThrustVectorDiagonalTrackFinalCost final
       override {
     const auto indexAlpha =
         LinearInterpolation::timeSegment(time, timeTrajectory);
-    approximation_.f =
-        computeDiagonalCost<true>(indexAlpha, state, stateTrajectory);
-    addAppro += approximation_;
+    Scalar value = 0;
+    for (int i = 0; i < 3; ++i) {
+      const Scalar velocityDeviation =
+          state(i) -
+          interpolateStateReferenceComponent(indexAlpha, stateTrajectory, i);
+      value += QvDiagonal_(i) * velocityDeviation * velocityDeviation;
+
+      addAppro.dfdx(i) += QvDiagonal_(i) * velocityDeviation;
+      addAppro.dfdxx(i, i) += QvDiagonal_(i);
+    }
+    addAppro.f += Scalar(0.5) * value;
   }
 
  private:
@@ -764,27 +770,7 @@ class ThrustVectorDiagonalTrackFinalCost final
     }
   }
 
-  template <bool UpdateApproximation>
-  Scalar computeDiagonalCost(const std::pair<int, Scalar>& indexAlpha,
-                             const Vector<Scalar, STATE_DIM>& state,
-                             const std::array<Vector<Scalar, STATE_DIM>,
-                                              ArrayLength>& stateTrajectory) {
-    Scalar value = 0;
-    for (int i = 0; i < 3; ++i) {
-      const Scalar velocityDeviation =
-          state(i) -
-          interpolateStateReferenceComponent(indexAlpha, stateTrajectory, i);
-      value += QvDiagonal_(i) * velocityDeviation * velocityDeviation;
-
-      if constexpr (UpdateApproximation) {
-        approximation_.dfdx(i) = QvDiagonal_(i) * velocityDeviation;
-      }
-    }
-    return Scalar(0.5) * value;
-  }
-
   Vector<Scalar, 3> QvDiagonal_;
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0> approximation_;
 };
 
 // 推力方向变化代价：基于一阶滞后后的实际生效加速度，惩罚相邻时刻推力方向突变。
@@ -804,7 +790,6 @@ class ThrustDirectionChangeCost final
         gravityVector_{Scalar(0), Scalar(0), Scalar(kGravity)} {
     assert(alpha_ >= Scalar(0));
     assert(alpha_ <= Scalar(1));
-    approximation_.setZero();
   }
 
   Scalar getValue(
@@ -879,36 +864,34 @@ class ThrustDirectionChangeCost final
         lowAccelerationGate(lastThrustAcceleration, thrustAcceleration);
     const Scalar effectiveWeight = gate * weight_;
 
-    approximation_.f = Scalar(0.5) * effectiveWeight * rk.dot(rk);
-    approximation_.dfdx.template segment<3>(3) =
+    addAppro.f += Scalar(0.5) * effectiveWeight * rk.dot(rk);
+    addAppro.dfdx.template segment<3>(3) +=
         effectiveWeight * effectiveAccelerationJacobian.transpose() * rk;
-    approximation_.dfdx.template segment<3>(6) =
+    addAppro.dfdx.template segment<3>(6) +=
         effectiveWeight * commandAccelerationJacobian.transpose() * rk;
-    approximation_.dfdu =
+    addAppro.dfdu +=
         effectiveWeight * inputAccelerationJacobian.transpose() * rk;
 
-    approximation_.dfdxx.template slice<3, 3>(3, 3) =
+    addAppro.dfdxx.template slice<3, 3>(3, 3) +=
         effectiveWeight * effectiveAccelerationJacobian.transpose() *
         effectiveAccelerationJacobian;
-    approximation_.dfdxx.template slice<3, 3>(3, 6) =
+    addAppro.dfdxx.template slice<3, 3>(3, 6) +=
         effectiveWeight * effectiveAccelerationJacobian.transpose() *
         commandAccelerationJacobian;
-    approximation_.dfdxx.template slice<3, 3>(6, 3) =
+    addAppro.dfdxx.template slice<3, 3>(6, 3) +=
         effectiveWeight * commandAccelerationJacobian.transpose() *
         effectiveAccelerationJacobian;
-    approximation_.dfdxx.template slice<3, 3>(6, 6) =
+    addAppro.dfdxx.template slice<3, 3>(6, 6) +=
         effectiveWeight * commandAccelerationJacobian.transpose() *
         commandAccelerationJacobian;
-    approximation_.dfduu = effectiveWeight *
-                           inputAccelerationJacobian.transpose() *
-                           inputAccelerationJacobian;
-    approximation_.dfdux.template slice<3, 3>(0, 3) =
+    addAppro.dfduu += effectiveWeight * inputAccelerationJacobian.transpose() *
+                      inputAccelerationJacobian;
+    addAppro.dfdux.template slice<3, 3>(0, 3) +=
         effectiveWeight * inputAccelerationJacobian.transpose() *
         effectiveAccelerationJacobian;
-    approximation_.dfdux.template slice<3, 3>(0, 6) =
+    addAppro.dfdux.template slice<3, 3>(0, 6) +=
         effectiveWeight * inputAccelerationJacobian.transpose() *
         commandAccelerationJacobian;
-    addAppro += approximation_;
   }
 
  private:
@@ -967,8 +950,6 @@ class ThrustDirectionChangeCost final
   Scalar oneMinusAlpha_;
   const Scalar weight_;
   const Vector<Scalar, 3> gravityVector_;
-  ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>
-      approximation_;
 };
 
 template <typename Scalar>

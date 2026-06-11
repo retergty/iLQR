@@ -60,9 +60,9 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
       const MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> penalty;
     penalty.setZero();
-
-    getQuadraticApproximationImpl(penalty, time, state, termsMultiplier,
-                                  std::make_index_sequence<Layout::NumTerms>{});
+    addQuadraticApproximationImpl(
+        time, state, termsMultiplier, penalty,
+        std::make_index_sequence<Layout::NumTerms>{});
     return penalty;
   }
 
@@ -103,13 +103,13 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
   }
 
   template <std::size_t... Is>
-  void getQuadraticApproximationImpl(
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& penalty,
+  void addQuadraticApproximationImpl(
       const Scalar time, const Vector<Scalar, XDim>& state,
       const MultiplierGroup<Scalar, Layout>& termsMultiplier,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& addAppro,
       std::index_sequence<Is...>) const {
-    ((penalty += getTerm<Is>()->getQuadraticApproximation(
-          time, state, std::get<Is>(termsMultiplier.terms))),
+    ((getTerm<Is>()->addQuadraticApproximation(
+          time, state, std::get<Is>(termsMultiplier.terms), addAppro)),
      ...);
   }
 

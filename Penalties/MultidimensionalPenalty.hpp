@@ -51,83 +51,79 @@ class MultidimensionalPenalty final {
   }
 
   /**
-   * @brief 由向量约束的线性近似经链式法则得到标量惩罚的二次近似。
+   * @brief 由向量约束的线性近似经链式法则计算并累加标量惩罚的二次近似。
    * @param [in] t 评估时间。
    * @param [in] h 约束的线性近似。
    * @param [in] l 拉格朗日乘子向量。
-   * @return 标量惩罚函数对状态/输入的二次近似。
+   * @param [in] penaltyScale 惩罚缩放系数（例如 multiplier.penalty）。
+   * @param [in,out] addAppro 累加目标。
    */
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  getQuadraticApproximation(
+  void addQuadraticApproximation(
       const Scalar t,
       const VectorFunctionLinearApproximation<Scalar, CDim, XDim, UDim>& h,
-      const Vector<Scalar, CDim>& l) const {
+      const Vector<Scalar, CDim>& l, const Scalar penaltyScale,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro)
+      const {
     Scalar penaltyValue = Scalar(0.0);
     Vector<Scalar, CDim> penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) =
         getPenaltyValue1stDev2ndDev(t, h.f, l);
     const Matrix<Scalar, CDim, XDim> penaltySecondDev_dhdx =
         scaleRows(penaltySecondDerivative, h.dfdx);
-
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-        penaltyApproximation;
-    penaltyApproximation.setZero();
-
-    penaltyApproximation.f = penaltyValue;
-    penaltyApproximation.dfdx = h.dfdx.transpose() * penaltyDerivative;
-    penaltyApproximation.dfdxx = h.dfdx.transpose() * penaltySecondDev_dhdx;
+    addAppro.f += penaltyScale * penaltyValue;
+    addAppro.dfdx += penaltyScale * (h.dfdx.transpose() * penaltyDerivative);
+    addAppro.dfdxx +=
+        penaltyScale * (h.dfdx.transpose() * penaltySecondDev_dhdx);
     if constexpr (UDim > 0) {
-      penaltyApproximation.dfdu = h.dfdu.transpose() * penaltyDerivative;
-      penaltyApproximation.dfdux = h.dfdu.transpose() * penaltySecondDev_dhdx;
-      penaltyApproximation.dfduu =
-          h.dfdu.transpose() * scaleRows(penaltySecondDerivative, h.dfdu);
+      addAppro.dfdu += penaltyScale * (h.dfdu.transpose() * penaltyDerivative);
+      addAppro.dfdux +=
+          penaltyScale * (h.dfdu.transpose() * penaltySecondDev_dhdx);
+      addAppro.dfduu +=
+          penaltyScale *
+          (h.dfdu.transpose() * scaleRows(penaltySecondDerivative, h.dfdu));
     }
-
-    return penaltyApproximation;
   }
 
   /**
-   * @brief 由向量约束的二次近似经链式法则得到标量惩罚的二次近似。
+   * @brief 由向量约束的二次近似经链式法则计算并累加标量惩罚的二次近似。
    * @param [in] t 评估时间。
    * @param [in] h 约束的二次近似。
    * @param [in] l 拉格朗日乘子向量。
-   * @return 标量惩罚函数对状态/输入的二次近似。
+   * @param [in] penaltyScale 惩罚缩放系数（例如 multiplier.penalty）。
+   * @param [in,out] addAppro 累加目标。
    */
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  getQuadraticApproximation(
+  void addQuadraticApproximation(
       const Scalar t,
       const VectorFunctionQuadraticApproximation<Scalar, CDim, XDim, UDim>& h,
-      const Vector<Scalar, CDim>& l) const {
+      const Vector<Scalar, CDim>& l, const Scalar penaltyScale,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro)
+      const {
     Scalar penaltyValue = Scalar(0.0);
     Vector<Scalar, CDim> penaltyDerivative, penaltySecondDerivative;
     std::tie(penaltyValue, penaltyDerivative, penaltySecondDerivative) =
         getPenaltyValue1stDev2ndDev(t, h.f, l);
     const Matrix<Scalar, CDim, XDim> penaltySecondDev_dhdx =
         scaleRows(penaltySecondDerivative, h.dfdx);
-
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-        penaltyApproximation;
-    penaltyApproximation.setZero();
-
-    penaltyApproximation.f = penaltyValue;
-    penaltyApproximation.dfdx = h.dfdx.transpose() * penaltyDerivative;
-    penaltyApproximation.dfdxx = h.dfdx.transpose() * penaltySecondDev_dhdx;
+    addAppro.f += penaltyScale * penaltyValue;
+    addAppro.dfdx += penaltyScale * (h.dfdx.transpose() * penaltyDerivative);
+    addAppro.dfdxx +=
+        penaltyScale * (h.dfdx.transpose() * penaltySecondDev_dhdx);
     for (int i = 0; i < CDim; ++i) {
-      penaltyApproximation.dfdxx += penaltyDerivative(i) * h.dfdxx[i];
+      addAppro.dfdxx += penaltyScale * penaltyDerivative(i) * h.dfdxx[i];
     }
 
     if constexpr (UDim > 0) {
-      penaltyApproximation.dfdu = h.dfdu.transpose() * penaltyDerivative;
-      penaltyApproximation.dfdux = h.dfdu.transpose() * penaltySecondDev_dhdx;
-      penaltyApproximation.dfduu =
-          h.dfdu.transpose() * scaleRows(penaltySecondDerivative, h.dfdu);
+      addAppro.dfdu += penaltyScale * (h.dfdu.transpose() * penaltyDerivative);
+      addAppro.dfdux +=
+          penaltyScale * (h.dfdu.transpose() * penaltySecondDev_dhdx);
+      addAppro.dfduu +=
+          penaltyScale *
+          (h.dfdu.transpose() * scaleRows(penaltySecondDerivative, h.dfdu));
       for (int i = 0; i < CDim; ++i) {
-        penaltyApproximation.dfduu += penaltyDerivative(i) * h.dfduu[i];
-        penaltyApproximation.dfdux += penaltyDerivative(i) * h.dfdux[i];
+        addAppro.dfduu += penaltyScale * penaltyDerivative(i) * h.dfduu[i];
+        addAppro.dfdux += penaltyScale * penaltyDerivative(i) * h.dfdux[i];
       }
     }
-
-    return penaltyApproximation;
   }
 
   /**

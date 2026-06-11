@@ -44,27 +44,25 @@ class StateInputAugmentedLagrangian final
     return {p, h};
   }
 
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  getQuadraticApproximation(
+  void addQuadraticApproximation(
       const Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
-      const Multiplier<Scalar, CDim>& multiplier) const override {
+      const Multiplier<Scalar, CDim>& multiplier,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro)
+      const override {
     switch (constraintPtr_->getOrder()) {
       case ConstraintOrder::Linear:
-        return multiplier.penalty *
-               penalty_.getQuadraticApproximation(
-                   time,
-                   constraintPtr_->getLinearApproximation(time, state, input),
-                   multiplier.lagrangian);
+        penalty_.addQuadraticApproximation(
+            time, constraintPtr_->getLinearApproximation(time, state, input),
+            multiplier.lagrangian, multiplier.penalty, addAppro);
+        return;
       case ConstraintOrder::Quadratic:
-        return multiplier.penalty *
-               penalty_.getQuadraticApproximation(
-                   time,
-                   constraintPtr_->getQuadraticApproximation(time, state,
-                                                             input),
-                   multiplier.lagrangian);
+        penalty_.addQuadraticApproximation(
+            time, constraintPtr_->getQuadraticApproximation(time, state, input),
+            multiplier.lagrangian, multiplier.penalty, addAppro);
+        return;
       default:
-        return ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>::Zero();
+        return;
     }
   }
 

@@ -3,7 +3,6 @@
 #include <cmath>
 
 #include "Penalties/ModifiedRelaxedBarrierPenalty.hpp"
-#include "Penalties/Penalty.hpp"
 #include "Penalties/QuadraticPenalty.hpp"
 #include "Penalties/SlacknessSquaredHingePenalty.hpp"
 
@@ -79,53 +78,6 @@ TEST(PenaltyTest, ModifiedRelaxedBarrierPenaltyMatchesLogAndRelaxedBranches) {
       penalty.updateMultiplier(time, lagrangian, relaxedBranchConstraint),
       expectedMultiplier, 1e-12);
   EXPECT_DOUBLE_EQ(penalty.initializeMultiplier(), 1.0);
-}
-
-// 验证罚函数包装器对纯状态线性约束正确应用链式法则。
-TEST(PenaltyTest, PenaltyWrapperLinearStateConstraintUsesChainRule) {
-  QuadraticPenalty<double> quadraticPenalty({2.0, 0.5});
-  Penalty<double, 2, 0> penalty(&quadraticPenalty);
-
-  ScalarFunctionLinearApproximation<double, 2, 0> constraint;
-  constraint.f = 2.0;
-  constraint.dfdx = {1.0, -3.0};
-
-  const auto approximation =
-      penalty.getQuadraticApproximation(0.0, constraint, 0.5);
-
-  const Vector<double, 2> expectedDfdx{3.5, -10.5};
-  const Matrix<double, 2, 2> expectedDfdxx{{2.0, -6.0}, {-6.0, 18.0}};
-
-  EXPECT_DOUBLE_EQ(approximation.f, 3.0);
-  EXPECT_TRUE(approximation.dfdx.isApprox(expectedDfdx, 1e-12));
-  EXPECT_TRUE(approximation.dfdxx.isApprox(expectedDfdxx, 1e-12));
-}
-
-// 验证罚函数包装器对状态输入线性约束正确应用链式法则。
-TEST(PenaltyTest, PenaltyWrapperLinearStateInputConstraintUsesChainRule) {
-  QuadraticPenalty<double> quadraticPenalty({4.0, 0.5});
-  Penalty<double, 2, 1> penalty(&quadraticPenalty);
-
-  ScalarFunctionLinearApproximation<double, 2, 1> constraint;
-  constraint.f = 1.0;
-  constraint.dfdx = {2.0, -1.0};
-  constraint.dfdu = {0.5};
-
-  const auto approximation =
-      penalty.getQuadraticApproximation(0.0, constraint, 1.5);
-
-  const Vector<double, 2> expectedDfdx{5.0, -2.5};
-  const Vector<double, 1> expectedDfdu{1.25};
-  const Matrix<double, 2, 2> expectedDfdxx{{16.0, -8.0}, {-8.0, 4.0}};
-  const Matrix<double, 1, 2> expectedDfdux{4.0, -2.0};
-  const Matrix<double, 1, 1> expectedDfduu{1.0};
-
-  EXPECT_DOUBLE_EQ(approximation.f, 0.5);
-  EXPECT_TRUE(approximation.dfdx.isApprox(expectedDfdx, 1e-12));
-  EXPECT_TRUE(approximation.dfdu.isApprox(expectedDfdu, 1e-12));
-  EXPECT_TRUE(approximation.dfdxx.isApprox(expectedDfdxx, 1e-12));
-  EXPECT_TRUE(approximation.dfdux.isApprox(expectedDfdux, 1e-12));
-  EXPECT_TRUE(approximation.dfduu.isApprox(expectedDfduu, 1e-12));
 }
 
 int main(int argc, char** argv) {

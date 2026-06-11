@@ -56,6 +56,18 @@ class StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
                         std::make_index_sequence<Layout::NumTerms>{});
   }
 
+  /** @brief 计算并累加所有 state-input Lagrangian 惩罚项的二次近似。 */
+  void addQuadraticApproximation(
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input,
+      const MultiplierGroup<Scalar, Layout>& termsMultiplier,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro)
+      const {
+    addQuadraticApproximationImpl(
+        time, state, input, termsMultiplier, addAppro,
+        std::make_index_sequence<Layout::NumTerms>{});
+  }
+
   /** @brief 获取所有 state-input Lagrangian 惩罚项的二次近似之和。 */
   ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
   getQuadraticApproximation(
@@ -64,9 +76,7 @@ class StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
       const MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
     ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> penalty;
     penalty.setZero();
-
-    getQuadraticApproximationImpl(penalty, time, state, input, termsMultiplier,
-                                  std::make_index_sequence<Layout::NumTerms>{});
+    addQuadraticApproximation(time, state, input, termsMultiplier, penalty);
     return penalty;
   }
 
@@ -110,14 +120,14 @@ class StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
   }
 
   template <std::size_t... Is>
-  void getQuadraticApproximationImpl(
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& penalty,
+  void addQuadraticApproximationImpl(
       const Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
       const MultiplierGroup<Scalar, Layout>& termsMultiplier,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro,
       std::index_sequence<Is...>) const {
-    ((penalty += getTerm<Is>()->getQuadraticApproximation(
-          time, state, input, std::get<Is>(termsMultiplier.terms))),
+    ((getTerm<Is>()->addQuadraticApproximation(
+          time, state, input, std::get<Is>(termsMultiplier.terms), addAppro)),
      ...);
   }
 

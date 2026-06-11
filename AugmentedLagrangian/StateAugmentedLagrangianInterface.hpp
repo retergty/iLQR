@@ -26,11 +26,12 @@ class StateAugmentedLagrangianInterface {
       Scalar time, const Vector<Scalar, XDim>& state,
       const Multiplier<Scalar, CDim>& multiplier) const = 0;
 
-  /** @brief 获取约束惩罚的二次近似。 */
-  virtual ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
-  getQuadraticApproximation(
+  /** @brief 计算并累加约束惩罚的二次近似。 */
+  virtual void addQuadraticApproximation(
       const Scalar time, const Vector<Scalar, XDim>& state,
-      const Multiplier<Scalar, CDim>& multiplier) const = 0;
+      const Multiplier<Scalar, CDim>& multiplier,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& addAppro)
+      const = 0;
 
   /** @brief 更新拉格朗日/惩罚乘子并返回更新后乘子与惩罚值。 */
   virtual std::pair<Multiplier<Scalar, CDim>, Scalar> updateLagrangian(
