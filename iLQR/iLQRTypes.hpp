@@ -89,7 +89,6 @@ struct iLQRTypes {
       Metrics<Scalar, Dims, typename Traits::FinalStageConstraintLayout_t>;
   using PrimalSolution_t = PrimalSolution<Scalar, TranscriptionConfig>;
   using DualSolution_t = DualSolution<Scalar, Horizon, ConstraintConfig>;
-  using DualSolutionRef_t = DualSolutionRef<Scalar, Horizon, ConstraintConfig>;
   using LinearQuadraticApproximator_t = LinearQuadraticApproximator<Descriptor>;
   using Transcription_t = ::Transcription_t<Descriptor>;
   using LQApproximationData_t =

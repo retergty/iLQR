@@ -119,14 +119,14 @@ void initializeDualSolution(
  * @param [in] ocp 最优控制问题。
  * @param [in] primalSolution 原始解。
  * @param [in,out] problemMetrics 问题指标（其惩罚项将随对偶解更新）。
- * @param [out] dualSolution 待更新的对偶解（引用）。
+ * @param [out] dualSolution 待更新的对偶解。
  */
 template <typename Scalar, typename Transcription, typename ConstraintConfig>
 void updateDualSolution(
     const OptimalControlProblem<Scalar, Transcription, ConstraintConfig>& ocp,
     const PrimalSolution<Scalar, Transcription>& primalSolution,
     ProblemMetrics<Scalar, Transcription, ConstraintConfig>& problemMetrics,
-    DualSolutionRef<Scalar, typename Transcription::Horizon, ConstraintConfig>
+    DualSolution<Scalar, typename Transcription::Horizon, ConstraintConfig>&
         dualSolution) {
   constexpr int XDim = Transcription::XDim;
   constexpr int UDim = Transcription::UDim;

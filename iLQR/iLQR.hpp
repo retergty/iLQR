@@ -6,6 +6,7 @@
 #pragma once
 #include <array>
 #include <cassert>
+#include <utility>
 
 #include "Integration/TrapezoidalIntegration.hpp"
 #include "OptimalControl/OptimalControlProblemHelperFunction.hpp"
@@ -82,7 +83,6 @@ class iLQR {
 
   using PrimalSolution_t = typename Types::PrimalSolution_t;
   using DualSolution_t = typename Types::DualSolution_t;
-  using DualSolutionRef_t = typename Types::DualSolutionRef_t;
   using LinearQuadraticApproximator_t =
       typename Types::LinearQuadraticApproximator_t;
   using LQApproximationData_t = typename Types::LQApproximationData_t;
@@ -130,12 +130,19 @@ class iLQR {
     finalTime_ = Scalar(0.0);
     lastFinalTime_ = Scalar(0.0);
 
-    optimizedPrimalSolution_.clear();
-    optimizedDualSolution_.clear();
-    optimizedProblemMetrics_.clear();
-    nominalPrimalSolution_.clear();
-    nominalDualSolution_.clear();
-    nominalProblemMetrics_.clear();
+    optimizedPrimalSolutionPtr_ = &primalSolutionBuffer_[0];
+    nominalPrimalSolutionPtr_ = &primalSolutionBuffer_[1];
+    optimizedDualSolutionPtr_ = &dualSolutionBuffer_[0];
+    nominalDualSolutionPtr_ = &dualSolutionBuffer_[1];
+    optimizedProblemMetricsPtr_ = &problemMetricsBuffer_[0];
+    nominalProblemMetricsPtr_ = &problemMetricsBuffer_[1];
+
+    optimizedPrimalSolutionPtr_->clear();
+    optimizedDualSolutionPtr_->clear();
+    optimizedProblemMetricsPtr_->clear();
+    nominalPrimalSolutionPtr_->clear();
+    nominalDualSolutionPtr_->clear();
+    nominalProblemMetricsPtr_->clear();
 
     totalNumIterations_ = 0;
     totalNumRuns_ = 0;
@@ -210,9 +217,9 @@ class iLQR {
       } else {
         // optimized --> nominal：将优化解作为下一次迭代的名义解。
         // 下一次迭代。
-        optimizedDualSolution_.swap(nominalDualSolution_);
-        optimizedPrimalSolution_.swap(nominalPrimalSolution_);
-        optimizedProblemMetrics_.swap(nominalProblemMetrics_);
+        std::swap(optimizedDualSolutionPtr_, nominalDualSolutionPtr_);
+        std::swap(optimizedPrimalSolutionPtr_, nominalPrimalSolutionPtr_);
+        std::swap(optimizedProblemMetricsPtr_, nominalProblemMetricsPtr_);
       }
     }  // while 循环结束。
   }
@@ -247,7 +254,7 @@ class iLQR {
   }
 
   const PrimalSolution_t& primalSolution() const {
-    return optimizedPrimalSolution_;
+    return *optimizedPrimalSolutionPtr_;
   }
   const PerformanceIndex_t& performanceIndex() const {
     return performanceIndex_;
@@ -275,13 +282,13 @@ class iLQR {
 
   ValueFunctionQuadraticApproximation_t getValueFunction(
       const Scalar time, const StateVector_t& state) const {
-    return getValueFunctionImpl(time, state, nominalPrimalSolution_,
+    return getValueFunctionImpl(time, state, *nominalPrimalSolutionPtr_,
                                 nominalRiccatiData_.valueFunctionTrajectory);
   }
 
   ValueFunctionQuadraticApproximation_t getValueFunction(
       size_t timeIndex, const StateVector_t& state) const {
-    return getValueFunctionImpl(timeIndex, state, nominalPrimalSolution_,
+    return getValueFunctionImpl(timeIndex, state, *nominalPrimalSolutionPtr_,
                                 nominalRiccatiData_.valueFunctionTrajectory);
   }
 
@@ -314,9 +321,9 @@ class iLQR {
                        nextValueFunction.dfdxx * modelData.dynamics.dfdu;
 
     const StateVector_t deltaX =
-        state - nominalPrimalSolution_.stateTrajectory_[timeIndex];
+        state - nominalPrimalSolutionPtr_->stateTrajectory_[timeIndex];
     const InputVector_t deltaU =
-        input - nominalPrimalSolution_.inputTrajectory_[timeIndex];
+        input - nominalPrimalSolutionPtr_->inputTrajectory_[timeIndex];
     const StateVector_t QxxDeltaX = qFunction.dfdxx * deltaX;
     const InputVector_t QuxDeltaX = qFunction.dfdux * deltaX;
     const InputVector_t QuuDeltaU = qFunction.dfduu * deltaU;
@@ -482,12 +489,12 @@ class iLQR {
     int numSteps = 0;
     bool ret = false;
     if (lastFinalTime_ > initTime_) {
-      numSteps = rolloutInitialController(optimizedPrimalSolution_,
-                                          nominalPrimalSolution_);
+      numSteps = rolloutInitialController(*optimizedPrimalSolutionPtr_,
+                                          *nominalPrimalSolutionPtr_);
       ret = true;
     }
     // 距离上次运行已过去太久。
-    rolloutInitializer(nominalPrimalSolution_, numSteps);
+    rolloutInitializer(*nominalPrimalSolutionPtr_, numSteps);
     return ret;
   }
 
@@ -550,17 +557,17 @@ class iLQR {
    */
   void initializeDualSolutionAndMetrics(bool useCachedDualSolution) {
     // 初始化对偶解。
-    initializeDualSolution(optimalControlProblem_, nominalPrimalSolution_,
-                           optimizedDualSolution_, nominalDualSolution_,
+    initializeDualSolution(optimalControlProblem_, *nominalPrimalSolutionPtr_,
+                           *optimizedDualSolutionPtr_, *nominalDualSolutionPtr_,
                            useCachedDualSolution);
 
     computeRolloutMetrics(optimalControlProblem_, targetTrajectory_,
-                          nominalPrimalSolution_, nominalDualSolution_,
-                          nominalProblemMetrics_);
+                          *nominalPrimalSolutionPtr_, *nominalDualSolutionPtr_,
+                          *nominalProblemMetricsPtr_);
 
     // 计算 rollout merit。
     performanceIndex_ = computeRolloutPerformanceIndex(
-        nominalPrimalSolution_.timeTrajectory_, nominalProblemMetrics_);
+        nominalPrimalSolutionPtr_->timeTrajectory_, *nominalProblemMetricsPtr_);
     performanceIndex_.merit = calculateRolloutMerit(performanceIndex_);
   }
 
@@ -576,17 +583,19 @@ class iLQR {
    * - 增广拉格朗日项产生的约束惩罚近似
    */
   void approximateOptimalControlProblem() {
-    approximateIntermediateLQ(nominalDualSolution_, nominalPrimalSolution_,
-                              nominalLQData_);
+    approximateIntermediateLQ(*nominalDualSolutionPtr_,
+                              *nominalPrimalSolutionPtr_, nominalLQData_);
 
     /*
      * 计算终端时刻的 Heuristics 函数，并调用 shiftHessian
      * 处理 Heuristics 的二阶导数。
      */
     ModelData_t& modelData = nominalLQData_.modelDataFinalTime;
-    const Scalar& time = nominalPrimalSolution_.timeTrajectory_.back();
-    const StateVector_t& state = nominalPrimalSolution_.stateTrajectory_.back();
-    const FinalMultiplierCollection_t& multiplier = nominalDualSolution_.final;
+    const Scalar& time = nominalPrimalSolutionPtr_->timeTrajectory_.back();
+    const StateVector_t& state =
+        nominalPrimalSolutionPtr_->stateTrajectory_.back();
+    const FinalMultiplierCollection_t& multiplier =
+        nominalDualSolutionPtr_->final;
     modelData = LinearQuadraticApproximator_t::approximateFinalLQ(
         optimalControlProblem_, targetTrajectory_, time, state, multiplier);
 
@@ -740,12 +749,13 @@ class iLQR {
    * 修改 unoptimizedController_。
    */
   void calculateController() {
-    unoptimizedController_.timeStamp_ = nominalPrimalSolution_.timeTrajectory_;
-    optimizedPrimalSolution_.controller_.timeStamp_ =
+    unoptimizedController_.timeStamp_ =
+        nominalPrimalSolutionPtr_->timeTrajectory_;
+    optimizedPrimalSolutionPtr_->controller_.timeStamp_ =
         unoptimizedController_.timeStamp_;
 
     for (size_t timeIndex = 0; timeIndex < PredictLength; ++timeIndex) {
-      calculateControllerWorker(timeIndex, nominalPrimalSolution_,
+      calculateControllerWorker(timeIndex, *nominalPrimalSolutionPtr_,
                                 unoptimizedController_);
     }
 
@@ -793,28 +803,29 @@ class iLQR {
   void takePrimalDualStep(Scalar lqModelExpectedCost) {
     // 更新原始解：运行搜索策略并找到最优 stepLength。
     SearchStrategySolutionRef_t solution(
-        optimizedDualSolution_, optimizedPrimalSolution_,
-        optimizedProblemMetrics_, performanceIndex_);
+        *optimizedDualSolutionPtr_, *optimizedPrimalSolutionPtr_,
+        *optimizedProblemMetricsPtr_, performanceIndex_);
     const bool success = lineSearchStrategy_.run(
         {initTime_, finalTime_}, initState_, lqModelExpectedCost,
-        unoptimizedController_, nominalDualSolution_, solution);
+        unoptimizedController_, *nominalDualSolutionPtr_, solution);
 
     // 更新对偶解。
     if (success) {
-      DualSolutionRef_t DualSolutionRef = optimizedDualSolution_;
-      updateDualSolution(optimalControlProblem_, optimizedPrimalSolution_,
-                         optimizedProblemMetrics_, DualSolutionRef);
+      updateDualSolution(optimalControlProblem_, *optimizedPrimalSolutionPtr_,
+                         *optimizedProblemMetricsPtr_,
+                         *optimizedDualSolutionPtr_);
       performanceIndex_ = computeRolloutPerformanceIndex(
-          optimizedPrimalSolution_.timeTrajectory_, optimizedProblemMetrics_);
+          optimizedPrimalSolutionPtr_->timeTrajectory_,
+          *optimizedProblemMetricsPtr_);
       performanceIndex_.merit = calculateRolloutMerit(performanceIndex_);
     }
 
     // 如果失败，则使用名义解；为保持缓存数据一致性，所有
     // 缓存都应保持不变。
     if (!success) {
-      optimizedDualSolution_ = nominalDualSolution_;
-      optimizedPrimalSolution_ = nominalPrimalSolution_;
-      optimizedProblemMetrics_ = nominalProblemMetrics_;
+      *optimizedDualSolutionPtr_ = *nominalDualSolutionPtr_;
+      *optimizedPrimalSolutionPtr_ = *nominalPrimalSolutionPtr_;
+      *optimizedProblemMetricsPtr_ = *nominalProblemMetricsPtr_;
       performanceIndex_ = performanceIndexLast_;
     }
   }
@@ -896,19 +907,24 @@ class iLQR {
   Scalar lastFinalTime_{Scalar(0.0)};
   StateVector_t initState_;
 
+  // 双缓存底层存储；迭代推进时只交换下面的名义解/最佳解指针。
+  PrimalSolution_t primalSolutionBuffer_[2];
+  DualSolution_t dualSolutionBuffer_[2];
+  ProblemMetrics_t problemMetricsBuffer_[2];
+
   // 当前反向递推使用的名义解与 rollout 指标。
-  PrimalSolution_t nominalPrimalSolution_;
-  DualSolution_t nominalDualSolution_;
-  ProblemMetrics_t nominalProblemMetrics_;
+  PrimalSolution_t* nominalPrimalSolutionPtr_{&primalSolutionBuffer_[1]};
+  DualSolution_t* nominalDualSolutionPtr_{&dualSolutionBuffer_[1]};
+  ProblemMetrics_t* nominalProblemMetricsPtr_{&problemMetricsBuffer_[1]};
 
   // 当前反向递推使用的 LQ 近似与 Riccati 派生数据。
   LQApproximationData_t nominalLQData_;
   RiccatiData_t nominalRiccatiData_;
 
   // 当前接受的最佳解及其 rollout 指标。
-  PrimalSolution_t optimizedPrimalSolution_;
-  DualSolution_t optimizedDualSolution_;
-  ProblemMetrics_t optimizedProblemMetrics_;
+  PrimalSolution_t* optimizedPrimalSolutionPtr_{&primalSolutionBuffer_[0]};
+  DualSolution_t* optimizedDualSolutionPtr_{&dualSolutionBuffer_[0]};
+  ProblemMetrics_t* optimizedProblemMetricsPtr_{&problemMetricsBuffer_[0]};
 
   // 线搜索前由 LQ 解计算出的控制器。
   LinearController_t unoptimizedController_;

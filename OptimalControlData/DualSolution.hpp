@@ -64,36 +64,6 @@ struct DualSolution {
 };
 
 /**
- * @brief 对偶解的引用视图：仅引用 terminal 与
- * intermediates，不包含时间戳，表示不可修改时间戳。
- */
-template <typename Scalar, typename Horizon, typename ConstraintConfig>
-struct DualSolutionRef {
-  static constexpr std::size_t PredictLength = Horizon::PredictLength;
-
-  using DualSolution_t = DualSolution<Scalar, Horizon, ConstraintConfig>;
-  using IntermediateMultiplierCollection_t =
-      typename DualSolution_t::IntermediateMultiplierCollection_t;
-  using FinalMultiplierCollection_t =
-      typename DualSolution_t::FinalMultiplierCollection_t;
-
-  /** @brief 由 DualSolution 构造，引用其 final 与 intermediates。 */
-  DualSolutionRef(DualSolution_t& dualSolution)
-      : DualSolutionRef(dualSolution.final, dualSolution.intermediates) {}
-
-  /** @brief 直接引用给定的 final 与 intermediates 数组。 */
-  DualSolutionRef(FinalMultiplierCollection_t& finalRef,
-                  std::array<IntermediateMultiplierCollection_t, PredictLength>&
-                      intermediatesRef)
-      : final(finalRef), intermediates(intermediatesRef) {}
-
-  /** @brief 终端乘子集合的引用。 */
-  FinalMultiplierCollection_t& final;
-  /** @brief 中间时刻乘子集合的引用。 */
-  std::array<IntermediateMultiplierCollection_t, PredictLength>& intermediates;
-};
-
-/**
  * @brief 按给定时间在对偶解时间序列上插值，得到该时刻的中间乘子集合。
  * @param [in] dualSolution 对偶解。
  * @param [in] time 查询时间。
