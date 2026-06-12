@@ -24,7 +24,7 @@ TEST(iLQREndToEndTest, RunWithQuadraticTrackingCost) {
   problem.dynamicsPtr = &dynamics;
   QuadraticStateInputCost<double, 2, 2, 6> runningCost(
       Matrix<double, 2, 2>::Identity(), Matrix<double, 2, 2>::Identity(), 0);
-  QuadraticStateCost<double, 2, 6> finalCost(
+  QuadraticStateCost<double, 2, 2, 6> finalCost(
       2.0 * Matrix<double, 2, 2>::Identity(), 0);
   problem.cost.add(runningCost);
   problem.finalCost.add(finalCost);
@@ -58,7 +58,7 @@ TEST(iLQREndToEndTest, RolloutMetricsMatchQuadraticTrackingCosts) {
 
   QuadraticStateInputCost<double, 2, 2, 3> runningCost(
       Matrix<double, 2, 2>::Identity(), Matrix<double, 2, 2>::Identity(), 0);
-  QuadraticStateCost<double, 2, 3> finalCost(
+  QuadraticStateCost<double, 2, 2, 3> finalCost(
       2.0 * Matrix<double, 2, 2>::Identity(), 0);
   Solver::OptimalControlProblem_t problem;
   problem.dynamicsPtr = &dynamics;
@@ -122,7 +122,7 @@ TEST(iLQREndToEndTest, SetTimeStepUpdatesNextRunTimeGrid) {
   problem.dynamicsPtr = &dynamics;
   QuadraticStateInputCost<double, 2, 2, 6> runningCost(
       Matrix<double, 2, 2>::Identity(), Matrix<double, 2, 2>::Identity(), 0);
-  QuadraticStateCost<double, 2, 6> finalCost(
+  QuadraticStateCost<double, 2, 2, 6> finalCost(
       2.0 * Matrix<double, 2, 2>::Identity(), 0);
   problem.cost.add(runningCost);
   problem.finalCost.add(finalCost);

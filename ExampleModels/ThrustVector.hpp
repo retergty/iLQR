@@ -318,11 +318,11 @@ class ThrustVectorDiagonalTrackCost final
 
 template <typename Scalar, int ArrayLength>
 class ThrustVectorTrackFinalCost final
-    : public StateCost<Scalar, STATE_DIM, ArrayLength> {
+    : public StateCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
  public:
   ThrustVectorTrackFinalCost(const Matrix<Scalar, STATE_DIM, STATE_DIM>& Q,
                              int cost_number)
-      : StateCost<Scalar, STATE_DIM, ArrayLength>(cost_number),
+      : StateCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number),
         Qv_(Q.template topLeftCorner<3, 3>()) {}
   ~ThrustVectorTrackFinalCost() override = default;
 
@@ -340,8 +340,8 @@ class ThrustVectorTrackFinalCost final
       Scalar time, const Vector<Scalar, STATE_DIM>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
-      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0>& addAppro)
-      override {
+      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>&
+          addAppro) override {
     const Vector<Scalar, 3> velocityDeviation =
         state.template head<3>() -
         interpolateVelocityReference(time, timeTrajectory, stateTrajectory);
@@ -373,11 +373,11 @@ class ThrustVectorTrackFinalCost final
 
 template <typename Scalar, int ArrayLength>
 class ThrustVectorDiagonalTrackFinalCost final
-    : public StateCost<Scalar, STATE_DIM, ArrayLength> {
+    : public StateCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
  public:
   ThrustVectorDiagonalTrackFinalCost(
       const Matrix<Scalar, STATE_DIM, STATE_DIM>& Q, int cost_number)
-      : StateCost<Scalar, STATE_DIM, ArrayLength>(cost_number) {
+      : StateCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(cost_number) {
     for (int i = 0; i < 3; ++i) {
       QvDiagonal_(i) = Q(i, i);
     }
@@ -404,8 +404,8 @@ class ThrustVectorDiagonalTrackFinalCost final
       Scalar time, const Vector<Scalar, STATE_DIM>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, STATE_DIM>, ArrayLength>& stateTrajectory,
-      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, 0>& addAppro)
-      override {
+      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>&
+          addAppro) override {
     const auto indexAlpha =
         LinearInterpolation::timeSegment(time, timeTrajectory);
     Scalar value = 0;

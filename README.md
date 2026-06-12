@@ -218,7 +218,7 @@ const Matrix<Scalar, XDim, XDim> Qf =
     Scalar(10.0) * Matrix<Scalar, XDim, XDim>::Identity();
 QuadraticStateInputCost<Scalar, XDim, UDim, PredictLength + 1> runningCost(
     Q, R, 0);
-QuadraticStateCost<Scalar, XDim, PredictLength + 1> finalCost(Qf, 0);
+QuadraticStateCost<Scalar, XDim, UDim, PredictLength + 1> finalCost(Qf, 0);
 problem.cost.add(runningCost);
 problem.finalCost.add(finalCost);
 

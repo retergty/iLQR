@@ -50,10 +50,10 @@ class DiscreteTranscriptionTest : public testing::Test {
                                                                              B);
     intermediateCost = std::make_unique<
         QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>(Q, R, 0);
-    stateCost = std::make_unique<QuadraticStateCost<Scalar, STATE_DIM, N + 1>>(
-        QState, 0);
-    finalCost = std::make_unique<QuadraticStateCost<Scalar, STATE_DIM, N + 1>>(
-        QFinal, 0);
+    stateCost = std::make_unique<
+        QuadraticStateCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>(QState, 0);
+    finalCost = std::make_unique<
+        QuadraticStateCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>(QFinal, 0);
 
     problem.dynamicsPtr = system.get();
     problem.cost.add(*intermediateCost);
@@ -120,8 +120,10 @@ class DiscreteTranscriptionTest : public testing::Test {
   std::unique_ptr<LinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>> system;
   std::unique_ptr<QuadraticStateInputCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>
       intermediateCost;
-  std::unique_ptr<QuadraticStateCost<Scalar, STATE_DIM, N + 1>> stateCost;
-  std::unique_ptr<QuadraticStateCost<Scalar, STATE_DIM, N + 1>> finalCost;
+  std::unique_ptr<QuadraticStateCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>
+      stateCost;
+  std::unique_ptr<QuadraticStateCost<Scalar, STATE_DIM, INPUT_DIM, N + 1>>
+      finalCost;
   Problem_t problem;
   TargetTrajectories_t targetTrajectory;
   Trajectory_t linearization;

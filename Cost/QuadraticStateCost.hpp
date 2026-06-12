@@ -12,10 +12,11 @@
  * 由参考轨迹插值得到。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  * @tparam ArrayLength 轨迹长度。
  */
-template <typename Scalar, int XDim, int ArrayLength>
-class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
+template <typename Scalar, int XDim, int UDim, int ArrayLength>
+class QuadraticStateCost : public StateCost<Scalar, XDim, UDim, ArrayLength> {
  public:
   /**
    * @brief 用权重矩阵 Q 构造二次代价。
@@ -23,7 +24,7 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
    * @param [in] cost_number 代价项唯一标识。
    */
   QuadraticStateCost(const Matrix<Scalar, XDim, XDim>& Q, int cost_number)
-      : StateCost<Scalar, XDim, ArrayLength>(cost_number), Q_(Q) {};
+      : StateCost<Scalar, XDim, UDim, ArrayLength>(cost_number), Q_(Q) {};
   ~QuadraticStateCost() override = default;
 
   /** @brief 获取代价值 0.5 * (x-x_ref)' Q (x-x_ref)。 */
@@ -42,7 +43,8 @@ class QuadraticStateCost : public StateCost<Scalar, XDim, ArrayLength> {
       Scalar time, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& addAppro) final {
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro)
+      final {
     const Vector<Scalar, XDim> xDeviation =
         getStateDeviation(time, state, timeTrajectory, stateTrajectoy);
     const Vector<Scalar, XDim> weightedStateDeviation = Q_ * xDeviation;

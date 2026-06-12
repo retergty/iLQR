@@ -58,10 +58,10 @@ struct OptimalControlProblem {
   /** @brief 中间代价（状态-输入）。 */
   StateInputCostCollection<Scalar, XDim, UDim, PredictLength + 1> cost;
   /** @brief 仅状态中间代价。 */
-  StateCostCollection<Scalar, XDim, PredictLength + 1> stateCost;
+  StateCostCollection<Scalar, XDim, UDim, PredictLength + 1> stateCost;
 
   /** @brief 终端代价。 */
-  StateCostCollection<Scalar, XDim, PredictLength + 1> finalCost;
+  StateCostCollection<Scalar, XDim, UDim, PredictLength + 1> finalCost;
 
   /** @brief 状态-输入等式约束增广拉格朗日。 */
   StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,

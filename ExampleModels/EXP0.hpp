@@ -53,10 +53,10 @@ class EXP0_Cost final : public QuadraticStateInputCost<Scalar, STATE_DIM,
 /******************************************************************************************************/
 template <typename Scalar, int ArrayLength>
 class EXP0_FinalCost final
-    : public QuadraticStateCost<Scalar, STATE_DIM, ArrayLength> {
+    : public QuadraticStateCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength> {
  public:
   EXP0_FinalCost()
-      : QuadraticStateCost<Scalar, STATE_DIM, ArrayLength>(
+      : QuadraticStateCost<Scalar, STATE_DIM, INPUT_DIM, ArrayLength>(
             Scalar(2) * Matrix<Scalar, STATE_DIM, STATE_DIM>::Identity(), 0) {}
   ~EXP0_FinalCost() override = default;
 

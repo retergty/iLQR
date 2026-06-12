@@ -66,7 +66,7 @@ TEST(ApproximationTest,
   Matrix<double, 2, 2> R{{3.0, 0.0}, {0.0, 5.0}};
   Matrix<double, 2, 2> QState{{7.0, 0.0}, {0.0, 11.0}};
   QuadraticStateInputCost<double, 2, 2, 3> stateInputCost(Q, R, 0);
-  QuadraticStateCost<double, 2, 3> stateCost(QState, 0);
+  QuadraticStateCost<double, 2, 2, 3> stateCost(QState, 0);
   problem.cost.add(stateInputCost);
   problem.stateCost.add(stateCost);
 
@@ -84,8 +84,9 @@ TEST(ApproximationTest,
 
   const double cost =
       Approximator::computeCost(problem, targetTrajectory, 0.5, state, input);
-  const auto costApproximation = Approximator::approximateCost(
-      problem, targetTrajectory, 0.5, state, input);
+  ScalarFunctionQuadraticApproximation<double, 2, 2> costApproximation;
+  Approximator::approximateCost(problem, targetTrajectory, 0.5, state, input,
+                                costApproximation);
   Approximator::IntermediateMultiplierCollection_t multipliers;
   const auto modelData = Approximator::approximateIntermediateCost(
       problem, targetTrajectory, 0.5, state, input, multipliers);
@@ -123,7 +124,7 @@ TEST(ApproximationTest, LinearQuadraticApproximatorComputesFinalCostAndLQ) {
 
   Approximator::OptimalControlProblem_t problem;
   Matrix<double, 2, 2> QFinal{{2.0, 0.0}, {0.0, 6.0}};
-  QuadraticStateCost<double, 2, 3> finalCost(QFinal, 0);
+  QuadraticStateCost<double, 2, 2, 3> finalCost(QFinal, 0);
   problem.finalCost.add(finalCost);
 
   Approximator::TargetTrajectories_t targetTrajectory;
@@ -137,8 +138,9 @@ TEST(ApproximationTest, LinearQuadraticApproximatorComputesFinalCostAndLQ) {
   Approximator::FinalMultiplierCollection_t multipliers;
   const double cost =
       Approximator::computeFinalCost(problem, targetTrajectory, 1.5, state);
-  const auto costApproximation =
-      Approximator::approximateFinalCost(problem, targetTrajectory, 1.5, state);
+  ScalarFunctionQuadraticApproximation<double, 2, 2> costApproximation;
+  Approximator::approximateFinalCost(problem, targetTrajectory, 1.5, state,
+                                     costApproximation);
   const auto modelData = Approximator::approximateFinalLQ(
       problem, targetTrajectory, 1.5, state, multipliers);
 

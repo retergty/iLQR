@@ -77,7 +77,7 @@ TEST_F(QuadraticCostTest, StateInputCostValue) {
 TEST_F(QuadraticCostTest, QuadraticCostsStoreExplicitCostNumber) {
   QuadraticStateInputCost<Scalar, XDim, UDim, ArrayLength> stateInputCost(
       Q_, R_, P_, 17);
-  QuadraticStateCost<Scalar, XDim, ArrayLength> stateCost(Qf_, 23);
+  QuadraticStateCost<Scalar, XDim, UDim, ArrayLength> stateCost(Qf_, 23);
 
   EXPECT_EQ(stateInputCost.number, 17);
   EXPECT_EQ(stateCost.number, 23);
@@ -106,7 +106,7 @@ TEST_F(QuadraticCostTest, StateInputCostApproximation) {
 }
 
 TEST_F(QuadraticCostTest, StateCostValue) {
-  QuadraticStateCost<Scalar, XDim, ArrayLength> costFunction(Qf_, 0);
+  QuadraticStateCost<Scalar, XDim, UDim, ArrayLength> costFunction(Qf_, 0);
 
   const auto cost =
       costFunction.getValue(t_, x_, timeTrajectory_, stateTrajectory_);
@@ -114,10 +114,10 @@ TEST_F(QuadraticCostTest, StateCostValue) {
 }
 
 TEST_F(QuadraticCostTest, StateCostApproximation) {
-  QuadraticStateCost<Scalar, XDim, ArrayLength> costFunction(Qf_, 0);
+  QuadraticStateCost<Scalar, XDim, UDim, ArrayLength> costFunction(Qf_, 0);
 
   auto approximation =
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>::Zero();
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>::Zero();
   costFunction.addQuadraticApproximation(t_, x_, timeTrajectory_,
                                          stateTrajectory_, approximation);
 

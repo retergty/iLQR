@@ -11,9 +11,10 @@
  * @brief 仅状态代价项集合：对多个 StateCost 求和得到总代价与总二次近似。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  * @tparam ArrayLength 轨迹长度。
  */
-template <typename Scalar, int XDim, int ArrayLength>
+template <typename Scalar, int XDim, int UDim, int ArrayLength>
 class StateCostCollection {
  public:
   StateCostCollection() = default;
@@ -33,30 +34,30 @@ class StateCostCollection {
     return cost;
   }
 
-  /** @brief 获取仅状态总代价的二次近似。 */
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
-  getQuadraticApproximation(
+  /**
+   * @brief 累加仅状态总代价的二次近似。
+   * @note 本接口不会清零 addAppro；调用方需自行管理初始化。
+   */
+  void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectories,
-      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoies) {
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> cost_appro;
-    cost_appro.setZero();
+      const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoies,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro) {
     for (auto it = list_.begin(); it != list_.end(); ++it) {
       if (it->isActive(time)) {
         it->addQuadraticApproximation(time, state, timeTrajectories,
-                                      stateTrajectoies, cost_appro);
+                                      stateTrajectoies, addAppro);
       }
     }
-    return cost_appro;
   }
 
   /** @brief 在链表末尾添加代价项。 */
-  void add(StateCost<Scalar, XDim, ArrayLength>& cost) {
+  void add(StateCost<Scalar, XDim, UDim, ArrayLength>& cost) {
     list_.insert(list_.end(), cost);
   }
 
  private:
-  IntrusiveList<StateCost<Scalar, XDim, ArrayLength>> list_;
+  IntrusiveList<StateCost<Scalar, XDim, UDim, ArrayLength>> list_;
 };
 
 /**
@@ -90,24 +91,24 @@ class StateInputCostCollection {
     return cost;
   }
 
-  /** 获取状态-输入代价二次近似。 */
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  getQuadraticApproximation(
+  /**
+   * @brief 累加状态-输入代价二次近似。
+   * @note 本接口不会清零 addAppro；调用方需自行管理初始化。
+   */
+  void addQuadraticApproximation(
       Scalar time, const Vector<Scalar, XDim>& state,
       const Vector<Scalar, UDim>& input,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
-      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory) {
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost_appro;
-    cost_appro.setZero();
+      const std::array<Vector<Scalar, UDim>, ArrayLength>& inputTrajectory,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro) {
     for (auto it = list_.begin(); it != list_.end(); ++it) {
       if (it->isActive(time)) {
         it->addQuadraticApproximation(time, state, input, timeTrajectory,
                                       stateTrajectoy, inputTrajectory,
-                                      cost_appro);
+                                      addAppro);
       }
     }
-    return cost_appro;
   }
 
   // 将代价加入列表尾部。

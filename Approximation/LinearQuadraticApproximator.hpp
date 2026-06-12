@@ -81,8 +81,8 @@ struct LinearQuadraticApproximator {
     modelData.time = time;
 
     // 代价。
-    modelData.cost =
-        approximateCost(problem, targetTrajectories, time, state, input);
+    approximateCost(problem, targetTrajectories, time, state, input,
+                    modelData.cost);
 
     // 拉格朗日项。
     if constexpr (StateEqConstraintDim != 0) {
@@ -146,8 +146,8 @@ struct LinearQuadraticApproximator {
     modelData.dynamics = finalDynamics;
 
     // 终端代价
-    modelData.cost =
-        approximateFinalCost(problem, targetTrajectories, time, state);
+    approximateFinalCost(problem, targetTrajectories, time, state,
+                         modelData.cost);
 
     // 拉格朗日项
     if constexpr (FinalStateEqConstraintDim != 0) {
@@ -211,12 +211,13 @@ struct LinearQuadraticApproximator {
    * 计算中间时刻总代价（即
    * cost + softConstraints）的二次近似。假定预计算请求
    * 已经发出。
+   * @note 由于集合接口采用 add 语义，这里会先对 outCost 清零。
    */
-  static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  approximateCost(OptimalControlProblem_t& problem,
-                  const TargetTrajectories_t& targetTrajectories,
-                  const Scalar time, const StateVector_t& state,
-                  const InputVector_t& input) {
+  static void approximateCost(
+      OptimalControlProblem_t& problem,
+      const TargetTrajectories_t& targetTrajectories, const Scalar time,
+      const StateVector_t& state, const InputVector_t& input,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& outCost) {
     const TimeTrajectory_t& targetTimeTrajectories =
         targetTrajectories.timeTrajectory;
     const StateTrajectory_t& targetStateTrajectories =
@@ -224,17 +225,12 @@ struct LinearQuadraticApproximator {
     const InputTrajectory_t& targetInputTrajectories =
         targetTrajectories.inputTrajectory;
 
-    // 获取状态-输入代价近似。
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost =
-        problem.cost.getQuadraticApproximation(
-            time, state, input, targetTimeTrajectories, targetStateTrajectories,
-            targetInputTrajectories);
-
-    // 获取仅状态代价近似。
-    cost += problem.stateCost.getQuadraticApproximation(
-        time, state, targetTimeTrajectories, targetStateTrajectories);
-
-    return cost;
+    outCost.setZero();
+    problem.cost.addQuadraticApproximation(
+        time, state, input, targetTimeTrajectories, targetStateTrajectories,
+        targetInputTrajectories, outCost);
+    problem.stateCost.addQuadraticApproximation(
+        time, state, targetTimeTrajectories, targetStateTrajectories, outCost);
   }
 
   /**
@@ -260,21 +256,21 @@ struct LinearQuadraticApproximator {
    * 计算终端总代价（即 cost +
    * softConstraints）的二次近似。假定预计算请求已经
    * 发出。
+   * @note 由于集合接口采用 add 语义，这里会先对 outCost 清零。
    */
-  static ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  approximateFinalCost(OptimalControlProblem_t& problem,
-                       const TargetTrajectories_t& targetTrajectories,
-                       const Scalar time, const StateVector_t& state) {
+  static void approximateFinalCost(
+      OptimalControlProblem_t& problem,
+      const TargetTrajectories_t& targetTrajectories, const Scalar time,
+      const StateVector_t& state,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& outCost) {
     const TimeTrajectory_t& targetTimeTrajectories =
         targetTrajectories.timeTrajectory;
     const StateTrajectory_t& targetStateTrajectories =
         targetTrajectories.stateTrajectory;
 
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> cost =
-        problem.finalCost.getQuadraticApproximation(
-            time, state, targetTimeTrajectories, targetStateTrajectories);
-
-    return cost;
+    outCost.setZero();
+    problem.finalCost.addQuadraticApproximation(
+        time, state, targetTimeTrajectories, targetStateTrajectories, outCost);
   }
 
   /**

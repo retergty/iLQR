@@ -72,10 +72,11 @@ getiLQRCost(
       cost.dfdxx, cost.dfduu, cost.dfdux, 0);
 }
 
-template <typename Scalar, int XDim, int ArrayLen>
-inline std::unique_ptr<StateCost<Scalar, XDim, ArrayLen>> getiLQRStateCost(
+template <typename Scalar, int XDim, int UDim, int ArrayLen>
+inline std::unique_ptr<StateCost<Scalar, XDim, UDim, ArrayLen>>
+getiLQRStateCost(
     const ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& costFinal) {
-  return std::make_unique<QuadraticStateCost<Scalar, XDim, ArrayLen>>(
+  return std::make_unique<QuadraticStateCost<Scalar, XDim, UDim, ArrayLen>>(
       costFinal.dfdxx, 0);
 }
 

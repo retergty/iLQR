@@ -11,11 +11,12 @@
  * @brief 仅状态代价项基类：按时间与状态计算代价值，并向给定对象累加二次近似。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  * @tparam ArrayLength 轨迹长度。
  */
-template <typename Scalar, int XDim, int ArrayLength>
+template <typename Scalar, int XDim, int UDim, int ArrayLength>
 class StateCost
-    : public IntrusiveListNode<StateCost<Scalar, XDim, ArrayLength>> {
+    : public IntrusiveListNode<StateCost<Scalar, XDim, UDim, ArrayLength>> {
  public:
   /** @brief 构造，cost_number 为代价项唯一标识。 */
   StateCost(int cost_number) : number(cost_number) {};
@@ -38,7 +39,7 @@ class StateCost
       Scalar time, const Vector<Scalar, XDim>& state,
       const std::array<Scalar, ArrayLength>& timeTrajectory,
       const std::array<Vector<Scalar, XDim>, ArrayLength>& stateTrajectoy,
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& addAppro) = 0;
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro) = 0;
 
   /** @brief 代价项唯一标识号。 */
   int number;

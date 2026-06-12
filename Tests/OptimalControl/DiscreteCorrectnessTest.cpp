@@ -57,7 +57,8 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
   using Dynamics_t = DiscreteLinearSystemDynamics<Scalar, STATE_DIM, INPUT_DIM>;
   using StateInputCost_t =
       StateInputCost<Scalar, STATE_DIM, INPUT_DIM, static_cast<int>(N + 1)>;
-  using FinalCost_t = StateCost<Scalar, STATE_DIM, static_cast<int>(N + 1)>;
+  using FinalCost_t =
+      StateCost<Scalar, STATE_DIM, INPUT_DIM, static_cast<int>(N + 1)>;
   using HardConstraint_t =
       StateInputConstraint<Scalar, STATE_DIM, INPUT_DIM, CONSTRAINT_DIM>;
   using Penalty_t = QuadraticPenalty<Scalar>;
@@ -121,13 +122,13 @@ class DiscreteDDPCorrectness : public testing::TestWithParam<unsigned> {
         test_tools::getiLQRCost<Scalar, STATE_DIM, INPUT_DIM,
                                 static_cast<int>(N + 1)>(runningCost);
     problem->qpFinalCostPtr =
-        test_tools::getiLQRStateCost<Scalar, STATE_DIM,
+        test_tools::getiLQRStateCost<Scalar, STATE_DIM, INPUT_DIM,
                                      static_cast<int>(N + 1)>(finalCost);
     problem->alCostPtr =
         test_tools::getiLQRCost<Scalar, STATE_DIM, INPUT_DIM,
                                 static_cast<int>(N + 1)>(runningCost);
     problem->alFinalCostPtr =
-        test_tools::getiLQRStateCost<Scalar, STATE_DIM,
+        test_tools::getiLQRStateCost<Scalar, STATE_DIM, INPUT_DIM,
                                      static_cast<int>(N + 1)>(finalCost);
 
     const auto hardConstraint =
