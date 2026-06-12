@@ -128,12 +128,22 @@ class StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
     (void)time;
     (void)state;
     (void)input;
-    ((std::tie(std::get<Is>(termsMultiplier.terms),
-               std::get<Is>(termsMetrics.terms).penalty) =
-          getTerm<Is>()->updateLagrangian(
-              time, state, input, std::get<Is>(termsMetrics.terms).constraint,
-              std::get<Is>(termsMultiplier.terms))),
+    (updateLagrangianTerm<Is>(time, state, input, termsMetrics,
+                              termsMultiplier),
      ...);
+  }
+
+  template <std::size_t I>
+  void updateLagrangianTerm(
+      const Scalar time, const Vector<Scalar, XDim>& state,
+      const Vector<Scalar, UDim>& input,
+      LagrangianMetricsGroup<Scalar, Layout>& termsMetrics,
+      MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
+    auto updated = getTerm<I>()->updateLagrangian(
+        time, state, input, std::get<I>(termsMetrics.terms).constraint,
+        std::get<I>(termsMultiplier.terms));
+    std::get<I>(termsMultiplier.terms) = updated.first;
+    std::get<I>(termsMetrics.terms).penalty = updated.second;
   }
 
   template <std::size_t... Is>
