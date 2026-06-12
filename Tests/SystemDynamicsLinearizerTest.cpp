@@ -52,14 +52,12 @@ class PendulumSystem final : public SystemDynamics {
     return StateVector{x(1), std::sin(x(0)) + 0.1 * u(0)};
   }
 
-  LinearApproximation linearApproximation(Scalar t, const StateVector& x,
-                                          const InputVector& u) override {
+  void linearApproximation(Scalar t, const StateVector& x, const InputVector& u,
+                           LinearApproximation& linearDynamics) override {
     (void)t;
-    LinearApproximation linearDynamics;
     linearDynamics.f = computeFlowMap(t, x, u);
     linearDynamics.dfdx = {{0.0, 1.0}, {std::cos(x(0)), 0.0}};
     linearDynamics.dfdu = {0.0, 0.1};
-    return linearDynamics;
   }
 };
 
@@ -135,8 +133,10 @@ TEST(testSystemDynamicsLinearizer, testPendulum) {
 bool derivativeChecker(SystemDynamics& sys1, SystemDynamics& sys2,
                        Scalar tolerance, Scalar t, const StateVector& x,
                        const InputVector& u) {
-  const auto derivatives1 = sys1.linearApproximation(t, x, u);
-  const auto derivatives2 = sys2.linearApproximation(t, x, u);
+  LinearApproximation derivatives1;
+  LinearApproximation derivatives2;
+  sys1.linearApproximation(t, x, u, derivatives1);
+  sys2.linearApproximation(t, x, u, derivatives2);
   const Scalar AError =
       (derivatives1.dfdx - derivatives2.dfdx).lpNorm<matrix::Infinity>();
   const Scalar BError =

@@ -51,7 +51,8 @@ TEST(SensitivityIntegratorTest, EulerSensitivityMatchesManualConstruction) {
   const StateVector x{0.2, -0.4};
   const InputVector u{0.7};
 
-  const LinearApproximation k1 = system.linearApproximation(t, x, u);
+  LinearApproximation k1;
+  system.linearApproximation(t, x, u, k1);
 
   LinearApproximation expected;
   expected.dfdx = StateMatrix::Identity() + dt * k1.dfdx;
@@ -78,9 +79,10 @@ TEST(SensitivityIntegratorTest, RK2SensitivityMatchesManualConstruction) {
   const StateVector x{0.2, -0.4};
   const InputVector u{0.7};
 
-  const LinearApproximation k1 = system.linearApproximation(t, x, u);
-  const LinearApproximation k2 =
-      system.linearApproximation(t + dt, x + dt * k1.f, u);
+  LinearApproximation k1;
+  system.linearApproximation(t, x, u, k1);
+  LinearApproximation k2;
+  system.linearApproximation(t + dt, x + dt * k1.f, u, k2);
 
   LinearApproximation expected;
   expected.dfdx = StateMatrix::Identity() + dtHalve * k1.dfdx +
@@ -111,13 +113,14 @@ TEST(SensitivityIntegratorTest, RK4SensitivityMatchesManualConstruction) {
   const StateVector x{0.2, -0.4};
   const InputVector u{0.7};
 
-  const LinearApproximation k1 = system.linearApproximation(t, x, u);
-  const LinearApproximation k2 =
-      system.linearApproximation(t + dtHalve, x + dtHalve * k1.f, u);
-  const LinearApproximation k3 =
-      system.linearApproximation(t + dtHalve, x + dtHalve * k2.f, u);
-  const LinearApproximation k4 =
-      system.linearApproximation(t + dt, x + dt * k3.f, u);
+  LinearApproximation k1;
+  system.linearApproximation(t, x, u, k1);
+  LinearApproximation k2;
+  system.linearApproximation(t + dtHalve, x + dtHalve * k1.f, u, k2);
+  LinearApproximation k3;
+  system.linearApproximation(t + dtHalve, x + dtHalve * k2.f, u, k3);
+  LinearApproximation k4;
+  system.linearApproximation(t + dt, x + dt * k3.f, u, k4);
 
   const StateMatrix dk1dxk = k1.dfdx;
   const StateMatrix dk2dxk = k2.dfdx + dtHalve * k2.dfdx * dk1dxk;

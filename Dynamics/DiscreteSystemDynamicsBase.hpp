@@ -44,28 +44,29 @@ class DiscreteSystemDynamicsBase
    * @param [in] x 当前状态 \f$ x_k \f$。
    * @param [in] u 当前输入 \f$ u_k \f$。
    * @param [in] dt 当前步长 \f$ t_{k+1} - t_k \f$。
-   * @return 包含名义下一状态、dfdx 和 dfdu 的离散一阶近似。
+   * @param [out] approximation 输出离散一阶近似，包含名义下一状态、dfdx 和
+   * dfdu。
    *
    * 返回值中的 dfdx 和 dfdu 表示离散映射
    * \f$ f_d(t_k,x_k,u_k,\Delta t) \f$ 对状态和输入的雅可比。
    * f 表示名义下一状态。
    */
-  virtual LinearApproximation_t linearApproximation(
-      Scalar t, const Vector<Scalar, XDim>& x, const Vector<Scalar, UDim>& u,
-      Scalar dt) = 0;
+  virtual void linearApproximation(Scalar t, const Vector<Scalar, XDim>& x,
+                                   const Vector<Scalar, UDim>& u, Scalar dt,
+                                   LinearApproximation_t& approximation) = 0;
 
   /**
    * @brief 计算离散偏差动力学近似，仅保留 dfdx、dfdu 并将常数项置零。
    *
    * 默认实现复用完整线性化以保持旧模型兼容。性能敏感模型可重写该函数，
    * 直接填充雅可比并避免计算名义下一状态。
+   * @param [out] approximation 输出偏差动力学线性近似。
    */
-  virtual LinearApproximation_t deviationLinearApproximation(
+  virtual void deviationLinearApproximation(
       Scalar t, const Vector<Scalar, XDim>& x, const Vector<Scalar, UDim>& u,
-      Scalar dt) {
-    LinearApproximation_t approximation = linearApproximation(t, x, u, dt);
+      Scalar dt, LinearApproximation_t& approximation) {
+    linearApproximation(t, x, u, dt, approximation);
     approximation.f.setZero();
-    return approximation;
   }
 
  protected:

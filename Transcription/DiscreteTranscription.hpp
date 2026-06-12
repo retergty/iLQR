@@ -60,8 +60,8 @@ class DiscreteTranscription {
     Approximator_t::approximateIntermediateCost(problem, targetTrajectories,
                                                 time, state, input, multipliers,
                                                 modelData);
-    modelData.dynamics = problem.dynamicsPtr->deviationLinearApproximation(
-        time, state, input, timeStep);
+    problem.dynamicsPtr->deviationLinearApproximation(
+        time, state, input, timeStep, modelData.dynamics);
   }
 
   /**

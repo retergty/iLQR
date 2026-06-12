@@ -46,7 +46,8 @@ TEST(DynamicsTest, LinearSystem_LinearApproximation) {
   const Vector<double, 2> x{1.0, 0.0};
   const Vector<double, 2> u{0.0, 1.0};
 
-  auto approx = dyn.linearApproximation(0.0, x, u);
+  LinearSystemDynamics<double, 2, 2>::LinearApproximation_t approx;
+  dyn.linearApproximation(0.0, x, u, approx);
 
   EXPECT_TRUE(approx.dfdx.isApprox(A, 1e-10));
   EXPECT_TRUE(approx.dfdu.isApprox(B, 1e-10));

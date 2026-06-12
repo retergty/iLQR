@@ -66,11 +66,11 @@ class SystemDynamicsLinearizer final
    * @param [in] t 当前时间。
    * @param [in] x 线性化状态。
    * @param [in] u 线性化输入。
-   * @return 线性近似 `(f, dfdx, dfdu)`。
+   * @param [out] linearDynamics 输出线性近似 `(f, dfdx, dfdu)`。
    */
-  VectorFunctionLinearApproximation_t linearApproximation(
-      Scalar t, const StateVector_t& x, const InputVector_t& u) override {
-    VectorFunctionLinearApproximation_t linearDynamics;
+  void linearApproximation(
+      Scalar t, const StateVector_t& x, const InputVector_t& u,
+      VectorFunctionLinearApproximation_t& linearDynamics) override {
     linearDynamics.f = controlledSystemPtr_->computeFlowMap(t, x, u);
     linearDynamics.dfdx = finiteDifferenceDerivativeState(
         *controlledSystemPtr_, t, x, u, eps_, doubleSidedDerivative_,
@@ -78,7 +78,6 @@ class SystemDynamicsLinearizer final
     linearDynamics.dfdu = finiteDifferenceDerivativeInput(
         *controlledSystemPtr_, t, x, u, eps_, doubleSidedDerivative_,
         isSecondOrderSystem_);
-    return linearDynamics;
   }
 
  private:

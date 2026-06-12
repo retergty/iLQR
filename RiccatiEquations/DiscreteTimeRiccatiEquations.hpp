@@ -67,6 +67,45 @@ class DiscreteTimeRiccatiEquations {
 
  private:
   /**
+   * @brief 仅在上三角执行累加：dst += lhs^T * rhs，并保持上三角有效。
+   *
+   * 该辅助函数用于已知结果应为对称矩阵的场景，避免对下三角重复计算。
+   * 计算完成后需调用 mirrorUpperToLower() 同步下三角。
+   *
+   * @tparam Rows lhs/rhs 的行数。
+   * @param [in,out] dst 目标方阵（仅上三角被更新）。
+   * @param [in] lhs 左矩阵（Rows x XDim）。
+   * @param [in] rhs 右矩阵（Rows x XDim）。
+   */
+  template <int Rows>
+  static void addTransposeProductUpper(
+      Matrix<Scalar, XDim, XDim>& dst,
+      const Matrix<Scalar, Rows, XDim>& lhs,
+      const Matrix<Scalar, Rows, XDim>& rhs) {
+    for (int i = 0; i < XDim; ++i) {
+      for (int k = i; k < XDim; ++k) {
+        Scalar sum = dst(i, k);
+        for (int j = 0; j < Rows; ++j) {
+          sum += lhs(j, i) * rhs(j, k);
+        }
+        dst(i, k) = sum;
+      }
+    }
+  }
+
+  /**
+   * @brief 将上三角镜像到下三角，恢复完整对称方阵。
+   * @param [in,out] matrix 输入上三角已正确的方阵。
+   */
+  static void mirrorUpperToLower(Matrix<Scalar, XDim, XDim>& matrix) {
+    for (int i = 1; i < XDim; ++i) {
+      for (int j = 0; j < i; ++j) {
+        matrix(i, j) = matrix(j, i);
+      }
+    }
+  }
+
+  /**
    * @brief iLQR 形式的一步 Riccati 差分方程实现（由 computeMap 调用）。
    * @param [in] modelData 当前节点模型数据。
    * @param [in] riccatiModification Riccati 修正。
@@ -113,10 +152,12 @@ class DiscreteTimeRiccatiEquations {
     // = Qm + deltaQm
     Sm = modelData.cost.dfdxx;
     Sm += riccatiModification.deltaQm_;
-    // += Am^T * Sm * Am, Sm is symmetry
-    Sm.addTransposeProduct(dreCache.Sm_Am_, modelData.dynamics.dfdx);
-    // += Gm^T * Km
-    Sm.addTransposeProduct(dreCache.Gm_, Km);
+    // += Am^T * Sm * Am 与 += Gm^T * Km 都是对称项：
+    // 仅计算上三角可避免下三角的重复乘加，最后再镜像恢复完整矩阵。
+    addTransposeProductUpper<XDim>(Sm, dreCache.Sm_Am_,
+                                   modelData.dynamics.dfdx);
+    addTransposeProductUpper<UDim>(Sm, dreCache.Gm_, Km);
+    mirrorUpperToLower(Sm);
 
     /*
      * Sv

@@ -123,27 +123,26 @@ class ThrustVectorDynamicSystem final
     }
   }
 
-  LinearApproximation_t linearApproximation(Scalar t,
-                                            const Vector<Scalar, STATE_DIM>& x,
-                                            const Vector<Scalar, INPUT_DIM>& u,
-                                            Scalar dt) override {
+  void linearApproximation(Scalar t, const Vector<Scalar, STATE_DIM>& x,
+                           const Vector<Scalar, INPUT_DIM>& u, Scalar dt,
+                           LinearApproximation_t& approximation) override {
     (void)t;
 
     updateCache(dt);
-    LinearApproximation_t approximation = cache_.approximation;
+    approximation = cache_.approximation;
     approximation.f = computeMapCached(x, u);
-    return approximation;
   }
 
-  LinearApproximation_t deviationLinearApproximation(
+  void deviationLinearApproximation(
       Scalar t, const Vector<Scalar, STATE_DIM>& x,
-      const Vector<Scalar, INPUT_DIM>& u, Scalar dt) override {
+      const Vector<Scalar, INPUT_DIM>& u, Scalar dt,
+      LinearApproximation_t& approximation) override {
     (void)t;
     (void)x;
     (void)u;
 
     updateCache(dt);
-    return cache_.approximation;
+    approximation = cache_.approximation;
   }
 
   Vector<Scalar, STATE_DIM> computeMap(Scalar t,
@@ -857,41 +856,41 @@ class ThrustDirectionChangeCost final
         lastThrustAccelerationJacobian;
     const Matrix<Scalar, 3, 3> commandAccelerationJacobian =
         alpha_ * thrustAccelerationJacobian;
-    const Matrix<Scalar, 3, 3> inputAccelerationJacobian =
-        commandAccelerationJacobian;
 
     const Scalar gate =
         lowAccelerationGate(lastThrustAcceleration, thrustAcceleration);
     const Scalar effectiveWeight = gate * weight_;
+    // 命令状态 x(6:8) 与输入 u 经过相同的链路雅可比（均为 alpha * J），
+    // 因此其一阶项可共享同一中间量。
+    const Vector<Scalar, 3> effectiveGradient =
+        effectiveWeight * effectiveAccelerationJacobian.transpose() * rk;
+    const Vector<Scalar, 3> commandGradient =
+        effectiveWeight * commandAccelerationJacobian.transpose() * rk;
+    // 预先构造对称块，复用到 dfdxx/dfduu/dfdux，避免重复 3x3 矩阵乘法。
+    const Matrix<Scalar, 3, 3> effectiveHessian =
+        effectiveWeight * effectiveAccelerationJacobian.transpose() *
+        effectiveAccelerationJacobian;
+    const Matrix<Scalar, 3, 3> effectiveCommandHessian =
+        effectiveWeight * effectiveAccelerationJacobian.transpose() *
+        commandAccelerationJacobian;
+    const Matrix<Scalar, 3, 3> commandHessian =
+        effectiveWeight * commandAccelerationJacobian.transpose() *
+        commandAccelerationJacobian;
 
     addAppro.f += Scalar(0.5) * effectiveWeight * rk.dot(rk);
-    addAppro.dfdx.template segment<3>(3) +=
-        effectiveWeight * effectiveAccelerationJacobian.transpose() * rk;
-    addAppro.dfdx.template segment<3>(6) +=
-        effectiveWeight * commandAccelerationJacobian.transpose() * rk;
-    addAppro.dfdu +=
-        effectiveWeight * inputAccelerationJacobian.transpose() * rk;
+    addAppro.dfdx.template segment<3>(3) += effectiveGradient;
+    addAppro.dfdx.template segment<3>(6) += commandGradient;
+    addAppro.dfdu += commandGradient;
 
-    addAppro.dfdxx.template slice<3, 3>(3, 3) +=
-        effectiveWeight * effectiveAccelerationJacobian.transpose() *
-        effectiveAccelerationJacobian;
-    addAppro.dfdxx.template slice<3, 3>(3, 6) +=
-        effectiveWeight * effectiveAccelerationJacobian.transpose() *
-        commandAccelerationJacobian;
+    addAppro.dfdxx.template slice<3, 3>(3, 3) += effectiveHessian;
+    addAppro.dfdxx.template slice<3, 3>(3, 6) += effectiveCommandHessian;
     addAppro.dfdxx.template slice<3, 3>(6, 3) +=
-        effectiveWeight * commandAccelerationJacobian.transpose() *
-        effectiveAccelerationJacobian;
-    addAppro.dfdxx.template slice<3, 3>(6, 6) +=
-        effectiveWeight * commandAccelerationJacobian.transpose() *
-        commandAccelerationJacobian;
-    addAppro.dfduu += effectiveWeight * inputAccelerationJacobian.transpose() *
-                      inputAccelerationJacobian;
+        effectiveCommandHessian.transpose();
+    addAppro.dfdxx.template slice<3, 3>(6, 6) += commandHessian;
+    addAppro.dfduu += commandHessian;
     addAppro.dfdux.template slice<3, 3>(0, 3) +=
-        effectiveWeight * inputAccelerationJacobian.transpose() *
-        effectiveAccelerationJacobian;
-    addAppro.dfdux.template slice<3, 3>(0, 6) +=
-        effectiveWeight * inputAccelerationJacobian.transpose() *
-        commandAccelerationJacobian;
+        effectiveCommandHessian.transpose();
+    addAppro.dfdux.template slice<3, 3>(0, 6) += commandHessian;
   }
 
  private:

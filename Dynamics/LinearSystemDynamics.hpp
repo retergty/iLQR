@@ -31,31 +31,27 @@ class LinearSystemDynamics : public SystemDynamicsBase<Scalar, XDim, UDim> {
     return f;
   }
 
-  /** @brief 返回完整线性近似：dfdx=A, dfdu=B, f=A*x+B*u。 */
-  LinearApproximation_t linearApproximation(
-      Scalar t, const Vector<Scalar, XDim>& x,
-      const Vector<Scalar, UDim>& u) override {
+  /** @brief 输出完整线性近似：dfdx=A, dfdu=B, f=A*x+B*u。 */
+  void linearApproximation(Scalar t, const Vector<Scalar, XDim>& x,
+                           const Vector<Scalar, UDim>& u,
+                           LinearApproximation_t& approximation) override {
     (void)t;
-    LinearApproximation_t approximation;
     approximation.f = A_ * x;
     approximation.f += B_ * u;
     approximation.dfdx = A_;
     approximation.dfdu = B_;
-    return approximation;
   }
 
-  /** @brief 返回偏差动力学近似：dfdx=A, dfdu=B, f=0。 */
-  LinearApproximation_t deviationLinearApproximation(
-      Scalar t, const Vector<Scalar, XDim>& x,
-      const Vector<Scalar, UDim>& u) override {
+  /** @brief 输出偏差动力学近似：dfdx=A, dfdu=B, f=0。 */
+  void deviationLinearApproximation(
+      Scalar t, const Vector<Scalar, XDim>& x, const Vector<Scalar, UDim>& u,
+      LinearApproximation_t& approximation) override {
     (void)t;
     (void)x;
     (void)u;
-    LinearApproximation_t approximation;
     approximation.f.setZero();
     approximation.dfdx = A_;
     approximation.dfdu = B_;
-    return approximation;
   }
 
  protected:

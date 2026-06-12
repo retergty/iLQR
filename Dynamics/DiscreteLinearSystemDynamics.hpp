@@ -58,31 +58,26 @@ class DiscreteLinearSystemDynamics
     return nextState;
   }
 
-  /** @brief 返回完整离散线性近似：dfdx=A, dfdu=B, f=A*x+B*u+b。 */
-  LinearApproximation_t linearApproximation(Scalar t,
-                                            const Vector<Scalar, XDim>& x,
-                                            const Vector<Scalar, UDim>& u,
-                                            Scalar dt) override {
-    LinearApproximation_t approximation;
+  /** @brief 输出完整离散线性近似：dfdx=A, dfdu=B, f=A*x+B*u+b。 */
+  void linearApproximation(Scalar t, const Vector<Scalar, XDim>& x,
+                           const Vector<Scalar, UDim>& u, Scalar dt,
+                           LinearApproximation_t& approximation) override {
     approximation.f = computeMap(t, x, u, dt);
     approximation.dfdx = A_;
     approximation.dfdu = B_;
-    return approximation;
   }
 
-  /** @brief 返回离散偏差动力学近似：dfdx=A, dfdu=B, f=0。 */
-  LinearApproximation_t deviationLinearApproximation(
+  /** @brief 输出离散偏差动力学近似：dfdx=A, dfdu=B, f=0。 */
+  void deviationLinearApproximation(
       Scalar t, const Vector<Scalar, XDim>& x, const Vector<Scalar, UDim>& u,
-      Scalar dt) override {
+      Scalar dt, LinearApproximation_t& approximation) override {
     (void)t;
     (void)x;
     (void)u;
     (void)dt;
-    LinearApproximation_t approximation;
     approximation.f.setZero();
     approximation.dfdx = A_;
     approximation.dfdu = B_;
-    return approximation;
   }
 
  protected:

@@ -52,15 +52,14 @@ class CircularKinematicsSystem final
     return u;
   }
 
-  VectorFunctionLinearApproximation<Scalar, STATE_DIM, STATE_DIM, INPUT_DIM>
-  linearApproximation(Scalar t, const Vector<Scalar, STATE_DIM>& x,
-                      const Vector<Scalar, INPUT_DIM>& u) override {
-    VectorFunctionLinearApproximation<Scalar, STATE_DIM, STATE_DIM, INPUT_DIM>
-        dynamics;
+  void linearApproximation(
+      Scalar t, const Vector<Scalar, STATE_DIM>& x,
+      const Vector<Scalar, INPUT_DIM>& u,
+      VectorFunctionLinearApproximation<Scalar, STATE_DIM, STATE_DIM,
+                                        INPUT_DIM>& dynamics) override {
     dynamics.f = computeFlowMap(t, x, u);
     dynamics.dfdx.setZero();
     dynamics.dfdu.setIdentity();
-    return dynamics;
   }
 };
 

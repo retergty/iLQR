@@ -89,8 +89,9 @@ TEST(ApproximationTest,
   Approximator::IntermediateMultiplierCollection_t multipliers;
   const auto modelData = Approximator::approximateIntermediateCost(
       problem, targetTrajectory, 0.5, state, input, multipliers);
-  const auto dynamicsApproximation =
-      dynamics.linearApproximation(0.5, state, input);
+  LinearSystemDynamics<double, 2, 2>::LinearApproximation_t
+      dynamicsApproximation;
+  dynamics.linearApproximation(0.5, state, input, dynamicsApproximation);
 
   const Vector<double, 2> expectedDfdx{13.5, 37.5};
   const Vector<double, 2> expectedDfdu{10.5, -2.5};

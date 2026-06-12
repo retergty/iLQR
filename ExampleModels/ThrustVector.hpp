@@ -82,26 +82,24 @@ class ThrustVectorDynamicSystem final
     }
   }
 
-  LinearApproximation_t linearApproximation(Scalar t,
-                                            const Vector<Scalar, STATE_DIM>& x,
-                                            const Vector<Scalar, INPUT_DIM>& u,
-                                            Scalar dt) override {
-    LinearApproximation_t approximation;
+  void linearApproximation(Scalar t, const Vector<Scalar, STATE_DIM>& x,
+                           const Vector<Scalar, INPUT_DIM>& u, Scalar dt,
+                           LinearApproximation_t& approximation) override {
     approximation.f = computeMap(t, x, u, dt);
     approximation.dfdx = cache_.A;
     approximation.dfdu = cache_.approximation.dfdu;
-    return approximation;
   }
 
-  LinearApproximation_t deviationLinearApproximation(
+  void deviationLinearApproximation(
       Scalar t, const Vector<Scalar, STATE_DIM>& x,
-      const Vector<Scalar, INPUT_DIM>& u, Scalar dt) override {
+      const Vector<Scalar, INPUT_DIM>& u, Scalar dt,
+      LinearApproximation_t& approximation) override {
     (void)t;
     (void)x;
     (void)u;
 
     updateCache(dt);
-    return cache_.approximation;
+    approximation = cache_.approximation;
   }
   Vector<Scalar, STATE_DIM> computeMap(Scalar t,
                                        const Vector<Scalar, STATE_DIM>& x,

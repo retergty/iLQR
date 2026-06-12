@@ -41,22 +41,24 @@ class SystemDynamicsBase : public ControlledSystemBase<Scalar, XDim, UDim> {
    * @param [in] t 当前时间。
    * @param [in] x 当前状态。
    * @param [in] u 当前输入。
-   * @return 包含 \f$f_{nom}=f(t,x,u)\f$、dfdx 和 dfdu 的线性近似。
+   * @param [out] approximation 输出线性近似，包含
+   * \f$f_{nom}=f(t,x,u)\f$、dfdx 和 dfdu。
    */
-  virtual LinearApproximation_t linearApproximation(
-      Scalar t, const Vector<Scalar, XDim>& x,
-      const Vector<Scalar, UDim>& u) = 0;
+  virtual void linearApproximation(Scalar t, const Vector<Scalar, XDim>& x,
+                                   const Vector<Scalar, UDim>& u,
+                                   LinearApproximation_t& approximation) = 0;
 
   /**
    * @brief 计算偏差动力学近似，仅保留 dfdx、dfdu 并将常数项置零。
    *
    * 默认实现复用完整线性化以保持旧模型兼容。性能敏感模型可重写该函数，
    * 直接填充雅可比并避免计算 \f$f_{nom}\f$。
+   * @param [out] approximation 输出偏差动力学线性近似。
    */
-  virtual LinearApproximation_t deviationLinearApproximation(
-      Scalar t, const Vector<Scalar, XDim>& x, const Vector<Scalar, UDim>& u) {
-    LinearApproximation_t approximation = linearApproximation(t, x, u);
+  virtual void deviationLinearApproximation(
+      Scalar t, const Vector<Scalar, XDim>& x, const Vector<Scalar, UDim>& u,
+      LinearApproximation_t& approximation) {
+    linearApproximation(t, x, u, approximation);
     approximation.f.setZero();
-    return approximation;
   }
 };

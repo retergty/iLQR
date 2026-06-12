@@ -77,7 +77,8 @@ class EulerDynamicsDiscretizer
     // B_{k} = dt * dfdu。
     // b_{k} = x_{n} + dt * f(x_{n},u_{n})
     VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim>
-        continuousApproximation = system.linearApproximation(t, x, u);
+        continuousApproximation;
+    system.linearApproximation(t, x, u, continuousApproximation);
     continuousApproximation.dfdx *= dt;
     continuousApproximation.dfdx +=
         Matrix<Scalar, XDim, XDim>::Identity();  // 加上 Identity()。
@@ -115,10 +116,10 @@ class EK2DynamicsDiscretizer
     const Scalar dt_halve = dt / Scalar(2.0);
 
     // 系统评估
-    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k1 =
-        system.linearApproximation(t, x, u);
-    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k2 =
-        system.linearApproximation(t + dt, x + dt * k1.f, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k1;
+    system.linearApproximation(t, x, u, k1);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k2;
+    system.linearApproximation(t + dt, x + dt * k1.f, u, k2);
 
     // 输入灵敏度 \dot{Su} = dfdx(t) Su + dfdu(t)，且 Su(0) = Zero()。
     // 复用 k.dfdu 的内存作为 dkduk。
@@ -175,17 +176,17 @@ class EK4DynamicsDiscretizer
     const Scalar dt_third = dt / Scalar(3.0);
 
     // 系统评估
-    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k1 =
-        system.linearApproximation(t, x, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k1;
+    system.linearApproximation(t, x, u, k1);
     Vector<Scalar, XDim> tmpV = x + dt_halve * k1.f;
-    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k2 =
-        system.linearApproximation(t + dt_halve, tmpV, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k2;
+    system.linearApproximation(t + dt_halve, tmpV, u, k2);
     tmpV = x + dt_halve * k2.f;
-    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k3 =
-        system.linearApproximation(t + dt_halve, tmpV, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k3;
+    system.linearApproximation(t + dt_halve, tmpV, u, k3);
     tmpV = x + dt * k3.f;
-    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k4 =
-        system.linearApproximation(t + dt, tmpV, u);
+    VectorFunctionLinearApproximation<Scalar, XDim, XDim, UDim> k4;
+    system.linearApproximation(t + dt, tmpV, u, k4);
 
     // 输入灵敏度 \dot{Su} = dfdx(t) Su + dfdu(t)，且 Su(0) = Zero()。
     // 复用 k.dfdu 的内存作为 dkduk。
