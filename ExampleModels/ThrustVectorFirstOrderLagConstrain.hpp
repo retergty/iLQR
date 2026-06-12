@@ -795,18 +795,23 @@ class ThrustCommandAccelerationConstraint final
       const Vector<Scalar, INPUT_DIM>& input) const override {
     (void)time;
 
-    const CommandAcceleration aCmd = commandAcceleration(state, input);
-    const CommandThrustAcceleration aT = commandThrustAcceleration(aCmd);
-    const Scalar radialNorm =
-        std::sqrt(aT.ax * aT.ax + aT.ay * aT.ay + coneSmoothing_);
+    const CommandAcceleration commandAcceleration =
+        computeCommandAcceleration(state, input);
+    const ThrustAcceleration thrustAcceleration =
+        computeThrustAcceleration(commandAcceleration);
+    const Scalar radialNorm = std::sqrt(
+        thrustAcceleration.ax * thrustAcceleration.ax +
+        thrustAcceleration.ay * thrustAcceleration.ay + coneSmoothing_);
 
     Vector<Scalar, 2> value;
     // h_cone >= 0: sqrt(t_x^2 + t_y^2) <= -tan(theta) * t_z
-    value(0) = -tanMaxTiltAngle_ * aT.az - radialNorm;
+    value(0) = -tanMaxTiltAngle_ * thrustAcceleration.az - radialNorm;
     // h_ellip >= 0: total command acceleration stays inside the ellipsoid.
-    value(1) = Scalar(1) - inverseAxMaxSquared_ * aCmd.ax * aCmd.ax -
-               inverseAyMaxSquared_ * aCmd.ay * aCmd.ay -
-               inverseAzMaxSquared_ * aCmd.az * aCmd.az;
+    value(1) =
+        Scalar(1) -
+        inverseAxMaxSquared_ * commandAcceleration.ax * commandAcceleration.ax -
+        inverseAyMaxSquared_ * commandAcceleration.ay * commandAcceleration.ay -
+        inverseAzMaxSquared_ * commandAcceleration.az * commandAcceleration.az;
     return value;
   }
 
@@ -821,26 +826,32 @@ class ThrustCommandAccelerationConstraint final
     approximation.setZero();
     approximation.f = getValue(time, state, input);
 
-    const CommandAcceleration aCmd = commandAcceleration(state, input);
-    const CommandThrustAcceleration aT = commandThrustAcceleration(aCmd);
+    const CommandAcceleration commandAcceleration =
+        computeCommandAcceleration(state, input);
+    const ThrustAcceleration thrustAcceleration =
+        computeThrustAcceleration(commandAcceleration);
 
     // ----- 约束 0：锥约束 h_cone -----
     const Scalar radialNormSquared =
-        aT.ax * aT.ax + aT.ay * aT.ay + coneSmoothing_;
+        thrustAcceleration.ax * thrustAcceleration.ax +
+        thrustAcceleration.ay * thrustAcceleration.ay + coneSmoothing_;
     const Scalar radialNorm = std::sqrt(radialNormSquared);
     const Scalar inverseRadialNorm = Scalar(1) / radialNorm;
     const Scalar inverseRadialNormCubed =
         inverseRadialNorm * inverseRadialNorm * inverseRadialNorm;
 
-    const Scalar coneDax = -aT.ax * inverseRadialNorm;
-    const Scalar coneDay = -aT.ay * inverseRadialNorm;
+    const Scalar coneDax = -thrustAcceleration.ax * inverseRadialNorm;
+    const Scalar coneDay = -thrustAcceleration.ay * inverseRadialNorm;
     const Scalar coneDaz = -tanMaxTiltAngle_;
 
-    const Scalar coneDaxDax =
-        -inverseRadialNorm + aT.ax * aT.ax * inverseRadialNormCubed;
-    const Scalar coneDayDay =
-        -inverseRadialNorm + aT.ay * aT.ay * inverseRadialNormCubed;
-    const Scalar coneDaxDay = aT.ax * aT.ay * inverseRadialNormCubed;
+    const Scalar coneDaxDax = -inverseRadialNorm + thrustAcceleration.ax *
+                                                       thrustAcceleration.ax *
+                                                       inverseRadialNormCubed;
+    const Scalar coneDayDay = -inverseRadialNorm + thrustAcceleration.ay *
+                                                       thrustAcceleration.ay *
+                                                       inverseRadialNormCubed;
+    const Scalar coneDaxDay =
+        thrustAcceleration.ax * thrustAcceleration.ay * inverseRadialNormCubed;
 
     approximation.dfdx(0, 6) = coneDax;
     approximation.dfdx(0, 7) = coneDay;
@@ -865,9 +876,12 @@ class ThrustCommandAccelerationConstraint final
     approximation.dfdux[0](1, 6) = coneDaxDay;
 
     // ----- 约束 1：椭球约束 h_ellip（总加速度） -----
-    const Scalar ellipDax = -Scalar(2) * inverseAxMaxSquared_ * aCmd.ax;
-    const Scalar ellipDay = -Scalar(2) * inverseAyMaxSquared_ * aCmd.ay;
-    const Scalar ellipDaz = -Scalar(2) * inverseAzMaxSquared_ * aCmd.az;
+    const Scalar ellipDax =
+        -Scalar(2) * inverseAxMaxSquared_ * commandAcceleration.ax;
+    const Scalar ellipDay =
+        -Scalar(2) * inverseAyMaxSquared_ * commandAcceleration.ay;
+    const Scalar ellipDaz =
+        -Scalar(2) * inverseAzMaxSquared_ * commandAcceleration.az;
 
     const Scalar ellipDaxDax = -Scalar(2) * inverseAxMaxSquared_;
     const Scalar ellipDayDay = -Scalar(2) * inverseAyMaxSquared_;
@@ -902,19 +916,19 @@ class ThrustCommandAccelerationConstraint final
     Scalar az;
   };
 
-  struct CommandThrustAcceleration {
+  struct ThrustAcceleration {
     Scalar ax;
     Scalar ay;
     Scalar az;
   };
 
-  static CommandAcceleration commandAcceleration(
+  static CommandAcceleration computeCommandAcceleration(
       const Vector<Scalar, STATE_DIM>& state,
       const Vector<Scalar, INPUT_DIM>& input) {
     return {state(6) + input(0), state(7) + input(1), state(8) + input(2)};
   }
 
-  CommandThrustAcceleration commandThrustAcceleration(
+  ThrustAcceleration computeThrustAcceleration(
       const CommandAcceleration& commandAcceleration) const {
     return {commandAcceleration.ax, commandAcceleration.ay,
             commandAcceleration.az - gravity_};
