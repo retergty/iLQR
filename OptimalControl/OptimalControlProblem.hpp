@@ -68,21 +68,21 @@ struct OptimalControlProblem {
                                           StateInputEqLayout>
       equalityLagrangian;
   /** @brief 仅状态等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim, StateEqLayout>
+  StateAugmentedLagrangianCollection<Scalar, XDim, UDim, StateEqLayout>
       stateEqualityLagrangian;
   /** @brief 状态-输入不等式约束增广拉格朗日。 */
   StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
                                           StateInputIneqLayout>
       inequalityLagrangian;
   /** @brief 仅状态不等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim, StateIneqLayout>
+  StateAugmentedLagrangianCollection<Scalar, XDim, UDim, StateIneqLayout>
       stateInequalityLagrangian;
 
   /** @brief 终端等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim, FinalStateEqLayout>
+  StateAugmentedLagrangianCollection<Scalar, XDim, UDim, FinalStateEqLayout>
       finalEqualityLagrangian;
   /** @brief 终端不等式约束增广拉格朗日。 */
-  StateAugmentedLagrangianCollection<Scalar, XDim, FinalStateIneqLayout>
+  StateAugmentedLagrangianCollection<Scalar, XDim, UDim, FinalStateIneqLayout>
       finalInequalityLagrangian;
 
   /** @brief 系统动力学指针，类型由 Transcription::DynamicsMode 决定。 */

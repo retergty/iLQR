@@ -14,8 +14,9 @@
  * 仅状态约束的增广拉格朗日惩罚接口：提供取值、二次近似、乘子更新与初始化。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  */
-template <typename Scalar, int XDim, int CDim>
+template <typename Scalar, int XDim, int UDim, int CDim>
 class StateAugmentedLagrangianInterface {
  public:
   StateAugmentedLagrangianInterface() = default;
@@ -30,7 +31,7 @@ class StateAugmentedLagrangianInterface {
   virtual void addQuadraticApproximation(
       const Scalar time, const Vector<Scalar, XDim>& state,
       const Multiplier<Scalar, CDim>& multiplier,
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& addAppro)
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro)
       const = 0;
 
   /** @brief 更新拉格朗日/惩罚乘子并返回更新后乘子与惩罚值。 */

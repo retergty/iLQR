@@ -44,7 +44,8 @@ class DoubleIntegratorReachingTask {
       LinearStateConstraint<Scalar, STATE_DIM, GOAL_CONSTRAINT_DIM>;
   using GoalPenalty_t = QuadraticPenalty<Scalar>;
   using GoalAugmentedLagrangian_t =
-      StateAugmentedLagrangian<Scalar, STATE_DIM, GOAL_CONSTRAINT_DIM>;
+      StateAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM,
+                               GOAL_CONSTRAINT_DIM>;
 
   DoubleIntegratorReachingTask() = default;
   virtual ~DoubleIntegratorReachingTask() = default;

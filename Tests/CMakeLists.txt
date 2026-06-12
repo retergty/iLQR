@@ -52,6 +52,7 @@ set(TEST_SOURCES
     OptimalControl/CircularKinematicsSmoothAbsolutePenaltyTest.cpp
     OptimalControl/ThrustVectorTest.cpp
     OptimalControl/ThrustVectorFirstOrderLagTest.cpp
+    OptimalControl/ThrustVectorFirstOrderLagConstrainTest.cpp
 )
 
 # 循环添加所有测试
@@ -85,6 +86,7 @@ endforeach()
 set(PERF_SOURCES
     OptimalControl/ThrustVectorPerfTest.cpp
     OptimalControl/ThrustVectorFirstOrderLagPerfTest.cpp
+    OptimalControl/ThrustVectorFirstOrderLagConstrainPerfTest.cpp
 )
 
 foreach(perf_source ${PERF_SOURCES})

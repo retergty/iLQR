@@ -16,10 +16,11 @@
  * 计算取值与二次近似。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  */
-template <typename Scalar, int XDim, int CDim>
+template <typename Scalar, int XDim, int UDim, int CDim>
 class StateAugmentedLagrangian final
-    : public StateAugmentedLagrangianInterface<Scalar, XDim, CDim> {
+    : public StateAugmentedLagrangianInterface<Scalar, XDim, UDim, CDim> {
  public:
   /**
    * @brief 用约束指针与惩罚指针构造。
@@ -42,7 +43,7 @@ class StateAugmentedLagrangian final
   void addQuadraticApproximation(
       const Scalar time, const Vector<Scalar, XDim>& state,
       const Multiplier<Scalar, CDim>& multiplier,
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& addAppro)
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro)
       const override {
     switch (constraintPtr_->getOrder()) {
       case ConstraintOrder::Linear:
@@ -81,5 +82,5 @@ class StateAugmentedLagrangian final
 
  private:
   StateConstraint<Scalar, XDim, CDim>* constraintPtr_;
-  MultidimensionalPenalty<Scalar, XDim, 0, CDim> penalty_;
+  MultidimensionalPenalty<Scalar, XDim, UDim, CDim> penalty_;
 };

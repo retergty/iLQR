@@ -318,7 +318,7 @@ a_{\mathrm{cmd},k}^N
 a_{\mathrm{cmd},k-1}^N+U_k
 $$
 
-该项约束的是当前周期实际准备发送给下游的命令总加速度，而不是上一拍命令状态本身。它给优化器提供了“命令总量应回到参考平衡点”的软约束，使 $R$ 负责限制命令变化速度，$R_a$ 负责限制命令总量长期漂移。工程实现中，$a_{\mathrm{cmd,ref},k}^N$ 通常可取当前实际命令或由上层规划给出的期望命令轨迹；若只希望抑制漂移而不引入额外前馈，常值参考取当前已发送命令即可。
+该项约束的是当前周期实际准备发送给下游的命令总加速度，而不是上一拍命令状态本身。它给优化器提供了“命令总量应回到参考平衡点”的软约束，使 $R$ 负责限制命令变化速度，$R_a$ 负责限制命令总量长期漂移。实际应用中，$a_{\mathrm{cmd,ref},k}^N$ 通常可取当前实际命令或由上层规划给出的期望命令轨迹；若只希望抑制漂移而不引入额外前馈，常值参考取当前已发送命令即可。
 
 定义选择矩阵：
 
@@ -372,7 +372,7 @@ $$
 R_a S_{\mathrm{cmd}}
 $$
 
-在当前实现中，该项已整合进 `TrackCost`，与速度跟踪和输入增量代价一次性返回同一个二次近似；对角线版本只取 $Q_v$、$R$ 和 $R_a$ 的对角线，以减少小维度 MPC 中的矩阵运算开销。
+该项可与速度跟踪和输入增量代价合并成同一个阶段代价二次近似；若权重矩阵取对角形式，可进一步减少小维度 MPC 中的矩阵运算开销。
 
 ## 推力加速度方向变化代价
 
@@ -587,7 +587,7 @@ $$
 \gamma_k w_{\mathrm{angle}} J_{r,u}^T J_{r,x}
 $$
 
-该近似忽略归一化残差的二阶导项，可保持 Hessian 半正定，更利于 iLQR 反向 Riccati 递推的数值稳定性。
+该近似忽略归一化残差的二阶导项，可保持 Hessian 半正定，更利于局部二次优化反向递推的数值稳定性。
 
 ## 低推力加速度门控
 
@@ -608,36 +608,46 @@ $$
 \frac{s^2}{s^2+a_{\min}^2}
 $$
 
-在局部二次近似中，工程上可在当前名义点计算 $\gamma_k$，并将其作为常量权重处理，从而避免门控函数的导数破坏 Gauss-Newton Hessian 的半正定结构。
+在局部二次近似中，可在当前名义点计算 $\gamma_k$，并将其作为常量权重处理，从而避免门控函数的导数破坏 Gauss-Newton Hessian 的半正定结构。
 
 ## 约束
 
-本节给出推力加速度命令的几何与幅值约束。约束对象选取当前控制周期将要发送给下游的命令总加速度对应的推力加速度，而不是实际生效推力加速度：
+本节给出当前控制周期将要发送给下游的命令约束。锥约束与 $z$ 轴防反推约束作用在命令总加速度对应的推力加速度上；椭球约束作用在命令总加速度本身，使悬停附近的总加速度平衡点位于原点。
+
+$$
+a_{\mathrm{cmd},k}^N
+:=
+S_{\mathrm{cmd}}X_k+U_k
+$$
+
+对应的命令推力加速度为：
 
 $$
 a_{T,\mathrm{cmd},k}^N
-:=
+=
 a_{\mathrm{cmd},k}^N
 -
 g e_3
 $$
 
-其中：
+为避免混淆，记命令总加速度为：
 
 $$
+c_k
+:=
 a_{\mathrm{cmd},k}^N
 =
 S_{\mathrm{cmd}}X_k+U_k
 $$
 
-因此：
+命令推力加速度为：
 
 $$
 y_k
 :=
 a_{T,\mathrm{cmd},k}^N
 =
-S_{\mathrm{cmd}}X_k+U_k-g e_3
+c_k-g e_3
 $$
 
 记：
@@ -645,21 +655,28 @@ $$
 $$
 y_k =
 \begin{bmatrix}
+t_x \\
+t_y \\
+t_z
+\end{bmatrix},
+\quad
+c_k =
+\begin{bmatrix}
 a_x \\
 a_y \\
 a_z
 \end{bmatrix}
 $$
 
-当前坐标系为 NED，$e_3=[0,0,1]^T$ 指向 Down 方向，重力总加速度为 $g e_3$。悬停附近总加速度 $a_{\mathrm{cmd},k}^N \approx 0$，对应推力加速度 $a_{T,\mathrm{cmd},k}^N \approx -g e_3$，因此正常上推时有 $a_z<0$。
+当前坐标系为 NED，$e_3=[0,0,1]^T$ 指向 Down 方向，重力总加速度为 $g e_3$。悬停附近总加速度 $c_k \approx 0$，对应推力加速度 $y_k \approx -g e_3$，因此正常上推时有 $t_z<0$。
 
-在当前 iLQR 约束实现中，`Constraint` 返回的约束值经 `AugmentedLagrangian` 与 `Penalties` 转换为附加代价。不等式建议统一写成：
+不等式约束统一写成：
 
 $$
 h(X_k,U_k) \ge 0
 $$
 
-例如 `SlacknessSquaredHingePenalty` 在 $h$ 变小或小于零时激活惩罚并更新非负乘子；当 $h$ 充分为正时，该约束分量对局部二次子问题的导数趋近于零。由于 $a_{T,\mathrm{cmd},k}^N$ 包含当前输入增量 $U_k$，这些约束应实现为状态-输入约束 `StateInputConstraint`，而不是仅依赖状态的 `StateConstraint`。`StateConstraint` 只适合 $h(X_k)$，其近似只返回对状态的导数；本节约束的最终导数需要同时给出对 $X_k$ 和 $U_k$ 的 Jacobian。工程实现时可将以下三个约束组合为一个 3 维状态-输入不等式约束：
+由于 $c_k$ 与 $y_k$ 都包含当前输入增量 $U_k$，这些约束是状态-输入不等式约束，而不是仅依赖状态的约束。局部二次优化时需要同时给出对 $X_k$ 和 $U_k$ 的 Jacobian。可将以下三个约束组合为一个 3 维状态-输入不等式约束：
 
 $$
 h(X_k,U_k)
@@ -677,9 +694,9 @@ $$
 锥约束限制推力加速度相对竖直上推方向的偏转角不超过 $\theta$：
 
 $$
-\sqrt{a_x^2+a_y^2}
+\sqrt{t_x^2+t_y^2}
 \le
--a_z\tan\theta
+-t_z\tan\theta
 $$
 
 其中应满足：
@@ -693,55 +710,55 @@ $$
 $$
 h_{\mathrm{cone}}
 :=
--a_z\tan\theta
+-t_z\tan\theta
 -
-\sqrt{a_x^2+a_y^2+\varepsilon_{\mathrm{cone}}}
+\sqrt{t_x^2+t_y^2+\varepsilon_{\mathrm{cone}}}
 \ge 0
 $$
 
-其中 $\varepsilon_{\mathrm{cone}}>0$ 用于避免 $a_x=a_y=0$ 附近的不可导，常用量级可取 $10^{-6}$ 到 $10^{-4}$。
+其中 $\varepsilon_{\mathrm{cone}}>0$ 用于避免 $t_x=t_y=0$ 附近的不可导，常用量级可取 $10^{-6}$ 到 $10^{-4}$。
 
 定义：
 
 $$
 r_{xy}
 :=
-\sqrt{a_x^2+a_y^2+\varepsilon_{\mathrm{cone}}}
+\sqrt{t_x^2+t_y^2+\varepsilon_{\mathrm{cone}}}
 $$
 
-则约束对推力加速度命令 $y_k$ 的梯度为。该梯度只是链式法则中的中间量，最终写入 `StateInputConstraint` 的导数应按后文转换为对 $X_k$ 和 $U_k$ 的 Jacobian：
+则约束对命令推力加速度 $y_k$ 的梯度为。该梯度只是链式法则中的中间量，最终应按后文转换为对 $X_k$ 和 $U_k$ 的 Jacobian：
 
 $$
 \frac{\partial h_{\mathrm{cone}}}{\partial y}
 =
 \begin{bmatrix}
--\dfrac{a_x}{r_{xy}} &
--\dfrac{a_y}{r_{xy}} &
+-\dfrac{t_x}{r_{xy}} &
+-\dfrac{t_y}{r_{xy}} &
 -\tan\theta
 \end{bmatrix}
 $$
 
-若实现二次近似，非零二阶项只出现在 $a_x,a_y$ 平面：
+若采用二次近似，非零二阶项只出现在 $t_x,t_y$ 平面：
 
 $$
 \frac{\partial^2 h_{\mathrm{cone}}}{\partial y^2}
 =
 \begin{bmatrix}
--\dfrac{1}{r_{xy}}+\dfrac{a_x^2}{r_{xy}^3} &
-\dfrac{a_xa_y}{r_{xy}^3} &
+-\dfrac{1}{r_{xy}}+\dfrac{t_x^2}{r_{xy}^3} &
+\dfrac{t_xt_y}{r_{xy}^3} &
 0 \\
-\dfrac{a_xa_y}{r_{xy}^3} &
--\dfrac{1}{r_{xy}}+\dfrac{a_y^2}{r_{xy}^3} &
+\dfrac{t_xt_y}{r_{xy}^3} &
+-\dfrac{1}{r_{xy}}+\dfrac{t_y^2}{r_{xy}^3} &
 0 \\
 0 & 0 & 0
 \end{bmatrix}
 $$
 
-相比平方形式，根号形式保持推力横向分量的一阶尺度，且不会在配合 $z$ 轴符号约束前产生双锥歧义，更适合作为增广拉格朗日不等式约束的直接表达。
+相比平方形式，根号形式保持推力横向分量的一阶尺度，且不会在配合 $z$ 轴符号约束前产生双锥歧义，更适合作为不等式约束的直接表达。
 
 ### 椭球约束
 
-椭球约束限制推力加速度命令三轴分量处于给定轴向能力范围内：
+椭球约束限制命令总加速度三轴分量处于给定轴向能力范围内：
 
 $$
 \left(\frac{a_x}{a_{x,\max}}\right)^2
@@ -776,10 +793,10 @@ h_{\mathrm{ellip}}
 \ge 0
 $$
 
-该约束对推力加速度命令 $y_k$ 的梯度为。该梯度只是链式法则中的中间量，最终写入 `StateInputConstraint` 的导数应按后文转换为对 $X_k$ 和 $U_k$ 的 Jacobian：
+该约束对命令总加速度 $c_k$ 的梯度为。该梯度只是链式法则中的中间量，最终应按后文转换为对 $X_k$ 和 $U_k$ 的 Jacobian：
 
 $$
-\frac{\partial h_{\mathrm{ellip}}}{\partial y}
+\frac{\partial h_{\mathrm{ellip}}}{\partial c}
 =
 \begin{bmatrix}
 -\dfrac{2a_x}{a_{x,\max}^2} &
@@ -791,7 +808,7 @@ $$
 二阶项为常量：
 
 $$
-\frac{\partial^2 h_{\mathrm{ellip}}}{\partial y^2}
+\frac{\partial^2 h_{\mathrm{ellip}}}{\partial c^2}
 =
 \begin{bmatrix}
 -\dfrac{2}{a_{x,\max}^2} & 0 & 0 \\
@@ -802,10 +819,10 @@ $$
 
 ### 推力 z 轴最小值约束
 
-推力 $z$ 轴最小值约束用于防止推力方向反转。由于 NED 坐标系下正常上推对应 $a_z<0$，可设定一个负的阈值 $z_{\min}<0$：
+推力 $z$ 轴最小值约束用于防止推力方向反转。由于 NED 坐标系下正常上推对应 $t_z<0$，可设定一个负的阈值 $z_{\min}<0$：
 
 $$
-a_z \le z_{\min}
+t_z \le z_{\min}
 $$
 
 写成 $h\ge0$：
@@ -813,11 +830,11 @@ $$
 $$
 h_z
 :=
-z_{\min}-a_z
+z_{\min}-t_z
 \ge 0
 $$
 
-该约束对推力加速度命令 $y_k$ 的梯度为。该梯度只是链式法则中的中间量，最终写入 `StateInputConstraint` 的导数应按后文转换为对 $X_k$ 和 $U_k$ 的 Jacobian：
+该约束对命令推力加速度 $y_k$ 的梯度为。该梯度只是链式法则中的中间量，最终应按后文转换为对 $X_k$ 和 $U_k$ 的 Jacobian：
 
 $$
 \frac{\partial h_z}{\partial y}
@@ -835,15 +852,15 @@ $$
 0_{3\times3}
 $$
 
-若同时使用椭球约束与 $z$ 轴最小值约束，应至少保证存在可行的竖直推力分量：
+若希望悬停点 $c_k=0$ 同时满足椭球约束与 $z$ 轴最小值约束，应至少保证：
 
 $$
--a_{z,\max}\le z_{\min}<0
+-g \le z_{\min}<0
 $$
 
 ### 约束对状态和输入的梯度
 
-`Constraint` 接口需要的不是对中间变量 $y_k$ 的导数，而是对优化变量的导数。对于本节的命令推力加速度约束，最终应返回：
+局部优化需要的不是对中间变量 $c_k$ 或 $y_k$ 的导数，而是对优化变量的导数。对于本节的命令约束，应计算：
 
 $$
 \mathrm{dfdx}
@@ -855,23 +872,39 @@ $$
 \frac{\partial h}{\partial U_k}
 $$
 
-上述三个约束均先写成 $y_k=a_{T,\mathrm{cmd},k}^N$ 的函数：
+锥约束与 $z$ 轴最小值约束写成 $y_k=a_{T,\mathrm{cmd},k}^N$ 的函数，椭球约束写成 $c_k=a_{\mathrm{cmd},k}^N$ 的函数：
 
 $$
-h_i(X_k,U_k)=\bar h_i(y_k)
+h_{\mathrm{cone}}(X_k,U_k)=\bar h_{\mathrm{cone}}(y_k),
+\quad
+h_{\mathrm{ellip}}(X_k,U_k)=\bar h_{\mathrm{ellip}}(c_k),
+\quad
+h_z(X_k,U_k)=\bar h_z(y_k)
 $$
 
 由于：
 
 $$
+c_k
+=
+S_{\mathrm{cmd}}X_k+U_k,
+\quad
 y_k
 =
-S_{\mathrm{cmd}}X_k+U_k-g e_3
+c_k-g e_3
 $$
 
 有：
 
 $$
+\frac{\partial c_k}{\partial X_k}
+=
+S_{\mathrm{cmd}},
+\quad
+\frac{\partial c_k}{\partial U_k}
+=
+I_3,
+\quad
 \frac{\partial y_k}{\partial X_k}
 =
 S_{\mathrm{cmd}},
@@ -881,31 +914,14 @@ S_{\mathrm{cmd}},
 I_3
 $$
 
-因此对任意约束分量 $h_i$：
+因此可将三个中间变量梯度按约束顺序堆叠：
 
 $$
-\frac{\partial h_i}{\partial X_k}
-=
-\frac{\partial \bar h_i}{\partial y}
-S_{\mathrm{cmd}}
-$$
-
-$$
-\frac{\partial h_i}{\partial U_k}
-=
-\frac{\partial \bar h_i}{\partial y}
-$$
-
-将三行梯度堆叠，得到状态-输入约束的 Jacobian：
-
-$$
-H_y
+G
 :=
-\frac{\partial h}{\partial y}
-=
 \begin{bmatrix}
 \dfrac{\partial h_{\mathrm{cone}}}{\partial y} \\
-\dfrac{\partial h_{\mathrm{ellip}}}{\partial y} \\
+\dfrac{\partial h_{\mathrm{ellip}}}{\partial c} \\
 \dfrac{\partial h_z}{\partial y}
 \end{bmatrix}
 $$
@@ -913,34 +929,34 @@ $$
 $$
 \frac{\partial h}{\partial X_k}
 =
-H_y S_{\mathrm{cmd}},
+G S_{\mathrm{cmd}},
 \quad
 \frac{\partial h}{\partial U_k}
 =
-H_y
+G
 $$
 
-若在 `StateInputConstraint` 中按 `ConstraintOrder::Linear` 提供局部线性近似，可只返回上述 $h$、$\partial h/\partial X_k$ 和 $\partial h/\partial U_k$，由 `MultidimensionalPenalty` 通过链式法则生成标量增广惩罚的二次近似。若希望保留约束自身曲率，可按 `ConstraintOrder::Quadratic` 同时填充每个约束分量的 Hessian：
+若只采用局部线性约束近似，可只使用上述 $h$、$\partial h/\partial X_k$ 和 $\partial h/\partial U_k$。若希望保留约束自身曲率，可同时使用每个约束分量的 Hessian。令 $\bar H_i$ 表示该约束对其自身中间变量的 Hessian，其中锥约束和 $z$ 轴最小值约束使用 $y_k$，椭球约束使用 $c_k$，则：
 
 $$
 \frac{\partial^2 h_i}{\partial X_k^2}
 =
 S_{\mathrm{cmd}}^T
-\frac{\partial^2 \bar h_i}{\partial y^2}
+\bar H_i
 S_{\mathrm{cmd}}
 $$
 
 $$
 \frac{\partial^2 h_i}{\partial U_k\partial X_k}
 =
-\frac{\partial^2 \bar h_i}{\partial y^2}
+\bar H_i
 S_{\mathrm{cmd}}
 $$
 
 $$
 \frac{\partial^2 h_i}{\partial U_k^2}
 =
-\frac{\partial^2 \bar h_i}{\partial y^2}
+\bar H_i
 $$
 
 ## 完整离散阶段代价
@@ -1027,6 +1043,8 @@ $$
 例如 $\alpha=0.2$ 表示每个控制周期实际总加速度追上当前命令误差的 $20\%$，响应较慢但更平滑；$\alpha=0.5$ 表示每拍追上误差的 $50\%$，响应更快。
 
 $R$ 和 $R_a$ 的作用不同：$R$ 抑制命令增量 $U_k$ 过大，使输出变化更平滑；$R_a$ 抑制命令总加速度 $a_{\mathrm{cmd},k}^N$ 长期偏离参考平衡点。若系统出现命令总加速度长期偏置、速度误差附近来回修正或低频震荡，可适当增大 $R_a$；若响应过慢或无法建立必要加速度，则应减小 $R_a$ 或检查参考命令是否设置过于保守。通常可先令 $R_a$ 比 $R$ 小一到两个数量级，再结合闭环震荡和响应速度逐步调整。
+
+约束参数可先取一组保守仿真初值：倾角 $45^\circ$，总加速度椭球三轴半径 $10\ \mathrm{m/s^2}$，$z_{\min}=-1\ \mathrm{m/s^2}$。若使用增广拉格朗日或其他软约束方法，应根据约束违反量和收敛速度调节惩罚权重与乘子更新步长。
 
 若已知连续时间常数 $T$，也可以换算：
 

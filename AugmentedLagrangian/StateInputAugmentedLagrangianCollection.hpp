@@ -63,21 +63,8 @@ class StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
       const MultiplierGroup<Scalar, Layout>& termsMultiplier,
       ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro)
       const {
-    addQuadraticApproximationImpl(
-        time, state, input, termsMultiplier, addAppro,
-        std::make_index_sequence<Layout::NumTerms>{});
-  }
-
-  /** @brief 获取所有 state-input Lagrangian 惩罚项的二次近似之和。 */
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>
-  getQuadraticApproximation(
-      const Scalar time, const Vector<Scalar, XDim>& state,
-      const Vector<Scalar, UDim>& input,
-      const MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim> penalty;
-    penalty.setZero();
-    addQuadraticApproximation(time, state, input, termsMultiplier, penalty);
-    return penalty;
+    addQuadraticApproximationImpl(time, state, input, termsMultiplier, addAppro,
+                                  std::make_index_sequence<Layout::NumTerms>{});
   }
 
   /** 更新每个激活项的拉格朗日/惩罚乘子和惩罚值。
@@ -127,7 +114,7 @@ class StateInputAugmentedLagrangianCollection<Scalar, XDim, UDim,
       ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro,
       std::index_sequence<Is...>) const {
     ((getTerm<Is>()->addQuadraticApproximation(
-          time, state, input, std::get<Is>(termsMultiplier.terms), addAppro)),
+         time, state, input, std::get<Is>(termsMultiplier.terms), addAppro)),
      ...);
   }
 

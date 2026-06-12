@@ -86,24 +86,20 @@ struct LinearQuadraticApproximator {
 
     // 拉格朗日项。
     if constexpr (StateEqConstraintDim != 0) {
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx =
-          problem.stateEqualityLagrangian.getQuadraticApproximation(
-              time, state, multipliers.stateEq);
-      modelData.cost += approx;
+      problem.stateEqualityLagrangian.addQuadraticApproximation(
+          time, state, multipliers.stateEq, modelData.cost);
     }
     if constexpr (StateIneqConstraintDim != 0) {
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> approx =
-          problem.stateInequalityLagrangian.getQuadraticApproximation(
-              time, state, multipliers.stateIneq);
-      modelData.cost += approx;
+      problem.stateInequalityLagrangian.addQuadraticApproximation(
+          time, state, multipliers.stateIneq, modelData.cost);
     }
     if constexpr (StateInputEqConstraintDim != 0) {
-      modelData.cost += problem.equalityLagrangian.getQuadraticApproximation(
-          time, state, input, multipliers.stateInputEq);
+      problem.equalityLagrangian.addQuadraticApproximation(
+          time, state, input, multipliers.stateInputEq, modelData.cost);
     }
     if constexpr (StateInputIneqConstraintDim != 0) {
-      modelData.cost += problem.inequalityLagrangian.getQuadraticApproximation(
-          time, state, input, multipliers.stateInputIneq);
+      problem.inequalityLagrangian.addQuadraticApproximation(
+          time, state, input, multipliers.stateInputIneq, modelData.cost);
     }
   }
 
@@ -151,14 +147,12 @@ struct LinearQuadraticApproximator {
 
     // 拉格朗日项
     if constexpr (FinalStateEqConstraintDim != 0) {
-      auto approx = problem.finalEqualityLagrangian.getQuadraticApproximation(
-          time, state, multipliers.stateEq);
-      modelData.cost += approx;
+      problem.finalEqualityLagrangian.addQuadraticApproximation(
+          time, state, multipliers.stateEq, modelData.cost);
     }
     if constexpr (FinalStateIneqConstraintDim != 0) {
-      auto approx = problem.finalInequalityLagrangian.getQuadraticApproximation(
-          time, state, multipliers.stateIneq);
-      modelData.cost += approx;
+      problem.finalInequalityLagrangian.addQuadraticApproximation(
+          time, state, multipliers.stateIneq, modelData.cost);
     }
   }
 

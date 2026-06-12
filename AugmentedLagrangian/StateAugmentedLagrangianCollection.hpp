@@ -18,13 +18,14 @@
  * StateAugmentedLagrangian term 求和。
  * @tparam Scalar 标量类型。
  * @tparam XDim 状态维度。
+ * @tparam UDim 输入维度。
  * @tparam GroupLayout 约束 term 分组布局。
  */
-template <typename Scalar, int XDim, typename GroupLayout>
+template <typename Scalar, int XDim, int UDim, typename GroupLayout>
 class StateAugmentedLagrangianCollection;
 
-template <typename Scalar, int XDim, typename... Terms>
-class StateAugmentedLagrangianCollection<Scalar, XDim,
+template <typename Scalar, int XDim, int UDim, typename... Terms>
+class StateAugmentedLagrangianCollection<Scalar, XDim, UDim,
                                          ConstraintGroupLayout<Terms...>> {
  public:
   using Layout = ConstraintGroupLayout<Terms...>;
@@ -35,7 +36,7 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
   using TermLayout = typename Layout::template Term<I>;
 
   template <std::size_t I>
-  using TermPtr = const StateAugmentedLagrangianInterface<Scalar, XDim,
+  using TermPtr = const StateAugmentedLagrangianInterface<Scalar, XDim, UDim,
                                                           TermLayout<I>::CDim>*;
 
   /** @brief 设置第 I 个增广拉格朗日项。 */
@@ -53,20 +54,17 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
                         std::make_index_sequence<Layout::NumTerms>{});
   }
 
-  /** @brief 获取所有 state Lagrangian 惩罚项的二次近似之和。 */
-  ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>
-  getQuadraticApproximation(
+  /** @brief 计算并累加所有 state Lagrangian 惩罚项的二次近似。 */
+  void addQuadraticApproximation(
       const Scalar time, const Vector<Scalar, XDim>& state,
-      const MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
-    ScalarFunctionQuadraticApproximation<Scalar, XDim, 0> penalty;
-    penalty.setZero();
-    addQuadraticApproximationImpl(
-        time, state, termsMultiplier, penalty,
-        std::make_index_sequence<Layout::NumTerms>{});
-    return penalty;
+      const MultiplierGroup<Scalar, Layout>& termsMultiplier,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro)
+      const {
+    addQuadraticApproximationImpl(time, state, termsMultiplier, addAppro,
+                                  std::make_index_sequence<Layout::NumTerms>{});
   }
 
-  /** 更新每个激活项的拉格朗日/惩罚乘子以及惩罚值。
+  /** 更新每个激活项的拉格朗日/惩罚乘子和惩罚值。
    * 项。 */
   void updateLagrangian(
       Scalar time, const Vector<Scalar, XDim>& state,
@@ -78,7 +76,8 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
 
   /** 初始化每个激活项的拉格朗日/惩罚乘子。 */
   void initializeLagrangian(
-      Scalar time, MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
+      const Scalar time,
+      MultiplierGroup<Scalar, Layout>& termsMultiplier) const {
     initializeLagrangianImpl(time, termsMultiplier,
                              std::make_index_sequence<Layout::NumTerms>{});
   }
@@ -106,10 +105,10 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
   void addQuadraticApproximationImpl(
       const Scalar time, const Vector<Scalar, XDim>& state,
       const MultiplierGroup<Scalar, Layout>& termsMultiplier,
-      ScalarFunctionQuadraticApproximation<Scalar, XDim, 0>& addAppro,
+      ScalarFunctionQuadraticApproximation<Scalar, XDim, UDim>& addAppro,
       std::index_sequence<Is...>) const {
     ((getTerm<Is>()->addQuadraticApproximation(
-          time, state, std::get<Is>(termsMultiplier.terms), addAppro)),
+         time, state, std::get<Is>(termsMultiplier.terms), addAppro)),
      ...);
   }
 
@@ -139,7 +138,7 @@ class StateAugmentedLagrangianCollection<Scalar, XDim,
      ...);
   }
 
-  std::tuple<
-      const StateAugmentedLagrangianInterface<Scalar, XDim, Terms::CDim>*...>
+  std::tuple<const StateAugmentedLagrangianInterface<Scalar, XDim, UDim,
+                                                     Terms::CDim>*...>
       terms_;
 };
