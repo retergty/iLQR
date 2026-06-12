@@ -6,12 +6,10 @@
 
 namespace {
 using Scalar = double;
-using Constraint =
-    thrust_vector_first_order_lag::ThrustCommandAccelerationConstraint<Scalar>;
-using OCPSettings =
-    thrust_vector_first_order_lag::ThrustVectorOCPSettings<Scalar>;
-using StateVector = Vector<Scalar, thrust_vector_first_order_lag::STATE_DIM>;
-using InputVector = Vector<Scalar, thrust_vector_first_order_lag::INPUT_DIM>;
+using Constraint = tvfol_constrain::ThrustCommandAccelerationConstraint<Scalar>;
+using OCPSettings = tvfol_constrain::ThrustVectorOCPSettings<Scalar>;
+using StateVector = Vector<Scalar, tvfol_constrain::STATE_DIM>;
+using InputVector = Vector<Scalar, tvfol_constrain::INPUT_DIM>;
 
 Constraint makeConstraint() {
   typename Constraint::Config config;

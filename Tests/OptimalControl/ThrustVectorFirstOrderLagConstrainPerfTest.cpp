@@ -14,13 +14,12 @@ constexpr Scalar LagAlpha = 0.5;
 constexpr size_t LoopCycle = 1000000;
 
 using Descriptor = iLQRDescriptor<
-    Scalar,
-    TranscriptionConfig<Dimensions<thrust_vector_first_order_lag::STATE_DIM,
-                                   thrust_vector_first_order_lag::INPUT_DIM>,
-                        Horizon<PredictLength>, DiscreteDynamics>>;
+    Scalar, TranscriptionConfig<Dimensions<tvfol_constrain::STATE_DIM,
+                                           tvfol_constrain::INPUT_DIM>,
+                                Horizon<PredictLength>, DiscreteDynamics>>;
 using Solver = iLQR<Descriptor>;
 using ThrustVectorILQR =
-    thrust_vector_first_order_lag::ThrustVectorILQR<Scalar, PredictLength>;
+    tvfol_constrain::ThrustVectorILQR<Scalar, PredictLength>;
 using StateVector = typename Solver::StateVector_t;
 using InputVector = typename Solver::InputVector_t;
 
@@ -47,9 +46,8 @@ void runOneMpcCycle(ThrustVectorILQR& ilqr,
   currentTime += TimeStep;
 }
 
-thrust_vector_first_order_lag::ThrustVectorILQRSettings<Scalar>
-makeILQRSettings() {
-  thrust_vector_first_order_lag::ThrustVectorILQRSettings<Scalar> settings;
+tvfol_constrain::ThrustVectorILQRSettings<Scalar> makeILQRSettings() {
+  tvfol_constrain::ThrustVectorILQRSettings<Scalar> settings;
   settings.ddpSettings.timeStep = TimeStep;
   settings.ddpSettings.maxNumIterations = 20;
   settings.ddpSettings.minRelCost = Scalar(1e-6);
@@ -57,13 +55,11 @@ makeILQRSettings() {
   settings.ocpSettings.Q.setZero();
   settings.ocpSettings.Q.template topLeftCorner<3, 3>().setIdentity();
   settings.ocpSettings.R =
-      Scalar(1e-3) *
-      Matrix<Scalar, thrust_vector_first_order_lag::INPUT_DIM,
-             thrust_vector_first_order_lag::INPUT_DIM>::Identity();
+      Scalar(1e-3) * Matrix<Scalar, tvfol_constrain::INPUT_DIM,
+                            tvfol_constrain::INPUT_DIM>::Identity();
   settings.ocpSettings.Ra =
-      Scalar(1e-4) *
-      Matrix<Scalar, thrust_vector_first_order_lag::INPUT_DIM,
-             thrust_vector_first_order_lag::INPUT_DIM>::Identity();
+      Scalar(1e-4) * Matrix<Scalar, tvfol_constrain::INPUT_DIM,
+                            tvfol_constrain::INPUT_DIM>::Identity();
   settings.ocpSettings.Qf.setZero();
   settings.ocpSettings.Qf.template topLeftCorner<3, 3>() =
       Scalar(10.0) * Matrix<Scalar, 3, 3>::Identity();
@@ -75,9 +71,8 @@ makeILQRSettings() {
 
 int main() {
   const auto ilqrSettings = makeILQRSettings();
-  auto ilqr =
-      thrust_vector_first_order_lag::createThrustVectorFirstOrderLagProblem<
-          Scalar, PredictLength>(ilqrSettings);
+  auto ilqr = tvfol_constrain::createThrustVectorFirstOrderLagProblem<
+      Scalar, PredictLength>(ilqrSettings);
 
   StateVector currentState;
   currentState.setZero();
