@@ -21,7 +21,7 @@
  * @tparam UDim 输入维度。
  */
 template <typename Scalar, int XDim, int UDim, int CDim>
-class StateInputAugmentedLagrangian final
+class StateInputAugmentedLagrangian
     : public StateInputAugmentedLagrangianInterface<Scalar, XDim, UDim, CDim> {
  public:
   /**
@@ -86,6 +86,13 @@ class StateInputAugmentedLagrangian final
       const Scalar time) const override {
     (void)time;
     return {Scalar(1.0), penalty_.initializeMultipliers()};
+  }
+
+ protected:
+  /** @brief 返回底层标量惩罚指针，供派生类在重写 addQuadraticApproximation
+   * 时直接调用。 */
+  const AugmentedPenaltyBase<Scalar>* penaltyBase() const noexcept {
+    return penalty_.penaltyBase();
   }
 
  private:

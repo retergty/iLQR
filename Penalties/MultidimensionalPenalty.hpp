@@ -157,6 +157,13 @@ class MultidimensionalPenalty final {
     return l;
   }
 
+  /**
+   * @brief 获取底层标量惩罚函数指针（供子类直接调用逐维接口）。
+   */
+  const AugmentedPenaltyBase<Scalar>* penaltyBase() const noexcept {
+    return penalty_ptr_;
+  }
+
  private:
   template <int Cols>
   Matrix<Scalar, CDim, Cols> scaleRows(

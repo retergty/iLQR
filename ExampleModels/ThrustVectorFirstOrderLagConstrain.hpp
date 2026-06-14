@@ -793,25 +793,7 @@ class ThrustCommandAccelerationConstraint final
       const Scalar time, const Vector<Scalar, STATE_DIM>& state,
       const Vector<Scalar, INPUT_DIM>& input) const override {
     (void)time;
-
-    const CommandAcceleration commandAcceleration =
-        computeCommandAcceleration(state, input);
-    const ThrustAcceleration thrustAcceleration =
-        computeThrustAcceleration(commandAcceleration);
-    const Scalar radialNorm = std::sqrt(
-        thrustAcceleration.ax * thrustAcceleration.ax +
-        thrustAcceleration.ay * thrustAcceleration.ay + coneSmoothing_);
-
-    Vector<Scalar, 2> value;
-    // h_cone >= 0: sqrt(t_x^2 + t_y^2) <= -tan(theta) * t_z
-    value(0) = -tanMaxTiltAngle_ * thrustAcceleration.az - radialNorm;
-    // h_ellip >= 0: total command acceleration stays inside the ellipsoid.
-    value(1) =
-        Scalar(1) -
-        inverseAxMaxSquared_ * commandAcceleration.ax * commandAcceleration.ax -
-        inverseAyMaxSquared_ * commandAcceleration.ay * commandAcceleration.ay -
-        inverseAzMaxSquared_ * commandAcceleration.az * commandAcceleration.az;
-    return value;
+    return computeIntermediates(state, input).f;
   }
 
   VectorFunctionQuadraticApproximation<Scalar, 2, STATE_DIM, INPUT_DIM>
@@ -820,21 +802,18 @@ class ThrustCommandAccelerationConstraint final
       const Vector<Scalar, INPUT_DIM>& input) const override {
     (void)time;
 
+    const ConstraintIntermediates inter = computeIntermediates(state, input);
+
     VectorFunctionQuadraticApproximation<Scalar, 2, STATE_DIM, INPUT_DIM>
         approximation;
     approximation.setZero();
-    approximation.f = getValue(time, state, input);
+    approximation.f = inter.f;
 
-    const CommandAcceleration commandAcceleration =
-        computeCommandAcceleration(state, input);
-    const ThrustAcceleration thrustAcceleration =
-        computeThrustAcceleration(commandAcceleration);
+    const CommandAcceleration& commandAcceleration = inter.commandAcceleration;
+    const ThrustAcceleration& thrustAcceleration = inter.thrustAcceleration;
 
     // ----- 约束 0：锥约束 h_cone -----
-    const Scalar radialNormSquared =
-        thrustAcceleration.ax * thrustAcceleration.ax +
-        thrustAcceleration.ay * thrustAcceleration.ay + coneSmoothing_;
-    const Scalar radialNorm = std::sqrt(radialNormSquared);
+    const Scalar radialNorm = inter.radialNorm;
     const Scalar inverseRadialNorm = Scalar(1) / radialNorm;
     const Scalar inverseRadialNormCubed =
         inverseRadialNorm * inverseRadialNorm * inverseRadialNorm;
@@ -921,6 +900,30 @@ class ThrustCommandAccelerationConstraint final
     Scalar az;
   };
 
+  struct ConstraintIntermediates {
+    CommandAcceleration commandAcceleration;
+    ThrustAcceleration thrustAcceleration;
+    Scalar radialNorm;
+    Vector<Scalar, 2> f;
+  };
+
+  ConstraintIntermediates computeIntermediates(
+      const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input) const {
+    const CommandAcceleration cmd = computeCommandAcceleration(state, input);
+    const ThrustAcceleration thr = computeThrustAcceleration(cmd);
+    const Scalar radialNorm =
+        std::sqrt(thr.ax * thr.ax + thr.ay * thr.ay + coneSmoothing_);
+    Vector<Scalar, 2> f;
+    // h_cone >= 0: sqrt(t_x^2 + t_y^2) <= -tan(theta) * t_z
+    f(0) = -tanMaxTiltAngle_ * thr.az - radialNorm;
+    // h_ellip >= 0: total command acceleration stays inside the ellipsoid.
+    f(1) = Scalar(1) - inverseAxMaxSquared_ * cmd.ax * cmd.ax -
+           inverseAyMaxSquared_ * cmd.ay * cmd.ay -
+           inverseAzMaxSquared_ * cmd.az * cmd.az;
+    return {cmd, thr, radialNorm, f};
+  }
+
   static CommandAcceleration computeCommandAcceleration(
       const Vector<Scalar, STATE_DIM>& state,
       const Vector<Scalar, INPUT_DIM>& input) {
@@ -1003,6 +1006,207 @@ struct ThrustCommandAccelerationConstraintSettings {
       Scalar(10.0), Scalar(1.0)};
 };
 
+// 锥+椭球约束的专用增广拉格朗日：利用雅可比仅作用于 a_cmd = x[6:8]+u
+// 的稀疏结构， 直接在 3×3 子块上累加惩罚项，绕过通用 (9×2)×(2×9) 矩阵路径。
+// getValue/updateLagrangian/initializeLagrangian 由基类
+// StateInputAugmentedLagrangian 提供。
+template <typename Scalar>
+class ThrustConstraintAugmentedLagrangian final
+    : public StateInputAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM, 2> {
+ public:
+  using Constraint_t = ThrustCommandAccelerationConstraint<Scalar>;
+  using Config_t = typename Constraint_t::Config;
+  using Base_t = StateInputAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM, 2>;
+
+  ThrustConstraintAugmentedLagrangian(Constraint_t* constraintPtr,
+                                      AugmentedPenaltyBase<Scalar>* penaltyPtr,
+                                      const Config_t& config)
+      : Base_t(constraintPtr, penaltyPtr),
+        tanMaxTiltAngle_(std::tan(config.maxTiltAngleRad)),
+        inverseAxMaxSquared_(Scalar(1) / (config.axMax * config.axMax)),
+        inverseAyMaxSquared_(Scalar(1) / (config.ayMax * config.ayMax)),
+        inverseAzMaxSquared_(Scalar(1) / (config.azMax * config.azMax)),
+        coneSmoothing_(config.coneSmoothing),
+        gravity_(Scalar(kGravity)) {}
+
+  void addQuadraticApproximation(
+      const Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const Multiplier<Scalar, 2>& multiplier,
+      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>&
+          addAppro) const override {
+    // a_cmd = x[6:8] + u（两个约束都只依赖此 3 维量）
+    const Scalar cmdAx = state(6) + input(0);
+    const Scalar cmdAy = state(7) + input(1);
+    const Scalar cmdAz = state(8) + input(2);
+    // a_T = a_cmd - g*e3（重力只在 z 轴）
+    const Scalar thrAz = cmdAz - gravity_;
+    const Scalar radialNorm =
+        std::sqrt(cmdAx * cmdAx + cmdAy * cmdAy + coneSmoothing_);
+
+    // 约束值（用于惩罚导数计算）
+    Vector<Scalar, 2> h;
+    h(0) = -tanMaxTiltAngle_ * thrAz - radialNorm;
+    h(1) = Scalar(1) - inverseAxMaxSquared_ * cmdAx * cmdAx -
+           inverseAyMaxSquared_ * cmdAy * cmdAy -
+           inverseAzMaxSquared_ * cmdAz * cmdAz;
+
+    const Vector<Scalar, 2>& l = multiplier.lagrangian;
+    const Scalar rho = multiplier.penalty;
+
+    // 每维约束的标量惩罚值/一阶/二阶导数
+    Scalar pVal = Scalar(0);
+    Vector<Scalar, 2> p1, p2;
+    const AugmentedPenaltyBase<Scalar>& pen = *this->penaltyBase();
+    for (int i = 0; i < 2; ++i) {
+      pVal += pen.getValue(time, l(i), h(i));
+      p1(i) = pen.getDerivative(time, l(i), h(i));
+      p2(i) = pen.getSecondDerivative(time, l(i), h(i));
+    }
+    addAppro.f += rho * pVal;
+
+    // 各约束对 a_cmd 的 3 维雅可比（∂a_cmd/∂x_{6+i} = ∂a_cmd/∂u_i = δ_i）
+    const Scalar invR = Scalar(1) / radialNorm;
+    const Scalar invR3 = invR * invR * invR;
+    // 锥约束雅可比：dh_cone/da_cmd = [-ax/R, -ay/R, -tan]
+    const Scalar jc0 = -cmdAx * invR;
+    const Scalar jc1 = -cmdAy * invR;
+    const Scalar jc2 = -tanMaxTiltAngle_;
+    // 椭球约束雅可比：dh_ellip/da_cmd = [-2ax/axMax², ...]
+    const Scalar je0 = -Scalar(2) * inverseAxMaxSquared_ * cmdAx;
+    const Scalar je1 = -Scalar(2) * inverseAyMaxSquared_ * cmdAy;
+    const Scalar je2 = -Scalar(2) * inverseAzMaxSquared_ * cmdAz;
+
+    // 一阶梯度（x[6:8] 与 u 对 a_cmd 的偏导相同，均为 I）
+    const Scalar g0 = rho * (p1(0) * jc0 + p1(1) * je0);
+    const Scalar g1 = rho * (p1(0) * jc1 + p1(1) * je1);
+    const Scalar g2 = rho * (p1(0) * jc2 + p1(1) * je2);
+    addAppro.dfdx(6) += g0;
+    addAppro.dfdx(7) += g1;
+    addAppro.dfdx(8) += g2;
+    addAppro.dfdu(0) += g0;
+    addAppro.dfdu(1) += g1;
+    addAppro.dfdu(2) += g2;
+
+    // 锥 Hessian（3×3 中 z 行列均为 0，仅 2×2 非零）
+    const Scalar hc00 = -invR + cmdAx * cmdAx * invR3;
+    const Scalar hc11 = -invR + cmdAy * cmdAy * invR3;
+    const Scalar hc01 = cmdAx * cmdAy * invR3;
+    // 椭球 Hessian（3×3 对角线）
+    const Scalar he00 = -Scalar(2) * inverseAxMaxSquared_;
+    const Scalar he11 = -Scalar(2) * inverseAyMaxSquared_;
+    const Scalar he22 = -Scalar(2) * inverseAzMaxSquared_;
+
+    // 合并 3×3 Hessian 子块：H3 = J^T diag(p'') J + Σ p'ᵢ Hᵢ
+    const Scalar h00 =
+        p2(0) * jc0 * jc0 + p2(1) * je0 * je0 + p1(0) * hc00 + p1(1) * he00;
+    const Scalar h11 =
+        p2(0) * jc1 * jc1 + p2(1) * je1 * je1 + p1(0) * hc11 + p1(1) * he11;
+    const Scalar h22 = p2(0) * jc2 * jc2 + p2(1) * je2 * je2 + p1(1) * he22;
+    const Scalar h01 = p2(0) * jc0 * jc1 + p2(1) * je0 * je1 + p1(0) * hc01;
+    const Scalar h02 = p2(0) * jc0 * jc2 + p2(1) * je0 * je2;
+    const Scalar h12 = p2(0) * jc1 * jc2 + p2(1) * je1 * je2;
+
+    const Scalar rh00 = rho * h00;
+    const Scalar rh11 = rho * h11;
+    const Scalar rh22 = rho * h22;
+    const Scalar rh01 = rho * h01;
+    const Scalar rh02 = rho * h02;
+    const Scalar rh12 = rho * h12;
+
+    // dfdxx：仅 [6:9, 6:9] 子块非零（对称）
+    addAppro.dfdxx(6, 6) += rh00;
+    addAppro.dfdxx(7, 7) += rh11;
+    addAppro.dfdxx(8, 8) += rh22;
+    addAppro.dfdxx(6, 7) += rh01;
+    addAppro.dfdxx(7, 6) += rh01;
+    addAppro.dfdxx(6, 8) += rh02;
+    addAppro.dfdxx(8, 6) += rh02;
+    addAppro.dfdxx(7, 8) += rh12;
+    addAppro.dfdxx(8, 7) += rh12;
+
+    // dfduu：全 3×3（∂a_cmd/∂u = I₃，与 H3 相同）
+    addAppro.dfduu(0, 0) += rh00;
+    addAppro.dfduu(1, 1) += rh11;
+    addAppro.dfduu(2, 2) += rh22;
+    addAppro.dfduu(0, 1) += rh01;
+    addAppro.dfduu(1, 0) += rh01;
+    addAppro.dfduu(0, 2) += rh02;
+    addAppro.dfduu(2, 0) += rh02;
+    addAppro.dfduu(1, 2) += rh12;
+    addAppro.dfduu(2, 1) += rh12;
+
+    // dfdux：[u_j, x_{6+m}] = H3(j, m)
+    addAppro.dfdux(0, 6) += rh00;
+    addAppro.dfdux(1, 7) += rh11;
+    addAppro.dfdux(2, 8) += rh22;
+    addAppro.dfdux(0, 7) += rh01;
+    addAppro.dfdux(1, 6) += rh01;
+    addAppro.dfdux(0, 8) += rh02;
+    addAppro.dfdux(2, 6) += rh02;
+    addAppro.dfdux(1, 8) += rh12;
+    addAppro.dfdux(2, 7) += rh12;
+  }
+
+ private:
+  Scalar tanMaxTiltAngle_;
+  Scalar inverseAxMaxSquared_;
+  Scalar inverseAyMaxSquared_;
+  Scalar inverseAzMaxSquared_;
+  Scalar coneSmoothing_;
+  Scalar gravity_;
+};
+
+// z 轴最小值约束的专用增广拉格朗日：h = zMin - (x₈+u₂-g)，雅可比仅在
+// dfdx(8)=-1 和 dfdu(2)=-1 两处非零，直接写 6 个标量，绕过全尺寸矩阵路径。
+// getValue/updateLagrangian/initializeLagrangian 由基类
+// StateInputAugmentedLagrangian 提供。
+template <typename Scalar>
+class ZMinConstraintAugmentedLagrangian final
+    : public StateInputAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM, 1> {
+ public:
+  using ZMinConstraint_t = ThrustCommandAccelerationZMinConstraint<Scalar>;
+  using Config_t = typename ZMinConstraint_t::Config;
+  using Base_t = StateInputAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM, 1>;
+
+  ZMinConstraintAugmentedLagrangian(ZMinConstraint_t* constraintPtr,
+                                    AugmentedPenaltyBase<Scalar>* penaltyPtr,
+                                    const Config_t& config)
+      : Base_t(constraintPtr, penaltyPtr),
+        zMin_(config.zMin),
+        gravity_(Scalar(kGravity)) {}
+
+  void addQuadraticApproximation(
+      const Scalar time, const Vector<Scalar, STATE_DIM>& state,
+      const Vector<Scalar, INPUT_DIM>& input,
+      const Multiplier<Scalar, 1>& multiplier,
+      ScalarFunctionQuadraticApproximation<Scalar, STATE_DIM, INPUT_DIM>&
+          addAppro) const override {
+    // h = zMin - (x₈ + u₂ - g)；线性约束，d²h = 0
+    const Scalar h = zMin_ - (state(8) + input(2) - gravity_);
+    const Scalar l = multiplier.lagrangian(0);
+    const Scalar rho = multiplier.penalty;
+    const AugmentedPenaltyBase<Scalar>& pen = *this->penaltyBase();
+
+    addAppro.f += rho * pen.getValue(time, l, h);
+
+    // dh/dx₈ = dh/du₂ = -1
+    const Scalar grad = rho * pen.getDerivative(time, l, h) * Scalar(-1);
+    addAppro.dfdx(8) += grad;
+    addAppro.dfdu(2) += grad;
+
+    // d²/dx₈² = d²/du₂² = d²/dx₈du₂ = p''·(-1)² = p''
+    const Scalar hess = rho * pen.getSecondDerivative(time, l, h);
+    addAppro.dfdxx(8, 8) += hess;
+    addAppro.dfduu(2, 2) += hess;
+    addAppro.dfdux(2, 8) += hess;
+  }
+
+ private:
+  Scalar zMin_;
+  Scalar gravity_;
+};
+
 // 命令加速度不等式约束的增广拉格朗日封装：
 // - term 0：推力锥约束 + 总加速度椭球约束（2 维）
 // - term 1：z 轴最小值约束（1 维）
@@ -1013,9 +1217,8 @@ class ThrustCommandAccelerationAugmentedLagrangian final {
   using ZMinConstraint_t = ThrustCommandAccelerationZMinConstraint<Scalar>;
   using Penalty_t = SlacknessSquaredHingePenalty<Scalar>;
   using ConstraintAugmentedLagrangian_t =
-      StateInputAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM, 2>;
-  using ZMinAugmentedLagrangian_t =
-      StateInputAugmentedLagrangian<Scalar, STATE_DIM, INPUT_DIM, 1>;
+      ThrustConstraintAugmentedLagrangian<Scalar>;
+  using ZMinAugmentedLagrangian_t = ZMinConstraintAugmentedLagrangian<Scalar>;
   using Settings_t = ThrustCommandAccelerationConstraintSettings<Scalar>;
 
   explicit ThrustCommandAccelerationAugmentedLagrangian(
@@ -1024,8 +1227,10 @@ class ThrustCommandAccelerationAugmentedLagrangian final {
         zMinConstraint_(config.zMinConstraint),
         constraintPenalty_(config.constraintPenalty),
         zMinPenalty_(config.zMinPenalty),
-        constraintLagrangian_(&constraint_, &constraintPenalty_),
-        zMinLagrangian_(&zMinConstraint_, &zMinPenalty_) {}
+        constraintLagrangian_(&constraint_, &constraintPenalty_,
+                              config.constraint),
+        zMinLagrangian_(&zMinConstraint_, &zMinPenalty_,
+                        config.zMinConstraint) {}
 
   ConstraintAugmentedLagrangian_t* constraintLagrangian() {
     return &constraintLagrangian_;

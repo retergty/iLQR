@@ -19,7 +19,7 @@
  * @tparam UDim 输入维度。
  */
 template <typename Scalar, int XDim, int UDim, int CDim>
-class StateAugmentedLagrangian final
+class StateAugmentedLagrangian
     : public StateAugmentedLagrangianInterface<Scalar, XDim, UDim, CDim> {
  public:
   /**
